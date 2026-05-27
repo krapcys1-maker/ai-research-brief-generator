@@ -1,0 +1,24 @@
+---
+description: Rules for AI-generated research brief output
+alwaysApply: true
+---
+
+# AI Output Rules
+
+- This app is not a generic chatbot.
+- AI must generate structured research brief JSON only.
+- The model must never invent papers, authors, citations, DOI values, URLs, venues, or facts.
+- Detect the language of the user query and generate the research brief in the same language.
+- Search query expansion may produce English queries, but the final report language must match the user query language.
+- Keep paper titles, author names, journal names, venue names, and DOI values unchanged.
+- If the query is Polish, all summaries, explanations, findings, gaps, uncertainties, and recommendations must be in Polish.
+- Every key finding must include `sourcePaperIds`.
+- Every major theme must include `sourcePaperIds`.
+- Every research gap must include `sourcePaperIds`.
+- Every controversy or uncertainty must include `sourcePaperIds`.
+- Research gaps must be grounded in the provided paper list.
+- Confidence must be one of: `low`, `medium`, `high`.
+- If evidence is indirect, include caveats.
+- If a claim cannot be supported by provided papers, remove it or mark it as weak.
+- Validate model output against the Zod schema.
+- Validate that every cited paper ID exists in the selected paper list.

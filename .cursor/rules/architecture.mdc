@@ -1,0 +1,24 @@
+---
+description: Architecture rules for AI Research Brief Generator
+alwaysApply: true
+---
+
+# Architecture Rules
+
+- Use Next.js App Router and TypeScript.
+- Keep source adapter logic inside `lib/sources`.
+- Keep provider-agnostic AI provider and prompt logic inside `lib/ai`.
+- Keep orchestration inside `lib/pipeline`.
+- Keep MVP storage inside `lib/storage` using mock/in-memory storage.
+- Do not add PostgreSQL or Prisma in the MVP.
+- Prepare persistence-ready types so database storage can be added later.
+- Use DeepSeek V4 Pro as the default AI config (`provider: deepseek`, `model: deepseek-v4-pro`) through `AI_PROVIDER`, `AI_MODEL`, and `DEEPSEEK_API_KEY`.
+- Do not hardcode DeepSeek throughout the architecture; use an AI provider abstraction.
+- Do not call external APIs directly from React components.
+- Do not call AI provider SDKs directly from React components.
+- All API inputs must be validated with Zod.
+- All AI outputs must be validated with Zod.
+- Prefer small composable functions over large files.
+- Do not introduce new libraries unless they solve a clear problem.
+- Build mock pipeline before real external API integrations.
+- Keep code typed, explicit, and easy to extend.

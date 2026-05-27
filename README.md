@@ -1,0 +1,61 @@
+# AI Research Brief Generator — Cursor Pack
+
+## Jak użyć
+
+1. Wrzuć te pliki do głównego folderu projektu.
+2. Otwórz projekt w Cursorze.
+3. Otwórz `CURSOR_START_PROMPT.md`.
+4. Skopiuj pierwszy prompt do Cursor Plan Mode.
+5. Nie każ Cursorowi budować wszystkiego naraz. Najpierw Phase 1 i Phase 2.
+
+## Najważniejsze pliki
+
+- `PROJECT.md` — główna specyfikacja projektu.
+- `TODO.md` — kolejność budowy.
+- `CURSOR_START_PROMPT.md` — gotowy prompt startowy.
+- `.cursor/rules/*.mdc` — stałe reguły dla Cursor Agenta.
+- `docs/ARCHITECTURE.md` — architektura.
+- `docs/MVP_SPEC.md` — zakres MVP.
+- `docs/PROMPTS.md` — prompty AI.
+
+## Główna zasada
+
+To nie jest chatbot. To pipeline:
+
+```text
+academic APIs → normalized papers → dedupe → ranking → structured AI synthesis → source-validated brief
+```
+
+## MVP defaults
+
+- Start without PostgreSQL. Use mock data and in-memory/mock storage first.
+- Use a provider-agnostic AI abstraction.
+- Default AI config: `provider: deepseek`, `model: deepseek-v4-pro`.
+- Read AI config from `AI_PROVIDER`, `AI_MODEL`, and `DEEPSEEK_API_KEY`.
+
+## How to run locally
+
+1. Create or update `.env` with:
+   - `AI_PROVIDER=deepseek`
+   - `AI_MODEL=deepseek-v4-pro`
+   - `DEEPSEEK_API_KEY=...`
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Start the app:
+
+```bash
+npm run dev
+```
+
+4. Open `http://localhost:3000`.
+
+Useful checks:
+
+```bash
+npm run lint
+npm run build
+```

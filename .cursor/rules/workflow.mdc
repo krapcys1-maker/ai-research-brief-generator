@@ -1,0 +1,17 @@
+---
+description: Development workflow rules for this project
+alwaysApply: true
+---
+
+# Workflow Rules
+
+- Work in phases.
+- Do not implement the whole product in one step.
+- Start with mock data and end-to-end UI flow.
+- After each phase, ensure the app runs locally.
+- Prefer incremental, reviewable changes.
+- When creating or editing files, keep the project structure from `PROJECT.md`.
+- Before adding real external APIs, ensure mock source adapter works.
+- Before adding AI synthesis, ensure paper normalization, deduplication, and scoring work.
+- Before polishing UI, ensure source-grounding validation works.
+- Do not add authentication, payments, or PDF parsing unless explicitly requested.

@@ -1,0 +1,24 @@
+---
+description: Rules for academic source adapters and paper normalization
+alwaysApply: true
+---
+
+# Data Source Rules
+
+- Every academic source adapter must implement the `SourceAdapter` interface.
+- Source adapters belong in `lib/sources`.
+- Normalize every source result into `NormalizedPaper`.
+- Do not leak source-specific response shapes outside the adapter.
+- Use `Promise.allSettled` when calling multiple source adapters.
+- Do not crash the whole pipeline if one source fails.
+- External API calls must use timeout handling.
+- External API calls must use retry or graceful failure.
+- Respect rate limits.
+- Cache repeated API calls when possible.
+- Deduplicate papers in this order:
+  1. DOI
+  2. arXiv ID
+  3. Semantic Scholar ID
+  4. OpenAlex ID
+  5. normalized title
+- Do not fetch or parse full PDFs in MVP.
