@@ -3,16 +3,43 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+type SourceOption = "mock" | "arxiv" | "semantic_scholar" | "openalex";
+
 type ResearchFormProps = {
   examples: string[];
 };
+
+const sourceOptions: { value: SourceOption; label: string }[] = [
+  { value: "mock", label: "Mock" },
+  { value: "arxiv", label: "arXiv" },
+  { value: "semantic_scholar", label: "Semantic Scholar" },
+  { value: "openalex", label: "OpenAlex" }
+];
 
 export function ResearchForm({ examples }: ResearchFormProps) {
   const router = useRouter();
   const [query, setQuery] = useState(examples[0] ?? "");
   const [maxPapers, setMaxPapers] = useState(10);
+  const [fromYear, setFromYear] = useState("");
+  const [toYear, setToYear] = useState("");
+  const [sources, setSources] = useState<SourceOption[]>([
+    "mock",
+    "arxiv",
+    "openalex"
+  ]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  function toggleSource(source: SourceOption) {
+    setSources((current) => {
+      if (current.includes(source)) {
+        const next = current.filter((item) => item !== source);
+        return next.length ? next : current;
+      }
+
+      return [...current, source];
+    });
+  }
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -28,7 +55,9 @@ export function ResearchForm({ examples }: ResearchFormProps) {
         body: JSON.stringify({
           query,
           maxPapers,
-          sources: ["mock"]
+          sources,
+          fromYear: fromYear ? Number(fromYear) : undefined,
+          toYear: toYear ? Number(toYear) : undefined
         })
       });
 
@@ -76,24 +105,110 @@ export function ResearchForm({ examples }: ResearchFormProps) {
           />
         </label>
 
-        <label className="stack" style={{ gap: 8, maxWidth: 240 }}>
-          <span style={{ fontWeight: 750 }}>Max papers</span>
-          <select
-            value={maxPapers}
-            onChange={(event) => setMaxPapers(Number(event.target.value))}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
+            gap: 14
+          }}
+        >
+          <label className="stack" style={{ gap: 8 }}>
+            <span style={{ fontWeight: 750 }}>Max papers</span>
+            <select
+              value={maxPapers}
+              onChange={(event) => setMaxPapers(Number(event.target.value))}
+              style={{
+                border: "1px solid var(--border)",
+                borderRadius: 8,
+                padding: "10px 12px",
+                background: "#fff"
+              }}
+            >
+              <option value={10}>10 papers</option>
+              <option value={15}>15 papers</option>
+              <option value={20}>20 papers</option>
+              <option value={30}>30 papers</option>
+            </select>
+          </label>
+
+          <label className="stack" style={{ gap: 8 }}>
+            <span style={{ fontWeight: 750 }}>From year</span>
+            <input
+              value={fromYear}
+              onChange={(event) => setFromYear(event.target.value)}
+              inputMode="numeric"
+              placeholder="2020"
+              min={1900}
+              max={2100}
+              type="number"
+              style={{
+                border: "1px solid var(--border)",
+                borderRadius: 8,
+                padding: "10px 12px"
+              }}
+            />
+          </label>
+
+          <label className="stack" style={{ gap: 8 }}>
+            <span style={{ fontWeight: 750 }}>To year</span>
+            <input
+              value={toYear}
+              onChange={(event) => setToYear(event.target.value)}
+              inputMode="numeric"
+              placeholder="2026"
+              min={1900}
+              max={2100}
+              type="number"
+              style={{
+                border: "1px solid var(--border)",
+                borderRadius: 8,
+                padding: "10px 12px"
+              }}
+            />
+          </label>
+        </div>
+
+        <fieldset
+          style={{
+            border: "1px solid var(--border)",
+            borderRadius: 8,
+            padding: 14,
+            margin: 0
+          }}
+        >
+          <legend style={{ fontWeight: 750, padding: "0 6px" }}>Sources</legend>
+          <div
             style={{
-              border: "1px solid var(--border)",
-              borderRadius: 8,
-              padding: "10px 12px",
-              background: "#fff"
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+              gap: 10
             }}
           >
-            <option value={10}>10 papers</option>
-            <option value={15}>15 papers</option>
-            <option value={20}>20 papers</option>
-            <option value={30}>30 papers</option>
-          </select>
-        </label>
+            {sourceOptions.map((source) => (
+              <label
+                key={source.value}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: 10,
+                  border: "1px solid var(--border)",
+                  borderRadius: 8,
+                  background: sources.includes(source.value)
+                    ? "var(--accent-soft)"
+                    : "#fff"
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={sources.includes(source.value)}
+                  onChange={() => toggleSource(source.value)}
+                />
+                <span>{source.label}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
 
         {error ? (
           <div

@@ -63,11 +63,22 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Added export link on the brief result page.
 - Added `searchSummary.warnings` support for future graceful source-adapter failures.
 - Verified `npm run lint` and `npm run build` after the export/source drawer changes.
+- Implemented real academic source adapters:
+  - arXiv Atom API
+  - Semantic Scholar Graph API
+  - OpenAlex Works API
+- Wired source selection into the home form.
+- Added optional year range inputs to the home form.
+- Added source search orchestration with `Promise.allSettled`.
+- Added timeout/retry helper for external source requests.
+- Verified arXiv and OpenAlex return papers for a small test query.
+- Verified Semantic Scholar 429 rate limiting is captured as a warning rather than crashing the whole search.
+- Verified multi-source search can continue with arXiv and OpenAlex when Semantic Scholar is rate limited.
 
 ## Important Current Decisions
 
 - Build Phase 1 and Phase 2 first.
-- Do not add real academic API calls yet.
+- Real academic source adapters exist, but the app still supports mock data and graceful partial failures.
 - Do not add PostgreSQL or Prisma yet.
 - Do not add authentication, payments, PDF parsing, or autonomous web browsing.
 - All AI output must be structured and validated with Zod.
@@ -76,7 +87,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Choose the next product direction:
-
-- add durable persistence before long-running source/API work, or
-- implement real academic source adapters with temporary in-memory storage, accepting that generated briefs disappear on server restart
+Add a small API cache for external source requests, then decide whether to add durable persistence or continue improving source quality/ranking.

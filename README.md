@@ -32,6 +32,8 @@ academic APIs → normalized papers → dedupe → ranking → structured AI syn
 - Use a provider-agnostic AI abstraction.
 - Default AI config: `provider: deepseek`, `model: deepseek-v4-pro`.
 - Read AI config from `AI_PROVIDER`, `AI_MODEL`, and `DEEPSEEK_API_KEY`.
+- Academic sources currently supported: mock data, arXiv, Semantic Scholar, OpenAlex.
+- Semantic Scholar can work without a key but may rate limit; add `SEMANTIC_SCHOLAR_API_KEY` later for better reliability.
 
 ## How to run locally
 

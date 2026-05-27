@@ -38,12 +38,12 @@
 
 ## Phase 4 — Source Adapters
 
-- [ ] Implement arXiv adapter.
-- [ ] Implement Semantic Scholar adapter.
-- [ ] Implement OpenAlex adapter.
-- [ ] Add timeout handling.
-- [ ] Add retry with exponential backoff.
-- [ ] Add graceful failure with `Promise.allSettled`.
+- [x] Implement arXiv adapter.
+- [x] Implement Semantic Scholar adapter.
+- [x] Implement OpenAlex adapter.
+- [x] Add timeout handling.
+- [x] Add retry with exponential backoff.
+- [x] Add graceful failure with `Promise.allSettled`.
 - [ ] Add API cache.
 
 ## Phase 5 — Paper Processing
