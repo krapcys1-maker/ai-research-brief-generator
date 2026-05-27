@@ -54,6 +54,10 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Verified cited `sourcePaperIds` exist in the selected paper list.
 - Verified `npm run lint` passes.
 - Verified `npm run build` passes.
+- Initialized a local git repository.
+- Created public GitHub repository `krapcys1-maker/ai-research-brief-generator`.
+- Published branch `codex/initial-mvp` to GitHub.
+- Confirmed `.env`, `.next`, and `node_modules` are ignored and not included in the committed tree.
 
 ## Important Current Decisions
 
