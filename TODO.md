@@ -87,15 +87,15 @@
 - [x] Render suggested next questions.
 - [x] Render bibliography.
 - [x] Add clickable citations.
-- [ ] Add source drawer.
-- [ ] Add warnings for failed sources.
+- [x] Add source drawer.
+- [x] Add warnings for failed sources.
 
 ## Phase 8 — Export
 
-- [ ] Add Markdown export function.
-- [ ] Add `GET /api/export/[id]?format=markdown`.
-- [ ] Add export button.
-- [ ] Include bibliography in export.
+- [x] Add Markdown export function.
+- [x] Add `GET /api/export/[id]?format=markdown`.
+- [x] Add export button.
+- [x] Include bibliography in export.
 
 ## Later
 

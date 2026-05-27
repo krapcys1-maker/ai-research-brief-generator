@@ -134,7 +134,8 @@ The JSON object must match this shape exactly:
     "totalFound": ${input.papers.length},
     "totalAfterDeduplication": ${input.papers.length},
     "totalUsedInBrief": ${input.papers.length},
-    "queryVariants": ${JSON.stringify(input.queryVariants)}
+    "queryVariants": ${JSON.stringify(input.queryVariants)},
+    "warnings": []
   },
   "bibliography": ${JSON.stringify(bibliography)}
 }

@@ -24,7 +24,8 @@ function createSearchSummary(input: {
     totalFound: input.raw.length,
     totalAfterDeduplication: input.deduped.length,
     totalUsedInBrief: input.selected.length,
-    queryVariants: [input.query]
+    queryVariants: [input.query],
+    warnings: []
   };
 }
 

@@ -58,6 +58,11 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Created public GitHub repository `krapcys1-maker/ai-research-brief-generator`.
 - Published branch `codex/initial-mvp` to GitHub.
 - Confirmed `.env`, `.next`, and `node_modules` are ignored and not included in the committed tree.
+- Added interactive source drawer for citation/source inspection.
+- Added Markdown export function and `GET /api/export/[id]?format=markdown`.
+- Added export link on the brief result page.
+- Added `searchSummary.warnings` support for future graceful source-adapter failures.
+- Verified `npm run lint` and `npm run build` after the export/source drawer changes.
 
 ## Important Current Decisions
 
@@ -71,9 +76,7 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Improve the result UI and export flow:
+Choose the next product direction:
 
-- render influential papers as their own section
-- add a source drawer or richer citation interaction
-- add Markdown export
-- consider storing generated briefs outside process memory before adding real academic sources
+- add durable persistence before long-running source/API work, or
+- implement real academic source adapters with temporary in-memory storage, accepting that generated briefs disappear on server restart

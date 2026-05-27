@@ -128,7 +128,8 @@ export const ResearchBriefSchema = z.object({
     totalFound: z.number().int().nonnegative(),
     totalAfterDeduplication: z.number().int().nonnegative(),
     totalUsedInBrief: z.number().int().nonnegative(),
-    queryVariants: z.array(z.string())
+    queryVariants: z.array(z.string()),
+    warnings: z.array(z.string()).default([])
   }),
   bibliography: z.array(BibliographyItemSchema).min(1)
 });
