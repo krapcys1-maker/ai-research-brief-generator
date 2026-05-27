@@ -77,6 +77,10 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Added in-memory TTL cache for source API results.
 - Added `GET /api/source-cache` diagnostics with aggregate cache counts only.
 - Verified repeated source searches hit cache instead of repeating external calls.
+- Added deterministic query expansion for source search.
+- Added Polish-to-English academic query variants while preserving the final brief language.
+- Wired query variants into multi-source search and AI synthesis metadata.
+- Verified expanded search can return papers from arXiv/OpenAlex for a Polish hallucination query.
 
 ## Important Current Decisions
 
@@ -90,4 +94,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Decide whether to add durable persistence next or improve source quality/ranking with better query expansion and adapter normalization.
+Improve source quality/ranking further with better normalization and source result diagnostics, or add durable persistence when ready to move beyond process memory.

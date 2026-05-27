@@ -1,4 +1,5 @@
 import { BriefRequestSchema, type ResearchBrief } from "@/lib/ai/schemas";
+import { generateQueryVariants } from "@/lib/ai/generateQueryVariants";
 import { synthesizeBrief } from "@/lib/ai/synthesizeBrief";
 import { dedupePapers } from "@/lib/pipeline/dedupe";
 import { scorePapers, selectTopPapers } from "@/lib/pipeline/score";
@@ -21,13 +22,14 @@ function createSearchSummary(input: {
   selected: NormalizedPaper[];
   sourcesUsed: ResearchSource[];
   warnings: string[];
+  queryVariants: string[];
 }): ResearchBrief["searchSummary"] {
   return {
     sourcesUsed: input.sourcesUsed,
     totalFound: input.raw.length,
     totalAfterDeduplication: input.deduped.length,
     totalUsedInBrief: input.selected.length,
-    queryVariants: [input.query],
+    queryVariants: input.queryVariants,
     warnings: input.warnings
   };
 }
@@ -35,9 +37,14 @@ function createSearchSummary(input: {
 export async function createBrief(rawInput: unknown) {
   const input = BriefRequestSchema.parse(rawInput);
   const outputLanguage = detectQueryLanguage(input.query);
+  const queryVariants = generateQueryVariants({
+    query: input.query,
+    outputLanguage
+  });
 
   const searchResult = await searchAllSources({
     query: input.query,
+    queryVariants,
     maxResults: Math.max(input.maxPapers * 2, 10),
     fromYear: input.fromYear,
     toYear: input.toYear,
@@ -64,14 +71,15 @@ export async function createBrief(rawInput: unknown) {
     deduped,
     selected,
     sourcesUsed: searchResult.sourcesUsed,
-    warnings: searchResult.warnings
+    warnings: searchResult.warnings,
+    queryVariants
   });
 
   const brief = await synthesizeBrief({
     id,
     query: input.query,
     outputLanguage,
-    queryVariants: [input.query],
+    queryVariants,
     papers: selected,
     searchSummary
   });

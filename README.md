@@ -35,6 +35,7 @@ academic APIs → normalized papers → dedupe → ranking → structured AI syn
 - Academic sources currently supported: mock data, arXiv, Semantic Scholar, OpenAlex.
 - Semantic Scholar can work without a key but may rate limit; add `SEMANTIC_SCHOLAR_API_KEY` later for better reliability.
 - Source API responses are cached in memory for the MVP. The cache resets when the server restarts.
+- Search uses deterministic query expansion. Polish queries may generate English academic search variants, while the final brief language still follows the original query.
 
 ## How to run locally
 

@@ -45,6 +45,7 @@
 - [x] Add retry with exponential backoff.
 - [x] Add graceful failure with `Promise.allSettled`.
 - [x] Add API cache.
+- [x] Add deterministic query expansion for source search.
 
 ## Phase 5 — Paper Processing
 
@@ -74,6 +75,7 @@
 - [x] Add source-grounding validator.
 - [x] Ensure Polish queries produce Polish final briefs.
 - [x] Allow query expansion to produce English search queries while preserving final report language.
+- [x] Pass query variants into source search and AI synthesis.
 
 ## Phase 7 — UI Polish
 

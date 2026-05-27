@@ -26,7 +26,7 @@ export type SearchAllSourcesResult = {
   warnings: string[];
 };
 
-export async function searchAllSources(input: SearchPapersInput & {
+async function searchSourcesForOneQuery(input: SearchPapersInput & {
   sources: ResearchSource[];
 }): Promise<SearchAllSourcesResult> {
   const selectedAdapters = input.sources.map((source) => adapters[source]);
@@ -97,6 +97,62 @@ export async function searchAllSources(input: SearchPapersInput & {
   return {
     papers,
     sourcesUsed,
+    warnings
+  };
+}
+
+export async function searchAllSources(input: SearchPapersInput & {
+  sources: ResearchSource[];
+  queryVariants?: string[];
+}): Promise<SearchAllSourcesResult> {
+  const queryVariants = input.queryVariants?.length
+    ? input.queryVariants
+    : [input.query];
+
+  const settled = await Promise.allSettled(
+    queryVariants.map((query) =>
+      searchSourcesForOneQuery({
+        query,
+        maxResults: input.maxResults,
+        fromYear: input.fromYear,
+        toYear: input.toYear,
+        sources: input.sources
+      })
+    )
+  );
+
+  const papers: NormalizedPaper[] = [];
+  const sourcesUsed = new Set<ResearchSource>();
+  const warnings: string[] = [];
+
+  settled.forEach((result, index) => {
+    const variant = queryVariants[index] ?? input.query;
+
+    if (result.status === "fulfilled") {
+      papers.push(...result.value.papers);
+      result.value.sourcesUsed.forEach((source) => sourcesUsed.add(source));
+      warnings.push(...result.value.warnings);
+      return;
+    }
+
+    warnings.push(
+      `query variant "${variant}" failed: ${
+        result.reason instanceof Error ? result.reason.message : "unknown error"
+      }`
+    );
+  });
+
+  if (!papers.length) {
+    throw new Error(
+      warnings.length
+        ? `All query variants failed or returned no papers. ${warnings.join(" ")}`
+        : "All query variants failed or returned no papers."
+    );
+  }
+
+  return {
+    papers,
+    sourcesUsed: [...sourcesUsed],
     warnings
   };
 }
