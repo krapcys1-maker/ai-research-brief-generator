@@ -34,6 +34,7 @@ academic APIs → normalized papers → dedupe → ranking → structured AI syn
 - Read AI config from `AI_PROVIDER`, `AI_MODEL`, and `DEEPSEEK_API_KEY`.
 - Academic sources currently supported: mock data, arXiv, Semantic Scholar, OpenAlex.
 - Semantic Scholar can work without a key but may rate limit; add `SEMANTIC_SCHOLAR_API_KEY` later for better reliability.
+- Source API responses are cached in memory for the MVP. The cache resets when the server restarts.
 
 ## How to run locally
 
@@ -60,4 +61,10 @@ Useful checks:
 ```bash
 npm run lint
 npm run build
+```
+
+Optional cache diagnostic:
+
+```bash
+curl http://localhost:3000/api/source-cache
 ```

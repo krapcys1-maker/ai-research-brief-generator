@@ -2,6 +2,10 @@ import { arxivSourceAdapter } from "@/lib/sources/arxiv";
 import { mockSourceAdapter } from "@/lib/sources/mockPapers";
 import { openAlexSourceAdapter } from "@/lib/sources/openAlex";
 import { semanticScholarSourceAdapter } from "@/lib/sources/semanticScholar";
+import {
+  getCachedSourcePapers,
+  setCachedSourcePapers
+} from "@/lib/storage/sourceApiCache";
 import type {
   NormalizedPaper,
   ResearchSource,
@@ -27,14 +31,33 @@ export async function searchAllSources(input: SearchPapersInput & {
 }): Promise<SearchAllSourcesResult> {
   const selectedAdapters = input.sources.map((source) => adapters[source]);
   const settled = await Promise.allSettled(
-    selectedAdapters.map((adapter) =>
-      adapter.searchPapers({
+    selectedAdapters.map(async (adapter) => {
+      const searchInput = {
         query: input.query,
         maxResults: input.maxResults,
         fromYear: input.fromYear,
         toYear: input.toYear
-      })
-    )
+      };
+      const cached = getCachedSourcePapers({
+        source: adapter.name,
+        ...searchInput
+      });
+
+      if (cached) {
+        return cached;
+      }
+
+      const papers = await adapter.searchPapers(searchInput);
+      setCachedSourcePapers(
+        {
+          source: adapter.name,
+          ...searchInput
+        },
+        papers
+      );
+
+      return papers;
+    })
   );
 
   const papers: NormalizedPaper[] = [];

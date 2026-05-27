@@ -74,6 +74,9 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Verified arXiv and OpenAlex return papers for a small test query.
 - Verified Semantic Scholar 429 rate limiting is captured as a warning rather than crashing the whole search.
 - Verified multi-source search can continue with arXiv and OpenAlex when Semantic Scholar is rate limited.
+- Added in-memory TTL cache for source API results.
+- Added `GET /api/source-cache` diagnostics with aggregate cache counts only.
+- Verified repeated source searches hit cache instead of repeating external calls.
 
 ## Important Current Decisions
 
@@ -87,4 +90,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Add a small API cache for external source requests, then decide whether to add durable persistence or continue improving source quality/ranking.
+Decide whether to add durable persistence next or improve source quality/ranking with better query expansion and adapter normalization.

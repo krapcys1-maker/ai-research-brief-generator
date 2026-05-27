@@ -44,7 +44,7 @@
 - [x] Add timeout handling.
 - [x] Add retry with exponential backoff.
 - [x] Add graceful failure with `Promise.allSettled`.
-- [ ] Add API cache.
+- [x] Add API cache.
 
 ## Phase 5 — Paper Processing
 
