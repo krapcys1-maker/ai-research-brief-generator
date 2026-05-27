@@ -81,6 +81,10 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Added Polish-to-English academic query variants while preserving the final brief language.
 - Wired query variants into multi-source search and AI synthesis metadata.
 - Verified expanded search can return papers from arXiv/OpenAlex for a Polish hallucination query.
+- Added Vitest test setup.
+- Added unit tests for language detection, query expansion, deduplication, and source-grounding validation.
+- Fixed title normalization so punctuation becomes spacing instead of merging words during deduplication.
+- Verified `npm test`, `npm run lint`, and `npm run build`.
 
 ## Important Current Decisions
 

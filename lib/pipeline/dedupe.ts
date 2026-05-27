@@ -3,7 +3,7 @@ import type { NormalizedPaper } from "@/lib/sources/types";
 export function normalizeTitle(title: string) {
   return title
     .toLowerCase()
-    .replace(/[^\w\s]/g, "")
+    .replace(/[^\w\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
