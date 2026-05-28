@@ -17,6 +17,7 @@
 - `docs/ARCHITECTURE.md` — architektura.
 - `docs/MVP_SPEC.md` — zakres MVP.
 - `docs/PROMPTS.md` — prompty AI.
+- `docs/DEPLOYMENT.md` — deployment checklist and production runtime notes.
 
 ## Główna zasada
 
