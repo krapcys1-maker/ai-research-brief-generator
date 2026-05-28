@@ -109,6 +109,7 @@
 
 ## Later
 
+- [x] Add source/API health panel.
 - [ ] Add user accounts.
 - [ ] Add saved topics.
 - [ ] Add weekly research digest.

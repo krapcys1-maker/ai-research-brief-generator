@@ -1,4 +1,5 @@
 import { ResearchForm } from "@/components/search/ResearchForm";
+import { SourceHealthPanel } from "@/components/search/SourceHealthPanel";
 
 const examples = [
   "retrieval augmented generation in medical diagnosis",
@@ -32,6 +33,10 @@ export default function HomePage() {
 
       <section className="container" style={{ padding: "12px 0 64px" }}>
         <ResearchForm examples={examples} />
+      </section>
+
+      <section className="container" style={{ padding: "0 0 64px" }}>
+        <SourceHealthPanel />
       </section>
     </main>
   );

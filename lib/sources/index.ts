@@ -6,6 +6,7 @@ import {
   getCachedSourcePapers,
   setCachedSourcePapers
 } from "@/lib/storage/sourceApiCache";
+import { recordSourceDiagnostics } from "@/lib/storage/sourceDiagnosticsStore";
 import type {
   NormalizedPaper,
   ResearchSource,
@@ -172,6 +173,8 @@ export async function searchAllSources(input: SearchPapersInput & {
       }`
     );
   });
+
+  recordSourceDiagnostics(sourceDiagnostics);
 
   if (!papers.length) {
     throw new Error(

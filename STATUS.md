@@ -118,6 +118,11 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Rendered adapter diagnostics in the brief result page and included them in Markdown export.
 - Added pipeline test coverage to ensure source diagnostics are stored in `searchSummary`.
 - Verified `npm test`, `npm run lint`, and `npm run build` after the source diagnostics update.
+- Added a source/API health panel to the home page using `/api/source-cache`.
+- Added an in-memory source diagnostics store with recent diagnostics and per-source health summary.
+- Extended `/api/source-cache` with cache stats, source health summary, and recent diagnostics.
+- Added unit test coverage for the source diagnostics store.
+- Verified `npm test`, `npm run lint`, and `npm run build` after the source health panel update.
 
 ## Important Current Decisions
 
@@ -131,4 +136,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Next practical options: add a small API/source health panel, add result history/search on the home page, or add durable persistence when ready to move beyond process memory.
+Next practical options: add result history/search on the home page, improve homepage copy to reflect real source adapters, or add durable persistence when ready to move beyond process memory.
