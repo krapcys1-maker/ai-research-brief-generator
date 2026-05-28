@@ -42,7 +42,7 @@ user query -> source adapters -> normalized papers -> dedupe/ranking -> quality 
 - Vitest coverage for core pipeline, schemas, routes, storage, source diagnostics, grounding, Q&A, rate limiting, and export.
 - Adapter contract tests for arXiv, Semantic Scholar, and OpenAlex response-shape drift.
 - Retrieval benchmark fixtures for acronyms, Polish/English variants, typo recovery, interdisciplinary topics, and domain-specific query expansion.
-- Claim/evidence benchmark fixtures for direct, indirect, weak, and unsupported-claim cases.
+- Claim/evidence benchmark fixtures for direct, indirect, weak, unsupported-claim, and overclaim cases.
 - Repeatable deployment smoke check through `npm run smoke:deploy`.
 
 ## Storage Modes
@@ -84,6 +84,7 @@ ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true
 ## Known Limits
 
 - The app grounds on selected paper metadata and abstracts, not parsed full-text PDFs.
+- Absolute/overclaim validation is heuristic; numeric and statistical claim support still needs dedicated checks.
 - Scoring is still heuristic and keyword/metadata based; embeddings are not implemented.
 - Source preflight is improved, but retrieval quality still needs semantic matching beyond lexical/title/abstract scoring.
 - Generation is still synchronous; long-running production generation should move to a job flow.

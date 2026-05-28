@@ -170,4 +170,50 @@ describe("claim/evidence benchmark fixtures", () => {
       "claim is not supported"
     );
   });
+
+  it("rejects overclaiming when evidence says reduce but the claim says eliminate", () => {
+    const brief = briefWithFinding({
+      finding: "RAG eliminates unsupported medical answers.",
+      explanation:
+        "This is stronger than the selected evidence, which only says reducing unsupported answers.",
+      confidence: "high",
+      evidenceText:
+        "grounding answers in retrieved medical evidence and reducing unsupported answers",
+      supportLevel: "direct"
+    });
+
+    expect(() => validateBriefGrounding(brief, [ragPaper])).toThrow(
+      "claim is stronger than its evidence"
+    );
+  });
+
+  it("rejects Polish absolute overclaims when evidence is weaker", () => {
+    const brief = briefWithFinding({
+      finding: "RAG eliminuje halucynacje w systemach medycznych.",
+      explanation:
+        "Evidence mentions reducing unsupported answers, not eliminating hallucinations.",
+      confidence: "high",
+      evidenceText:
+        "grounding answers in retrieved medical evidence and reducing unsupported answers",
+      supportLevel: "direct"
+    });
+
+    expect(() => validateBriefGrounding(brief, [ragPaper])).toThrow(
+      "claim is stronger than its evidence"
+    );
+  });
+
+  it("allows cautious Polish paraphrases without absolute language", () => {
+    const brief = briefWithFinding({
+      finding: "RAG może ograniczać niepoparte odpowiedzi medyczne.",
+      explanation:
+        "Claim remains cautious and matches evidence about reducing unsupported answers.",
+      confidence: "medium",
+      evidenceText:
+        "grounding answers in retrieved medical evidence and reducing unsupported answers",
+      supportLevel: "indirect"
+    });
+
+    expect(() => validateBriefGrounding(brief, [ragPaper])).not.toThrow();
+  });
 });

@@ -41,8 +41,8 @@ The app supports:
 
 ## Latest Completed Step
 
-Added claim/evidence benchmark fixtures and strengthened grounding validation. The validator now checks that claim text overlaps its evidence snippets in addition to checking evidence-to-paper metadata support, so a real paper ID with unrelated evidence is no longer enough.
+Expanded adversarial claim/evidence benchmarks and strengthened grounding validation against overclaiming. The validator now rejects absolute claims such as "eliminates", "cures", "gwarantuje", or "eliminuje" when the evidence snippets only support weaker language, while still allowing cautious Polish paraphrases.
 
 ## Next Recommended Step
 
-Follow `docs/ROADMAP.md`. The next practical research-quality step is expanding retrieval and claim/evidence benchmarks with more gold queries, expected source IDs, and adversarial unsupported-claim cases.
+Follow `docs/ROADMAP.md`. The next practical research-quality step is expanding retrieval benchmarks with more gold queries and expected source IDs, then adding numeric/statistical claim evidence checks.

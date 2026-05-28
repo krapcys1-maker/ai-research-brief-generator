@@ -5,7 +5,7 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 ## Next
 
 - [ ] Expand retrieval benchmark fixtures with more gold queries and expected source IDs.
-- [ ] Expand claim/evidence benchmark fixtures with more adversarial unsupported-claim cases.
+- [ ] Add claim/evidence benchmark fixtures for numeric and statistical claims.
 
 ## Production Readiness
 

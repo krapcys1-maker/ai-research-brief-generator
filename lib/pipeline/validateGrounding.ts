@@ -76,6 +76,43 @@ function tokenize(value: string) {
     .filter((token) => token.length >= 4 && !STOPWORDS.has(token));
 }
 
+const ABSOLUTE_CLAIM_TERMS = new Set([
+  "always",
+  "cure",
+  "cures",
+  "cured",
+  "curing",
+  "eliminate",
+  "eliminates",
+  "eliminated",
+  "eliminating",
+  "ensure",
+  "ensures",
+  "guarantee",
+  "guarantees",
+  "prevent",
+  "prevents",
+  "zero",
+  "calkowicie",
+  "eliminuje",
+  "eliminuja",
+  "gwarantuje",
+  "gwarantuja",
+  "lecza",
+  "zawsze",
+  "leczy",
+  "zapobiega"
+]);
+
+function getAbsoluteClaimTerms(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .split(/[^a-z0-9]+/i)
+    .filter((token) => ABSOLUTE_CLAIM_TERMS.has(token));
+}
+
 export function hasEvidenceOverlap(evidenceText: string, paper: NormalizedPaper) {
   const evidenceTokens = new Set(tokenize(evidenceText));
   const paperTokens = new Set(
@@ -109,6 +146,22 @@ export function hasClaimEvidenceOverlap(
   const requiredOverlap = claimTokens.size <= 5 ? 1 : 2;
 
   return overlap.length >= requiredOverlap;
+}
+
+export function hasUnsupportedAbsoluteClaim(
+  claimText: string,
+  evidence: EvidenceLink[]
+) {
+  const absoluteClaimTerms = getAbsoluteClaimTerms(claimText);
+
+  if (!absoluteClaimTerms.length) {
+    return false;
+  }
+
+  const evidenceText = evidence.map((item) => item.evidenceText).join(" ");
+  const absoluteEvidenceTerms = new Set(getAbsoluteClaimTerms(evidenceText));
+
+  return absoluteClaimTerms.some((term) => !absoluteEvidenceTerms.has(term));
 }
 
 export function validateEvidenceLinks(input: {
@@ -181,6 +234,12 @@ export function validateBriefGrounding(
     if (!hasClaimEvidenceOverlap(input.claimText, input.evidence)) {
       throw new Error(
         `${input.section} claim is not supported by its evidence snippets`
+      );
+    }
+
+    if (hasUnsupportedAbsoluteClaim(input.claimText, input.evidence)) {
+      throw new Error(
+        `${input.section} claim is stronger than its evidence snippets`
       );
     }
 
