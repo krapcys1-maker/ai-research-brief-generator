@@ -53,6 +53,53 @@ function getPaperSourceCounts(papers: NormalizedPaper[]) {
   return Object.entries(counts).sort((a, b) => b[1] - a[1]);
 }
 
+function getWarningGroups(warnings: string[]) {
+  const groups = warnings.reduce<
+    Record<string, { label: string; detail: string; count: number }>
+  >((acc, warning) => {
+    const sourceMatch = warning.match(/^([a-z_]+) (failed|returned no papers):?\s*(.*)$/i);
+    const queryMatch = warning.match(/^query variant "(.+)" failed:\s*(.*)$/i);
+    const label = sourceMatch?.[1] ?? (queryMatch ? "query variant" : "pipeline");
+    const detail = sourceMatch?.[3] || queryMatch?.[2] || warning;
+    const key = `${label}:${detail}`;
+
+    acc[key] = acc[key] ?? { label, detail, count: 0 };
+    acc[key].count += 1;
+
+    return acc;
+  }, {});
+
+  return Object.values(groups).sort((a, b) => b.count - a.count);
+}
+
+function WarningSummary({ warnings }: { warnings: string[] }) {
+  if (!warnings.length) {
+    return null;
+  }
+
+  const groups = getWarningGroups(warnings);
+
+  return (
+    <div className="warning-panel" role="status">
+      <div className="warning-panel-header">
+        <strong>Source warnings</strong>
+        <span>
+          {warnings.length} warning{warnings.length === 1 ? "" : "s"}
+        </span>
+      </div>
+      <div className="warning-group-list">
+        {groups.map((group) => (
+          <div className="warning-group" key={`${group.label}:${group.detail}`}>
+            <span className="badge">{group.label}</span>
+            <span>{group.detail}</span>
+            {group.count > 1 ? <strong>x{group.count}</strong> : null}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function SearchDiagnostics({
   brief,
   papers
@@ -81,7 +128,7 @@ function SearchDiagnostics({
 
       <div className="diagnostics-grid">
         <div>
-          <h3 className="compact-heading">Sources requested</h3>
+          <h3 className="compact-heading">Successful sources</h3>
           <div className="token-list">
             {brief.searchSummary.sourcesUsed.map((source) => (
               <span className="badge" key={source}>
@@ -115,11 +162,15 @@ function SearchDiagnostics({
       {brief.searchSummary.warnings.length ? (
         <div style={{ marginTop: 18 }}>
           <h3 className="compact-heading">Warnings</h3>
-          <ul className="compact-list warning-list">
-            {brief.searchSummary.warnings.map((warning) => (
-              <li key={warning}>{warning}</li>
+          <div className="warning-group-list">
+            {getWarningGroups(brief.searchSummary.warnings).map((group) => (
+              <div className="warning-group" key={`${group.label}:${group.detail}`}>
+                <span className="badge">{group.label}</span>
+                <span>{group.detail}</span>
+                {group.count > 1 ? <strong>x{group.count}</strong> : null}
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       ) : null}
     </Section>
@@ -250,21 +301,7 @@ export function BriefRenderer({
             Papers used: {brief.searchSummary.totalUsedInBrief}
           </span>
         </div>
-        {brief.searchSummary.warnings.length ? (
-          <div
-            style={{
-              border: "1px solid #fed7aa",
-              background: "#fff7ed",
-              color: "var(--warning)",
-              borderRadius: 8,
-              padding: 12,
-              marginTop: 16,
-              lineHeight: 1.5
-            }}
-          >
-            {brief.searchSummary.warnings.join(" ")}
-          </div>
-        ) : null}
+        <WarningSummary warnings={brief.searchSummary.warnings} />
         <h1 style={{ margin: "16px 0 10px", fontSize: "2rem", lineHeight: 1.15 }}>
           {brief.title}
         </h1>

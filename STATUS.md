@@ -108,6 +108,9 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Added a loading/progress panel to the research form for long synchronous DeepSeek generations.
 - Disabled form controls while a brief is being generated to prevent duplicate or conflicting submissions.
 - Verified `npm test`, `npm run lint`, and `npm run build` after the progress UI update.
+- Improved result-page warning visibility by grouping repeated source/query warnings and showing warning counts in the brief header and diagnostics section.
+- Renamed the source diagnostics label from requested sources to successful sources to match the current `sourcesUsed` meaning.
+- Verified `npm test`, `npm run lint`, and `npm run build` after the warning UI update.
 
 ## Important Current Decisions
 
@@ -121,4 +124,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Next practical options: add richer source diagnostics per adapter/query, improve real-source failure visibility in the result UI, or add durable persistence when ready to move beyond process memory.
+Next practical options: add explicit requested-vs-successful source tracking to `searchSummary`, add per-adapter/query diagnostics, or add durable persistence when ready to move beyond process memory.

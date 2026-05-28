@@ -95,6 +95,7 @@
 - [x] Add source/result diagnostics.
 - [x] Show paper score breakdowns.
 - [x] Add loading/progress state for brief generation.
+- [x] Improve source warning visibility in result UI.
 
 ## Phase 8 — Export
 
