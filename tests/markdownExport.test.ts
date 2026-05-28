@@ -39,6 +39,9 @@ describe("researchBriefToMarkdown", () => {
       papers: [
         createPaper({
           source: "openalex",
+          abstract: "A useful abstract for export coverage.",
+          doi: "10.1000/example",
+          pdfUrl: "https://example.org/paper.pdf",
           citationCount: 42,
           influentialCitationCount: 7,
           relevanceScore: 0.91,
@@ -52,6 +55,13 @@ describe("researchBriefToMarkdown", () => {
       ]
     });
 
+    expect(markdown).toContain("## Evidence Boundary");
+    expect(markdown).toContain(
+      "This brief is grounded in selected paper metadata"
+    );
+    expect(markdown).toContain("- Papers with abstracts: 1/1");
+    expect(markdown).toContain("- Papers with PDF links: 1/1");
+    expect(markdown).toContain("- Papers with DOI: 1/1");
     expect(markdown).toContain("## Search Summary");
     expect(markdown).toContain("- Requested sources: mock, arxiv, openalex");
     expect(markdown).toContain("- Successful sources: mock, openalex");

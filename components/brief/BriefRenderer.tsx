@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import type { ResearchBrief } from "@/lib/ai/schemas";
 import type { NormalizedPaper } from "@/lib/sources/types";
 import { PaperCard } from "@/components/brief/PaperCard";
+import { getEvidenceBoundary } from "@/lib/brief/evidenceBoundary";
 
 function SourceRefs({
   ids,
@@ -234,6 +235,50 @@ function QualitySummary({
         <p>{brief.searchSummary.warnings.length} source warning(s)</p>
       </div>
     </section>
+  );
+}
+
+function EvidenceBoundaryPanel({
+  brief,
+  papers
+}: {
+  brief: ResearchBrief;
+  papers: NormalizedPaper[];
+}) {
+  const boundary = getEvidenceBoundary({
+    outputLanguage: brief.outputLanguage,
+    papers
+  });
+
+  return (
+    <Section title={boundary.title}>
+      <p style={{ margin: "0 0 12px", lineHeight: 1.65 }}>
+        {boundary.summary}
+      </p>
+      <div className="evidence-boundary-grid">
+        <div>
+          <span className="metric-label">Selected papers</span>
+          <strong>{boundary.metrics.totalPapers}</strong>
+        </div>
+        <div>
+          <span className="metric-label">With abstracts</span>
+          <strong>{boundary.metrics.papersWithAbstracts}</strong>
+        </div>
+        <div>
+          <span className="metric-label">PDF links</span>
+          <strong>{boundary.metrics.papersWithPdfLinks}</strong>
+        </div>
+        <div>
+          <span className="metric-label">With DOI</span>
+          <strong>{boundary.metrics.papersWithDoi}</strong>
+        </div>
+      </div>
+      <ul className="compact-list" style={{ marginTop: 14 }}>
+        {boundary.bullets.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    </Section>
   );
 }
 
@@ -574,6 +619,8 @@ export function BriefRenderer({
       </header>
 
       <QualitySummary brief={brief} papers={papers} />
+
+      <EvidenceBoundaryPanel brief={brief} papers={papers} />
 
       <Section title="TL;DR">
         <p style={{ margin: 0, lineHeight: 1.65 }}>{brief.tldr}</p>

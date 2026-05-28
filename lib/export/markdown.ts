@@ -1,5 +1,6 @@
 import type { ResearchBrief } from "@/lib/ai/schemas";
 import type { NormalizedPaper } from "@/lib/sources/types";
+import { getEvidenceBoundary } from "@/lib/brief/evidenceBoundary";
 
 function sourceList(ids: string[]) {
   return ids.map((id) => `[${id}]`).join(" ");
@@ -18,6 +19,10 @@ export function researchBriefToMarkdown(input: {
   papers: NormalizedPaper[];
 }) {
   const { brief, papers } = input;
+  const evidenceBoundary = getEvidenceBoundary({
+    outputLanguage: brief.outputLanguage,
+    papers
+  });
   const lines: string[] = [];
 
   lines.push(`# ${brief.title}`);
@@ -25,6 +30,24 @@ export function researchBriefToMarkdown(input: {
   lines.push(`**Query:** ${brief.query}`);
   lines.push(`**Output language:** ${brief.outputLanguage}`);
   lines.push(`**Generated:** ${brief.generatedAt}`);
+  lines.push("");
+  lines.push(`## ${evidenceBoundary.title}`);
+  lines.push("");
+  lines.push(evidenceBoundary.summary);
+  lines.push("");
+  lines.push(`- Selected papers: ${evidenceBoundary.metrics.totalPapers}`);
+  lines.push(
+    `- Papers with abstracts: ${evidenceBoundary.metrics.papersWithAbstracts}/${evidenceBoundary.metrics.totalPapers}`
+  );
+  lines.push(
+    `- Papers with PDF links: ${evidenceBoundary.metrics.papersWithPdfLinks}/${evidenceBoundary.metrics.totalPapers}`
+  );
+  lines.push(
+    `- Papers with DOI: ${evidenceBoundary.metrics.papersWithDoi}/${evidenceBoundary.metrics.totalPapers}`
+  );
+  for (const bullet of evidenceBoundary.bullets) {
+    lines.push(`- ${bullet}`);
+  }
   lines.push("");
   lines.push("## TL;DR");
   lines.push("");

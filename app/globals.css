@@ -296,6 +296,25 @@ textarea {
   line-height: 1.5;
 }
 
+.evidence-boundary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.evidence-boundary-grid > div {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfcfe;
+}
+
+.evidence-boundary-grid strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.2rem;
+}
+
 .reading-path {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1009,6 +1028,7 @@ textarea {
   .score-grid,
   .source-diagnostic-list,
   .quality-panel,
+  .evidence-boundary-grid,
   .reading-path,
   .preflight-metrics,
   .source-health-metrics,

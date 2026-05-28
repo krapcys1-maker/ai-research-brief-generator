@@ -226,6 +226,7 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Protected `GET /api/briefs` with the same public-history setting and hid the home recent-history panel when disabled.
 - Added production fail-fast persistence checks so missing or invalid PostgreSQL `DATABASE_URL` no longer silently falls back to in-memory brief storage.
 - Added `ALLOW_MEMORY_STORAGE_IN_PRODUCTION=true` as an explicit temporary demo escape hatch for non-durable production memory mode.
+- Added an evidence boundary to the brief UI and Markdown export so users can see that current synthesis is grounded in metadata/abstracts, not parsed full-text PDFs.
 
 ## Important Current Decisions
 
