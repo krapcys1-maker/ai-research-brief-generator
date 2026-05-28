@@ -1,6 +1,7 @@
 import { BriefHistoryPanel } from "@/components/search/BriefHistoryPanel";
 import { ResearchForm } from "@/components/search/ResearchForm";
 import { SourceHealthPanel } from "@/components/search/SourceHealthPanel";
+import { isPublicBriefHistoryEnabled } from "@/lib/config/briefHistory";
 
 const examples = [
   "retrieval augmented generation in medical diagnosis",
@@ -10,6 +11,8 @@ const examples = [
 ];
 
 export default function HomePage() {
+  const showBriefHistory = isPublicBriefHistoryEnabled();
+
   return (
     <main>
       <section className="container" style={{ padding: "56px 0 24px" }}>
@@ -39,7 +42,7 @@ export default function HomePage() {
 
       <section className="container" style={{ padding: "0 0 64px" }}>
         <div className="home-diagnostics-grid">
-          <BriefHistoryPanel />
+          {showBriefHistory ? <BriefHistoryPanel /> : null}
           <SourceHealthPanel />
         </div>
       </section>

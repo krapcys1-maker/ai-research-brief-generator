@@ -4,6 +4,7 @@ import { createBrief } from "@/lib/pipeline/createBrief";
 import { ResearchQualityGateError } from "@/lib/pipeline/qualityGate";
 import { checkRateLimit, getClientIp } from "@/lib/security/rateLimit";
 import { getBriefRepository } from "@/lib/storage/repository";
+import { isPublicBriefHistoryEnabled } from "@/lib/config/briefHistory";
 
 function errorResponse(message: string, status = 400) {
   return NextResponse.json(
@@ -87,6 +88,16 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
+  if (!isPublicBriefHistoryEnabled()) {
+    return NextResponse.json(
+      {
+        status: "disabled",
+        error: "Public brief history is disabled."
+      },
+      { status: 403 }
+    );
+  }
+
   const briefRepository = await getBriefRepository();
 
   return NextResponse.json({

@@ -25,6 +25,12 @@ export function BriefHistoryPanel() {
         };
 
         if (!response.ok) {
+          if (response.status === 403) {
+            setBriefs([]);
+            setError(null);
+            return;
+          }
+
           throw new Error("Could not load brief history.");
         }
 

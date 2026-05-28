@@ -2,13 +2,19 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createBrief as mockedCreateBrief } from "@/lib/pipeline/createBrief";
 import { ResearchQualityGateError } from "@/lib/pipeline/qualityGate";
 import { resetRateLimitForTests } from "@/lib/security/rateLimit";
+import { getBriefRepository as mockedGetBriefRepository } from "@/lib/storage/repository";
 import { createBrief as createBriefFixture } from "./fixtures";
 
 vi.mock("@/lib/pipeline/createBrief", () => ({
   createBrief: vi.fn()
 }));
 
+vi.mock("@/lib/storage/repository", () => ({
+  getBriefRepository: vi.fn()
+}));
+
 const createBriefMock = vi.mocked(mockedCreateBrief);
+const getBriefRepositoryMock = vi.mocked(mockedGetBriefRepository);
 
 describe("POST /api/briefs", () => {
   afterEach(() => {
@@ -146,5 +152,53 @@ describe("POST /api/briefs", () => {
     expect(payload.status).toBe("error");
     expect(payload.error).toContain("Too many brief generation requests");
     expect(createBriefMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("GET /api/briefs", () => {
+  afterEach(() => {
+    vi.resetAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  it("returns brief summaries when public history is enabled", async () => {
+    vi.stubEnv("PUBLIC_BRIEF_HISTORY_ENABLED", "true");
+    getBriefRepositoryMock.mockResolvedValueOnce({
+      saveWithPapers: vi.fn(),
+      getById: vi.fn(),
+      list: vi.fn(),
+      clear: vi.fn(),
+      listSummaries: vi.fn().mockResolvedValue([
+        {
+          id: "brief_public",
+          title: "Public history item",
+          query: "AI agents",
+          generatedAt: "2026-01-01T00:00:00.000Z",
+          outputLanguage: "en",
+          createdAt: "2026-01-01T00:00:00.000Z"
+        }
+      ])
+    });
+
+    const { GET } = await import("@/app/api/briefs/route");
+    const response = await GET();
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.briefs).toHaveLength(1);
+    expect(payload.briefs[0].id).toBe("brief_public");
+  });
+
+  it("blocks brief summaries when public history is disabled", async () => {
+    vi.stubEnv("PUBLIC_BRIEF_HISTORY_ENABLED", "false");
+
+    const { GET } = await import("@/app/api/briefs/route");
+    const response = await GET();
+    const payload = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(payload.status).toBe("disabled");
+    expect(payload.error).toContain("disabled");
+    expect(getBriefRepositoryMock).not.toHaveBeenCalled();
   });
 });

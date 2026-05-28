@@ -28,6 +28,14 @@ BRIEF_RATE_LIMIT_MAX=5
 BRIEF_RATE_LIMIT_WINDOW_MS=600000
 ```
 
+Public brief history setting:
+
+```bash
+PUBLIC_BRIEF_HISTORY_ENABLED=false
+```
+
+Production defaults to disabled public brief history when this variable is omitted. Enable it only after authentication/session scoping exists or when generated brief summaries are intentionally public.
+
 Optional source API setting:
 
 ```bash
@@ -119,6 +127,7 @@ The repository already ignores `.env`, `.next`, and `node_modules`.
 - [ ] `AI_PROVIDER=deepseek`.
 - [ ] `AI_MODEL=deepseek-v4-pro`.
 - [ ] `DATABASE_URL` points to production PostgreSQL.
+- [ ] `PUBLIC_BRIEF_HISTORY_ENABLED` is unset or `false` unless public history is intentional.
 - [ ] `npx prisma migrate deploy` succeeds.
 - [ ] `npm run build` succeeds.
 - [ ] `BRIEF_RATE_LIMIT_MAX` and `BRIEF_RATE_LIMIT_WINDOW_MS` are set.

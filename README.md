@@ -47,6 +47,7 @@ academic APIs → normalized papers → dedupe → ranking → structured AI syn
    - `DEEPSEEK_API_KEY=...`
    - optional `BRIEF_RATE_LIMIT_MAX=5`
    - optional `BRIEF_RATE_LIMIT_WINDOW_MS=600000`
+   - optional `PUBLIC_BRIEF_HISTORY_ENABLED=true`
 2. Install dependencies:
 
 ```bash
@@ -83,6 +84,8 @@ npm run prisma:migrate
 ```
 
 With PostgreSQL enabled, generated briefs, selected papers, source API cache records, and source diagnostics are persisted through Prisma. Without `DATABASE_URL`, or when `DATABASE_URL` is not a PostgreSQL URL, the app safely falls back to in-memory storage and reports the active storage mode in the Source health panel.
+
+Public recent brief history is enabled by default in local development and disabled by default in production. Set `PUBLIC_BRIEF_HISTORY_ENABLED=true` only when global brief summaries are safe to expose.
 
 Optional PostgreSQL integration check:
 

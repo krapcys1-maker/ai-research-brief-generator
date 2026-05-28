@@ -221,6 +221,9 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Reviewed the product audit against the real code and docs.
 - Added `docs/REMEDIATION_PLAN.md` with P0/P1/P2 repair priorities covering privacy, persistence, rate limiting, claim-level evidence, source quality, UX, and documentation cleanup.
 - Extended the remediation plan with DOI-as-first-class-source handling and a guarded future `Ask this brief` Q&A feature that must answer only from selected papers with evidence snippets.
+- Added `PUBLIC_BRIEF_HISTORY_ENABLED` so public recent brief history can be disabled independently of brief generation.
+- Changed production defaults so public brief history is disabled unless explicitly enabled.
+- Protected `GET /api/briefs` with the same public-history setting and hid the home recent-history panel when disabled.
 
 ## Important Current Decisions
 
