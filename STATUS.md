@@ -41,7 +41,7 @@ The app supports:
 
 ## Latest Completed Step
 
-Simplified source preflight language so users see whether sources are ready, limited, or too weak before generation. Technical preflight metrics are now collapsed behind `Technical source details`.
+Completed a manual browser QA pass across source preflight, brief rendering, source details, `Ask This Brief`, Markdown export, and desktop/mobile layout. Fixed the source preflight UX so a failed quality gate disables `Generate Brief`, shows a clear note, and clears stale preflight results when the request inputs change.
 
 ## Next Recommended Step
 

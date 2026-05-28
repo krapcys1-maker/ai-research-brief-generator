@@ -333,6 +333,10 @@ export function ResearchForm({ examples }: ResearchFormProps) {
   const [checkingSources, setCheckingSources] = useState(false);
   const [progressStep, setProgressStep] = useState(0);
   const busy = loading || checkingSources;
+  const generationBlockedByPreflight =
+    preflight?.qualityGate.canSynthesize === false ||
+    preflight?.qualityGate.coverage === "poor";
+  const generateDisabled = busy || generationBlockedByPreflight;
 
   useEffect(() => {
     if (!loading) {
@@ -348,7 +352,17 @@ export function ResearchForm({ examples }: ResearchFormProps) {
     return () => window.clearInterval(interval);
   }, [loading]);
 
+  function resetRequestReview() {
+    setPreflight(null);
+    setQualityGate(null);
+    if (errorKind === "warning") {
+      setError(null);
+      setErrorKind("error");
+    }
+  }
+
   function toggleSource(source: SourceOption) {
+    resetRequestReview();
     setSources((current) => {
       if (current.includes(source)) {
         const next = current.filter((item) => item !== source);
@@ -484,7 +498,10 @@ export function ResearchForm({ examples }: ResearchFormProps) {
           <textarea
             className="form-control form-textarea"
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              resetRequestReview();
+              setQuery(event.target.value);
+            }}
             disabled={busy}
             minLength={3}
             maxLength={300}
@@ -499,7 +516,10 @@ export function ResearchForm({ examples }: ResearchFormProps) {
             <select
               className="form-control"
               value={maxPapers}
-              onChange={(event) => setMaxPapers(Number(event.target.value))}
+              onChange={(event) => {
+                resetRequestReview();
+                setMaxPapers(Number(event.target.value));
+              }}
               disabled={busy}
             >
               <option value={10}>10 papers</option>
@@ -514,7 +534,10 @@ export function ResearchForm({ examples }: ResearchFormProps) {
             <input
               className="form-control"
               value={fromYear}
-              onChange={(event) => setFromYear(event.target.value)}
+              onChange={(event) => {
+                resetRequestReview();
+                setFromYear(event.target.value);
+              }}
               disabled={busy}
               inputMode="numeric"
               placeholder="2020"
@@ -529,7 +552,10 @@ export function ResearchForm({ examples }: ResearchFormProps) {
             <input
               className="form-control"
               value={toYear}
-              onChange={(event) => setToYear(event.target.value)}
+              onChange={(event) => {
+                resetRequestReview();
+                setToYear(event.target.value);
+              }}
               disabled={busy}
               inputMode="numeric"
               placeholder="2026"
@@ -654,11 +680,25 @@ export function ResearchForm({ examples }: ResearchFormProps) {
           </button>
           <button
             type="submit"
-            disabled={busy}
-            className="primary-action"
+            disabled={generateDisabled}
+            className={
+              generationBlockedByPreflight
+                ? "primary-action is-blocked"
+                : "primary-action"
+            }
+            title={
+              generationBlockedByPreflight
+                ? "Check a broader query or enable stronger sources before generating."
+                : undefined
+            }
           >
             {loading ? "Generating..." : "Generate Brief"}
           </button>
+          {generationBlockedByPreflight ? (
+            <p className="form-action-note" role="status">
+              Improve the source check before generating this brief.
+            </p>
+          ) : null}
         </div>
       </form>
 

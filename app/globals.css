@@ -859,6 +859,7 @@ textarea {
 .form-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 10px;
 }
 
@@ -886,6 +887,18 @@ textarea {
 .primary-action:disabled {
   background: #78918d;
   cursor: wait;
+}
+
+.primary-action.is-blocked:disabled {
+  background: #9f7d72;
+  cursor: not-allowed;
+}
+
+.form-action-note {
+  margin: 0;
+  color: var(--warning);
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
 .secondary-action:disabled {
