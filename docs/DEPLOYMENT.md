@@ -113,6 +113,30 @@ Expected production shape:
 
 Then generate a small mock-source brief first, followed by a live-source brief.
 
+You can run the repeatable deployment smoke check against an already running app:
+
+```bash
+SMOKE_BASE_URL=https://your-deployment.example npm run smoke:deploy
+```
+
+Local default:
+
+```bash
+npm run smoke:deploy
+```
+
+The smoke check verifies:
+
+- `GET /api/source-cache`
+- `POST /api/briefs/preflight`
+- `POST /api/briefs`
+- `GET /api/briefs/[id]`
+- `GET /briefs/[id]`
+- `POST /api/briefs/[id]/questions`
+- `GET /api/export/[id]?format=markdown`
+
+It uses `SMOKE_SOURCES=mock` by default so source adapter rate limits do not block deployment verification. It still exercises the configured AI provider for brief generation and Q&A unless `SMOKE_SKIP_AI=true` is set for a preflight-only check.
+
 ## Rate Limiting
 
 The limiter protects `POST /api/briefs` with a per-IP window.

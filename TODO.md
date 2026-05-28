@@ -4,7 +4,7 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 
 ## Next
 
-- [ ] Add deployment smoke checks for preflight, generation, Q&A, export, and source health.
+- [ ] Add benchmark fixtures for synonyms, acronyms, Polish/English variants, and interdisciplinary topics.
 
 ## Production Readiness
 
@@ -16,7 +16,6 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 
 - [ ] Add embeddings provider abstraction.
 - [ ] Add hybrid retrieval with lexical and semantic scoring.
-- [ ] Add benchmark fixtures for synonyms, acronyms, Polish/English variants, and interdisciplinary topics.
 - [ ] Add PDF/full-text ingestion with explicit full-text evidence boundaries.
 
 ## Product UX

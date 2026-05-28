@@ -41,8 +41,8 @@ The app supports:
 
 ## Latest Completed Step
 
-Added adapter contract tests for arXiv, Semantic Scholar, and OpenAlex. The tests use fixture API responses, avoid live network calls, and verify URL parameters, field normalization, malformed-record filtering, DOI handling, PDF/source URLs, author mapping, year filtering, and OpenAlex abstract reconstruction.
+Added a repeatable deployment smoke check. `npm run smoke:deploy` verifies source health, preflight, brief generation, brief API fetch, rendered brief page, `Ask This Brief`, Markdown export, source grounding, and Polish output language against a running deployment.
 
 ## Next Recommended Step
 
-Follow `docs/ROADMAP.md`. The next practical product step is deployment smoke checks for preflight, generation, Q&A, export, and source health.
+Follow `docs/ROADMAP.md`. The next practical research-quality step is benchmark fixtures for synonyms, acronyms, Polish/English variants, and interdisciplinary topics.
