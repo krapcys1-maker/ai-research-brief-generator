@@ -41,8 +41,8 @@ The app supports:
 
 ## Latest Completed Step
 
-Completed a manual browser QA pass across source preflight, brief rendering, source details, `Ask This Brief`, Markdown export, and desktop/mobile layout. Fixed the source preflight UX so a failed quality gate disables `Generate Brief`, shows a clear note, and clears stale preflight results when the request inputs change.
+Added deterministic source-quality and paper-level reading guidance. Preflight, the reading path, source drawer, bibliography cards, and Markdown export now explain why a paper was selected, what kind of source it is, and which metadata limitations should be checked.
 
 ## Next Recommended Step
 
-Follow `docs/ROADMAP.md`. The next practical product step is richer source coverage assessment, especially abstract coverage, DOI/identifier coverage, source diversity, and query-title alignment.
+Follow `docs/ROADMAP.md`. The next practical product step is adding query-title alignment as an explicit quality signal, then adapter contract tests for arXiv, Semantic Scholar, and OpenAlex response drift.

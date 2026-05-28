@@ -62,6 +62,9 @@ describe("researchBriefToMarkdown", () => {
     expect(markdown).toContain("- Papers with abstracts: 1/1");
     expect(markdown).toContain("- Papers with PDF links: 1/1");
     expect(markdown).toContain("- Papers with DOI: 1/1");
+    expect(markdown).toContain("## Source Quality");
+    expect(markdown).toContain("**Weak source base:**");
+    expect(markdown).toContain("- Strong query matches: 1");
     expect(markdown).toContain("**Evidence:**");
     expect(markdown).toContain(
       "- [paper_1] (direct) grounded generation in clinical settings"
@@ -83,6 +86,9 @@ describe("researchBriefToMarkdown", () => {
     );
     expect(markdown).toContain("- Warnings: semantic_scholar failed: rate limited");
     expect(markdown).toContain("- Source: openalex");
+    expect(markdown).toContain("- Role:");
+    expect(markdown).toContain("- Why read this:");
+    expect(markdown).toContain("- Strengths:");
     expect(markdown).toContain("- Influential citation count: 7");
     expect(markdown).toContain("- Final score: 0.86");
     expect(markdown).toContain(

@@ -1,5 +1,6 @@
 import type { NormalizedPaper } from "@/lib/sources/types";
 import { formatDoi, getDoiUrl } from "@/lib/sources/doi";
+import { getPaperInsight } from "@/lib/pipeline/paperInsights";
 
 function formatScore(score: number | undefined) {
   return typeof score === "number" ? score.toFixed(2) : "N/A";
@@ -29,6 +30,7 @@ function ScoreBar({
 
 export function PaperCard({ paper }: { paper: NormalizedPaper }) {
   const doiUrl = getDoiUrl(paper.doi);
+  const insight = getPaperInsight(paper);
   const scoreRows = [
     ["Relevance", paper.relevanceScore],
     ["Citations", paper.citationScore],
@@ -50,6 +52,22 @@ export function PaperCard({ paper }: { paper: NormalizedPaper }) {
       <h3 style={{ margin: "0 0 8px", fontSize: "1rem", lineHeight: 1.35 }}>
         {paper.title}
       </h3>
+      <div className="paper-insight">
+        <div>
+          <span className="metric-label">Why read this</span>
+          <p>{insight.whyRead}</p>
+        </div>
+        {insight.limitations.length ? (
+          <div>
+            <span className="metric-label">Check before relying on it</span>
+            <ul className="compact-list">
+              {insight.limitations.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </div>
       <p style={{ margin: "0 0 10px", color: "var(--muted)", lineHeight: 1.55 }}>
         {paper.authors.join(", ")}
       </p>

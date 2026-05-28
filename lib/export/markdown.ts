@@ -3,6 +3,10 @@ import type { EvidenceLink } from "@/lib/ai/schemas";
 import type { NormalizedPaper } from "@/lib/sources/types";
 import { getEvidenceBoundary } from "@/lib/brief/evidenceBoundary";
 import { formatDoi, getDoiUrl } from "@/lib/sources/doi";
+import {
+  getPaperInsight,
+  getSourceQualitySummary
+} from "@/lib/pipeline/paperInsights";
 
 function sourceList(ids: string[]) {
   return ids.map((id) => `[${id}]`).join(" ");
@@ -45,6 +49,7 @@ export function researchBriefToMarkdown(input: {
     outputLanguage: brief.outputLanguage,
     papers
   });
+  const sourceQuality = getSourceQualitySummary(papers);
   const lines: string[] = [];
 
   lines.push(`# ${brief.title}`);
@@ -69,6 +74,23 @@ export function researchBriefToMarkdown(input: {
   );
   for (const bullet of evidenceBoundary.bullets) {
     lines.push(`- ${bullet}`);
+  }
+  lines.push("");
+  lines.push("## Source Quality");
+  lines.push("");
+  lines.push(`**${sourceQuality.label}:** ${sourceQuality.description}`);
+  lines.push("");
+  lines.push(`- Live papers: ${sourceQuality.metrics.livePapers}`);
+  lines.push(`- Mock papers: ${sourceQuality.metrics.mockPapers}`);
+  lines.push(`- Source diversity: ${sourceQuality.metrics.sourceDiversity}`);
+  lines.push(`- Average relevance: ${sourceQuality.metrics.averageRelevance.toFixed(2)}`);
+  lines.push(`- Strong query matches: ${sourceQuality.metrics.highRelevancePapers}`);
+  lines.push(`- Low query matches: ${sourceQuality.metrics.lowRelevancePapers}`);
+  if (sourceQuality.strengths.length) {
+    lines.push("- Strengths: " + sourceQuality.strengths.join("; "));
+  }
+  if (sourceQuality.cautions.length) {
+    lines.push("- Cautions: " + sourceQuality.cautions.join("; "));
   }
   lines.push("");
   lines.push("## TL;DR");
@@ -177,9 +199,19 @@ export function researchBriefToMarkdown(input: {
   lines.push("## Bibliography");
   lines.push("");
   for (const paper of papers) {
+    const insight = getPaperInsight(paper);
+
     lines.push(`### [${paper.id}] ${paper.title}`);
     lines.push("");
     lines.push(`- Source: ${paper.source}`);
+    lines.push(`- Role: ${insight.role}`);
+    lines.push(`- Why read this: ${insight.whyRead}`);
+    if (insight.strengths.length) {
+      lines.push(`- Strengths: ${insight.strengths.join("; ")}`);
+    }
+    if (insight.limitations.length) {
+      lines.push(`- Limitations: ${insight.limitations.join("; ")}`);
+    }
     lines.push(`- Authors: ${paper.authors.join(", ")}`);
     lines.push(`- Year: ${clean(paper.year?.toString())}`);
     lines.push(`- Venue: ${clean(paper.venue)}`);

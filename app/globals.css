@@ -421,6 +421,27 @@ textarea {
   line-height: 1.45;
 }
 
+.reading-path-reason {
+  color: var(--foreground) !important;
+  font-weight: 650;
+}
+
+.paper-insight {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 10px 0 12px;
+  background: #fbfcfe;
+}
+
+.paper-insight p {
+  margin: 4px 0 0;
+  color: var(--foreground);
+  line-height: 1.55;
+}
+
 .section-lede {
   margin: 0 0 14px;
   color: var(--muted);
@@ -1059,6 +1080,15 @@ textarea {
 .preflight-paper-list h4 {
   font-size: 0.92rem;
   line-height: 1.35;
+}
+
+.preflight-paper-reason {
+  color: var(--foreground) !important;
+  font-weight: 650;
+}
+
+.preflight-paper-warning {
+  color: var(--warning) !important;
 }
 
 .preflight-technical {

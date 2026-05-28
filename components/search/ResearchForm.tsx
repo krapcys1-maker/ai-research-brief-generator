@@ -33,6 +33,12 @@ type PreflightPaper = {
   url: string | null;
   relevanceScore: number | null;
   finalScore: number | null;
+  insight?: {
+    role: string;
+    whyRead: string;
+    strengths: string[];
+    limitations: string[];
+  };
 };
 
 type PreflightPayload = {
@@ -236,12 +242,34 @@ function SourcePreflightPanel({
           <div className="preflight-paper-list">
             {preflight.papers.slice(0, 5).map((paper) => (
               <article key={paper.id}>
-                <span className="badge">{paper.source}</span>
+                <div className="token-list">
+                  <span className="badge">{paper.source}</span>
+                  {paper.insight?.role ? (
+                    <span className="badge">{paper.insight.role}</span>
+                  ) : null}
+                </div>
                 <h4>{paper.title}</h4>
+                {paper.insight?.whyRead ? (
+                  <p className="preflight-paper-reason">
+                    {paper.insight.whyRead}
+                  </p>
+                ) : null}
                 <p>
                   {paper.authors.slice(0, 3).join(", ")}
                   {paper.year ? ` (${paper.year})` : ""}
                 </p>
+                {paper.insight?.strengths.length ? (
+                  <ul className="compact-list">
+                    {paper.insight.strengths.slice(0, 3).map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                ) : null}
+                {paper.insight?.limitations.length ? (
+                  <p className="preflight-paper-warning">
+                    Check: {paper.insight.limitations.slice(0, 2).join("; ")}
+                  </p>
+                ) : null}
                 {paper.doi ? (
                   <p>
                     DOI:{" "}

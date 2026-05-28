@@ -7,6 +7,10 @@ import type { NormalizedPaper } from "@/lib/sources/types";
 import { PaperCard } from "@/components/brief/PaperCard";
 import { getEvidenceBoundary } from "@/lib/brief/evidenceBoundary";
 import { formatDoi, getDoiUrl } from "@/lib/sources/doi";
+import {
+  getPaperInsight,
+  getSourceQualitySummary
+} from "@/lib/pipeline/paperInsights";
 
 function SourceRefs({
   ids,
@@ -250,6 +254,7 @@ function QualitySummary({
 }) {
   const quality = getBriefQuality(brief, papers);
   const sourceCounts = getPaperSourceCounts(papers);
+  const sourceQuality = getSourceQualitySummary(papers);
 
   return (
     <section className="quality-panel" aria-label="Brief quality summary">
@@ -257,6 +262,11 @@ function QualitySummary({
         <span className="metric-label">Brief quality</span>
         <strong>{quality.label}</strong>
         <p>{quality.description}</p>
+      </div>
+      <div>
+        <span className="metric-label">Source quality</span>
+        <strong>{sourceQuality.label}</strong>
+        <p>{sourceQuality.description}</p>
       </div>
       <div>
         <span className="metric-label">Source mix</span>
@@ -268,10 +278,36 @@ function QualitySummary({
         </p>
       </div>
       <div>
-        <span className="metric-label">Average relevance</span>
-        <strong>{quality.averageRelevance.toFixed(2)}</strong>
-        <p>{brief.searchSummary.warnings.length} source warning(s)</p>
+        <span className="metric-label">Coverage signals</span>
+        <strong>
+          {sourceQuality.metrics.papersWithAbstracts}/{sourceQuality.metrics.totalPapers} abstracts
+        </strong>
+        <p>
+          {sourceQuality.metrics.papersWithDoi} DOI-backed,{" "}
+          {sourceQuality.metrics.highRelevancePapers} strong match,{" "}
+          {brief.searchSummary.warnings.length} warning(s)
+        </p>
       </div>
+      {sourceQuality.strengths.length ? (
+        <div>
+          <span className="metric-label">Strengths</span>
+          <ul className="compact-list">
+            {sourceQuality.strengths.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {sourceQuality.cautions.length ? (
+        <div>
+          <span className="metric-label">Cautions</span>
+          <ul className="compact-list">
+            {sourceQuality.cautions.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -461,8 +497,12 @@ function ReadingPath({
       <div className="reading-path">
         {topPapers.map((paper, index) => (
           <article key={paper.id}>
-            <span className="badge">#{index + 1}</span>
+            <div className="token-list">
+              <span className="badge">#{index + 1}</span>
+              <span className="badge">{getPaperInsight(paper).role}</span>
+            </div>
             <h3>{paper.title}</h3>
+            <p className="reading-path-reason">{getPaperInsight(paper).whyRead}</p>
             <p>
               {formatCitationLabel(paper, paper.id)}
               {paper.venue ? `, ${paper.venue}` : ""}
@@ -800,6 +840,7 @@ function SourceDrawer({
   }
 
   const doiUrl = getDoiUrl(paper.doi);
+  const insight = getPaperInsight(paper);
 
   return (
     <div
@@ -825,6 +866,7 @@ function SourceDrawer({
           }}
         >
           <span className="badge">{paper.id}</span>
+          <span className="badge">{insight.role}</span>
           <button
             type="button"
             onClick={onClose}
@@ -876,6 +918,22 @@ function SourceDrawer({
             </dd>
           </div>
         </dl>
+        <div className="paper-insight">
+          <div>
+            <span className="metric-label">Why this paper</span>
+            <p>{insight.whyRead}</p>
+          </div>
+          {insight.limitations.length ? (
+            <div>
+              <span className="metric-label">Limitations</span>
+              <ul className="compact-list">
+                {insight.limitations.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </div>
         {paper.abstract ? <p style={{ lineHeight: 1.6 }}>{paper.abstract}</p> : null}
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <a className="citation" href={`#${paper.id}`}>
