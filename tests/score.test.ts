@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { scorePapers, selectTopPapers } from "@/lib/pipeline/score";
+import {
+  scorePapers,
+  scorePapersForQueriesHybrid,
+  selectTopPapers
+} from "@/lib/pipeline/score";
 import { createPaper } from "@/tests/fixtures";
 
 describe("scorePapers", () => {
@@ -198,5 +202,29 @@ describe("scorePapers", () => {
     );
 
     expect(selectTopPapers(scored, 10)).toEqual([]);
+  });
+
+  it("adds semantic scores through the hybrid scorer", async () => {
+    const scored = await scorePapersForQueriesHybrid(
+      [
+        createPaper({
+          id: "stem_cell",
+          title: "Mesenchymal Stem Cell Therapy for Burn Wounds",
+          abstract: "Stem cells support tissue regeneration after burn injury.",
+          source: "openalex"
+        }),
+        createPaper({
+          id: "software_agent",
+          title: "AI Agents in Software Engineering",
+          abstract: "Agents automate code maintenance tasks.",
+          source: "openalex"
+        })
+      ],
+      ["stem cells burn treatment"]
+    );
+
+    expect(scored[0].id).toBe("stem_cell");
+    expect(scored[0].semanticScore).toBeGreaterThan(0);
+    expect(scored[0].finalScore).toBeGreaterThan(scored[1].finalScore ?? 0);
   });
 });

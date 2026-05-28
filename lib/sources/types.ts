@@ -25,6 +25,7 @@ export type NormalizedPaper = {
   influentialCitationCount: number | null;
   source: ResearchSource | "merged";
   relevanceScore?: number;
+  semanticScore?: number;
   citationScore?: number;
   recencyScore?: number;
   completenessScore?: number;

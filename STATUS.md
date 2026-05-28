@@ -10,7 +10,7 @@ The app supports:
 
 - mock, arXiv, Semantic Scholar, and OpenAlex source adapters
 - source preflight and Research Quality Gate
-- paper normalization, dedupe, ranking, and top-paper selection
+- paper normalization, dedupe, hybrid lexical/semantic ranking, and top-paper selection
 - DeepSeek V4 Pro structured synthesis through a provider abstraction
 - Zod validation for AI outputs
 - claim-level `sourcePaperIds` and evidence snippets
@@ -41,8 +41,8 @@ The app supports:
 
 ## Latest Completed Step
 
-Moved brief generation to an async in-process job flow. `POST /api/briefs` now returns `202` with `jobId`, `GET /api/briefs/jobs/[id]` exposes job status, and the UI polls until completion before redirecting to the generated brief.
+Added the first hybrid retrieval layer. Scoring now includes `semanticScore` from an embeddings provider abstraction, with a local hash-ngram provider as the default so no new API key is required.
 
 ## Next Recommended Step
 
-Replace the in-process job runner with a durable production queue/worker, or start the embeddings provider abstraction for hybrid retrieval if deployment remains single-instance for now.
+Expand retrieval benchmark fixtures with more gold queries and expected source IDs, then replace the local embedding provider with a model-grade production provider.

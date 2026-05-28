@@ -236,7 +236,7 @@ export function researchBriefToMarkdown(input: {
     lines.push(`- Citation count: ${clean(paper.citationCount?.toString())}`);
     lines.push(`- Influential citation count: ${clean(paper.influentialCitationCount?.toString())}`);
     lines.push(`- Final score: ${score(paper.finalScore)}`);
-    lines.push(`- Score breakdown: relevance ${score(paper.relevanceScore)}, citations ${score(paper.citationScore)}, recency ${score(paper.recencyScore)}, completeness ${score(paper.completenessScore)}, source ${score(paper.sourceQualityScore)}, identifiers ${score(paper.identifierScore)}`);
+    lines.push(`- Score breakdown: relevance ${score(paper.relevanceScore)}, semantic ${score(paper.semanticScore)}, citations ${score(paper.citationScore)}, recency ${score(paper.recencyScore)}, completeness ${score(paper.completenessScore)}, source ${score(paper.sourceQualityScore)}, identifiers ${score(paper.identifierScore)}`);
     if (paper.abstract) {
       lines.push(`- Abstract: ${paper.abstract}`);
     }

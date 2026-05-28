@@ -5,7 +5,7 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 ## Next
 
 - [ ] Expand retrieval benchmark fixtures with more gold queries and expected source IDs.
-- [ ] Start embeddings provider abstraction for hybrid retrieval.
+- [ ] Replace local embeddings with a production embedding provider.
 
 ## Production Readiness
 
@@ -14,8 +14,9 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 
 ## Research Quality
 
-- [ ] Add embeddings provider abstraction.
-- [ ] Add hybrid retrieval with lexical and semantic scoring.
+- [x] Add embeddings provider abstraction.
+- [x] Add hybrid retrieval with lexical and semantic scoring.
+- [ ] Tune hybrid retrieval with model-grade embeddings and larger benchmarks.
 - [ ] Add PDF/full-text ingestion with explicit full-text evidence boundaries.
 
 ## Product UX

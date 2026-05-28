@@ -12,13 +12,11 @@ Last updated: 2026-05-28
 
 ## P1: Research Quality
 
-- Add hybrid retrieval:
-  - lexical score
-  - embedding similarity
-  - metadata quality
+- Replace the local embedding provider with a production embedding provider.
+- Expand hybrid retrieval beyond the current lexical + local semantic signal:
+  - model-grade embedding similarity
   - source diversity
-  - citation/recency balance
-- Add embeddings provider abstraction separate from the chat provider.
+  - citation/recency balance tuning
 - Expand retrieval benchmarks with more gold queries and expected source IDs.
 - Add more claim/evidence benchmark fixtures for methodological claims, such as sample size, study design, and evaluation setting.
 

@@ -34,6 +34,7 @@ export async function POST(request: Request) {
         doi: paper.doi,
         url: paper.sourceUrls[0] ?? null,
         relevanceScore: paper.relevanceScore ?? null,
+        semanticScore: paper.semanticScore ?? null,
         finalScore: paper.finalScore ?? null,
         insight: getPaperInsight(
           paper,

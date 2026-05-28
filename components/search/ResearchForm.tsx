@@ -32,6 +32,7 @@ type PreflightPaper = {
   doi: string | null;
   url: string | null;
   relevanceScore: number | null;
+  semanticScore: number | null;
   finalScore: number | null;
   insight?: {
     role: string;
@@ -338,6 +339,9 @@ function SourcePreflightPanel({
                 ) : null}
                 <p>
                   Match strength: {formatScore(paper.relevanceScore)}
+                  {typeof paper.semanticScore === "number"
+                    ? ` - semantic ${formatScore(paper.semanticScore)}`
+                    : ""}
                   {paper.url ? (
                     <>
                       {" "}

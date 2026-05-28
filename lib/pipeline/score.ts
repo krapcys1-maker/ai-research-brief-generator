@@ -1,4 +1,6 @@
 import type { NormalizedPaper } from "@/lib/sources/types";
+import { createEmbeddingProvider } from "@/lib/embeddings/client";
+import type { EmbeddingProvider } from "@/lib/embeddings/types";
 
 const SOURCE_QUALITY_PRIORS: Record<NormalizedPaper["source"], number> = {
   merged: 0.96,
@@ -73,6 +75,14 @@ export function scorePapersForQueries(
   papers: NormalizedPaper[],
   queries: string[]
 ) {
+  return scorePapersForQueriesWithSemantic(papers, queries);
+}
+
+function scorePapersForQueriesWithSemantic(
+  papers: NormalizedPaper[],
+  queries: string[],
+  semanticScores = new Map<string, number>()
+) {
   const queryTerms = new Set(queries.flatMap(tokenize));
   const currentYear = new Date().getFullYear();
   const maxCitationLog = Math.max(
@@ -110,6 +120,7 @@ export function scorePapersForQueries(
       const completenessScore = getCompletenessScore(paper);
       const identifierScore = getIdentifierScore(paper);
       const sourceQualityScore = SOURCE_QUALITY_PRIORS[paper.source] ?? 0.75;
+      const semanticScore = semanticScores.get(paper.id) ?? 0;
 
       const qualityScore =
         citationScore * 0.35 +
@@ -118,20 +129,26 @@ export function scorePapersForQueries(
         sourceQualityScore * 0.15 +
         identifierScore * 0.15;
       const rawFinalScore =
-        relevanceScore * 0.5 +
-        citationScore * 0.18 +
-        recencyScore * 0.12 +
-        completenessScore * 0.08 +
-        sourceQualityScore * 0.07 +
+        relevanceScore * 0.42 +
+        semanticScore * 0.14 +
+        citationScore * 0.16 +
+        recencyScore * 0.1 +
+        completenessScore * 0.07 +
+        sourceQualityScore * 0.06 +
         identifierScore * 0.05;
       const lowRelevancePenalty =
-        relevanceScore === 0 ? 0.3 : relevanceScore < 0.12 ? 0.65 : 1;
+        relevanceScore === 0 && semanticScore < 0.18
+          ? 0.3
+          : relevanceScore < 0.12 && semanticScore < 0.24
+            ? 0.65
+            : 1;
       const mockPenalty = paper.source === "mock" ? 0.72 : 1;
       const finalScore = rawFinalScore * lowRelevancePenalty * mockPenalty;
 
       return {
         ...paper,
         relevanceScore,
+        semanticScore,
         citationScore,
         recencyScore,
         completenessScore,
@@ -144,14 +161,71 @@ export function scorePapersForQueries(
     .sort((a, b) => (b.finalScore ?? 0) - (a.finalScore ?? 0));
 }
 
+function cosineSimilarity(left: number[], right: number[]) {
+  const length = Math.min(left.length, right.length);
+  let dot = 0;
+  let leftMagnitude = 0;
+  let rightMagnitude = 0;
+
+  for (let index = 0; index < length; index += 1) {
+    dot += left[index] * right[index];
+    leftMagnitude += left[index] * left[index];
+    rightMagnitude += right[index] * right[index];
+  }
+
+  if (!leftMagnitude || !rightMagnitude) {
+    return 0;
+  }
+
+  return clamp01(dot / Math.sqrt(leftMagnitude * rightMagnitude));
+}
+
+function paperEmbeddingText(paper: NormalizedPaper) {
+  return [paper.title, paper.abstract, paper.venue].filter(Boolean).join(" ");
+}
+
+export async function scorePapersForQueriesHybrid(
+  papers: NormalizedPaper[],
+  queries: string[],
+  provider: EmbeddingProvider = createEmbeddingProvider()
+) {
+  if (!papers.length) {
+    return [];
+  }
+
+  const [queryEmbeddings, paperEmbeddings] = await Promise.all([
+    provider.embed(queries),
+    provider.embed(papers.map(paperEmbeddingText))
+  ]);
+  const semanticScores = new Map<string, number>();
+
+  for (const [index, paper] of papers.entries()) {
+    const paperEmbedding = paperEmbeddings[index];
+    const bestScore = Math.max(
+      0,
+      ...queryEmbeddings.map((queryEmbedding) =>
+        cosineSimilarity(queryEmbedding, paperEmbedding)
+      )
+    );
+
+    semanticScores.set(paper.id, bestScore);
+  }
+
+  return scorePapersForQueriesWithSemantic(papers, queries, semanticScores);
+}
+
 export function selectTopPapers(papers: NormalizedPaper[], maxPapers: number) {
   const nonMock = papers.filter((paper) => paper.source !== "mock");
   const mock = papers.filter((paper) => paper.source === "mock");
   const relevantNonMock = nonMock.filter(
-    (paper) => (paper.relevanceScore ?? 0) >= MIN_RELEVANCE_FOR_SELECTION
+    (paper) =>
+      Math.max(paper.relevanceScore ?? 0, (paper.semanticScore ?? 0) * 0.8) >=
+      MIN_RELEVANCE_FOR_SELECTION
   );
   const relevantMock = mock.filter(
-    (paper) => (paper.relevanceScore ?? 0) >= MIN_RELEVANCE_FOR_SELECTION
+    (paper) =>
+      Math.max(paper.relevanceScore ?? 0, (paper.semanticScore ?? 0) * 0.8) >=
+      MIN_RELEVANCE_FOR_SELECTION
   );
 
   if (relevantNonMock.length) {

@@ -25,7 +25,8 @@ user query -> generation job -> source adapters -> normalized papers -> dedupe/r
   - Semantic Scholar
   - OpenAlex
 - Source search orchestration with query expansion, timeout handling, retry behavior, partial failure warnings, and source diagnostics.
-- Paper normalization, DOI/arXiv/Semantic Scholar/OpenAlex ID dedupe, scoring, source quality signals, and top-paper selection.
+- Paper normalization, DOI/arXiv/Semantic Scholar/OpenAlex ID dedupe, hybrid lexical/semantic scoring, source quality signals, and top-paper selection.
+- Embeddings provider abstraction with a local hash-ngram provider by default. This adds a semantic retrieval signal without requiring a new API key.
 - Deterministic paper-level reading guidance, source-quality summaries, and query-title/abstract alignment signals.
 - Research Quality Gate that blocks weak source coverage before calling the AI provider.
 - Provider-agnostic AI wrapper with DeepSeek as the implemented default:
@@ -89,8 +90,8 @@ ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true
 
 - The app grounds on selected paper metadata and abstracts, not parsed full-text PDFs.
 - Absolute, numeric, statistical, and comparative validation is heuristic; it is not a substitute for full-text methodological verification.
-- Scoring is still heuristic and keyword/metadata based; embeddings are not implemented.
-- Source preflight is improved, but retrieval quality still needs semantic matching beyond lexical/title/abstract scoring.
+- Scoring is still heuristic, but now combines lexical/title/abstract relevance with a local semantic embedding signal.
+- The local embedding provider is not a replacement for model-grade embeddings; retrieval quality still needs a production embedding provider and larger benchmark set.
 - Generation now uses an in-process job runner. This improves local UX, but a durable queue/worker is still needed for multi-instance production deployments.
 - Authentication and private user-scoped history are not implemented.
 - shadcn/ui is not implemented; current UI uses custom CSS.

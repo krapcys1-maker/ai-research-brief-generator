@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { generateQueryVariants } from "@/lib/ai/generateQueryVariants";
-import { scorePapersForQueries, selectTopPapers } from "@/lib/pipeline/score";
+import { scorePapersForQueriesHybrid, selectTopPapers } from "@/lib/pipeline/score";
 import { createPaper } from "@/tests/fixtures";
 import type { NormalizedPaper } from "@/lib/sources/types";
 import type { OutputLanguage } from "@/lib/utils/language";
 
-function rankFixture(input: {
+async function rankFixture(input: {
   query: string;
   outputLanguage?: OutputLanguage;
   papers: NormalizedPaper[];
@@ -14,7 +14,7 @@ function rankFixture(input: {
     query: input.query,
     outputLanguage: input.outputLanguage ?? "en"
   });
-  const scored = scorePapersForQueries(input.papers, variants);
+  const scored = await scorePapersForQueriesHybrid(input.papers, variants);
 
   return {
     variants,
@@ -33,8 +33,8 @@ function expectSelectedIds(
 }
 
 describe("retrieval benchmark fixtures", () => {
-  it("handles Polish acronym queries for RAG in medical diagnosis", () => {
-    const { variants, selected } = rankFixture({
+  it("handles Polish acronym queries for RAG in medical diagnosis", async () => {
+    const { variants, selected } = await rankFixture({
       query: "RAG w diagnozie medycznej",
       outputLanguage: "pl",
       papers: [
@@ -58,8 +58,8 @@ describe("retrieval benchmark fixtures", () => {
     expectSelectedIds(selected, ["rag_med"]);
   });
 
-  it("expands GNN acronyms for drug discovery searches", () => {
-    const { variants, selected } = rankFixture({
+  it("expands GNN acronyms for drug discovery searches", async () => {
+    const { variants, selected } = await rankFixture({
       query: "GNN drug discovery",
       papers: [
         createPaper({
@@ -82,8 +82,8 @@ describe("retrieval benchmark fixtures", () => {
     expectSelectedIds(selected, ["gnn_drug"]);
   });
 
-  it("keeps interdisciplinary healthcare privacy queries on topic", () => {
-    const { selected } = rankFixture({
+  it("keeps interdisciplinary healthcare privacy queries on topic", async () => {
+    const { selected } = await rankFixture({
       query: "privacy preserving machine learning in healthcare",
       papers: [
         createPaper({
@@ -106,8 +106,8 @@ describe("retrieval benchmark fixtures", () => {
     expectSelectedIds(selected, ["federated_healthcare"]);
   });
 
-  it("recovers common Polish typos for transformer queries", () => {
-    const { variants, selected } = rankFixture({
+  it("recovers common Polish typos for transformer queries", async () => {
+    const { variants, selected } = await rankFixture({
       query: "jak dzialaja transformey w sieciach ai",
       outputLanguage: "pl",
       papers: [
@@ -131,8 +131,8 @@ describe("retrieval benchmark fixtures", () => {
     expectSelectedIds(selected, ["transformers"]);
   });
 
-  it("prioritizes stem-cell burn treatment over generic stem-cell papers", () => {
-    const { variants, selected } = rankFixture({
+  it("prioritizes stem-cell burn treatment over generic stem-cell papers", async () => {
+    const { variants, selected } = await rankFixture({
       query: "komorki macierzyste w leczeniu oparzen",
       outputLanguage: "pl",
       papers: [

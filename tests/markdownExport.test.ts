@@ -96,7 +96,7 @@ describe("researchBriefToMarkdown", () => {
     expect(markdown).toContain("- Influential citation count: 7");
     expect(markdown).toContain("- Final score: 0.86");
     expect(markdown).toContain(
-      "- Score breakdown: relevance 0.91, citations 0.72, recency 0.83, completeness 1.00, source 0.90, identifiers 0.80"
+      "- Score breakdown: relevance 0.91, semantic N/A, citations 0.72, recency 0.83, completeness 1.00, source 0.90, identifiers 0.80"
     );
   });
 });

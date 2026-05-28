@@ -554,6 +554,9 @@ function ReadingPath({
               Relevance {typeof paper.relevanceScore === "number"
                 ? paper.relevanceScore.toFixed(2)
                 : "N/A"}
+              {typeof paper.semanticScore === "number"
+                ? ` - Semantic ${paper.semanticScore.toFixed(2)}`
+                : ""}
               {paper.doi ? " - DOI available" : ""}
             </p>
             <button

@@ -79,6 +79,10 @@ function getBestQueryAlignmentScore(paper: NormalizedPaper, queryVariants: strin
   );
 }
 
+function getEffectiveRelevance(paper: NormalizedPaper) {
+  return Math.max(paper.relevanceScore ?? 0, (paper.semanticScore ?? 0) * 0.8);
+}
+
 export function evaluateResearchQuality(input: {
   request: BriefRequest;
   selected: NormalizedPaper[];
@@ -90,7 +94,7 @@ export function evaluateResearchQuality(input: {
     .length;
   const livePaperCount = selectedPaperCount - mockPaperCount;
   const averageRelevance = selectedPaperCount
-    ? input.selected.reduce((sum, paper) => sum + (paper.relevanceScore ?? 0), 0) /
+    ? input.selected.reduce((sum, paper) => sum + getEffectiveRelevance(paper), 0) /
       selectedPaperCount
     : 0;
   const queryAlignmentScores = input.selected.map((paper) =>

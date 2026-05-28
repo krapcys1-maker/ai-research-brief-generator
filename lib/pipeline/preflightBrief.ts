@@ -9,7 +9,7 @@ import {
   evaluateResearchQuality,
   type ResearchQualityGateResult
 } from "@/lib/pipeline/qualityGate";
-import { scorePapersForQueries, selectTopPapers } from "@/lib/pipeline/score";
+import { scorePapersForQueriesHybrid, selectTopPapers } from "@/lib/pipeline/score";
 import { searchAllSources, type SearchAllSourcesResult } from "@/lib/sources";
 import type { NormalizedPaper, ResearchSource } from "@/lib/sources/types";
 import { detectQueryLanguage, type OutputLanguage } from "@/lib/utils/language";
@@ -51,7 +51,11 @@ export function createSearchSummary(input: {
     input.selected.length > 0 &&
     input.selected.every((paper) => paper.source === "mock");
   const averageRelevance =
-    input.selected.reduce((sum, paper) => sum + (paper.relevanceScore ?? 0), 0) /
+    input.selected.reduce(
+      (sum, paper) =>
+        sum + Math.max(paper.relevanceScore ?? 0, (paper.semanticScore ?? 0) * 0.8),
+      0
+    ) /
     Math.max(1, input.selected.length);
   const qualityWarnings = [
     selectedOnlyMock && requestedLiveSources.length
@@ -119,7 +123,10 @@ export async function preflightBrief(
 
   const rawPapers = searchResult.papers;
   const dedupedPapers = dedupePapers(rawPapers);
-  const scoredPapers = scorePapersForQueries(dedupedPapers, queryVariants);
+  const scoredPapers = await scorePapersForQueriesHybrid(
+    dedupedPapers,
+    queryVariants
+  );
   const selectedPapers = selectTopPapers(scoredPapers, request.maxPapers);
   const qualityGate = evaluateResearchQuality({
     request,
