@@ -19,7 +19,7 @@ Last updated: 2026-05-28
   - citation/recency balance
 - Add embeddings provider abstraction separate from the chat provider.
 - Expand retrieval benchmarks with more gold queries and expected source IDs.
-- Add claim/evidence evaluation benchmarks for numeric and statistical claim support.
+- Add claim/evidence evaluation benchmarks for comparative claim support.
 
 ## P2: Product UX
 

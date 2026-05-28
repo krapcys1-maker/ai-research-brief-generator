@@ -41,8 +41,8 @@ The app supports:
 
 ## Latest Completed Step
 
-Expanded adversarial claim/evidence benchmarks and strengthened grounding validation against overclaiming. The validator now rejects absolute claims such as "eliminates", "cures", "gwarantuje", or "eliminuje" when the evidence snippets only support weaker language, while still allowing cautious Polish paraphrases.
+Added numeric/statistical claim grounding checks for briefs and `Ask This Brief`. The validator now rejects claims that add unsupported numbers, percentages, p-values, confidence intervals, or statistical-significance language unless the evidence snippets and selected paper metadata contain matching quantitative signals.
 
 ## Next Recommended Step
 
-Follow `docs/ROADMAP.md`. The next practical research-quality step is expanding retrieval benchmarks with more gold queries and expected source IDs, then adding numeric/statistical claim evidence checks.
+Follow `docs/ROADMAP.md`. The next practical research-quality step is expanding retrieval benchmarks with more gold queries and expected source IDs, then adding comparative-claim checks for language like "outperforms" or "more effective than".

@@ -30,8 +30,8 @@ user query -> source adapters -> normalized papers -> dedupe/ranking -> quality 
   - `DEEPSEEK_API_KEY`
 - Structured JSON synthesis validated with Zod.
 - Claim-level grounding with `sourcePaperIds` and evidence snippets for executive summaries, findings, themes, gaps, and uncertainties.
-- Grounding validation checks selected paper IDs, evidence-to-paper metadata overlap, claim-to-evidence overlap, weak-evidence caveats, and bibliography DOI consistency.
-- Grounded `Ask This Brief` Q&A over selected papers for a single generated brief.
+- Grounding validation checks selected paper IDs, evidence-to-paper metadata overlap, claim-to-evidence overlap, overclaim language, numeric/statistical support, weak-evidence caveats, and bibliography DOI consistency.
+- Grounded `Ask This Brief` Q&A over selected papers for a single generated brief, using the same claim/evidence grounding checks as the main brief.
 - Brief result UI with bottom line, confidence, reading path, priority takeaways, evidence snippets, source drawer, bibliography, and collapsed technical diagnostics.
 - Markdown export through `GET /api/export/[id]?format=markdown`.
 - Optional PostgreSQL/Prisma persistence behind the `BriefRepository` contract.
@@ -42,7 +42,7 @@ user query -> source adapters -> normalized papers -> dedupe/ranking -> quality 
 - Vitest coverage for core pipeline, schemas, routes, storage, source diagnostics, grounding, Q&A, rate limiting, and export.
 - Adapter contract tests for arXiv, Semantic Scholar, and OpenAlex response-shape drift.
 - Retrieval benchmark fixtures for acronyms, Polish/English variants, typo recovery, interdisciplinary topics, and domain-specific query expansion.
-- Claim/evidence benchmark fixtures for direct, indirect, weak, unsupported-claim, and overclaim cases.
+- Claim/evidence benchmark fixtures for direct, indirect, weak, unsupported-claim, overclaim, numeric, and statistical-significance cases.
 - Repeatable deployment smoke check through `npm run smoke:deploy`.
 
 ## Storage Modes
@@ -84,7 +84,7 @@ ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true
 ## Known Limits
 
 - The app grounds on selected paper metadata and abstracts, not parsed full-text PDFs.
-- Absolute/overclaim validation is heuristic; numeric and statistical claim support still needs dedicated checks.
+- Absolute, numeric, and statistical validation is heuristic; comparative claims such as "better than" and "outperforms" still need dedicated checks.
 - Scoring is still heuristic and keyword/metadata based; embeddings are not implemented.
 - Source preflight is improved, but retrieval quality still needs semantic matching beyond lexical/title/abstract scoring.
 - Generation is still synchronous; long-running production generation should move to a job flow.

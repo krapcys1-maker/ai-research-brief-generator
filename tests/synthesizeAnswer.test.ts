@@ -24,14 +24,15 @@ describe("synthesizeAnswer", () => {
         notAnswerableFromSources: false,
         claims: [
           {
-            claim: "RAG wspiera grounding odpowiedzi klinicznych.",
+            claim: "Retrieval grounding supports clinical evaluation.",
             explanation:
-              "Evidence links retrieval-augmented generation with medical diagnosis.",
+              "Evidence links retrieval grounded generation with clinical evaluation.",
             sourcePaperIds: ["paper_1"],
             evidence: [
               {
                 paperId: "paper_1",
-                evidenceText: "Retrieval-Augmented Generation for Medical Diagnosis",
+                evidenceText:
+                  "retrieval grounded generation in clinical evaluation and reliability",
                 supportLevel: "direct"
               }
             ]
@@ -113,5 +114,44 @@ describe("synthesizeAnswer", () => {
         papers: [createPaper()]
       })
     ).rejects.toThrow("unknown paperId");
+  });
+
+  it("rejects answer claims that add unsupported numeric details", async () => {
+    vi.mocked(createAIProvider).mockReturnValue({
+      name: "deepseek",
+      generateStructured: async () => ({
+        question: "How much did grounding improve reliability?",
+        outputLanguage: "en",
+        answer: "Retrieval grounding improved reliability by 40%.",
+        confidence: "high",
+        notAnswerableFromSources: false,
+        claims: [
+          {
+            claim: "Retrieval grounding improved reliability by 40%.",
+            explanation:
+              "The answer adds a precise numeric improvement absent from the selected paper.",
+            sourcePaperIds: ["paper_1"],
+            evidence: [
+              {
+                paperId: "paper_1",
+                evidenceText:
+                  "retrieval grounded generation in clinical evaluation and reliability",
+                supportLevel: "direct"
+              }
+            ]
+          }
+        ],
+        suggestedFollowUpQuestions: []
+      })
+    });
+
+    await expect(
+      synthesizeAnswer({
+        question: "How much did grounding improve reliability?",
+        outputLanguage: "en",
+        brief: createBrief(),
+        papers: [createPaper()]
+      })
+    ).rejects.toThrow("quantitative/statistical detail not found in evidence");
   });
 });

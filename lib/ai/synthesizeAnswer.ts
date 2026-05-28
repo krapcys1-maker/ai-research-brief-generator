@@ -8,7 +8,7 @@ import {
   AIProviderError,
   createAIProvider
 } from "@/lib/ai/client";
-import { validateEvidenceLinks } from "@/lib/pipeline/validateGrounding";
+import { validateClaimGrounding } from "@/lib/pipeline/validateGrounding";
 import type { NormalizedPaper } from "@/lib/sources/types";
 import type { OutputLanguage } from "@/lib/utils/language";
 import { getLanguageInstruction } from "@/lib/utils/language";
@@ -158,11 +158,13 @@ export function validateBriefAnswerGrounding(
       }
     }
 
-    validateEvidenceLinks({
+    validateClaimGrounding({
       evidence: claim.evidence,
       sourcePaperIds: claim.sourcePaperIds,
       section: "answer claim",
-      papers
+      claimText: `${claim.claim} ${claim.explanation}`,
+      papers,
+      allowsWeakSupport: answer.confidence === "low"
     });
   }
 }

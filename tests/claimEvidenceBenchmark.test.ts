@@ -11,6 +11,15 @@ const ragPaper = createPaper({
   doi: "10.1000/rag-med"
 });
 
+const metricPaper = createPaper({
+  id: "rag_metric",
+  title: "Measured Effects of Retrieval Grounding in Clinical Answers",
+  abstract:
+    "Retrieval grounding reduced unsupported clinical answers by 40% in the benchmark and the difference was statistically significant with p < 0.05.",
+  source: "openalex",
+  doi: "10.1000/rag-metric"
+});
+
 function briefWithFinding(input: {
   finding: string;
   explanation: string;
@@ -18,16 +27,22 @@ function briefWithFinding(input: {
   evidenceText: string;
   supportLevel: "direct" | "indirect" | "weak";
   caveats?: string[];
+  paper?: typeof ragPaper;
 }) {
+  const paper = input.paper ?? ragPaper;
+  const baselineEvidence =
+    paper.id === "rag_metric"
+      ? "Retrieval grounding reduced unsupported clinical answers"
+      : "Retrieval augmented generation supports clinical evaluation";
+
   return createBrief({
     executiveSummary: {
       paragraph: "Retrieval augmented generation supports clinical evaluation.",
-      sourcePaperIds: ["rag_med"],
+      sourcePaperIds: [paper.id],
       evidence: [
         {
-          paperId: "rag_med",
-          evidenceText:
-            "Retrieval augmented generation supports clinical evaluation",
+          paperId: paper.id,
+          evidenceText: baselineEvidence,
           supportLevel: "direct"
         }
       ]
@@ -37,10 +52,10 @@ function briefWithFinding(input: {
         finding: input.finding,
         explanation: input.explanation,
         confidence: input.confidence,
-        sourcePaperIds: ["rag_med"],
+        sourcePaperIds: [paper.id],
         evidence: [
           {
-            paperId: "rag_med",
+            paperId: paper.id,
             evidenceText: input.evidenceText,
             supportLevel: input.supportLevel
           }
@@ -52,10 +67,10 @@ function briefWithFinding(input: {
       {
         theme: "Clinical evaluation",
         description: "Retrieved medical evidence supports evaluation.",
-        sourcePaperIds: ["rag_med"],
+        sourcePaperIds: [paper.id],
         evidence: [
           {
-            paperId: "rag_med",
+            paperId: paper.id,
             evidenceText:
               "retrieved medical evidence and reducing unsupported answers",
             supportLevel: "direct"
@@ -67,12 +82,11 @@ function briefWithFinding(input: {
       {
         gap: "Clinical evaluation",
         whyItMatters: "Clinical evaluation needs medical evidence.",
-        sourcePaperIds: ["rag_med"],
+        sourcePaperIds: [paper.id],
         evidence: [
           {
-            paperId: "rag_med",
-            evidenceText:
-              "Retrieval augmented generation supports clinical evaluation",
+            paperId: paper.id,
+            evidenceText: baselineEvidence,
             supportLevel: "direct"
           }
         ]
@@ -82,10 +96,10 @@ function briefWithFinding(input: {
       {
         issue: "Unsupported answers",
         explanation: "Unsupported answers can still occur.",
-        sourcePaperIds: ["rag_med"],
+        sourcePaperIds: [paper.id],
         evidence: [
           {
-            paperId: "rag_med",
+            paperId: paper.id,
             evidenceText: "reducing unsupported answers",
             supportLevel: "indirect"
           }
@@ -94,18 +108,18 @@ function briefWithFinding(input: {
     ],
     influentialPapers: [
       {
-        paperId: "rag_med",
+        paperId: paper.id,
         reason: "It anchors the claim/evidence benchmark."
       }
     ],
     bibliography: [
       {
-        paperId: "rag_med",
-        title: ragPaper.title,
-        authors: ragPaper.authors,
-        year: ragPaper.year,
-        url: ragPaper.sourceUrls[0] ?? null,
-        doi: ragPaper.doi
+        paperId: paper.id,
+        title: paper.title,
+        authors: paper.authors,
+        year: paper.year,
+        url: paper.sourceUrls[0] ?? null,
+        doi: paper.doi
       }
     ]
   });
@@ -215,5 +229,84 @@ describe("claim/evidence benchmark fixtures", () => {
     });
 
     expect(() => validateBriefGrounding(brief, [ragPaper])).not.toThrow();
+  });
+
+  it("rejects numeric claims when the evidence has no matching number", () => {
+    const brief = briefWithFinding({
+      finding: "RAG reduced unsupported clinical answers by 40%.",
+      explanation:
+        "The finding includes a precise effect size that is absent from the evidence snippet.",
+      confidence: "high",
+      evidenceText:
+        "Retrieval grounding reduced unsupported clinical answers in the benchmark",
+      supportLevel: "direct"
+    });
+
+    expect(() => validateBriefGrounding(brief, [ragPaper])).toThrow(
+      "quantitative/statistical detail not found in evidence"
+    );
+  });
+
+  it("rejects evidence snippets that add numbers absent from paper metadata", () => {
+    const brief = briefWithFinding({
+      finding: "RAG reduced unsupported clinical answers by 40%.",
+      explanation:
+        "The evidence snippet invents a precise effect size not present in the selected paper metadata.",
+      confidence: "high",
+      evidenceText:
+        "Retrieval grounding reduced unsupported clinical answers by 40%",
+      supportLevel: "direct"
+    });
+
+    expect(() => validateBriefGrounding(brief, [ragPaper])).toThrow(
+      "evidence includes quantitative/statistical detail"
+    );
+  });
+
+  it("accepts numeric claims when evidence and paper metadata contain the same number", () => {
+    const brief = briefWithFinding({
+      finding: "Retrieval grounding reduced unsupported clinical answers by 40%.",
+      explanation:
+        "The selected paper reports the same benchmark effect size in its metadata.",
+      confidence: "high",
+      evidenceText:
+        "Retrieval grounding reduced unsupported clinical answers by 40% in the benchmark",
+      supportLevel: "direct",
+      paper: metricPaper
+    });
+
+    expect(() => validateBriefGrounding(brief, [metricPaper])).not.toThrow();
+  });
+
+  it("rejects statistical significance claims when evidence only reports a directional result", () => {
+    const brief = briefWithFinding({
+      finding:
+        "Retrieval grounding produced a statistically significant reduction in unsupported answers.",
+      explanation:
+        "The claim says statistically significant, but the evidence only reports a directional reduction.",
+      confidence: "high",
+      evidenceText:
+        "Retrieval grounding reduced unsupported clinical answers in the benchmark",
+      supportLevel: "direct"
+    });
+
+    expect(() => validateBriefGrounding(brief, [ragPaper])).toThrow(
+      "quantitative/statistical detail not found in evidence"
+    );
+  });
+
+  it("accepts statistical significance claims when evidence and paper metadata include the statistical signal", () => {
+    const brief = briefWithFinding({
+      finding:
+        "Retrieval grounding produced a statistically significant reduction in unsupported answers.",
+      explanation: "The evidence includes the same statistical signal and p-value.",
+      confidence: "high",
+      evidenceText:
+        "Retrieval grounding reduced unsupported clinical answers by 40% and the difference was statistically significant with p < 0.05",
+      supportLevel: "direct",
+      paper: metricPaper
+    });
+
+    expect(() => validateBriefGrounding(brief, [metricPaper])).not.toThrow();
   });
 });

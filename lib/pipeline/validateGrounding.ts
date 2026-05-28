@@ -113,6 +113,122 @@ function getAbsoluteClaimTerms(value: string) {
     .filter((token) => ABSOLUTE_CLAIM_TERMS.has(token));
 }
 
+const QUANTITATIVE_SIGNAL_PATTERNS = [
+  {
+    signal: "statistical_significance",
+    patterns: [
+      /\bstatistically significant\b/,
+      /\bstatistical significance\b/,
+      /\bistotn\w* statystyczn\w*\b/,
+      /\bstatystyczn\w* istotn\w*\b/
+    ]
+  },
+  {
+    signal: "p_value",
+    patterns: [
+      /\bp\s*(?:<=|>=|<|>|=)\s*0?[.,]\d+\b/,
+      /\bp[-\s]?value\b/,
+      /\bwartosc p\b/
+    ]
+  },
+  {
+    signal: "confidence_interval",
+    patterns: [
+      /\bconfidence interval\b/,
+      /\b95\s*%\s*ci\b/,
+      /\bci\b/,
+      /\bprzedzial\w* ufnosc\w*\b/
+    ]
+  },
+  {
+    signal: "odds_ratio",
+    patterns: [/\bodds ratio\b/, /\biloraz szans\b/]
+  },
+  {
+    signal: "hazard_ratio",
+    patterns: [/\bhazard ratio\b/, /\bwspolczynnik hazardu\b/]
+  },
+  {
+    signal: "relative_risk",
+    patterns: [/\brelative risk\b/, /\brisk ratio\b/, /\bryzyko wzgledne\b/]
+  },
+  {
+    signal: "mean_difference",
+    patterns: [/\bmean difference\b/, /\bsrednia roznic\w*\b/]
+  },
+  {
+    signal: "ratio_double",
+    patterns: [/\bdouble[ds]?\b/, /\btwice\b/, /\btwofold\b/, /\bdwukrotn\w*\b/]
+  },
+  {
+    signal: "ratio_triple",
+    patterns: [/\btriple[ds]?\b/, /\bthreefold\b/, /\btrzykrotn\w*\b/]
+  }
+];
+
+function normalizeForSignals(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function normalizeNumericSignal(value: string) {
+  const normalized = value
+    .toLowerCase()
+    .replace(/\s+/g, "")
+    .replace(",", ".")
+    .replace(/percentagepoints?/, "percentagepoint")
+    .replace(/percent(age)?/, "%")
+    .replace(/proc\.?|procent(ow|y|ach)?/, "%");
+
+  if (/^2(\.0)?(x|fold)$/.test(normalized)) {
+    return "ratio_double";
+  }
+
+  if (/^3(\.0)?(x|fold)$/.test(normalized)) {
+    return "ratio_triple";
+  }
+
+  return `number:${normalized}`;
+}
+
+function getQuantitativeSignals(value: string) {
+  const normalized = normalizeForSignals(value);
+  const signals = new Set<string>();
+
+  for (const item of QUANTITATIVE_SIGNAL_PATTERNS) {
+    if (item.patterns.some((pattern) => pattern.test(normalized))) {
+      signals.add(item.signal);
+    }
+  }
+
+  const numericPattern =
+    /\b\d+(?:[.,]\d+)?\s*(?:%|percent(?:age)?(?:\s+points?)?|proc\.?|procent(?:ow|y|ach)?|x|fold)?/g;
+  const numericMatches = normalized.match(numericPattern) ?? [];
+
+  for (const match of numericMatches) {
+    signals.add(normalizeNumericSignal(match));
+  }
+
+  return signals;
+}
+
+export function hasUnsupportedQuantitativeDetail(
+  statementText: string,
+  supportText: string
+) {
+  const statementSignals = getQuantitativeSignals(statementText);
+
+  if (!statementSignals.size) {
+    return false;
+  }
+
+  const supportSignals = getQuantitativeSignals(supportText);
+
+  return [...statementSignals].some((signal) => !supportSignals.has(signal));
+}
+
 export function hasEvidenceOverlap(evidenceText: string, paper: NormalizedPaper) {
   const evidenceTokens = new Set(tokenize(evidenceText));
   const paperTokens = new Set(
@@ -164,6 +280,16 @@ export function hasUnsupportedAbsoluteClaim(
   return absoluteClaimTerms.some((term) => !absoluteEvidenceTerms.has(term));
 }
 
+export function hasUnsupportedQuantitativeClaim(
+  claimText: string,
+  evidence: EvidenceLink[]
+) {
+  return hasUnsupportedQuantitativeDetail(
+    claimText,
+    evidence.map((item) => item.evidenceText).join(" ")
+  );
+}
+
 export function validateEvidenceLinks(input: {
   evidence: EvidenceLink[];
   sourcePaperIds: string[];
@@ -195,6 +321,56 @@ export function validateEvidenceLinks(input: {
         `${input.section} evidence is not supported by selected paper metadata: ${evidence.paperId}`
       );
     }
+
+    const paperText = `${paper.title} ${paper.abstract ?? ""} ${paper.venue ?? ""} ${
+      paper.year ?? ""
+    } ${paper.citationCount ?? ""}`;
+
+    if (hasUnsupportedQuantitativeDetail(evidence.evidenceText, paperText)) {
+      throw new Error(
+        `${input.section} evidence includes quantitative/statistical detail not found in selected paper metadata: ${evidence.paperId}`
+      );
+    }
+  }
+}
+
+export function validateClaimGrounding(input: {
+  evidence: EvidenceLink[];
+  sourcePaperIds: string[];
+  section: string;
+  claimText: string;
+  papers: NormalizedPaper[];
+  allowsWeakSupport?: boolean;
+}) {
+  validateEvidenceLinks({
+    evidence: input.evidence,
+    sourcePaperIds: input.sourcePaperIds,
+    section: input.section,
+    papers: input.papers
+  });
+
+  if (!hasClaimEvidenceOverlap(input.claimText, input.evidence)) {
+    throw new Error(
+      `${input.section} claim is not supported by its evidence snippets`
+    );
+  }
+
+  if (hasUnsupportedAbsoluteClaim(input.claimText, input.evidence)) {
+    throw new Error(
+      `${input.section} claim is stronger than its evidence snippets`
+    );
+  }
+
+  if (hasUnsupportedQuantitativeClaim(input.claimText, input.evidence)) {
+    throw new Error(
+      `${input.section} claim includes quantitative/statistical detail not found in evidence snippets`
+    );
+  }
+
+  for (const evidence of input.evidence) {
+    if (evidence.supportLevel === "weak" && input.allowsWeakSupport === false) {
+      throw new Error(`${input.section} has weak evidence without uncertainty caveats`);
+    }
   }
 }
 
@@ -224,30 +400,7 @@ export function validateBriefGrounding(
     claimText: string;
     allowsWeakSupport?: boolean;
   }) {
-    validateEvidenceLinks({
-      evidence: input.evidence,
-      sourcePaperIds: input.sourcePaperIds,
-      section: input.section,
-      papers
-    });
-
-    if (!hasClaimEvidenceOverlap(input.claimText, input.evidence)) {
-      throw new Error(
-        `${input.section} claim is not supported by its evidence snippets`
-      );
-    }
-
-    if (hasUnsupportedAbsoluteClaim(input.claimText, input.evidence)) {
-      throw new Error(
-        `${input.section} claim is stronger than its evidence snippets`
-      );
-    }
-
-    for (const evidence of input.evidence) {
-      if (evidence.supportLevel === "weak" && input.allowsWeakSupport === false) {
-        throw new Error(`${input.section} has weak evidence without uncertainty caveats`);
-      }
-    }
+    validateClaimGrounding({ ...input, papers });
   }
 
   assertValidPaperIds(
