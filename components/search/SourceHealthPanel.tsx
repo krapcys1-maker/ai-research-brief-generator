@@ -7,6 +7,9 @@ type SourceHealthResponse = {
     mode: "memory" | "postgresql";
     hasDatabaseUrl: boolean;
     hasValidPostgresUrl: boolean;
+    isProduction: boolean;
+    allowsMemoryStorage: boolean;
+    fatalError: string | null;
     warning: string | null;
   };
   cache: {

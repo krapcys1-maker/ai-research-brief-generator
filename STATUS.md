@@ -224,6 +224,8 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Added `PUBLIC_BRIEF_HISTORY_ENABLED` so public recent brief history can be disabled independently of brief generation.
 - Changed production defaults so public brief history is disabled unless explicitly enabled.
 - Protected `GET /api/briefs` with the same public-history setting and hid the home recent-history panel when disabled.
+- Added production fail-fast persistence checks so missing or invalid PostgreSQL `DATABASE_URL` no longer silently falls back to in-memory brief storage.
+- Added `ALLOW_MEMORY_STORAGE_IN_PRODUCTION=true` as an explicit temporary demo escape hatch for non-durable production memory mode.
 
 ## Important Current Decisions
 

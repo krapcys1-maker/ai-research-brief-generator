@@ -83,7 +83,9 @@ npm run prisma:generate
 npm run prisma:migrate
 ```
 
-With PostgreSQL enabled, generated briefs, selected papers, source API cache records, and source diagnostics are persisted through Prisma. Without `DATABASE_URL`, or when `DATABASE_URL` is not a PostgreSQL URL, the app safely falls back to in-memory storage and reports the active storage mode in the Source health panel.
+With PostgreSQL enabled, generated briefs, selected papers, source API cache records, and source diagnostics are persisted through Prisma. In local development, without `DATABASE_URL`, or when `DATABASE_URL` is not a PostgreSQL URL, the app falls back to in-memory storage and reports the active storage mode in the Source health panel.
+
+In production, a valid PostgreSQL `DATABASE_URL` is required by default. The app fails fast instead of silently switching to non-durable memory storage. For temporary demos only, set `ALLOW_MEMORY_STORAGE_IN_PRODUCTION=true`.
 
 Public recent brief history is enabled by default in local development and disabled by default in production. Set `PUBLIC_BRIEF_HISTORY_ENABLED=true` only when global brief summaries are safe to expose.
 

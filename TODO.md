@@ -140,7 +140,7 @@
 See `docs/REMEDIATION_PLAN.md` for the full audit-based repair plan.
 
 - [x] Disable or scope public recent brief history before public deployment.
-- [ ] Fail fast in production when PostgreSQL persistence is missing or invalid.
+- [x] Fail fast in production when PostgreSQL persistence is missing or invalid.
 - [ ] Replace in-memory production rate limiting with Redis/KV-backed limiting.
 - [ ] Add an evidence boundary/disclaimer to the brief UI and Markdown export.
 - [ ] Improve DOI visibility as a first-class paper identifier.

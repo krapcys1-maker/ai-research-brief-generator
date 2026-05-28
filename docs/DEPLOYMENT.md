@@ -21,6 +21,16 @@ DEEPSEEK_API_KEY=...
 DATABASE_URL=postgresql://...
 ```
 
+Production requires a valid PostgreSQL `DATABASE_URL` by default. Missing or invalid database configuration fails fast instead of falling back to non-durable memory storage.
+
+Temporary demo escape hatch:
+
+```bash
+ALLOW_MEMORY_STORAGE_IN_PRODUCTION=true
+```
+
+Use this only for throwaway demos. Generated briefs will disappear across restarts.
+
 Recommended production rate limit settings:
 
 ```bash
@@ -127,6 +137,7 @@ The repository already ignores `.env`, `.next`, and `node_modules`.
 - [ ] `AI_PROVIDER=deepseek`.
 - [ ] `AI_MODEL=deepseek-v4-pro`.
 - [ ] `DATABASE_URL` points to production PostgreSQL.
+- [ ] `ALLOW_MEMORY_STORAGE_IN_PRODUCTION` is not set for real production deployments.
 - [ ] `PUBLIC_BRIEF_HISTORY_ENABLED` is unset or `false` unless public history is intentional.
 - [ ] `npx prisma migrate deploy` succeeds.
 - [ ] `npm run build` succeeds.
