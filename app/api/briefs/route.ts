@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { createBrief } from "@/lib/pipeline/createBrief";
 import { ResearchQualityGateError } from "@/lib/pipeline/qualityGate";
-import { checkRateLimit, getClientIp } from "@/lib/security/rateLimit";
+import {
+  checkRateLimit,
+  getClientIp,
+  RateLimitConfigurationError
+} from "@/lib/security/rateLimit";
 import { getBriefRepository } from "@/lib/storage/repository";
 import { isPublicBriefHistoryEnabled } from "@/lib/config/briefHistory";
 
@@ -19,7 +23,7 @@ function errorResponse(message: string, status = 400) {
 export async function POST(request: Request) {
   try {
     const clientIp = getClientIp(request);
-    const rateLimit = checkRateLimit({
+    const rateLimit = await checkRateLimit({
       key: `brief:${clientIp}`
     });
 
@@ -70,6 +74,16 @@ export async function POST(request: Request) {
           qualityGate: error.qualityGate
         },
         { status: 422 }
+      );
+    }
+
+    if (error instanceof RateLimitConfigurationError) {
+      return NextResponse.json(
+        {
+          status: "configuration_error",
+          error: error.message
+        },
+        { status: 503 }
       );
     }
 

@@ -19,6 +19,9 @@ AI_PROVIDER=deepseek
 AI_MODEL=deepseek-v4-pro
 DEEPSEEK_API_KEY=...
 DATABASE_URL=postgresql://...
+RATE_LIMIT_BACKEND=upstash
+UPSTASH_REDIS_REST_URL=...
+UPSTASH_REDIS_REST_TOKEN=...
 ```
 
 Production requires a valid PostgreSQL `DATABASE_URL` by default. Missing or invalid database configuration fails fast instead of falling back to non-durable memory storage.
@@ -27,9 +30,10 @@ Temporary demo escape hatch:
 
 ```bash
 ALLOW_MEMORY_STORAGE_IN_PRODUCTION=true
+ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true
 ```
 
-Use this only for throwaway demos. Generated briefs will disappear across restarts.
+Use these only for throwaway single-instance demos. Generated briefs will disappear across restarts, and memory rate limits will not be shared across instances.
 
 Recommended production rate limit settings:
 
@@ -111,14 +115,19 @@ Then generate a small mock-source brief first, followed by a live-source brief.
 
 ## Rate Limiting
 
-The current limiter protects `POST /api/briefs` with an in-memory per-IP window.
+The limiter protects `POST /api/briefs` with a per-IP window.
 
-This is acceptable for MVP and single-instance deployments. For multi-instance production, replace or supplement it with one of:
+Local development and tests use in-memory counters by default. Production requires shared Upstash Redis REST rate limiting by default:
 
-- Redis/KV-backed limiter
-- hosting-provider edge rate limiting
-- API gateway rules
-- authenticated per-user quotas
+```bash
+RATE_LIMIT_BACKEND=upstash
+UPSTASH_REDIS_REST_URL=https://...
+UPSTASH_REDIS_REST_TOKEN=...
+```
+
+Missing shared rate-limit configuration returns a controlled configuration error instead of silently using per-instance memory counters. For temporary single-instance demos only, set `ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true`.
+
+Hosting-provider edge rate limiting, API gateway rules, or authenticated per-user quotas can still be layered on top later.
 
 ## Secrets
 
@@ -138,6 +147,10 @@ The repository already ignores `.env`, `.next`, and `node_modules`.
 - [ ] `AI_MODEL=deepseek-v4-pro`.
 - [ ] `DATABASE_URL` points to production PostgreSQL.
 - [ ] `ALLOW_MEMORY_STORAGE_IN_PRODUCTION` is not set for real production deployments.
+- [ ] `RATE_LIMIT_BACKEND=upstash`.
+- [ ] `UPSTASH_REDIS_REST_URL` is configured.
+- [ ] `UPSTASH_REDIS_REST_TOKEN` is configured.
+- [ ] `ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION` is not set for real production deployments.
 - [ ] `PUBLIC_BRIEF_HISTORY_ENABLED` is unset or `false` unless public history is intentional.
 - [ ] `npx prisma migrate deploy` succeeds.
 - [ ] `npm run build` succeeds.

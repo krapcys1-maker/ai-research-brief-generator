@@ -153,6 +153,31 @@ describe("POST /api/briefs", () => {
     expect(payload.error).toContain("Too many brief generation requests");
     expect(createBriefMock).toHaveBeenCalledTimes(1);
   });
+
+  it("returns a controlled configuration error when production rate limiting is missing", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("UPSTASH_REDIS_REST_URL", "");
+    vi.stubEnv("UPSTASH_REDIS_REST_TOKEN", "");
+    vi.stubEnv("ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION", "");
+
+    const { POST } = await import("@/app/api/briefs/route");
+    const response = await POST(
+      new Request("http://localhost/api/briefs", {
+        method: "POST",
+        body: JSON.stringify({
+          query: "retrieval augmented generation",
+          maxPapers: 5,
+          sources: ["mock"]
+        })
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(503);
+    expect(payload.status).toBe("configuration_error");
+    expect(payload.error).toContain("shared rate limit backend");
+    expect(createBriefMock).not.toHaveBeenCalled();
+  });
 });
 
 describe("GET /api/briefs", () => {

@@ -15,7 +15,7 @@ The main risks are:
 - claim grounding is still mostly ID-level, not evidence-level
 - public brief history can expose user research topics without authentication
 - production storage can silently fall back to memory mode
-- rate limiting is process-local and not safe for multi-instance production
+- rate limiting now has a shared Upstash Redis REST production backend, but production envs must be configured before public deploy
 - documentation mixes historical MVP rules with the current implemented state
 - some UX surfaces expose too much diagnostic detail before explaining user value
 
@@ -26,7 +26,7 @@ The main risks are:
 | `sourcePaperIds` do not prove claim-level grounding | Correct | `validateBriefGrounding` checks that IDs exist and are non-empty. It does not verify that the cited paper supports the claim. |
 | MVP documentation is inconsistent with current state | Correct | `PROJECT.md`, `README.md`, `docs/ARCHITECTURE.md`, and `docs/MVP_SPEC.md` still contain historical "no PostgreSQL in MVP" language while PostgreSQL is already implemented. |
 | Public recent brief history is risky without auth | Correct | `GET /api/briefs` returns repository summaries, and the home page has recent brief history. |
-| In-memory rate limiting is not production-grade | Correct | Current limiter uses an in-process `Map`. This is fine for local/single-instance only. |
+| In-memory rate limiting is not production-grade | Addressed | Local/test still use memory, while production can use Upstash Redis REST and fails fast without shared limiting unless an explicit demo escape hatch is set. |
 | Production fallback to in-memory storage is risky | Correct | Current repository selection falls back to memory when `DATABASE_URL` is invalid or missing. This is convenient in development but dangerous in production. |
 | Source quality and ranking need stronger validation | Mostly correct | Source preflight and quality gate now exist, but they are still heuristic and should be clearer and stricter. |
 | Scoring is heuristic | Correct | Current scoring is improved but still keyword/metadata based. Embeddings or hybrid retrieval are not implemented. |
@@ -87,9 +87,11 @@ Acceptance criteria:
 
 ### 3. Replace process-local rate limiting
 
+Status: completed for the current production target.
+
 Problem:
 
-The current rate limiter uses an in-memory `Map`, so limits are not shared across instances.
+The old rate limiter used an in-memory `Map`, so limits were not shared across instances.
 
 Target behavior:
 
@@ -102,8 +104,9 @@ Implementation plan:
 2. Keep the current memory limiter as `MemoryRateLimiter`.
 3. Add `RedisRateLimiter` or `KvRateLimiter`.
 4. Configure via env:
-   - `RATE_LIMIT_BACKEND=memory|redis`
-   - `REDIS_URL` or provider-specific KV vars
+   - `RATE_LIMIT_BACKEND=memory|upstash`
+   - `UPSTASH_REDIS_REST_URL`
+   - `UPSTASH_REDIS_REST_TOKEN`
 5. In production, warn or fail if backend is `memory`.
 6. Add tests around limiter selection and 429 responses.
 

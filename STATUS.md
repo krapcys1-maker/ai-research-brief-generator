@@ -233,12 +233,18 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Updated AI synthesis prompts to require evidence snippets with `paperId`, `evidenceText`, and `supportLevel`.
 - Hardened grounding validation so each evidence snippet must cite a selected paper, appear in the item's `sourcePaperIds`, and overlap with the paper title/abstract/metadata.
 - Rendered evidence snippets in the brief UI and Markdown export.
+- Added a shared rate-limit backend abstraction for costly `POST /api/briefs` generation.
+- Kept in-memory rate limiting as the local development and test backend.
+- Added Upstash Redis REST rate limiting for production with `RATE_LIMIT_BACKEND=upstash`, `UPSTASH_REDIS_REST_URL`, and `UPSTASH_REDIS_REST_TOKEN`.
+- Added production fail-fast rate-limit configuration checks so public deployments no longer silently fall back to per-instance memory counters.
+- Added `ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true` as an explicit temporary single-instance demo escape hatch.
+- Added unit and route tests for memory limiting, Upstash limiting, production misconfiguration, and blocked requests.
 
 ## Important Current Decisions
 
 - Build Phase 1 and Phase 2 first.
 - Real academic source adapters exist, but the app still supports mock data and graceful partial failures.
-- PostgreSQL/Prisma persistence is now available behind the repository contract, while invalid or missing `DATABASE_URL` still falls back to in-memory storage.
+- PostgreSQL/Prisma persistence is now available behind the repository contract, while invalid or missing `DATABASE_URL` falls back to in-memory storage only outside production unless the explicit demo escape hatch is enabled.
 - Do not add authentication, payments, PDF parsing, or autonomous web browsing.
 - All AI output must be structured and validated with Zod.
 - Every key finding, major theme, research gap, and uncertainty must include `sourcePaperIds`.
@@ -246,4 +252,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Follow `docs/REMEDIATION_PLAN.md`. The highest-priority next step is to disable or scope public recent brief history before public deployment.
+Follow `docs/REMEDIATION_PLAN.md`. The highest-priority next step is to simplify the brief UX for non-technical users and then add controlled `Ask this brief` Q&A over selected papers.

@@ -47,6 +47,7 @@ academic APIs → normalized papers → dedupe → ranking → structured AI syn
    - `DEEPSEEK_API_KEY=...`
    - optional `BRIEF_RATE_LIMIT_MAX=5`
    - optional `BRIEF_RATE_LIMIT_WINDOW_MS=600000`
+   - optional `RATE_LIMIT_BACKEND=memory`
    - optional `PUBLIC_BRIEF_HISTORY_ENABLED=true`
 2. Install dependencies:
 
@@ -88,6 +89,14 @@ With PostgreSQL enabled, generated briefs, selected papers, source API cache rec
 In production, a valid PostgreSQL `DATABASE_URL` is required by default. The app fails fast instead of silently switching to non-durable memory storage. For temporary demos only, set `ALLOW_MEMORY_STORAGE_IN_PRODUCTION=true`.
 
 Public recent brief history is enabled by default in local development and disabled by default in production. Set `PUBLIC_BRIEF_HISTORY_ENABLED=true` only when global brief summaries are safe to expose.
+
+Rate limiting uses in-memory counters in local development. In production, configure a shared Upstash Redis REST backend so limits work across instances:
+
+- `RATE_LIMIT_BACKEND=upstash`
+- `UPSTASH_REDIS_REST_URL=...`
+- `UPSTASH_REDIS_REST_TOKEN=...`
+
+For temporary single-instance demos only, set `ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true`.
 
 Optional PostgreSQL integration check:
 
