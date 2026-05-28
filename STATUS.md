@@ -100,6 +100,8 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Improved paper ranking with per-source quality priors, identifier scoring, influential-citation blending, and explicit scoring breakdown fields.
 - Added scoring tests to confirm metadata quality helps when relevance is comparable while relevance remains the strongest signal.
 - Verified `npm test`, `npm run lint`, and `npm run build` after the scoring update.
+- Added score breakdowns to bibliography paper cards, including final score plus relevance, citations, recency, completeness, source, and identifier scores.
+- Verified `npm test`, `npm run lint`, and `npm run build` after the score breakdown UI change.
 
 ## Important Current Decisions
 
@@ -113,4 +115,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Next practical options: add richer source diagnostics per adapter/query, improve the result UI with visible score breakdowns, or add durable persistence when ready to move beyond process memory.
+Next practical options: add richer source diagnostics per adapter/query, add Markdown export coverage for source/search metadata, or add durable persistence when ready to move beyond process memory.

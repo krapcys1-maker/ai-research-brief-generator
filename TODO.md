@@ -93,6 +93,7 @@
 - [x] Add source drawer.
 - [x] Add warnings for failed sources.
 - [x] Add source/result diagnostics.
+- [x] Show paper score breakdowns.
 
 ## Phase 8 — Export
 
