@@ -36,6 +36,83 @@ Return only valid JSON matching the requested schema.
 Do not return markdown.
 Do not wrap the JSON in code fences.`;
 
+function normalizeQuestion(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function isSelectionRationaleQuestion(question: string) {
+  const normalized = normalizeQuestion(question);
+
+  return (
+    /\bwhy\b.*\b(select|selected|choose|chosen|include|included)\b/.test(
+      normalized
+    ) ||
+    /\bdlaczego\b.*\b(wybran|wybrano|dobran|uwzglednion|artykul|paper|zrod)\w*\b/.test(
+      normalized
+    )
+  );
+}
+
+function evidenceTextForPaper(paper: NormalizedPaper) {
+  const candidate = paper.abstract?.trim() || paper.title;
+  return candidate.length > 280 ? `${candidate.slice(0, 277).trim()}...` : candidate;
+}
+
+function synthesizeSelectionRationale(input: SynthesizeAnswerInput): BriefAnswer {
+  const citedPapers = input.papers.slice(0, 3);
+  const isPolish = input.outputLanguage === "pl";
+  const answer = isPolish
+    ? "Te artykuly zostaly wybrane, bo sa wsrod najwyzej ocenionych zrodel uzytych w briefie i ich tytuly lub abstrakty bezposrednio lacza sie z tematem zapytania. Ponizej pokazuje konkretne dowody z metadanych wybranych paperow."
+    : "These papers were selected because they are among the highest-ranked sources used in the brief and their titles or abstracts directly connect to the research query. The concrete evidence from selected paper metadata is listed below.";
+
+  const claims = citedPapers.map((paper) => {
+    const evidenceText = evidenceTextForPaper(paper);
+    const claim = isPolish
+      ? `"${paper.title}" zostal wybrany, bo jego metadane wspieraja temat briefu: ${input.brief.query}.`
+      : `"${paper.title}" was selected because its metadata supports the brief topic: ${input.brief.query}.`;
+    const explanation = isPolish
+      ? `Dowod pochodzi z tytulu lub abstraktu paperu; aplikacja nie dopowiada tu informacji spoza wybranych zrodel.`
+      : "The evidence comes from the paper title or abstract; the app does not add information outside the selected sources here.";
+
+    return {
+      claim,
+      explanation,
+      sourcePaperIds: [paper.id],
+      evidence: [
+        {
+          paperId: paper.id,
+          evidenceText,
+          supportLevel: "direct" as const
+        }
+      ]
+    };
+  });
+
+  const groundedAnswer = BriefAnswerSchema.parse({
+    question: input.question,
+    outputLanguage: input.outputLanguage,
+    answer,
+    confidence: "medium",
+    notAnswerableFromSources: false,
+    claims,
+    suggestedFollowUpQuestions: isPolish
+      ? [
+          "Ktory z wybranych paperow jest najmocniej dopasowany do pytania?",
+          "Ktore wnioski maja tylko posrednie wsparcie w zrodlach?"
+        ]
+      : [
+          "Which selected paper is the strongest match for the question?",
+          "Which findings have only indirect source support?"
+        ]
+  });
+
+  validateBriefAnswerGrounding(groundedAnswer, input.papers);
+  return groundedAnswer;
+}
+
 function buildAnswerPrompt(input: SynthesizeAnswerInput) {
   const papersJson = JSON.stringify(
     input.papers.map((paper) => ({
@@ -142,6 +219,7 @@ export function validateBriefAnswerGrounding(
   papers: NormalizedPaper[]
 ) {
   const paperIds = new Set(papers.map((paper) => paper.id));
+  const papersById = new Map(papers.map((paper) => [paper.id, paper]));
 
   if (answer.notAnswerableFromSources) {
     if (answer.claims.length > 0) {
@@ -158,18 +236,43 @@ export function validateBriefAnswerGrounding(
       }
     }
 
+    const additionalSupportText = claim.sourcePaperIds
+      .map((id) => {
+        const paper = papersById.get(id);
+
+        if (!paper) {
+          return "";
+        }
+
+        return [
+          paper.title,
+          paper.abstract,
+          paper.venue,
+          paper.authors.join(" "),
+          paper.year?.toString()
+        ]
+          .filter(Boolean)
+          .join(" ");
+      })
+      .join(" ");
+
     validateClaimGrounding({
       evidence: claim.evidence,
       sourcePaperIds: claim.sourcePaperIds,
       section: "answer claim",
       claimText: `${claim.claim} ${claim.explanation}`,
       papers,
-      allowsWeakSupport: answer.confidence === "low"
+      allowsWeakSupport: answer.confidence === "low",
+      additionalSupportText
     });
   }
 }
 
 export async function synthesizeAnswer(input: SynthesizeAnswerInput) {
+  if (isSelectionRationaleQuestion(input.question)) {
+    return synthesizeSelectionRationale(input);
+  }
+
   const provider = createAIProvider();
   let lastError: unknown;
 

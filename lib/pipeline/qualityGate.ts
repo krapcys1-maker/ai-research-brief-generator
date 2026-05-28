@@ -1,4 +1,5 @@
 import type { BriefRequest } from "@/lib/ai/schemas";
+import { getPaperQueryAlignment } from "@/lib/pipeline/paperInsights";
 import type { NormalizedPaper, ResearchSource } from "@/lib/sources/types";
 
 export type ResearchQualityGateResult = {
@@ -66,6 +67,18 @@ function buildSuggestions(input: {
   return [...suggestions].slice(0, 4);
 }
 
+function getBestQueryAlignmentScore(paper: NormalizedPaper, queryVariants: string[]) {
+  if (!queryVariants.length) {
+    return 0;
+  }
+
+  return Math.max(
+    ...queryVariants.map(
+      (variant) => getPaperQueryAlignment(paper, variant).combinedScore
+    )
+  );
+}
+
 export function evaluateResearchQuality(input: {
   request: BriefRequest;
   selected: NormalizedPaper[];
@@ -80,6 +93,15 @@ export function evaluateResearchQuality(input: {
     ? input.selected.reduce((sum, paper) => sum + (paper.relevanceScore ?? 0), 0) /
       selectedPaperCount
     : 0;
+  const queryAlignmentScores = input.selected.map((paper) =>
+    getBestQueryAlignmentScore(paper, input.queryVariants)
+  );
+  const strongQueryAlignmentPaperCount = queryAlignmentScores.filter(
+    (score) => score >= 0.65
+  ).length;
+  const weakQueryAlignmentPaperCount = queryAlignmentScores.filter(
+    (score) => score < 0.3
+  ).length;
   const liveSourcesRequested = getLiveSources(input.request.sources).length > 0;
   const mockOnly = selectedPaperCount > 0 && mockPaperCount === selectedPaperCount;
   const reasons: string[] = [];
@@ -96,15 +118,28 @@ export function evaluateResearchQuality(input: {
     reasons.push("The selected papers have weak relevance to the query.");
   }
 
+  if (
+    selectedPaperCount >= 3 &&
+    strongQueryAlignmentPaperCount === 0 &&
+    weakQueryAlignmentPaperCount >= selectedPaperCount * 0.6
+  ) {
+    reasons.push("The selected papers only weakly match the query wording and variants.");
+  }
+
   if (liveSourcesRequested && mockOnly) {
     reasons.push("Only mock/demo papers were selected even though live sources were requested.");
   }
 
   const canSynthesize = reasons.length === 0;
+  const hasStrongAlignment =
+    strongQueryAlignmentPaperCount >= Math.max(1, selectedPaperCount * 0.25);
   const coverage =
     !canSynthesize
       ? "poor"
-      : selectedPaperCount >= 6 && livePaperCount >= 3 && averageRelevance >= 0.45
+      : selectedPaperCount >= 6 &&
+          livePaperCount >= 3 &&
+          averageRelevance >= 0.45 &&
+          hasStrongAlignment
         ? "good"
         : "limited";
 

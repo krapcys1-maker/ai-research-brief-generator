@@ -289,6 +289,20 @@ describe("claim/evidence benchmark fixtures", () => {
     expect(() => validateBriefGrounding(brief, [metricPaper])).not.toThrow();
   });
 
+  it("allows standalone publication years without treating them as effect sizes", () => {
+    const brief = briefWithFinding({
+      finding: "Lewis et al. 2020 introduced retrieval augmented generation.",
+      explanation:
+        "The year is citation context, while the claim is grounded by the evidence snippet.",
+      confidence: "high",
+      evidenceText:
+        "Retrieval augmented generation supports clinical evaluation by grounding answers in retrieved medical evidence",
+      supportLevel: "direct"
+    });
+
+    expect(() => validateBriefGrounding(brief, [ragPaper])).not.toThrow();
+  });
+
   it("rejects statistical significance claims when evidence only reports a directional result", () => {
     const brief = briefWithFinding({
       finding:

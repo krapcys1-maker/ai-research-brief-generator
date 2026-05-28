@@ -25,6 +25,8 @@ describe("evaluateResearchQuality", () => {
     const selected = Array.from({ length: 6 }, (_, index) =>
       createPaper({
         id: `paper_${index}`,
+        title: "CRISPR Gene Therapy Safety",
+        abstract: "CRISPR gene therapy safety evidence.",
         source: "openalex",
         relevanceScore: 0.7
       })

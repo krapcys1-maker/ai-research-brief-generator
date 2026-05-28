@@ -103,6 +103,13 @@ export async function POST(
     const message =
       error instanceof Error ? error.message : "Could not answer this brief question.";
 
+    if (message.startsWith("Could not generate a valid grounded answer")) {
+      return errorResponse(
+        "The selected sources were not enough to produce a validated grounded answer. Try a narrower question or generate a brief with stronger source coverage.",
+        422
+      );
+    }
+
     return errorResponse(message, 500);
   }
 }

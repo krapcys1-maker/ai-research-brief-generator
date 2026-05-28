@@ -108,4 +108,41 @@ describe("POST /api/briefs/[id]/questions", () => {
     expect(payload.status).toBe("error");
     expect(synthesizeAnswerMock).not.toHaveBeenCalled();
   });
+
+  it("returns a controlled validation error when Q&A cannot be grounded", async () => {
+    const brief = createBrief();
+    const paper = createPaper();
+
+    getBriefRepositoryMock.mockResolvedValueOnce({
+      saveWithPapers: vi.fn(),
+      getById: vi.fn().mockResolvedValue({
+        brief,
+        papers: [paper],
+        createdAt: "2026-01-01T00:00:00.000Z"
+      }),
+      list: vi.fn(),
+      listSummaries: vi.fn(),
+      clear: vi.fn()
+    });
+    synthesizeAnswerMock.mockRejectedValueOnce(
+      new Error(
+        "Could not generate a valid grounded answer: answer claim is not supported by its evidence snippets"
+      )
+    );
+
+    const { POST } = await import("@/app/api/briefs/[id]/questions/route");
+    const response = await POST(
+      new Request("http://localhost/api/briefs/brief_1/questions", {
+        method: "POST",
+        body: JSON.stringify({
+          question: "Dlaczego?"
+        })
+      }),
+      { params: Promise.resolve({ id: "brief_1" }) }
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(422);
+    expect(payload.error).toContain("selected sources were not enough");
+  });
 });

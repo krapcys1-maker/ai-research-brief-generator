@@ -41,8 +41,8 @@ The app supports:
 
 ## Latest Completed Step
 
-Added comparative claim grounding checks for briefs and `Ask This Brief`. The validator now rejects unsupported comparison language such as "better than", "outperforms", "more effective than", "versus", and Polish equivalents like "skuteczniejszy niz" unless evidence snippets and selected paper metadata contain a comparative signal.
+Completed a manual QA and source-quality audit. The main fixes were query-variant alignment in source preflight/brief UI, stricter quality-gate alignment checks, safer Polish Q&A grounding, controlled Q&A validation errors, deterministic selection-rationale answers, and duplicate-key cleanup in preflight lists. Details are in `docs/QA_REPORT.md`.
 
 ## Next Recommended Step
 
-Follow `docs/ROADMAP.md`. The next practical research-quality step is expanding retrieval benchmarks with more gold queries and expected source IDs, then starting the embeddings provider abstraction for hybrid retrieval.
+Move long-running generation to an async job flow with polling. After that, expand retrieval benchmarks and start the embeddings provider abstraction for hybrid retrieval.

@@ -218,8 +218,8 @@ function SourcePreflightPanel({
         <div className="preflight-block">
           <h3>Before generating</h3>
           <ul>
-            {preflight.qualityGate.reasons.map((reason) => (
-              <li key={reason}>{formatPreflightWarning(reason)}</li>
+            {preflight.qualityGate.reasons.map((reason, index) => (
+              <li key={`${reason}:${index}`}>{formatPreflightWarning(reason)}</li>
             ))}
           </ul>
         </div>
@@ -231,9 +231,9 @@ function SourcePreflightPanel({
             {copy.tone === "good" ? "Optional refinement" : "Try a better query"}
           </h3>
           <div className="preflight-suggestion-list">
-            {preflight.qualityGate.suggestions.map((suggestion) => (
+            {preflight.qualityGate.suggestions.map((suggestion, index) => (
               <button
-                key={suggestion}
+                key={`${suggestion}:${index}`}
                 type="button"
                 onClick={() => onUseSuggestion(suggestion)}
               >
@@ -285,8 +285,8 @@ function SourcePreflightPanel({
                 </p>
                 {paper.insight?.strengths.length ? (
                   <ul className="compact-list">
-                    {paper.insight.strengths.slice(0, 3).map((item) => (
-                      <li key={item}>{item}</li>
+                    {paper.insight.strengths.slice(0, 3).map((item, index) => (
+                      <li key={`${item}:${index}`}>{item}</li>
                     ))}
                   </ul>
                 ) : null}
@@ -335,8 +335,8 @@ function SourcePreflightPanel({
         <div className="preflight-block">
           <h3>Source issues</h3>
           <ul>
-            {preflight.searchSummary.warnings.slice(0, 5).map((warning) => (
-              <li key={warning}>{formatPreflightWarning(warning)}</li>
+            {preflight.searchSummary.warnings.slice(0, 5).map((warning, index) => (
+              <li key={`${warning}:${index}`}>{formatPreflightWarning(warning)}</li>
             ))}
           </ul>
         </div>
@@ -662,8 +662,8 @@ export function ResearchForm({ examples }: ResearchFormProps) {
                 </div>
                 {qualityGate.reasons.length ? (
                   <ul>
-                    {qualityGate.reasons.map((reason) => (
-                      <li key={reason}>{formatPreflightWarning(reason)}</li>
+                    {qualityGate.reasons.map((reason, index) => (
+                      <li key={`${reason}:${index}`}>{formatPreflightWarning(reason)}</li>
                     ))}
                   </ul>
                 ) : null}
@@ -671,9 +671,9 @@ export function ResearchForm({ examples }: ResearchFormProps) {
                   <div className="quality-gate-suggestions">
                     <strong>Try next</strong>
                     <div>
-                      {qualityGate.suggestions.map((suggestion) => (
+                      {qualityGate.suggestions.map((suggestion, index) => (
                         <button
-                          key={suggestion}
+                          key={`${suggestion}:${index}`}
                           type="button"
                           onClick={() => applySuggestion(suggestion)}
                         >

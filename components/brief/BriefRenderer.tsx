@@ -254,7 +254,8 @@ function QualitySummary({
 }) {
   const quality = getBriefQuality(brief, papers);
   const sourceCounts = getPaperSourceCounts(papers);
-  const sourceQuality = getSourceQualitySummary(papers, brief.query);
+  const alignmentQuery = brief.searchSummary.queryVariants.join(" ");
+  const sourceQuality = getSourceQualitySummary(papers, alignmentQuery);
 
   return (
     <section className="quality-panel" aria-label="Brief quality summary">
@@ -1033,6 +1034,7 @@ export function BriefRenderer({
     () => new Map(papers.map((paper) => [paper.id, paper])),
     [papers]
   );
+  const alignmentQuery = brief.searchSummary.queryVariants.join(" ");
   const selectedPaper = selectedPaperId
     ? papersById.get(selectedPaperId) ?? null
     : null;
@@ -1070,7 +1072,7 @@ export function BriefRenderer({
 
       <ReadingPath
         papers={papers}
-        query={brief.query}
+        query={alignmentQuery}
         onSelect={setSelectedPaperId}
       />
 
@@ -1240,13 +1242,13 @@ export function BriefRenderer({
       <Section title="Bibliography">
         <div className="stack">
           {papers.map((paper) => (
-            <PaperCard key={paper.id} paper={paper} query={brief.query} />
+            <PaperCard key={paper.id} paper={paper} query={alignmentQuery} />
           ))}
         </div>
       </Section>
       <SourceDrawer
         paper={selectedPaper}
-        query={brief.query}
+        query={alignmentQuery}
         onClose={() => setSelectedPaperId(null)}
       />
     </div>

@@ -43,13 +43,13 @@ describe("synthesizeAnswer", () => {
     });
 
     const answer = await synthesizeAnswer({
-      question: "Dlaczego ten artykul zostal wybrany?",
+      question: "Jak RAG wspiera odpowiedzi kliniczne?",
       outputLanguage: "pl",
       brief: createBrief(),
       papers: [paper]
     });
 
-    expect(answer.question).toBe("Dlaczego ten artykul zostal wybrany?");
+    expect(answer.question).toBe("Jak RAG wspiera odpowiedzi kliniczne?");
     expect(answer.outputLanguage).toBe("pl");
     expect(answer.claims[0].sourcePaperIds).toEqual(["paper_1"]);
   });
@@ -79,11 +79,70 @@ describe("synthesizeAnswer", () => {
     expect(answer.claims).toEqual([]);
   });
 
+  it("accepts Polish Q&A claims when English evidence and cited paper metadata support them", async () => {
+    vi.mocked(createAIProvider).mockReturnValue({
+      name: "deepseek",
+      generateStructured: async () => ({
+        question: "Jak RAG wspiera diagnostyke medyczna?",
+        outputLanguage: "pl",
+        answer:
+          "Wybrane artykuly dotycza RAG w diagnostyce medycznej i ocenie klinicznej.",
+        confidence: "medium",
+        notAnswerableFromSources: false,
+        claims: [
+          {
+            claim:
+              "Wybrane artykuly dotycza RAG w diagnostyce medycznej i ocenie klinicznej.",
+            explanation:
+              "Metadane paperu wskazuja na medical diagnosis oraz clinical evaluation.",
+            sourcePaperIds: ["paper_1"],
+            evidence: [
+              {
+                paperId: "paper_1",
+                evidenceText:
+                  "retrieval grounded generation in clinical evaluation and reliability",
+                supportLevel: "direct"
+              }
+            ]
+          }
+        ],
+        suggestedFollowUpQuestions: []
+      })
+    });
+
+    const answer = await synthesizeAnswer({
+      question: "Jak RAG wspiera diagnostyke medyczna?",
+      outputLanguage: "pl",
+      brief: createBrief(),
+      papers: [createPaper()]
+    });
+
+    expect(answer.claims[0].claim).toContain("diagnostyce medycznej");
+  });
+
+  it("answers paper selection rationale deterministically from selected paper metadata", async () => {
+    vi.mocked(createAIProvider).mockClear();
+
+    const answer = await synthesizeAnswer({
+      question: "Dlaczego te artykuly zostaly wybrane?",
+      outputLanguage: "pl",
+      brief: createBrief(),
+      papers: [createPaper()]
+    });
+
+    expect(createAIProvider).not.toHaveBeenCalled();
+    expect(answer.notAnswerableFromSources).toBe(false);
+    expect(answer.claims[0].sourcePaperIds).toEqual(["paper_1"]);
+    expect(answer.claims[0].evidence[0].evidenceText).toContain(
+      "retrieval grounded generation"
+    );
+  });
+
   it("rejects answers that cite unknown paper IDs", async () => {
     vi.mocked(createAIProvider).mockReturnValue({
       name: "deepseek",
       generateStructured: async () => ({
-        question: "Why was this selected?",
+        question: "What supports this answer?",
         outputLanguage: "en",
         answer: "The selected source supports the answer.",
         confidence: "high",
@@ -108,7 +167,7 @@ describe("synthesizeAnswer", () => {
 
     await expect(
       synthesizeAnswer({
-        question: "Why was this selected?",
+        question: "What supports this answer?",
         outputLanguage: "en",
         brief: createBrief(),
         papers: [createPaper()]

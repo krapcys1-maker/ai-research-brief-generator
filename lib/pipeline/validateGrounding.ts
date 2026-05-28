@@ -42,6 +42,33 @@ const STOPWORDS = new Set([
   "with"
 ]);
 
+const TOKEN_TRANSLATIONS: Record<string, string[]> = {
+  diagnoza: ["diagnosis"],
+  diagnostyka: ["diagnosis"],
+  diagnostyczn: ["diagnosis"],
+  hallucination: ["hallucination"],
+  halucynacja: ["hallucination"],
+  halucynacji: ["hallucination"],
+  halucynacje: ["hallucination"],
+  kliniczn: ["clinical"],
+  medyczn: ["medical"],
+  ogranicza: ["reduce"],
+  ograniczaj: ["reduce"],
+  ograniczan: ["reduce"],
+  poprawa: ["improve"],
+  poprawiaj: ["improve"],
+  poprawia: ["improve"],
+  redukcja: ["reduce"],
+  redukuje: ["reduce"],
+  wiarygodnosc: ["reliability"],
+  wiernosci: ["faithfulness"],
+  wiernosc: ["faithfulness"],
+  wyszukiwa: ["retrieve"],
+  wyszukiwanie: ["retrieve"],
+  zrodlo: ["source"],
+  zrodla: ["source"]
+};
+
 function stemToken(token: string) {
   if (token === "grounded" || token === "grounding") {
     return "ground";
@@ -66,14 +93,19 @@ function stemToken(token: string) {
   return token;
 }
 
+function expandToken(token: string) {
+  const stemmed = stemToken(token);
+  return [stemmed, ...(TOKEN_TRANSLATIONS[stemmed] ?? [])];
+}
+
 function tokenize(value: string) {
   return value
     .toLowerCase()
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
     .split(/[^a-z0-9]+/i)
-    .map(stemToken)
-    .filter((token) => token.length >= 4 && !STOPWORDS.has(token));
+    .flatMap(expandToken)
+    .filter((token) => (token.length >= 4 || token === "rag") && !STOPWORDS.has(token));
 }
 
 const ABSOLUTE_CLAIM_TERMS = new Set([
@@ -193,6 +225,17 @@ function normalizeNumericSignal(value: string) {
   return `number:${normalized}`;
 }
 
+function isLikelyStandaloneYear(value: string) {
+  const normalized = value.trim();
+
+  if (!/^\d{4}$/.test(normalized)) {
+    return false;
+  }
+
+  const year = Number(normalized);
+  return year >= 1900 && year <= 2100;
+}
+
 function getQuantitativeSignals(value: string) {
   const normalized = normalizeForSignals(value);
   const signals = new Set<string>();
@@ -208,6 +251,10 @@ function getQuantitativeSignals(value: string) {
   const numericMatches = normalized.match(numericPattern) ?? [];
 
   for (const match of numericMatches) {
+    if (isLikelyStandaloneYear(match)) {
+      continue;
+    }
+
     signals.add(normalizeNumericSignal(match));
   }
 
@@ -287,11 +334,14 @@ export function hasEvidenceOverlap(evidenceText: string, paper: NormalizedPaper)
 
 export function hasClaimEvidenceOverlap(
   claimText: string,
-  evidence: EvidenceLink[]
+  evidence: EvidenceLink[],
+  additionalSupportText = ""
 ) {
   const claimTokens = new Set(tokenize(claimText));
   const evidenceTokens = new Set(
-    evidence.flatMap((item) => tokenize(item.evidenceText))
+    evidence
+      .flatMap((item) => tokenize(item.evidenceText))
+      .concat(tokenize(additionalSupportText))
   );
 
   if (!claimTokens.size || !evidenceTokens.size) {
@@ -397,6 +447,7 @@ export function validateClaimGrounding(input: {
   claimText: string;
   papers: NormalizedPaper[];
   allowsWeakSupport?: boolean;
+  additionalSupportText?: string;
 }) {
   validateEvidenceLinks({
     evidence: input.evidence,
@@ -405,7 +456,13 @@ export function validateClaimGrounding(input: {
     papers: input.papers
   });
 
-  if (!hasClaimEvidenceOverlap(input.claimText, input.evidence)) {
+  if (
+    !hasClaimEvidenceOverlap(
+      input.claimText,
+      input.evidence,
+      input.additionalSupportText
+    )
+  ) {
     throw new Error(
       `${input.section} claim is not supported by its evidence snippets`
     );
