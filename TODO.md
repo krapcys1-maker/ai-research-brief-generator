@@ -4,12 +4,12 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 
 ## Next
 
-- [ ] Add benchmark fixtures for synonyms, acronyms, Polish/English variants, and interdisciplinary topics.
+- [ ] Expand retrieval benchmark fixtures with more gold queries and expected source IDs.
+- [ ] Add claim/evidence evaluation benchmark fixtures for direct, indirect, and weak support.
 
 ## Production Readiness
 
 - [ ] Add authentication or session-scoped/private brief history.
-- [ ] Add deployment smoke checks for preflight, generation, Q&A, export, and source health.
 - [ ] Add a clear production privacy note before public deployment.
 
 ## Research Quality

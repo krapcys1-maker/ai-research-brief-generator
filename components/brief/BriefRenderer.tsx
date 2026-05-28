@@ -358,6 +358,14 @@ function BriefAtAGlance({
           </p>
         </div>
         <div>
+          <span className="metric-label">Evidence boundary</span>
+          <strong>Abstract-level only</strong>
+          <p>
+            Not full-text PDF verification. Treat this as a metadata/abstract
+            briefing.
+          </p>
+        </div>
+        <div>
           <span className="metric-label">Review focus</span>
           <strong>{cautionCount} open issues</strong>
           <p>

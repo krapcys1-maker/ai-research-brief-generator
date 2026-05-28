@@ -41,8 +41,8 @@ The app supports:
 
 ## Latest Completed Step
 
-Added a repeatable deployment smoke check. `npm run smoke:deploy` verifies source health, preflight, brief generation, brief API fetch, rendered brief page, `Ask This Brief`, Markdown export, source grounding, and Polish output language against a running deployment.
+Added first retrieval benchmark fixtures and tightened product messaging around the evidence boundary. The test suite now covers acronym expansion, Polish/English query variants, typo recovery, interdisciplinary retrieval, and domain-specific query expansion; the brief UI now states that current evidence is abstract/metadata-level, not full-text PDF verification.
 
 ## Next Recommended Step
 
-Follow `docs/ROADMAP.md`. The next practical research-quality step is benchmark fixtures for synonyms, acronyms, Polish/English variants, and interdisciplinary topics.
+Follow `docs/ROADMAP.md`. The next practical research-quality step is expanding benchmark fixtures with gold source IDs and adding claim/evidence evaluation cases for direct, indirect, and weak support.

@@ -53,6 +53,13 @@ const polishStopWords = new Set([
   "oraz"
 ]);
 
+const acronymExpansions: Record<string, string> = {
+  gnn: "graph neural networks",
+  llm: "large language models",
+  llms: "large language models",
+  rag: "retrieval augmented generation"
+};
+
 function normalizeWhitespace(value: string) {
   return value.replace(/\s+/g, " ").trim();
 }
@@ -78,6 +85,16 @@ function unique(values: string[]) {
   }
 
   return result;
+}
+
+function expandAcronyms(query: string) {
+  return query
+    .split(/\s+/)
+    .map((word) => {
+      const normalized = normalizeLookupTerm(word);
+      return acronymExpansions[normalized] ?? word;
+    })
+    .join(" ");
 }
 
 function translatePolishTerms(query: string) {
@@ -106,9 +123,11 @@ export function generateQueryVariants(input: {
     input.outputLanguage === "pl"
       ? translatePolishTerms(input.query)
       : input.query;
+  const expandedOriginal = expandAcronyms(input.query);
+  const expandedTranslated = expandAcronyms(translated);
 
   const domainVariants =
-    translated.includes("stem cells") && translated.includes("burn")
+    expandedTranslated.includes("stem cells") && expandedTranslated.includes("burn")
       ? [
           "stem cells burn treatment",
           "mesenchymal stem cells burn wound treatment",
@@ -119,10 +138,12 @@ export function generateQueryVariants(input: {
   const variants = unique([
     input.query,
     translated,
+    expandedOriginal,
+    expandedTranslated,
     ...domainVariants,
-    `${translated} systematic review`,
-    `${translated} benchmark evaluation`,
-    `${translated} survey`
+    `${expandedTranslated} systematic review`,
+    `${expandedTranslated} benchmark evaluation`,
+    `${expandedTranslated} survey`
   ]);
 
   return variants.slice(0, 5);

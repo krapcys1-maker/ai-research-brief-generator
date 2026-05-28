@@ -7,21 +7,10 @@ Last updated: 2026-05-28
 - Add authentication or session-scoped/private brief history.
 - Keep production PostgreSQL fail-fast behavior enabled.
 - Keep production shared rate limiting enabled through Upstash Redis REST or equivalent KV.
-- Add deployment smoke checks for:
-  - `POST /api/briefs/preflight`
-  - `POST /api/briefs`
-  - `POST /api/briefs/[id]/questions`
-  - `GET /api/export/[id]?format=markdown`
 - Add a clear production privacy note before enabling public deployments.
 
 ## P1: Research Quality
 
-- Add richer source coverage assessment:
-  - abstract coverage
-  - DOI/identifier coverage
-  - source diversity
-  - query-title alignment
-  - live-source reliability
 - Add hybrid retrieval:
   - lexical score
   - embedding similarity
@@ -29,8 +18,8 @@ Last updated: 2026-05-28
   - source diversity
   - citation/recency balance
 - Add embeddings provider abstraction separate from the chat provider.
-- Improve paper-level "why read this paper" explanations in preflight and bibliography.
-- Add adapter contract tests for arXiv, Semantic Scholar, and OpenAlex response drift.
+- Expand retrieval benchmarks with more gold queries and expected source IDs.
+- Add claim/evidence evaluation benchmarks for direct, indirect, and weak support.
 
 ## P2: Product UX
 

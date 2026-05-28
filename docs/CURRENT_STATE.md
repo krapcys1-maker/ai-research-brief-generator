@@ -22,6 +22,7 @@ user query -> source adapters -> normalized papers -> dedupe/ranking -> quality 
   - OpenAlex
 - Source search orchestration with query expansion, timeout handling, retry behavior, partial failure warnings, and source diagnostics.
 - Paper normalization, DOI/arXiv/Semantic Scholar/OpenAlex ID dedupe, scoring, source quality signals, and top-paper selection.
+- Deterministic paper-level reading guidance, source-quality summaries, and query-title/abstract alignment signals.
 - Research Quality Gate that blocks weak source coverage before calling the AI provider.
 - Provider-agnostic AI wrapper with DeepSeek as the implemented default:
   - `AI_PROVIDER=deepseek`
@@ -38,6 +39,9 @@ user query -> source adapters -> normalized papers -> dedupe/ranking -> quality 
 - Production fail-fast behavior for missing persistence and missing shared rate limiting unless explicit demo escape hatches are set.
 - Upstash Redis REST rate limiting for production deployments.
 - Vitest coverage for core pipeline, schemas, routes, storage, source diagnostics, grounding, Q&A, rate limiting, and export.
+- Adapter contract tests for arXiv, Semantic Scholar, and OpenAlex response-shape drift.
+- Retrieval benchmark fixtures for acronyms, Polish/English variants, typo recovery, interdisciplinary topics, and domain-specific query expansion.
+- Repeatable deployment smoke check through `npm run smoke:deploy`.
 
 ## Storage Modes
 
@@ -79,7 +83,7 @@ ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true
 
 - The app grounds on selected paper metadata and abstracts, not parsed full-text PDFs.
 - Scoring is still heuristic and keyword/metadata based; embeddings are not implemented.
-- Source preflight is improved but still needs richer coverage dimensions such as abstract coverage, identifier coverage, source diversity, and query-title alignment.
+- Source preflight is improved, but retrieval quality still needs semantic matching beyond lexical/title/abstract scoring.
 - Generation is still synchronous; long-running production generation should move to a job flow.
 - Authentication and private user-scoped history are not implemented.
 - shadcn/ui is not implemented; current UI uses custom CSS.
