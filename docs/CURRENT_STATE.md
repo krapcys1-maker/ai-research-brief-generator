@@ -30,6 +30,7 @@ user query -> source adapters -> normalized papers -> dedupe/ranking -> quality 
   - `DEEPSEEK_API_KEY`
 - Structured JSON synthesis validated with Zod.
 - Claim-level grounding with `sourcePaperIds` and evidence snippets for executive summaries, findings, themes, gaps, and uncertainties.
+- Grounding validation checks selected paper IDs, evidence-to-paper metadata overlap, claim-to-evidence overlap, weak-evidence caveats, and bibliography DOI consistency.
 - Grounded `Ask This Brief` Q&A over selected papers for a single generated brief.
 - Brief result UI with bottom line, confidence, reading path, priority takeaways, evidence snippets, source drawer, bibliography, and collapsed technical diagnostics.
 - Markdown export through `GET /api/export/[id]?format=markdown`.
@@ -41,6 +42,7 @@ user query -> source adapters -> normalized papers -> dedupe/ranking -> quality 
 - Vitest coverage for core pipeline, schemas, routes, storage, source diagnostics, grounding, Q&A, rate limiting, and export.
 - Adapter contract tests for arXiv, Semantic Scholar, and OpenAlex response-shape drift.
 - Retrieval benchmark fixtures for acronyms, Polish/English variants, typo recovery, interdisciplinary topics, and domain-specific query expansion.
+- Claim/evidence benchmark fixtures for direct, indirect, weak, and unsupported-claim cases.
 - Repeatable deployment smoke check through `npm run smoke:deploy`.
 
 ## Storage Modes

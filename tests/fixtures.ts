@@ -4,7 +4,8 @@ import type { NormalizedPaper } from "@/lib/sources/types";
 const defaultEvidence = [
   {
     paperId: "paper_1",
-    evidenceText: "grounded generation in clinical settings",
+    evidenceText:
+      "retrieval grounded generation supports clinical evaluation and reliability",
     supportLevel: "direct" as const
   }
 ];
@@ -13,7 +14,8 @@ export function createPaper(overrides: Partial<NormalizedPaper> = {}): Normalize
   return {
     id: "paper_1",
     title: "Retrieval-Augmented Generation for Medical Diagnosis",
-    abstract: "A study about grounded generation in clinical settings.",
+    abstract:
+      "A study about retrieval grounded generation in clinical evaluation and reliability.",
     authors: ["Ada Researcher"],
     year: 2024,
     publishedAt: "2024-01-01",

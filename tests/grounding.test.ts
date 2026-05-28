@@ -89,14 +89,15 @@ describe("validateBriefGrounding", () => {
     const brief = createBrief({
       keyFindings: [
         {
-          finding: "Weak evidence",
-          explanation: "Weak evidence must be marked carefully.",
+          finding: "Retrieval grounding has weak clinical evidence.",
+          explanation: "Weak retrieval evidence must be marked carefully.",
           confidence: "medium",
           sourcePaperIds: ["paper_1"],
           evidence: [
             {
               paperId: "paper_1",
-              evidenceText: "grounded generation in clinical settings",
+              evidenceText:
+                "retrieval grounded generation supports clinical evaluation and reliability",
               supportLevel: "weak"
             }
           ],

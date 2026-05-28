@@ -41,8 +41,8 @@ The app supports:
 
 ## Latest Completed Step
 
-Added first retrieval benchmark fixtures and tightened product messaging around the evidence boundary. The test suite now covers acronym expansion, Polish/English query variants, typo recovery, interdisciplinary retrieval, and domain-specific query expansion; the brief UI now states that current evidence is abstract/metadata-level, not full-text PDF verification.
+Added claim/evidence benchmark fixtures and strengthened grounding validation. The validator now checks that claim text overlaps its evidence snippets in addition to checking evidence-to-paper metadata support, so a real paper ID with unrelated evidence is no longer enough.
 
 ## Next Recommended Step
 
-Follow `docs/ROADMAP.md`. The next practical research-quality step is expanding benchmark fixtures with gold source IDs and adding claim/evidence evaluation cases for direct, indirect, and weak support.
+Follow `docs/ROADMAP.md`. The next practical research-quality step is expanding retrieval and claim/evidence benchmarks with more gold queries, expected source IDs, and adversarial unsupported-claim cases.

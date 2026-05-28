@@ -69,7 +69,7 @@ describe("researchBriefToMarkdown", () => {
     expect(markdown).toContain("- Weak query-title/abstract matches:");
     expect(markdown).toContain("**Evidence:**");
     expect(markdown).toContain(
-      "- [paper_1] (direct) grounded generation in clinical settings"
+      "- [paper_1] (direct) retrieval grounded generation supports clinical evaluation and reliability"
     );
     expect(markdown).toContain(
       "- DOI: [10.1000/example](https://doi.org/10.1000/example)"

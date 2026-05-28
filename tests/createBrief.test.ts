@@ -176,7 +176,8 @@ describe("createBrief", () => {
             {
               id: "paper_1",
               title: "Retrieval-Augmented Generation for Medical Diagnosis",
-              abstract: "A study about grounded generation in clinical settings.",
+              abstract:
+                "A study about retrieval grounded generation in clinical evaluation and reliability.",
               authors: ["Ada Researcher"],
               year: 2024,
               publishedAt: "2024-01-01",
@@ -194,7 +195,8 @@ describe("createBrief", () => {
             {
               id: "paper_2",
               title: "Retrieval-Augmented Generation for Clinical Question Answering",
-              abstract: "A second grounded generation study for clinical settings.",
+              abstract:
+                "A second retrieval grounded generation study for clinical evaluation.",
               authors: ["Ben Researcher"],
               year: 2024,
               publishedAt: "2024-02-01",

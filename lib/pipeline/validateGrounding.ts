@@ -15,8 +15,10 @@ const STOPWORDS = new Set([
   "can",
   "could",
   "does",
+  "evidence",
   "for",
   "from",
+  "claim",
   "has",
   "have",
   "into",
@@ -25,16 +27,44 @@ const STOPWORDS = new Set([
   "not",
   "paper",
   "study",
+  "support",
+  "supports",
   "that",
   "the",
   "their",
   "these",
   "this",
+  "unrelated",
   "use",
   "used",
+  "valid",
   "using",
   "with"
 ]);
+
+function stemToken(token: string) {
+  if (token === "grounded" || token === "grounding") {
+    return "ground";
+  }
+
+  if (token === "retrieved" || token === "retrieval") {
+    return "retrieve";
+  }
+
+  if (token.endsWith("ing") && token.length > 6) {
+    return token.slice(0, -3);
+  }
+
+  if (token.endsWith("ed") && token.length > 5) {
+    return token.slice(0, -2);
+  }
+
+  if (token.endsWith("s") && token.length > 4) {
+    return token.slice(0, -1);
+  }
+
+  return token;
+}
 
 function tokenize(value: string) {
   return value
@@ -42,6 +72,7 @@ function tokenize(value: string) {
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
     .split(/[^a-z0-9]+/i)
+    .map(stemToken)
     .filter((token) => token.length >= 4 && !STOPWORDS.has(token));
 }
 
@@ -57,6 +88,25 @@ export function hasEvidenceOverlap(evidenceText: string, paper: NormalizedPaper)
 
   const overlap = [...evidenceTokens].filter((token) => paperTokens.has(token));
   const requiredOverlap = evidenceTokens.size <= 3 ? 1 : 2;
+
+  return overlap.length >= requiredOverlap;
+}
+
+export function hasClaimEvidenceOverlap(
+  claimText: string,
+  evidence: EvidenceLink[]
+) {
+  const claimTokens = new Set(tokenize(claimText));
+  const evidenceTokens = new Set(
+    evidence.flatMap((item) => tokenize(item.evidenceText))
+  );
+
+  if (!claimTokens.size || !evidenceTokens.size) {
+    return false;
+  }
+
+  const overlap = [...claimTokens].filter((token) => evidenceTokens.has(token));
+  const requiredOverlap = claimTokens.size <= 5 ? 1 : 2;
 
   return overlap.length >= requiredOverlap;
 }
@@ -118,6 +168,7 @@ export function validateBriefGrounding(
     evidence: EvidenceLink[];
     sourcePaperIds: string[];
     section: string;
+    claimText: string;
     allowsWeakSupport?: boolean;
   }) {
     validateEvidenceLinks({
@@ -126,6 +177,12 @@ export function validateBriefGrounding(
       section: input.section,
       papers
     });
+
+    if (!hasClaimEvidenceOverlap(input.claimText, input.evidence)) {
+      throw new Error(
+        `${input.section} claim is not supported by its evidence snippets`
+      );
+    }
 
     for (const evidence of input.evidence) {
       if (evidence.supportLevel === "weak" && input.allowsWeakSupport === false) {
@@ -141,7 +198,8 @@ export function validateBriefGrounding(
   assertEvidenceLinks({
     evidence: brief.executiveSummary.evidence,
     sourcePaperIds: brief.executiveSummary.sourcePaperIds,
-    section: "executiveSummary"
+    section: "executiveSummary",
+    claimText: brief.executiveSummary.paragraph
   });
 
   for (const item of brief.keyFindings) {
@@ -150,6 +208,7 @@ export function validateBriefGrounding(
       evidence: item.evidence,
       sourcePaperIds: item.sourcePaperIds,
       section: "keyFinding",
+      claimText: `${item.finding} ${item.explanation}`,
       allowsWeakSupport: item.confidence === "low" || item.caveats.length > 0
     });
   }
@@ -159,7 +218,8 @@ export function validateBriefGrounding(
     assertEvidenceLinks({
       evidence: item.evidence,
       sourcePaperIds: item.sourcePaperIds,
-      section: "majorTheme"
+      section: "majorTheme",
+      claimText: `${item.theme} ${item.description}`
     });
   }
 
@@ -168,7 +228,8 @@ export function validateBriefGrounding(
     assertEvidenceLinks({
       evidence: item.evidence,
       sourcePaperIds: item.sourcePaperIds,
-      section: "researchGap"
+      section: "researchGap",
+      claimText: `${item.gap} ${item.whyItMatters}`
     });
   }
 
@@ -177,7 +238,8 @@ export function validateBriefGrounding(
     assertEvidenceLinks({
       evidence: item.evidence,
       sourcePaperIds: item.sourcePaperIds,
-      section: "controversyOrUncertainty"
+      section: "controversyOrUncertainty",
+      claimText: `${item.issue} ${item.explanation}`
     });
   }
 

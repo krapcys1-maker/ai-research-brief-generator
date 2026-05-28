@@ -23,6 +23,15 @@ function rankFixture(input: {
   };
 }
 
+function expectSelectedIds(
+  selected: NormalizedPaper[],
+  expectedIds: string[]
+) {
+  expect(selected.map((paper) => paper.id).slice(0, expectedIds.length)).toEqual(
+    expectedIds
+  );
+}
+
 describe("retrieval benchmark fixtures", () => {
   it("handles Polish acronym queries for RAG in medical diagnosis", () => {
     const { variants, selected } = rankFixture({
@@ -46,7 +55,7 @@ describe("retrieval benchmark fixtures", () => {
     });
 
     expect(variants).toContain("retrieval augmented generation diagnosis medical");
-    expect(selected[0].id).toBe("rag_med");
+    expectSelectedIds(selected, ["rag_med"]);
   });
 
   it("expands GNN acronyms for drug discovery searches", () => {
@@ -70,7 +79,7 @@ describe("retrieval benchmark fixtures", () => {
     });
 
     expect(variants).toContain("graph neural networks drug discovery");
-    expect(selected[0].id).toBe("gnn_drug");
+    expectSelectedIds(selected, ["gnn_drug"]);
   });
 
   it("keeps interdisciplinary healthcare privacy queries on topic", () => {
@@ -94,7 +103,7 @@ describe("retrieval benchmark fixtures", () => {
       ]
     });
 
-    expect(selected[0].id).toBe("federated_healthcare");
+    expectSelectedIds(selected, ["federated_healthcare"]);
   });
 
   it("recovers common Polish typos for transformer queries", () => {
@@ -119,7 +128,7 @@ describe("retrieval benchmark fixtures", () => {
     });
 
     expect(variants).toContain("transformers networks artificial intelligence");
-    expect(selected[0].id).toBe("transformers");
+    expectSelectedIds(selected, ["transformers"]);
   });
 
   it("prioritizes stem-cell burn treatment over generic stem-cell papers", () => {
@@ -145,6 +154,6 @@ describe("retrieval benchmark fixtures", () => {
     });
 
     expect(variants).toContain("stem cells burn treatment");
-    expect(selected[0].id).toBe("burn_wounds");
+    expectSelectedIds(selected, ["burn_wounds"]);
   });
 });
