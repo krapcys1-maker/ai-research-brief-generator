@@ -94,6 +94,7 @@
 - [x] Add warnings for failed sources.
 - [x] Add source/result diagnostics.
 - [x] Show paper score breakdowns.
+- [x] Add loading/progress state for brief generation.
 
 ## Phase 8 — Export
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type SourceOption = "mock" | "arxiv" | "semantic_scholar" | "openalex";
@@ -16,6 +16,16 @@ const sourceOptions: { value: SourceOption; label: string }[] = [
   { value: "openalex", label: "OpenAlex" }
 ];
 
+const progressSteps = [
+  "Expanding query",
+  "Searching academic sources",
+  "Normalizing and deduplicating papers",
+  "Ranking selected sources",
+  "Generating structured brief",
+  "Validating citations",
+  "Saving result"
+];
+
 export function ResearchForm({ examples }: ResearchFormProps) {
   const router = useRouter();
   const [query, setQuery] = useState(examples[0] ?? "");
@@ -29,6 +39,21 @@ export function ResearchForm({ examples }: ResearchFormProps) {
   ]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [progressStep, setProgressStep] = useState(0);
+
+  useEffect(() => {
+    if (!loading) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      setProgressStep((current) =>
+        Math.min(current + 1, progressSteps.length - 1)
+      );
+    }, 3500);
+
+    return () => window.clearInterval(interval);
+  }, [loading]);
 
   function toggleSource(source: SourceOption) {
     setSources((current) => {
@@ -44,6 +69,7 @@ export function ResearchForm({ examples }: ResearchFormProps) {
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setProgressStep(0);
     setLoading(true);
 
     try {
@@ -90,6 +116,7 @@ export function ResearchForm({ examples }: ResearchFormProps) {
           <textarea
             value={query}
             onChange={(event) => setQuery(event.target.value)}
+            disabled={loading}
             minLength={3}
             maxLength={300}
             required
@@ -117,6 +144,7 @@ export function ResearchForm({ examples }: ResearchFormProps) {
             <select
               value={maxPapers}
               onChange={(event) => setMaxPapers(Number(event.target.value))}
+              disabled={loading}
               style={{
                 border: "1px solid var(--border)",
                 borderRadius: 8,
@@ -136,6 +164,7 @@ export function ResearchForm({ examples }: ResearchFormProps) {
             <input
               value={fromYear}
               onChange={(event) => setFromYear(event.target.value)}
+              disabled={loading}
               inputMode="numeric"
               placeholder="2020"
               min={1900}
@@ -154,6 +183,7 @@ export function ResearchForm({ examples }: ResearchFormProps) {
             <input
               value={toYear}
               onChange={(event) => setToYear(event.target.value)}
+              disabled={loading}
               inputMode="numeric"
               placeholder="2026"
               min={1900}
@@ -202,6 +232,7 @@ export function ResearchForm({ examples }: ResearchFormProps) {
                 <input
                   type="checkbox"
                   checked={sources.includes(source.value)}
+                  disabled={loading}
                   onChange={() => toggleSource(source.value)}
                 />
                 <span>{source.label}</span>
@@ -223,6 +254,33 @@ export function ResearchForm({ examples }: ResearchFormProps) {
             }}
           >
             {error}
+          </div>
+        ) : null}
+
+        {loading ? (
+          <div className="progress-panel" aria-live="polite">
+            <div className="progress-header">
+              <span>Pipeline progress</span>
+              <strong>
+                Step {progressStep + 1} of {progressSteps.length}
+              </strong>
+            </div>
+            <ol className="progress-steps">
+              {progressSteps.map((step, index) => (
+                <li
+                  key={step}
+                  className={
+                    index < progressStep
+                      ? "is-complete"
+                      : index === progressStep
+                        ? "is-active"
+                        : ""
+                  }
+                >
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ol>
           </div>
         ) : null}
 

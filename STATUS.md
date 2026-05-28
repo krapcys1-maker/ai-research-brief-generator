@@ -105,6 +105,9 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Extended Markdown export with query variants, warnings, paper source metadata, influential citations, final score, and score breakdowns.
 - Added Markdown export test coverage for search diagnostics and paper scores.
 - Verified `npm test`, `npm run lint`, and `npm run build` after the export metadata update.
+- Added a loading/progress panel to the research form for long synchronous DeepSeek generations.
+- Disabled form controls while a brief is being generated to prevent duplicate or conflicting submissions.
+- Verified `npm test`, `npm run lint`, and `npm run build` after the progress UI update.
 
 ## Important Current Decisions
 
@@ -118,4 +121,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Next practical options: add richer source diagnostics per adapter/query, add a minimal loading/progress experience for long DeepSeek runs, or add durable persistence when ready to move beyond process memory.
+Next practical options: add richer source diagnostics per adapter/query, improve real-source failure visibility in the result UI, or add durable persistence when ready to move beyond process memory.

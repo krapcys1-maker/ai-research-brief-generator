@@ -180,6 +180,74 @@ textarea {
   background: var(--accent);
 }
 
+.progress-panel {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fbfcfe;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 750;
+}
+
+.progress-header strong {
+  color: var(--foreground);
+  white-space: nowrap;
+}
+
+.progress-steps {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.progress-steps li {
+  position: relative;
+  min-height: 26px;
+  padding-left: 32px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.progress-steps li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 1px;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #fff;
+}
+
+.progress-steps li.is-complete,
+.progress-steps li.is-active {
+  color: var(--foreground);
+  font-weight: 700;
+}
+
+.progress-steps li.is-complete::before {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.progress-steps li.is-active::before {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
 .research-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
