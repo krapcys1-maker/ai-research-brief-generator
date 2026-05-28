@@ -13,12 +13,22 @@ const polishToEnglishTerms: Record<string, string> = {
   halucynacji: "hallucination",
   jak: "",
   jezykowych: "language",
+  komorek: "cells",
+  komorki: "cells",
   lekow: "drug",
+  leczenia: "treatment",
+  leczenie: "treatment",
+  leczeniu: "treatment",
+  macierzyste: "stem",
+  macierzystych: "stem",
   maszynowe: "machine",
   medycznej: "medical",
   medycznych: "medical",
   modelach: "models",
   modeli: "models",
+  oparzenia: "burns",
+  oparzen: "burns",
+  oparzeniowych: "burn wound",
   oprogramowania: "software engineering",
   prywatnosc: "privacy",
   sieciach: "networks",
@@ -37,6 +47,7 @@ const polishStopWords = new Set([
   "z",
   "ze",
   "na",
+  "nad",
   "do",
   "i",
   "oraz"
@@ -82,7 +93,9 @@ function translatePolishTerms(query: string) {
       return polishToEnglishTerms[normalized] ?? normalized;
     })
     .filter(Boolean)
-    .join(" ");
+    .join(" ")
+    .replace(/\bcells stem\b/g, "stem cells")
+    .replace(/\btreatment burns\b/g, "burn treatment");
 }
 
 export function generateQueryVariants(input: {
@@ -94,13 +107,23 @@ export function generateQueryVariants(input: {
       ? translatePolishTerms(input.query)
       : input.query;
 
+  const domainVariants =
+    translated.includes("stem cells") && translated.includes("burn")
+      ? [
+          "stem cells burn treatment",
+          "mesenchymal stem cells burn wound treatment",
+          "stem cell therapy burn wounds"
+        ]
+      : [];
+
   const variants = unique([
     input.query,
     translated,
+    ...domainVariants,
     `${translated} systematic review`,
     `${translated} benchmark evaluation`,
     `${translated} survey`
   ]);
 
-  return variants.slice(0, 4);
+  return variants.slice(0, 5);
 }

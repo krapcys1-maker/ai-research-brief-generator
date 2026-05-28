@@ -48,8 +48,11 @@ function createSearchSummary(input: {
     selectedOnlyMock && requestedLiveSources.length
       ? "brief quality warning: selected papers are mock/demo records only, even though live sources were requested."
       : null,
-    averageRelevance < 0.12
+    averageRelevance < 0.35
       ? "brief quality warning: selected papers have weak lexical relevance to the query."
+      : null,
+    input.selected.length < 3
+      ? "brief quality warning: only limited source coverage was available for this query."
       : null,
     requestedLiveSources.some((source) => !selectedSources.has(source)) &&
     selectedOnlyMock
@@ -101,7 +104,9 @@ export async function createBrief(
   const selected = selectTopPapers(scored, input.maxPapers);
 
   if (!selected.length) {
-    throw new Error("No papers remained after deduplication and scoring.");
+    throw new Error(
+      "No relevant papers were available after deduplication and scoring. Try a broader query or different sources."
+    );
   }
 
   const id = createBriefId();

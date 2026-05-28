@@ -13,6 +13,7 @@ Keep paper titles, author names, journal names, venue names, and DOI values unch
 If the query is Polish, write all summaries, explanations, findings, gaps, uncertainties, and recommendations in Polish.
 If evidence is weak, mark confidence as low.
 If papers disagree or evidence is indirect, include caveats.
+Do not put raw paper IDs inside prose fields. Put citations only in sourcePaperIds arrays and influentialPapers.paperId.
 Return only valid JSON matching the schema.
 Use the exact property names requested by the user prompt.
 Do not rename properties.
@@ -73,6 +74,8 @@ Your task:
 5. Identify controversies or uncertainties.
 6. Suggest next research questions.
 7. Cite paper IDs for every important claim.
+8. Prefer concrete claims over generic summaries: include mechanisms, measured effects, evaluation settings, populations, materials, or implementation constraints when the papers support them.
+9. When evidence is thin or selected papers are few, say so plainly instead of over-generalizing.
 
 Return exactly one JSON object with these keys:
 id, query, outputLanguage, generatedAt, title, tldr, executiveSummary, keyFindings, majorThemes, influentialPapers, researchGaps, controversiesOrUncertainties, suggestedNextQuestions, searchSummary, bibliography.

@@ -209,6 +209,8 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
   - checked the mobile viewport for horizontal overflow
 - Fixed mobile rendering by adding the Next.js viewport metadata and allowing brief sections to shrink/wrap inside narrow screens.
 - Fixed a browser-detected hydration mismatch by replacing locale-dependent generated-date rendering with a deterministic UTC format.
+- Ran a five-topic research-quality QA pass and saved notes in `docs/QA_REPORT.md`.
+- Improved query expansion, relevance scoring, paper selection, and source-cache behavior based on QA findings.
 
 ## Important Current Decisions
 

@@ -24,4 +24,14 @@ describe("generateQueryVariants", () => {
     expect(new Set(variants).size).toBe(variants.length);
     expect(variants[0]).toBe("retrieval augmented generation");
   });
+
+  it("translates Polish biomedical treatment terms for live source search", () => {
+    const variants = generateQueryVariants({
+      query: "komórki macierzyste w leczeniu oparzeń",
+      outputLanguage: "pl"
+    });
+
+    expect(variants).toContain("stem cells burn treatment");
+    expect(variants).toContain("mesenchymal stem cells burn wound treatment");
+  });
 });

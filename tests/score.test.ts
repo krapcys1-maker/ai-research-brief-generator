@@ -130,4 +130,73 @@ describe("scorePapers", () => {
 
     expect(selectTopPapers(scored, 1)[0].id).toBe("live_transformer");
   });
+
+  it("does not let generic expansion terms inflate off-topic systematic reviews", () => {
+    const scored = scorePapers(
+      [
+        createPaper({
+          id: "off_topic_systematic_review",
+          title: "Prediction models for diagnosis and prognosis: systematic review",
+          abstract: "A clinical review about prognosis models and healthcare.",
+          source: "openalex",
+          citationCount: 5000
+        }),
+        createPaper({
+          id: "software_agent",
+          title: "AI Agents in Software Engineering",
+          abstract:
+            "A survey of autonomous agents for code generation, testing, and software maintenance.",
+          source: "openalex",
+          citationCount: 20
+        })
+      ],
+      "AI agents in software engineering systematic review"
+    );
+
+    expect(scored[0].id).toBe("software_agent");
+    expect(scored[0].relevanceScore).toBeGreaterThan(
+      scored[1].relevanceScore ?? 0
+    );
+  });
+
+  it("does not fill a live-source brief with weak mock fallback papers", () => {
+    const scored = scorePapers(
+      [
+        createPaper({
+          id: "live_burns",
+          title: "Mesenchymal stem cells in burn wound treatment",
+          abstract: "Stem cells are evaluated for burn wound healing.",
+          source: "openalex"
+        }),
+        createPaper({
+          id: "mock_llm",
+          title: "Safety and Reliability Challenges for Clinical Large Language Models",
+          abstract: "A review of clinical language model deployment.",
+          source: "mock",
+          citationCount: 10000
+        })
+      ],
+      "stem cells burn treatment"
+    );
+
+    const selected = selectTopPapers(scored, 10);
+
+    expect(selected.map((paper) => paper.id)).toEqual(["live_burns"]);
+  });
+
+  it("returns no papers when every candidate is irrelevant", () => {
+    const scored = scorePapers(
+      [
+        createPaper({
+          id: "mock_llm",
+          title: "Survey of Hallucination in Natural Language Generation",
+          abstract: "A paper about language model hallucinations.",
+          source: "mock"
+        })
+      ],
+      "stem cells burn treatment"
+    );
+
+    expect(selectTopPapers(scored, 10)).toEqual([]);
+  });
 });

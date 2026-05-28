@@ -8,13 +8,32 @@ const SOURCE_QUALITY_PRIORS: Record<NormalizedPaper["source"], number> = {
   mock: 0.45
 };
 
+const STOP_TERMS = new Set([
+  "and",
+  "for",
+  "from",
+  "how",
+  "the",
+  "with",
+  "systematic",
+  "review",
+  "survey",
+  "benchmark",
+  "evaluation"
+]);
+
+const MIN_RELEVANCE_FOR_SELECTION = 0.2;
+
 function tokenize(text: string) {
   return text
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .split(/[^\p{L}\p{N}]+/u)
-    .filter((term) => term.length > 2);
+    .filter((term) => term.length > 1 && !STOP_TERMS.has(term))
+    .flatMap((term) =>
+      term.endsWith("s") && term.length > 3 ? [term, term.slice(0, -1)] : [term]
+    );
 }
 
 function clamp01(value: number) {
@@ -69,10 +88,15 @@ export function scorePapersForQueries(
 
   return papers
     .map((paper) => {
-      const haystack = tokenize(`${paper.title} ${paper.abstract ?? ""} ${paper.venue ?? ""}`);
-      const matches = haystack.filter((term) => queryTerms.has(term)).length;
+      const titleTerms = new Set(tokenize(paper.title));
+      const abstractTerms = new Set(tokenize(`${paper.abstract ?? ""} ${paper.venue ?? ""}`));
+      const titleMatches = [...queryTerms].filter((term) => titleTerms.has(term)).length;
+      const abstractMatches = [...queryTerms].filter((term) =>
+        abstractTerms.has(term)
+      ).length;
+      const divisor = Math.min(queryTerms.size, 8);
       const relevanceScore = queryTerms.size
-        ? clamp01(matches / Math.min(queryTerms.size, 8))
+        ? clamp01((titleMatches / divisor) * 0.75 + (abstractMatches / divisor) * 0.25)
         : 0.5;
       const citationVolumeScore =
         Math.log((paper.citationCount ?? 0) + 1) / maxCitationLog;
@@ -124,22 +148,22 @@ export function selectTopPapers(papers: NormalizedPaper[], maxPapers: number) {
   const nonMock = papers.filter((paper) => paper.source !== "mock");
   const mock = papers.filter((paper) => paper.source === "mock");
   const relevantNonMock = nonMock.filter(
-    (paper) => (paper.relevanceScore ?? 0) >= 0.08
+    (paper) => (paper.relevanceScore ?? 0) >= MIN_RELEVANCE_FOR_SELECTION
   );
-  const relevantMock = mock.filter((paper) => (paper.relevanceScore ?? 0) >= 0.08);
+  const relevantMock = mock.filter(
+    (paper) => (paper.relevanceScore ?? 0) >= MIN_RELEVANCE_FOR_SELECTION
+  );
 
   if (relevantNonMock.length) {
     return [
       ...relevantNonMock,
-      ...relevantMock,
-      ...nonMock.filter((paper) => !relevantNonMock.includes(paper)),
-      ...mock.filter((paper) => !relevantMock.includes(paper))
+      ...relevantMock
     ].slice(0, maxPapers);
   }
 
-  return [
-    ...relevantMock,
-    ...nonMock,
-    ...mock.filter((paper) => !relevantMock.includes(paper))
-  ].slice(0, maxPapers);
+  if (relevantMock.length) {
+    return relevantMock.slice(0, maxPapers);
+  }
+
+  return [];
 }

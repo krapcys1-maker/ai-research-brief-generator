@@ -102,6 +102,8 @@ export async function getCachedSourcePapers(input: SourceCacheKeyInput) {
   if (record) {
     if (record.expiresAt <= Date.now()) {
       cache.delete(key);
+    } else if (!record.papers.length) {
+      cache.delete(key);
     } else {
       return record.papers;
     }
@@ -141,6 +143,15 @@ export async function getCachedSourcePapers(input: SourceCacheKeyInput) {
     return null;
   }
 
+  if (!parsed.data.length) {
+    await prisma.apiCache.delete({
+      where: {
+        cacheKey: key
+      }
+    });
+    return null;
+  }
+
   cache.set(key, {
     papers: parsed.data,
     createdAt: persistentRecord.createdAt.getTime(),
@@ -155,6 +166,10 @@ export async function setCachedSourcePapers(
   papers: NormalizedPaper[],
   ttlMs = 1000 * 60 * 30
 ) {
+  if (!papers.length) {
+    return;
+  }
+
   const key = createSourceCacheKey(input);
   const now = Date.now();
   const expiresAt = now + ttlMs;
