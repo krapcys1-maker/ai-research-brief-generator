@@ -1,4 +1,5 @@
 import type { ResearchBrief } from "@/lib/ai/schemas";
+import type { EvidenceLink } from "@/lib/ai/schemas";
 import type { NormalizedPaper } from "@/lib/sources/types";
 import { getEvidenceBoundary } from "@/lib/brief/evidenceBoundary";
 import { formatDoi, getDoiUrl } from "@/lib/sources/doi";
@@ -19,6 +20,20 @@ function doiMarkdown(value: string | null | undefined) {
   const url = getDoiUrl(value);
 
   return url ? `[${formatDoi(value)}](${url})` : "N/A";
+}
+
+function evidenceLines(evidence: EvidenceLink[]) {
+  if (!evidence.length) {
+    return [];
+  }
+
+  return [
+    "**Evidence:**",
+    ...evidence.map(
+      (item) =>
+        `- [${item.paperId}] (${item.supportLevel}) ${item.evidenceText}`
+    )
+  ];
 }
 
 export function researchBriefToMarkdown(input: {
@@ -63,6 +78,7 @@ export function researchBriefToMarkdown(input: {
   lines.push("## Executive Summary");
   lines.push("");
   lines.push(`${brief.executiveSummary.paragraph} ${sourceList(brief.executiveSummary.sourcePaperIds)}`);
+  lines.push(...evidenceLines(brief.executiveSummary.evidence));
   lines.push("");
   lines.push("## Key Findings");
   lines.push("");
@@ -71,6 +87,7 @@ export function researchBriefToMarkdown(input: {
     lines.push(`### ${item.finding}`);
     lines.push("");
     lines.push(`${item.explanation} ${sourceList(item.sourcePaperIds)}`);
+    lines.push(...evidenceLines(item.evidence));
     lines.push("");
     lines.push(`**Confidence:** ${item.confidence}`);
     if (item.caveats.length) {
@@ -86,6 +103,7 @@ export function researchBriefToMarkdown(input: {
     lines.push(`### ${item.theme}`);
     lines.push("");
     lines.push(`${item.description} ${sourceList(item.sourcePaperIds)}`);
+    lines.push(...evidenceLines(item.evidence));
     lines.push("");
   }
 
@@ -102,6 +120,7 @@ export function researchBriefToMarkdown(input: {
     lines.push(`### ${item.gap}`);
     lines.push("");
     lines.push(`${item.whyItMatters} ${sourceList(item.sourcePaperIds)}`);
+    lines.push(...evidenceLines(item.evidence));
     lines.push("");
   }
 
@@ -111,6 +130,7 @@ export function researchBriefToMarkdown(input: {
     lines.push(`### ${item.issue}`);
     lines.push("");
     lines.push(`${item.explanation} ${sourceList(item.sourcePaperIds)}`);
+    lines.push(...evidenceLines(item.evidence));
     lines.push("");
   }
 

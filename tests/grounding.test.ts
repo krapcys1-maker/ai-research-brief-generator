@@ -43,6 +43,73 @@ describe("validateBriefGrounding", () => {
     );
   });
 
+  it("rejects claims without evidence snippets", () => {
+    const brief = createBrief({
+      keyFindings: [
+        {
+          finding: "No evidence",
+          explanation: "This cites a paper but does not show evidence.",
+          confidence: "medium",
+          sourcePaperIds: ["paper_1"],
+          evidence: [],
+          caveats: []
+        }
+      ]
+    });
+
+    expect(() => validateBriefGrounding(brief, [createPaper()])).toThrow(
+      "has no evidence snippets"
+    );
+  });
+
+  it("rejects evidence text that is not supported by selected paper metadata", () => {
+    const brief = createBrief({
+      majorThemes: [
+        {
+          theme: "Unsupported evidence",
+          description: "The source ID exists but the snippet is unrelated.",
+          sourcePaperIds: ["paper_1"],
+          evidence: [
+            {
+              paperId: "paper_1",
+              evidenceText: "quantum banana market volatility",
+              supportLevel: "direct"
+            }
+          ]
+        }
+      ]
+    });
+
+    expect(() => validateBriefGrounding(brief, [createPaper()])).toThrow(
+      "evidence is not supported"
+    );
+  });
+
+  it("rejects weak key-finding evidence unless confidence or caveats reflect uncertainty", () => {
+    const brief = createBrief({
+      keyFindings: [
+        {
+          finding: "Weak evidence",
+          explanation: "Weak evidence must be marked carefully.",
+          confidence: "medium",
+          sourcePaperIds: ["paper_1"],
+          evidence: [
+            {
+              paperId: "paper_1",
+              evidenceText: "grounded generation in clinical settings",
+              supportLevel: "weak"
+            }
+          ],
+          caveats: []
+        }
+      ]
+    });
+
+    expect(() => validateBriefGrounding(brief, [createPaper()])).toThrow(
+      "weak evidence"
+    );
+  });
+
   it("rejects bibliography DOI values that do not match selected paper metadata", () => {
     const brief = createBrief({
       bibliography: [

@@ -144,7 +144,7 @@ See `docs/REMEDIATION_PLAN.md` for the full audit-based repair plan.
 - [ ] Replace in-memory production rate limiting with Redis/KV-backed limiting.
 - [x] Add an evidence boundary/disclaimer to the brief UI and Markdown export.
 - [x] Improve DOI visibility as a first-class paper identifier.
-- [ ] Add claim-level evidence snippets and support validation.
+- [x] Add claim-level evidence snippets and support validation.
 - [ ] Add controlled `Ask this brief` Q&A over selected papers after evidence validation.
 - [ ] Simplify source preflight and brief UX language for non-technical users.
 - [ ] Restructure docs into product spec, current state, roadmap, and changelog.

@@ -64,11 +64,20 @@ export const NormalizedPaperSchema = z.object({
 
 export type NormalizedPaper = z.infer<typeof NormalizedPaperSchema>;
 
+export const EvidenceLinkSchema = z.object({
+  paperId: z.string().min(1),
+  evidenceText: z.string().min(1),
+  supportLevel: z.enum(["direct", "indirect", "weak"])
+});
+
+export type EvidenceLink = z.infer<typeof EvidenceLinkSchema>;
+
 export const KeyFindingSchema = z.object({
   finding: z.string().min(1),
   explanation: z.string().min(1),
   confidence: z.enum(["low", "medium", "high"]),
   sourcePaperIds: z.array(z.string().min(1)).min(1),
+  evidence: z.array(EvidenceLinkSchema).default([]),
   caveats: z.array(z.string()).default([])
 });
 
@@ -77,7 +86,8 @@ export type KeyFinding = z.infer<typeof KeyFindingSchema>;
 export const MajorThemeSchema = z.object({
   theme: z.string().min(1),
   description: z.string().min(1),
-  sourcePaperIds: z.array(z.string().min(1)).min(1)
+  sourcePaperIds: z.array(z.string().min(1)).min(1),
+  evidence: z.array(EvidenceLinkSchema).default([])
 });
 
 export type MajorTheme = z.infer<typeof MajorThemeSchema>;
@@ -85,7 +95,8 @@ export type MajorTheme = z.infer<typeof MajorThemeSchema>;
 export const ResearchGapSchema = z.object({
   gap: z.string().min(1),
   whyItMatters: z.string().min(1),
-  sourcePaperIds: z.array(z.string().min(1)).min(1)
+  sourcePaperIds: z.array(z.string().min(1)).min(1),
+  evidence: z.array(EvidenceLinkSchema).default([])
 });
 
 export type ResearchGap = z.infer<typeof ResearchGapSchema>;
@@ -93,7 +104,8 @@ export type ResearchGap = z.infer<typeof ResearchGapSchema>;
 export const ControversyOrUncertaintySchema = z.object({
   issue: z.string().min(1),
   explanation: z.string().min(1),
-  sourcePaperIds: z.array(z.string().min(1)).min(1)
+  sourcePaperIds: z.array(z.string().min(1)).min(1),
+  evidence: z.array(EvidenceLinkSchema).default([])
 });
 
 export type ControversyOrUncertainty = z.infer<
@@ -120,7 +132,8 @@ export const ResearchBriefSchema = z.object({
   tldr: z.string().min(1),
   executiveSummary: z.object({
     paragraph: z.string().min(1),
-    sourcePaperIds: z.array(z.string().min(1)).min(1)
+    sourcePaperIds: z.array(z.string().min(1)).min(1),
+    evidence: z.array(EvidenceLinkSchema).default([])
   }),
   keyFindings: z.array(KeyFindingSchema).min(1),
   majorThemes: z.array(MajorThemeSchema).min(1),

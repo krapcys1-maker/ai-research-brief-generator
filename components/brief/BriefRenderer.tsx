@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { ResearchBrief } from "@/lib/ai/schemas";
+import type { EvidenceLink, ResearchBrief } from "@/lib/ai/schemas";
 import type { NormalizedPaper } from "@/lib/sources/types";
 import { PaperCard } from "@/components/brief/PaperCard";
 import { getEvidenceBoundary } from "@/lib/brief/evidenceBoundary";
@@ -45,6 +45,42 @@ function Section({
       <h2 style={{ margin: "0 0 16px", fontSize: "1.25rem" }}>{title}</h2>
       {children}
     </section>
+  );
+}
+
+function EvidenceList({
+  evidence,
+  papersById,
+  onSelect
+}: {
+  evidence: EvidenceLink[];
+  papersById: Map<string, NormalizedPaper>;
+  onSelect: (id: string) => void;
+}) {
+  if (!evidence.length) {
+    return null;
+  }
+
+  return (
+    <div className="evidence-list" aria-label="Claim evidence">
+      <strong>Evidence</strong>
+      {evidence.map((item) => (
+        <blockquote key={`${item.paperId}:${item.evidenceText}`}>
+          <p>{item.evidenceText}</p>
+          <footer>
+            <button
+              type="button"
+              className="citation"
+              onClick={() => onSelect(item.paperId)}
+              title={item.paperId}
+            >
+              {formatCitationLabel(papersById.get(item.paperId), item.paperId)}
+            </button>
+            <span className="badge">{item.supportLevel}</span>
+          </footer>
+        </blockquote>
+      ))}
+    </div>
   );
 }
 
@@ -650,6 +686,11 @@ export function BriefRenderer({
           papersById={papersById}
           onSelect={setSelectedPaperId}
         />
+        <EvidenceList
+          evidence={brief.executiveSummary.evidence}
+          papersById={papersById}
+          onSelect={setSelectedPaperId}
+        />
       </Section>
 
       <Section title="Key Findings">
@@ -675,6 +716,11 @@ export function BriefRenderer({
                 papersById={papersById}
                 onSelect={setSelectedPaperId}
               />
+              <EvidenceList
+                evidence={item.evidence}
+                papersById={papersById}
+                onSelect={setSelectedPaperId}
+              />
             </article>
           ))}
         </div>
@@ -692,6 +738,11 @@ export function BriefRenderer({
               </p>
               <SourceRefs
                 ids={item.sourcePaperIds}
+                papersById={papersById}
+                onSelect={setSelectedPaperId}
+              />
+              <EvidenceList
+                evidence={item.evidence}
                 papersById={papersById}
                 onSelect={setSelectedPaperId}
               />
@@ -732,6 +783,11 @@ export function BriefRenderer({
                 papersById={papersById}
                 onSelect={setSelectedPaperId}
               />
+              <EvidenceList
+                evidence={item.evidence}
+                papersById={papersById}
+                onSelect={setSelectedPaperId}
+              />
             </article>
           ))}
         </div>
@@ -749,6 +805,11 @@ export function BriefRenderer({
               </p>
               <SourceRefs
                 ids={item.sourcePaperIds}
+                papersById={papersById}
+                onSelect={setSelectedPaperId}
+              />
+              <EvidenceList
+                evidence={item.evidence}
                 papersById={papersById}
                 onSelect={setSelectedPaperId}
               />

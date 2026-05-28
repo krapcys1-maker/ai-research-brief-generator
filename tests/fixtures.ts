@@ -1,6 +1,14 @@
 import type { ResearchBrief } from "@/lib/ai/schemas";
 import type { NormalizedPaper } from "@/lib/sources/types";
 
+const defaultEvidence = [
+  {
+    paperId: "paper_1",
+    evidenceText: "grounded generation in clinical settings",
+    supportLevel: "direct" as const
+  }
+];
+
 export function createPaper(overrides: Partial<NormalizedPaper> = {}): NormalizedPaper {
   return {
     id: "paper_1",
@@ -33,7 +41,8 @@ export function createBrief(overrides: Partial<ResearchBrief> = {}): ResearchBri
     tldr: "Grounding improves verifiability.",
     executiveSummary: {
       paragraph: "Evidence supports retrieval grounding.",
-      sourcePaperIds: ["paper_1"]
+      sourcePaperIds: ["paper_1"],
+      evidence: defaultEvidence
     },
     keyFindings: [
       {
@@ -41,6 +50,7 @@ export function createBrief(overrides: Partial<ResearchBrief> = {}): ResearchBri
         explanation: "Retrieved sources can support generated claims.",
         confidence: "medium",
         sourcePaperIds: ["paper_1"],
+        evidence: defaultEvidence,
         caveats: []
       }
     ],
@@ -48,7 +58,8 @@ export function createBrief(overrides: Partial<ResearchBrief> = {}): ResearchBri
       {
         theme: "Grounding",
         description: "Systems cite retrieved documents.",
-        sourcePaperIds: ["paper_1"]
+        sourcePaperIds: ["paper_1"],
+        evidence: defaultEvidence
       }
     ],
     influentialPapers: [
@@ -61,14 +72,16 @@ export function createBrief(overrides: Partial<ResearchBrief> = {}): ResearchBri
       {
         gap: "Clinical evaluation",
         whyItMatters: "Deployment requires validated clinical workflows.",
-        sourcePaperIds: ["paper_1"]
+        sourcePaperIds: ["paper_1"],
+        evidence: defaultEvidence
       }
     ],
     controversiesOrUncertainties: [
       {
         issue: "Evaluation reliability",
         explanation: "Metrics may not capture clinical safety.",
-        sourcePaperIds: ["paper_1"]
+        sourcePaperIds: ["paper_1"],
+        evidence: defaultEvidence
       }
     ],
     suggestedNextQuestions: ["How should citations be audited?"],

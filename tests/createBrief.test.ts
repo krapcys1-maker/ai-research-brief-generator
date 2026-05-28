@@ -11,6 +11,14 @@ function createSyntheticBrief(input: SynthesizeBriefInput): ResearchBrief {
     throw new Error("Test expected at least one paper.");
   }
 
+  const evidence = [
+    {
+      paperId: firstPaper.id,
+      evidenceText: firstPaper.abstract ?? firstPaper.title,
+      supportLevel: "direct" as const
+    }
+  ];
+
   return {
     id: input.id,
     query: input.query,
@@ -29,7 +37,8 @@ function createSyntheticBrief(input: SynthesizeBriefInput): ResearchBrief {
         input.outputLanguage === "pl"
           ? "Wybrane prace wspierają syntetyczny wniosek testowy."
           : "Selected papers support the synthetic test conclusion.",
-      sourcePaperIds: [firstPaper.id]
+      sourcePaperIds: [firstPaper.id],
+      evidence
     },
     keyFindings: [
       {
@@ -40,6 +49,7 @@ function createSyntheticBrief(input: SynthesizeBriefInput): ResearchBrief {
             : "The finding includes a valid source.",
         confidence: "medium",
         sourcePaperIds: [firstPaper.id],
+        evidence,
         caveats: []
       }
     ],
@@ -50,7 +60,8 @@ function createSyntheticBrief(input: SynthesizeBriefInput): ResearchBrief {
           input.outputLanguage === "pl"
             ? "Opis tematu jest uziemiony w źródle."
             : "The theme description is grounded in the source.",
-        sourcePaperIds: [firstPaper.id]
+        sourcePaperIds: [firstPaper.id],
+        evidence
       }
     ],
     influentialPapers: [
@@ -69,7 +80,8 @@ function createSyntheticBrief(input: SynthesizeBriefInput): ResearchBrief {
           input.outputLanguage === "pl"
             ? "Luka ma znaczenie dla dalszych badań."
             : "The gap matters for future work.",
-        sourcePaperIds: [firstPaper.id]
+        sourcePaperIds: [firstPaper.id],
+        evidence
       }
     ],
     controversiesOrUncertainties: [
@@ -82,7 +94,8 @@ function createSyntheticBrief(input: SynthesizeBriefInput): ResearchBrief {
           input.outputLanguage === "pl"
             ? "Niepewność ma poprawne źródło."
             : "The uncertainty includes a valid source.",
-        sourcePaperIds: [firstPaper.id]
+        sourcePaperIds: [firstPaper.id],
+        evidence
       }
     ],
     suggestedNextQuestions: [

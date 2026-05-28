@@ -229,6 +229,10 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Added an evidence boundary to the brief UI and Markdown export so users can see that current synthesis is grounded in metadata/abstracts, not parsed full-text PDFs.
 - Promoted DOI to a first-class source identifier with consistent DOI links in paper cards, source details, preflight previews, and Markdown export.
 - Hardened grounding validation so AI-generated bibliography entries cannot introduce DOI values that differ from selected paper metadata.
+- Added claim-level evidence schema for executive summaries, key findings, themes, gaps, and uncertainties.
+- Updated AI synthesis prompts to require evidence snippets with `paperId`, `evidenceText`, and `supportLevel`.
+- Hardened grounding validation so each evidence snippet must cite a selected paper, appear in the item's `sourcePaperIds`, and overlap with the paper title/abstract/metadata.
+- Rendered evidence snippets in the brief UI and Markdown export.
 
 ## Important Current Decisions
 
