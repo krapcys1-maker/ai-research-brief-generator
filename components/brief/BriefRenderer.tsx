@@ -113,6 +113,16 @@ function formatNarrativeText(text: string, papersById: Map<string, NormalizedPap
   }, text);
 }
 
+function formatGeneratedAt(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return `${date.toISOString().slice(0, 16).replace("T", " ")} UTC`;
+}
+
 function getWarningGroups(warnings: string[]) {
   const groups = warnings.reduce<
     Record<string, { label: string; detail: string; count: number }>
@@ -551,7 +561,7 @@ export function BriefRenderer({
           Query: {brief.query}
         </p>
         <p style={{ color: "var(--muted)", lineHeight: 1.6, margin: "8px 0 0" }}>
-          Generated: {new Date(brief.generatedAt).toLocaleString()}
+          Generated: {formatGeneratedAt(brief.generatedAt)}
         </p>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 18 }}>
           <a

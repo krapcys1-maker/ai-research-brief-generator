@@ -208,6 +208,7 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
   - verified Markdown export
   - checked the mobile viewport for horizontal overflow
 - Fixed mobile rendering by adding the Next.js viewport metadata and allowing brief sections to shrink/wrap inside narrow screens.
+- Fixed a browser-detected hydration mismatch by replacing locale-dependent generated-date rendering with a deterministic UTC format.
 
 ## Important Current Decisions
 
