@@ -4,8 +4,8 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 
 ## Next
 
-- [ ] Expand retrieval benchmark fixtures with more gold queries and expected source IDs.
 - [ ] Replace local embeddings with a production embedding provider.
+- [ ] Add more gold retrieval queries from live OpenAlex/arXiv examples.
 
 ## Production Readiness
 
@@ -14,6 +14,7 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 
 ## Research Quality
 
+- [x] Expand retrieval benchmark fixtures with more gold queries and expected source IDs.
 - [x] Add embeddings provider abstraction.
 - [x] Add hybrid retrieval with lexical and semantic scoring.
 - [ ] Tune hybrid retrieval with model-grade embeddings and larger benchmarks.

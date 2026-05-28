@@ -41,8 +41,8 @@ The app supports:
 
 ## Latest Completed Step
 
-Added the first hybrid retrieval layer. Scoring now includes `semanticScore` from an embeddings provider abstraction, with a local hash-ngram provider as the default so no new API key is required.
+Added a retrieval gold benchmark suite with expected paper IDs across Polish, English, typo, acronym, interdisciplinary, and comparison queries. The benchmark also caught and fixed a scoring weakness where generic terms such as "networks" could over-rank off-topic papers.
 
 ## Next Recommended Step
 
-Expand retrieval benchmark fixtures with more gold queries and expected source IDs, then replace the local embedding provider with a model-grade production provider.
+Replace the local embedding provider with a model-grade production provider, then use the gold benchmark suite to tune ranking weights.

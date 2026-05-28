@@ -46,7 +46,7 @@ user query -> generation job -> source adapters -> normalized papers -> dedupe/r
 - Upstash Redis REST rate limiting for production deployments.
 - Vitest coverage for core pipeline, schemas, routes, storage, source diagnostics, grounding, Q&A, rate limiting, and export.
 - Adapter contract tests for arXiv, Semantic Scholar, and OpenAlex response-shape drift.
-- Retrieval benchmark fixtures for acronyms, Polish/English variants, typo recovery, interdisciplinary topics, and domain-specific query expansion.
+- Retrieval benchmark fixtures and gold-query tests for acronyms, Polish/English variants, typo recovery, interdisciplinary topics, comparison queries, and domain-specific query expansion.
 - Claim/evidence benchmark fixtures for direct, indirect, weak, unsupported-claim, overclaim, numeric, statistical-significance, and comparative cases.
 - Repeatable deployment smoke check through `npm run smoke:deploy`.
 

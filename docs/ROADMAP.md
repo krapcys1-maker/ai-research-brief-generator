@@ -17,7 +17,7 @@ Last updated: 2026-05-28
   - model-grade embedding similarity
   - source diversity
   - citation/recency balance tuning
-- Expand retrieval benchmarks with more gold queries and expected source IDs.
+- Expand retrieval benchmarks with more gold queries from real live-source results.
 - Add more claim/evidence benchmark fixtures for methodological claims, such as sample size, study design, and evaluation setting.
 
 ## P2: Product UX
