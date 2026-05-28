@@ -154,4 +154,43 @@ describe("synthesizeAnswer", () => {
       })
     ).rejects.toThrow("quantitative/statistical detail not found in evidence");
   });
+
+  it("rejects answer claims that add unsupported comparative details", async () => {
+    vi.mocked(createAIProvider).mockReturnValue({
+      name: "deepseek",
+      generateStructured: async () => ({
+        question: "Is this better than baseline?",
+        outputLanguage: "en",
+        answer: "Retrieval grounding is more reliable than baseline.",
+        confidence: "high",
+        notAnswerableFromSources: false,
+        claims: [
+          {
+            claim: "Retrieval grounding is more reliable than baseline.",
+            explanation:
+              "The answer adds a comparison absent from the selected paper evidence.",
+            sourcePaperIds: ["paper_1"],
+            evidence: [
+              {
+                paperId: "paper_1",
+                evidenceText:
+                  "retrieval grounded generation in clinical evaluation and reliability",
+                supportLevel: "direct"
+              }
+            ]
+          }
+        ],
+        suggestedFollowUpQuestions: []
+      })
+    });
+
+    await expect(
+      synthesizeAnswer({
+        question: "Is this better than baseline?",
+        outputLanguage: "en",
+        brief: createBrief(),
+        papers: [createPaper()]
+      })
+    ).rejects.toThrow("comparative detail not found in evidence");
+  });
 });

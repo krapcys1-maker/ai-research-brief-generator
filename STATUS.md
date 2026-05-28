@@ -41,8 +41,8 @@ The app supports:
 
 ## Latest Completed Step
 
-Added numeric/statistical claim grounding checks for briefs and `Ask This Brief`. The validator now rejects claims that add unsupported numbers, percentages, p-values, confidence intervals, or statistical-significance language unless the evidence snippets and selected paper metadata contain matching quantitative signals.
+Added comparative claim grounding checks for briefs and `Ask This Brief`. The validator now rejects unsupported comparison language such as "better than", "outperforms", "more effective than", "versus", and Polish equivalents like "skuteczniejszy niz" unless evidence snippets and selected paper metadata contain a comparative signal.
 
 ## Next Recommended Step
 
-Follow `docs/ROADMAP.md`. The next practical research-quality step is expanding retrieval benchmarks with more gold queries and expected source IDs, then adding comparative-claim checks for language like "outperforms" or "more effective than".
+Follow `docs/ROADMAP.md`. The next practical research-quality step is expanding retrieval benchmarks with more gold queries and expected source IDs, then starting the embeddings provider abstraction for hybrid retrieval.

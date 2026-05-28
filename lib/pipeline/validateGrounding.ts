@@ -229,6 +229,46 @@ export function hasUnsupportedQuantitativeDetail(
   return [...statementSignals].some((signal) => !supportSignals.has(signal));
 }
 
+const COMPARATIVE_SIGNAL_PATTERNS = [
+  /\bbetter than\b/,
+  /\boutperform(?:s|ed|ing)?\b/,
+  /\bmore effective than\b/,
+  /\bmore accurate than\b/,
+  /\bmore reliable than\b/,
+  /\bmore robust than\b/,
+  /\bsuperior to\b/,
+  /\bimprov(?:e|es|ed|ing)\s+over\b/,
+  /\bless effective than\b/,
+  /\blower than\b/,
+  /\bhigher than\b/,
+  /\bfewer than\b/,
+  /\bcompared (?:with|to)\b/,
+  /\bin comparison (?:with|to)\b/,
+  /\bversus\b/,
+  /\bvs\.?\b/,
+  /\blepsz\w* niz\b/,
+  /\bgorsz\w* niz\b/,
+  /\bskuteczniejsz\w* niz\b/,
+  /\bbardziej skuteczn\w* niz\b/,
+  /\bmniej skuteczn\w* niz\b/,
+  /\bdokladniejsz\w* niz\b/,
+  /\bprzewyzsz\w*\b/,
+  /\bw porownaniu (?:z|do)\b/
+];
+
+function hasComparativeSignal(value: string) {
+  const normalized = normalizeForSignals(value);
+
+  return COMPARATIVE_SIGNAL_PATTERNS.some((pattern) => pattern.test(normalized));
+}
+
+export function hasUnsupportedComparativeDetail(
+  statementText: string,
+  supportText: string
+) {
+  return hasComparativeSignal(statementText) && !hasComparativeSignal(supportText);
+}
+
 export function hasEvidenceOverlap(evidenceText: string, paper: NormalizedPaper) {
   const evidenceTokens = new Set(tokenize(evidenceText));
   const paperTokens = new Set(
@@ -290,6 +330,16 @@ export function hasUnsupportedQuantitativeClaim(
   );
 }
 
+export function hasUnsupportedComparativeClaim(
+  claimText: string,
+  evidence: EvidenceLink[]
+) {
+  return hasUnsupportedComparativeDetail(
+    claimText,
+    evidence.map((item) => item.evidenceText).join(" ")
+  );
+}
+
 export function validateEvidenceLinks(input: {
   evidence: EvidenceLink[];
   sourcePaperIds: string[];
@@ -331,6 +381,12 @@ export function validateEvidenceLinks(input: {
         `${input.section} evidence includes quantitative/statistical detail not found in selected paper metadata: ${evidence.paperId}`
       );
     }
+
+    if (hasUnsupportedComparativeDetail(evidence.evidenceText, paperText)) {
+      throw new Error(
+        `${input.section} evidence includes comparative detail not found in selected paper metadata: ${evidence.paperId}`
+      );
+    }
   }
 }
 
@@ -364,6 +420,12 @@ export function validateClaimGrounding(input: {
   if (hasUnsupportedQuantitativeClaim(input.claimText, input.evidence)) {
     throw new Error(
       `${input.section} claim includes quantitative/statistical detail not found in evidence snippets`
+    );
+  }
+
+  if (hasUnsupportedComparativeClaim(input.claimText, input.evidence)) {
+    throw new Error(
+      `${input.section} claim includes comparative detail not found in evidence snippets`
     );
   }
 

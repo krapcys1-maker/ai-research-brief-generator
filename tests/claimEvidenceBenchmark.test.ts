@@ -20,6 +20,15 @@ const metricPaper = createPaper({
   doi: "10.1000/rag-metric"
 });
 
+const comparativePaper = createPaper({
+  id: "rag_compare",
+  title: "Comparing Retrieval Grounding with Baseline Clinical QA",
+  abstract:
+    "Retrieval grounding outperformed baseline clinical question answering in answer support and was more reliable than the baseline system.",
+  source: "openalex",
+  doi: "10.1000/rag-compare"
+});
+
 function briefWithFinding(input: {
   finding: string;
   explanation: string;
@@ -33,6 +42,8 @@ function briefWithFinding(input: {
   const baselineEvidence =
     paper.id === "rag_metric"
       ? "Retrieval grounding reduced unsupported clinical answers"
+      : paper.id === "rag_compare"
+        ? "Retrieval grounding outperformed baseline clinical question answering"
       : "Retrieval augmented generation supports clinical evaluation";
 
   return createBrief({
@@ -219,7 +230,7 @@ describe("claim/evidence benchmark fixtures", () => {
 
   it("allows cautious Polish paraphrases without absolute language", () => {
     const brief = briefWithFinding({
-      finding: "RAG może ograniczać niepoparte odpowiedzi medyczne.",
+      finding: "RAG moze ograniczac niepoparte odpowiedzi medyczne.",
       explanation:
         "Claim remains cautious and matches evidence about reducing unsupported answers.",
       confidence: "medium",
@@ -308,5 +319,68 @@ describe("claim/evidence benchmark fixtures", () => {
     });
 
     expect(() => validateBriefGrounding(brief, [metricPaper])).not.toThrow();
+  });
+
+  it("rejects comparative claims when evidence has no comparison", () => {
+    const brief = briefWithFinding({
+      finding: "RAG is more effective than baseline clinical QA.",
+      explanation:
+        "The finding adds a comparative claim, but the evidence only says RAG supports evaluation.",
+      confidence: "high",
+      evidenceText:
+        "Retrieval augmented generation supports clinical evaluation by grounding answers in retrieved medical evidence",
+      supportLevel: "direct"
+    });
+
+    expect(() => validateBriefGrounding(brief, [ragPaper])).toThrow(
+      "comparative detail not found in evidence"
+    );
+  });
+
+  it("rejects evidence snippets that add comparisons absent from paper metadata", () => {
+    const brief = briefWithFinding({
+      finding: "RAG outperforms baseline clinical QA.",
+      explanation:
+        "The evidence snippet invents a comparison not present in the selected paper metadata.",
+      confidence: "high",
+      evidenceText:
+        "Retrieval augmented generation outperformed baseline clinical QA by grounding answers in retrieved medical evidence",
+      supportLevel: "direct"
+    });
+
+    expect(() => validateBriefGrounding(brief, [ragPaper])).toThrow(
+      "evidence includes comparative detail"
+    );
+  });
+
+  it("accepts comparative claims when evidence and paper metadata include a comparison", () => {
+    const brief = briefWithFinding({
+      finding: "Retrieval grounding outperformed baseline clinical question answering.",
+      explanation:
+        "The evidence and selected paper metadata both include the baseline comparison.",
+      confidence: "high",
+      evidenceText:
+        "Retrieval grounding outperformed baseline clinical question answering in answer support",
+      supportLevel: "direct",
+      paper: comparativePaper
+    });
+
+    expect(() => validateBriefGrounding(brief, [comparativePaper])).not.toThrow();
+  });
+
+  it("rejects Polish comparative claims when evidence has no comparison", () => {
+    const brief = briefWithFinding({
+      finding: "RAG jest skuteczniejszy niz standardowe QA kliniczne.",
+      explanation:
+        "Retrieval augmented generation supports clinical evaluation, but the comparative language is not in evidence.",
+      confidence: "high",
+      evidenceText:
+        "Retrieval augmented generation supports clinical evaluation by grounding answers in retrieved medical evidence",
+      supportLevel: "direct"
+    });
+
+    expect(() => validateBriefGrounding(brief, [ragPaper])).toThrow(
+      "comparative detail not found in evidence"
+    );
   });
 });
