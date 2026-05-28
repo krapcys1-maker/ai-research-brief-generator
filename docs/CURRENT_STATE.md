@@ -9,12 +9,16 @@ AI Research Brief Generator is a working Next.js App Router prototype for source
 It is not a generic chatbot. The primary flow is:
 
 ```text
-user query -> source adapters -> normalized papers -> dedupe/ranking -> quality gate -> structured AI synthesis -> grounding validation -> brief UI/export
+user query -> generation job -> source adapters -> normalized papers -> dedupe/ranking -> quality gate -> structured AI synthesis -> grounding validation -> brief UI/export
 ```
 
 ## Implemented Capabilities
 
 - Home page research form with query, source selection, year range, source preflight, and generation progress.
+- Async generation job flow:
+  - `POST /api/briefs` queues a generation job and returns `202` with `jobId`.
+  - `GET /api/briefs/jobs/[id]` returns queued/running/completed/failure status.
+  - The UI polls job status and redirects to `/briefs/[id]` when completed.
 - Academic sources:
   - mock data
   - arXiv
@@ -87,7 +91,7 @@ ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true
 - Absolute, numeric, statistical, and comparative validation is heuristic; it is not a substitute for full-text methodological verification.
 - Scoring is still heuristic and keyword/metadata based; embeddings are not implemented.
 - Source preflight is improved, but retrieval quality still needs semantic matching beyond lexical/title/abstract scoring.
-- Generation is still synchronous; long-running production generation should move to a job flow.
+- Generation now uses an in-process job runner. This improves local UX, but a durable queue/worker is still needed for multi-instance production deployments.
 - Authentication and private user-scoped history are not implemented.
 - shadcn/ui is not implemented; current UI uses custom CSS.
 

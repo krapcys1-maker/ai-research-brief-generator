@@ -41,8 +41,8 @@ The app supports:
 
 ## Latest Completed Step
 
-Completed a manual QA and source-quality audit. The main fixes were query-variant alignment in source preflight/brief UI, stricter quality-gate alignment checks, safer Polish Q&A grounding, controlled Q&A validation errors, deterministic selection-rationale answers, and duplicate-key cleanup in preflight lists. Details are in `docs/QA_REPORT.md`.
+Moved brief generation to an async in-process job flow. `POST /api/briefs` now returns `202` with `jobId`, `GET /api/briefs/jobs/[id]` exposes job status, and the UI polls until completion before redirecting to the generated brief.
 
 ## Next Recommended Step
 
-Move long-running generation to an async job flow with polling. After that, expand retrieval benchmarks and start the embeddings provider abstraction for hybrid retrieval.
+Replace the in-process job runner with a durable production queue/worker, or start the embeddings provider abstraction for hybrid retrieval if deployment remains single-instance for now.

@@ -1,20 +1,32 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createBrief as mockedCreateBrief } from "@/lib/pipeline/createBrief";
-import { ResearchQualityGateError } from "@/lib/pipeline/qualityGate";
+import { createBriefJob as mockedCreateBriefJob } from "@/lib/jobs/briefJobs";
 import { resetRateLimitForTests } from "@/lib/security/rateLimit";
 import { getBriefRepository as mockedGetBriefRepository } from "@/lib/storage/repository";
-import { createBrief as createBriefFixture } from "./fixtures";
 
-vi.mock("@/lib/pipeline/createBrief", () => ({
-  createBrief: vi.fn()
+vi.mock("@/lib/jobs/briefJobs", () => ({
+  createBriefJob: vi.fn()
 }));
 
 vi.mock("@/lib/storage/repository", () => ({
   getBriefRepository: vi.fn()
 }));
 
-const createBriefMock = vi.mocked(mockedCreateBrief);
+const createBriefJobMock = vi.mocked(mockedCreateBriefJob);
 const getBriefRepositoryMock = vi.mocked(mockedGetBriefRepository);
+
+function queuedJob() {
+  return {
+    id: "job_test",
+    status: "queued" as const,
+    createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-01-01T00:00:00.000Z",
+    request: {
+      query: "retrieval augmented generation",
+      maxPapers: 5,
+      sources: ["mock"] as const
+    }
+  };
+}
 
 describe("POST /api/briefs", () => {
   afterEach(() => {
@@ -23,12 +35,8 @@ describe("POST /api/briefs", () => {
     vi.unstubAllEnvs();
   });
 
-  it("returns a brief ID when creation succeeds", async () => {
-    createBriefMock.mockResolvedValueOnce({
-      brief: createBriefFixture({ id: "brief_test" }),
-      papers: [],
-      createdAt: "2026-01-01T00:00:00.000Z"
-    });
+  it("returns a job ID when generation is queued", async () => {
+    createBriefJobMock.mockReturnValueOnce(queuedJob());
 
     const { POST } = await import("@/app/api/briefs/route");
     const response = await POST(
@@ -43,26 +51,27 @@ describe("POST /api/briefs", () => {
     );
     const payload = await response.json();
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(202);
     expect(response.headers.get("X-RateLimit-Limit")).toBe("5");
     expect(response.headers.get("X-RateLimit-Remaining")).toBe("4");
     expect(payload).toEqual({
-      briefId: "brief_test",
-      status: "completed"
+      jobId: "job_test",
+      status: "queued"
+    });
+    expect(createBriefJobMock).toHaveBeenCalledWith({
+      query: "retrieval augmented generation",
+      maxPapers: 5,
+      sources: ["mock"]
     });
   });
 
-  it("returns a controlled provider configuration error", async () => {
-    createBriefMock.mockRejectedValueOnce(
-      new Error("Missing DEEPSEEK_API_KEY. Add it to .env.")
-    );
-
+  it("rejects invalid generation requests before creating a job", async () => {
     const { POST } = await import("@/app/api/briefs/route");
     const response = await POST(
       new Request("http://localhost/api/briefs", {
         method: "POST",
         body: JSON.stringify({
-          query: "retrieval augmented generation",
+          query: "x",
           maxPapers: 5,
           sources: ["mock"]
         })
@@ -70,53 +79,15 @@ describe("POST /api/briefs", () => {
     );
     const payload = await response.json();
 
-    expect(response.status).toBe(503);
+    expect(response.status).toBe(400);
     expect(payload.status).toBe("error");
-    expect(payload.error).toContain("DEEPSEEK_API_KEY");
-  });
-
-  it("returns quality gate details when sources are too weak", async () => {
-    createBriefMock.mockRejectedValueOnce(
-      new ResearchQualityGateError({
-        coverage: "poor",
-        canSynthesize: false,
-        selectedPaperCount: 0,
-        livePaperCount: 0,
-        mockPaperCount: 0,
-        averageRelevance: 0,
-        warningCount: 1,
-        reasons: ["No relevant papers were available after deduplication and scoring."],
-        suggestions: ["Try this broader query: stem cells burn treatment"]
-      })
-    );
-
-    const { POST } = await import("@/app/api/briefs/route");
-    const response = await POST(
-      new Request("http://localhost/api/briefs", {
-        method: "POST",
-        body: JSON.stringify({
-          query: "komórki macierzyste",
-          maxPapers: 5,
-          sources: ["mock", "openalex"]
-        })
-      })
-    );
-    const payload = await response.json();
-
-    expect(response.status).toBe(422);
-    expect(payload.status).toBe("quality_gate_failed");
-    expect(payload.qualityGate.coverage).toBe("poor");
-    expect(payload.qualityGate.suggestions[0]).toContain("stem cells");
+    expect(createBriefJobMock).not.toHaveBeenCalled();
   });
 
   it("rate limits costly brief generation requests per client", async () => {
     vi.stubEnv("BRIEF_RATE_LIMIT_MAX", "1");
     vi.stubEnv("BRIEF_RATE_LIMIT_WINDOW_MS", "60000");
-    createBriefMock.mockResolvedValue({
-      brief: createBriefFixture({ id: "brief_rate_limited" }),
-      papers: [],
-      createdAt: "2026-01-01T00:00:00.000Z"
-    });
+    createBriefJobMock.mockReturnValue(queuedJob());
 
     const { POST } = await import("@/app/api/briefs/route");
     const requestBody = JSON.stringify({
@@ -145,13 +116,13 @@ describe("POST /api/briefs", () => {
     );
     const payload = await secondResponse.json();
 
-    expect(firstResponse.status).toBe(200);
+    expect(firstResponse.status).toBe(202);
     expect(secondResponse.status).toBe(429);
     expect(secondResponse.headers.get("Retry-After")).toBeTruthy();
     expect(secondResponse.headers.get("X-RateLimit-Remaining")).toBe("0");
     expect(payload.status).toBe("error");
     expect(payload.error).toContain("Too many brief generation requests");
-    expect(createBriefMock).toHaveBeenCalledTimes(1);
+    expect(createBriefJobMock).toHaveBeenCalledTimes(1);
   });
 
   it("returns a controlled configuration error when production rate limiting is missing", async () => {
@@ -176,7 +147,7 @@ describe("POST /api/briefs", () => {
     expect(response.status).toBe(503);
     expect(payload.status).toBe("configuration_error");
     expect(payload.error).toContain("shared rate limit backend");
-    expect(createBriefMock).not.toHaveBeenCalled();
+    expect(createBriefJobMock).not.toHaveBeenCalled();
   });
 });
 
@@ -227,3 +198,4 @@ describe("GET /api/briefs", () => {
     expect(getBriefRepositoryMock).not.toHaveBeenCalled();
   });
 });
+

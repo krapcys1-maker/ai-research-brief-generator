@@ -135,13 +135,15 @@ Fix:
 
 Manual generation/Q&A can take tens of seconds with the live AI provider. A mock-only generation request timed out from the caller after about 110 seconds.
 
-Recommended solution:
+Implemented follow-up:
 
-- Move generation to a job flow:
-  - `POST /api/briefs/jobs`
-  - `GET /api/briefs/jobs/[id]`
-  - `GET /api/briefs/[id]`
-- Keep progress polling in the UI.
+- `POST /api/briefs` now queues an in-process generation job and returns `202` with `jobId`.
+- `GET /api/briefs/jobs/[id]` returns job status for UI polling.
+- The UI polls status and redirects to the generated brief after completion.
+
+Remaining production solution:
+
+- Replace the in-process runner with a durable queue/worker before multi-instance deployment.
 - Store intermediate status and validation errors.
 
 ### 2. Grounding Is Still Metadata/Abstract-Level
@@ -196,4 +198,3 @@ npm test
 npm run lint
 npm run build
 ```
-

@@ -20,7 +20,8 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 
 ## Product UX
 
-- [ ] Move long generation to a job flow with polling.
+- [x] Move long generation to a job flow with polling.
+- [ ] Replace in-process job runner with a durable production queue/worker.
 - [ ] Add user accounts.
 - [ ] Add private saved topics.
 - [ ] Add comparison mode.

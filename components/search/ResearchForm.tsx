@@ -63,6 +63,31 @@ type PreflightPayload = {
   papers: PreflightPaper[];
 };
 
+type BriefJobPayload = {
+  jobId: string;
+  status:
+    | "queued"
+    | "running"
+    | "completed"
+    | "quality_gate_failed"
+    | "configuration_error"
+    | "failed";
+  briefId?: string;
+  error?: string;
+  qualityGate?: QualityGatePayload;
+};
+
+const terminalJobStatuses = new Set<BriefJobPayload["status"]>([
+  "completed",
+  "quality_gate_failed",
+  "configuration_error",
+  "failed"
+]);
+
+function sleep(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
 function getQualityGateCopy(qualityGate: QualityGatePayload) {
   if (qualityGate.canSynthesize === false || qualityGate.coverage === "poor") {
     return {
@@ -385,6 +410,9 @@ export function ResearchForm({ examples }: ResearchFormProps) {
   const [loading, setLoading] = useState(false);
   const [checkingSources, setCheckingSources] = useState(false);
   const [progressStep, setProgressStep] = useState(0);
+  const [jobStatus, setJobStatus] = useState<BriefJobPayload["status"] | null>(
+    null
+  );
   const busy = loading || checkingSources;
   const generationBlockedByPreflight =
     preflight?.qualityGate.canSynthesize === false ||
@@ -434,6 +462,37 @@ export function ResearchForm({ examples }: ResearchFormProps) {
       fromYear: fromYear ? Number(fromYear) : undefined,
       toYear: toYear ? Number(toYear) : undefined
     };
+  }
+
+  async function waitForBriefJob(jobId: string) {
+    for (let attempt = 0; attempt < 240; attempt += 1) {
+      const response = await fetch(`/api/briefs/jobs/${jobId}`, {
+        cache: "no-store"
+      });
+      const payload = (await response.json()) as BriefJobPayload & {
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Brief generation job failed.");
+      }
+
+      setJobStatus(payload.status);
+
+      if (payload.status === "running") {
+        setProgressStep((current) => Math.max(current, 1));
+      }
+
+      if (terminalJobStatuses.has(payload.status)) {
+        return payload;
+      }
+
+      await sleep(1500);
+    }
+
+    throw new Error(
+      "Brief generation is still running. Refresh the page and check recent briefs later."
+    );
   }
 
   function applySuggestion(suggestion: string) {
@@ -493,6 +552,7 @@ export function ResearchForm({ examples }: ResearchFormProps) {
     setPreflight(null);
     setErrorKind("error");
     setProgressStep(0);
+    setJobStatus("queued");
     setLoading(true);
 
     try {
@@ -506,12 +566,13 @@ export function ResearchForm({ examples }: ResearchFormProps) {
 
       const payload = (await response.json()) as {
         briefId?: string;
+        jobId?: string;
         error?: string;
         status?: string;
         qualityGate?: QualityGatePayload;
       };
 
-      if (!response.ok || !payload.briefId) {
+      if (!response.ok || (!payload.briefId && !payload.jobId)) {
         if (response.status === 429) {
           const retryAfter = response.headers.get("Retry-After");
           setErrorKind("warning");
@@ -531,7 +592,35 @@ export function ResearchForm({ examples }: ResearchFormProps) {
         throw new Error(payload.error ?? "Brief generation failed.");
       }
 
-      router.push(`/briefs/${payload.briefId}`);
+      if (payload.briefId) {
+        router.push(`/briefs/${payload.briefId}`);
+        return;
+      }
+
+      if (!payload.jobId) {
+        throw new Error("Brief generation did not return a job ID.");
+      }
+
+      const job = await waitForBriefJob(payload.jobId);
+
+      if (job.status === "completed" && job.briefId) {
+        router.push(`/briefs/${job.briefId}`);
+        return;
+      }
+
+      if (job.status === "quality_gate_failed" && job.qualityGate) {
+        setErrorKind("warning");
+        setQualityGate(job.qualityGate);
+        throw new Error(
+          job.error ?? "The selected sources are too weak for a reliable brief."
+        );
+      }
+
+      if (job.status === "configuration_error") {
+        throw new Error(job.error ?? "AI or storage configuration is incomplete.");
+      }
+
+      throw new Error(job.error ?? "Brief generation failed.");
     } catch (caught) {
       setError(
         caught instanceof Error
@@ -540,6 +629,7 @@ export function ResearchForm({ examples }: ResearchFormProps) {
       );
     } finally {
       setLoading(false);
+      setJobStatus(null);
     }
   }
 
@@ -691,7 +781,10 @@ export function ResearchForm({ examples }: ResearchFormProps) {
         {loading ? (
           <div className="progress-panel" aria-live="polite">
             <div className="progress-header">
-              <span>Pipeline progress</span>
+              <span>
+                Pipeline progress
+                {jobStatus ? ` - ${jobStatus.replaceAll("_", " ")}` : ""}
+              </span>
               <strong>
                 Step {progressStep + 1} of {progressSteps.length}
               </strong>

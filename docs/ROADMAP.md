@@ -4,6 +4,7 @@ Last updated: 2026-05-28
 
 ## P0: Production Readiness
 
+- Replace the in-process generation job runner with a durable queue/worker for multi-instance production.
 - Add authentication or session-scoped/private brief history.
 - Keep production PostgreSQL fail-fast behavior enabled.
 - Keep production shared rate limiting enabled through Upstash Redis REST or equivalent KV.
@@ -23,10 +24,6 @@ Last updated: 2026-05-28
 
 ## P2: Product UX
 
-- Move long generation to a job flow:
-  - `POST /api/briefs/jobs`
-  - `GET /api/briefs/jobs/[id]`
-  - `GET /api/briefs/[id]`
 - Add user accounts and private saved topics.
 - Add saved brief collections.
 - Add comparison mode for prompts such as "RAG vs fine-tuning in medicine".

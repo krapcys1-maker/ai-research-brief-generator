@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
-import { createBrief } from "@/lib/pipeline/createBrief";
-import { ResearchQualityGateError } from "@/lib/pipeline/qualityGate";
+import { BriefRequestSchema } from "@/lib/ai/schemas";
+import { createBriefJob } from "@/lib/jobs/briefJobs";
 import {
   checkRateLimit,
   getClientIp,
@@ -45,15 +45,16 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = await request.json();
-    const record = await createBrief(body);
+    const body = BriefRequestSchema.parse(await request.json());
+    const job = createBriefJob(body);
 
     return NextResponse.json(
       {
-        briefId: record.brief.id,
-        status: "completed"
+        jobId: job.id,
+        status: job.status
       },
       {
+        status: 202,
         headers: {
           "X-RateLimit-Limit": rateLimit.limit.toString(),
           "X-RateLimit-Remaining": rateLimit.remaining.toString(),
@@ -64,17 +65,6 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof ZodError) {
       return errorResponse(error.issues.map((issue) => issue.message).join("; "));
-    }
-
-    if (error instanceof ResearchQualityGateError) {
-      return NextResponse.json(
-        {
-          status: "quality_gate_failed",
-          error: error.message,
-          qualityGate: error.qualityGate
-        },
-        { status: 422 }
-      );
     }
 
     if (error instanceof RateLimitConfigurationError) {

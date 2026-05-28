@@ -417,7 +417,7 @@ export type ResearchBrief = {
 
 ### `POST /api/briefs`
 
-Creates a brief.
+Queues brief generation.
 
 Request:
 
@@ -431,16 +431,30 @@ Request:
 }
 ```
 
-Response for MVP:
+Response:
 
 ```json
 {
-  "briefId": "brief_123",
-  "status": "completed"
+  "jobId": "job_123",
+  "status": "queued"
 }
 ```
 
-The first implementation can be synchronous. Later, if generation becomes slow, convert this to a job system.
+### `GET /api/briefs/jobs/[id]`
+
+Returns generation job status for polling.
+
+Completed response:
+
+```json
+{
+  "jobId": "job_123",
+  "status": "completed",
+  "briefId": "brief_123"
+}
+```
+
+The current implementation uses an in-process job runner. Production multi-instance deployment should replace it with a durable queue/worker.
 
 ### `GET /api/briefs`
 
