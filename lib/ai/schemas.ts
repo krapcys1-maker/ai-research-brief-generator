@@ -7,6 +7,15 @@ export const ResearchSourceSchema = z.enum([
   "openalex"
 ]);
 
+export const SourceSearchDiagnosticSchema = z.object({
+  source: ResearchSourceSchema,
+  query: z.string().min(1),
+  status: z.enum(["success", "empty", "failed"]),
+  resultCount: z.number().int().nonnegative(),
+  cached: z.boolean(),
+  message: z.string().optional()
+});
+
 export const BriefRequestSchema = z
   .object({
     query: z.string().trim().min(3).max(300),
@@ -135,6 +144,7 @@ export const ResearchBriefSchema = z.object({
     totalAfterDeduplication: z.number().int().nonnegative(),
     totalUsedInBrief: z.number().int().nonnegative(),
     queryVariants: z.array(z.string()),
+    sourceDiagnostics: z.array(SourceSearchDiagnosticSchema).default([]),
     warnings: z.array(z.string()).default([])
   }),
   bibliography: z.array(BibliographyItemSchema).min(1)

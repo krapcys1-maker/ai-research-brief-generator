@@ -16,6 +16,23 @@ describe("researchBriefToMarkdown", () => {
             "retrieval augmented generation",
             "grounded generation healthcare"
           ],
+          sourceDiagnostics: [
+            {
+              source: "mock",
+              query: "retrieval augmented generation",
+              status: "success",
+              resultCount: 4,
+              cached: true
+            },
+            {
+              source: "semantic_scholar",
+              query: "grounded generation healthcare",
+              status: "failed",
+              resultCount: 0,
+              cached: false,
+              message: "rate limited"
+            }
+          ],
           warnings: ["semantic_scholar failed: rate limited"]
         }
       }),
@@ -40,6 +57,13 @@ describe("researchBriefToMarkdown", () => {
     expect(markdown).toContain("- Successful sources: mock, openalex");
     expect(markdown).toContain("### Query Variants");
     expect(markdown).toContain("- grounded generation healthcare");
+    expect(markdown).toContain("### Source Diagnostics");
+    expect(markdown).toContain(
+      "| mock | success | 4 | yes | retrieval augmented generation |  |"
+    );
+    expect(markdown).toContain(
+      "| semantic_scholar | failed | 0 | no | grounded generation healthcare | rate limited |"
+    );
     expect(markdown).toContain("- Warnings: semantic_scholar failed: rate limited");
     expect(markdown).toContain("- Source: openalex");
     expect(markdown).toContain("- Influential citation count: 7");

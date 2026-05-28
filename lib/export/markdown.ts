@@ -109,6 +109,21 @@ export function researchBriefToMarkdown(input: {
   }
   lines.push("");
 
+  if (brief.searchSummary.sourceDiagnostics.length) {
+    lines.push("### Source Diagnostics");
+    lines.push("");
+    lines.push("| Source | Status | Results | Cached | Query | Message |");
+    lines.push("| --- | --- | ---: | --- | --- | --- |");
+    for (const diagnostic of brief.searchSummary.sourceDiagnostics) {
+      lines.push(
+        `| ${diagnostic.source} | ${diagnostic.status} | ${diagnostic.resultCount} | ${
+          diagnostic.cached ? "yes" : "no"
+        } | ${diagnostic.query} | ${diagnostic.message ?? ""} |`
+      );
+    }
+    lines.push("");
+  }
+
   lines.push("## Bibliography");
   lines.push("");
   for (const paper of papers) {

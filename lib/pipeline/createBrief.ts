@@ -30,6 +30,7 @@ function createSearchSummary(input: {
   selected: NormalizedPaper[];
   requestedSources: ResearchSource[];
   sourcesUsed: ResearchSource[];
+  sourceDiagnostics: ResearchBrief["searchSummary"]["sourceDiagnostics"];
   warnings: string[];
   queryVariants: string[];
 }): ResearchBrief["searchSummary"] {
@@ -40,6 +41,7 @@ function createSearchSummary(input: {
     totalAfterDeduplication: input.deduped.length,
     totalUsedInBrief: input.selected.length,
     queryVariants: input.queryVariants,
+    sourceDiagnostics: input.sourceDiagnostics,
     warnings: input.warnings
   };
 }
@@ -87,6 +89,7 @@ export async function createBrief(
     selected,
     requestedSources: input.sources,
     sourcesUsed: searchResult.sourcesUsed,
+    sourceDiagnostics: searchResult.sourceDiagnostics,
     warnings: searchResult.warnings,
     queryVariants
   });

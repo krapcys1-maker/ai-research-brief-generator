@@ -97,6 +97,7 @@
 - [x] Add loading/progress state for brief generation.
 - [x] Improve source warning visibility in result UI.
 - [x] Track requested and successful sources separately.
+- [x] Add per-adapter/query source diagnostics.
 
 ## Phase 8 — Export
 

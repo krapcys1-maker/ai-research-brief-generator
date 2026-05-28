@@ -184,6 +184,39 @@ function SearchDiagnostics({
           </div>
         </div>
       ) : null}
+
+      {brief.searchSummary.sourceDiagnostics.length ? (
+        <div style={{ marginTop: 18 }}>
+          <h3 className="compact-heading">Adapter diagnostics</h3>
+          <div className="source-diagnostic-list">
+            {brief.searchSummary.sourceDiagnostics.map((diagnostic, index) => (
+              <article
+                className="source-diagnostic"
+                key={`${diagnostic.source}:${diagnostic.query}:${index}`}
+              >
+                <div className="token-list">
+                  <span className="badge">{diagnostic.source}</span>
+                  <span className="badge">{diagnostic.status}</span>
+                  {diagnostic.cached ? <span className="badge">cached</span> : null}
+                </div>
+                <p>{diagnostic.query}</p>
+                <dl>
+                  <div>
+                    <dt>Results</dt>
+                    <dd>{diagnostic.resultCount}</dd>
+                  </div>
+                  {diagnostic.message ? (
+                    <div>
+                      <dt>Message</dt>
+                      <dd>{diagnostic.message}</dd>
+                    </div>
+                  ) : null}
+                </dl>
+              </article>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </Section>
   );
 }

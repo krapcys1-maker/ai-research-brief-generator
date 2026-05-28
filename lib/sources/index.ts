@@ -10,7 +10,8 @@ import type {
   NormalizedPaper,
   ResearchSource,
   SearchPapersInput,
-  SourceAdapter
+  SourceAdapter,
+  SourceSearchDiagnostic
 } from "@/lib/sources/types";
 
 const adapters: Record<ResearchSource, SourceAdapter> = {
@@ -24,6 +25,7 @@ export type SearchAllSourcesResult = {
   papers: NormalizedPaper[];
   sourcesUsed: ResearchSource[];
   warnings: string[];
+  sourceDiagnostics: SourceSearchDiagnostic[];
 };
 
 async function searchSourcesForOneQuery(input: SearchPapersInput & {
@@ -44,7 +46,10 @@ async function searchSourcesForOneQuery(input: SearchPapersInput & {
       });
 
       if (cached) {
-        return cached;
+        return {
+          papers: cached,
+          cached: true
+        };
       }
 
       const papers = await adapter.searchPapers(searchInput);
@@ -56,13 +61,17 @@ async function searchSourcesForOneQuery(input: SearchPapersInput & {
         papers
       );
 
-      return papers;
+      return {
+        papers,
+        cached: false
+      };
     })
   );
 
   const papers: NormalizedPaper[] = [];
   const sourcesUsed: ResearchSource[] = [];
   const warnings: string[] = [];
+  const sourceDiagnostics: SourceSearchDiagnostic[] = [];
 
   settled.forEach((result, index) => {
     const adapter = selectedAdapters[index];
@@ -71,33 +80,42 @@ async function searchSourcesForOneQuery(input: SearchPapersInput & {
     }
 
     if (result.status === "fulfilled") {
-      papers.push(...result.value);
-      sourcesUsed.push(adapter.name);
-      if (!result.value.length) {
+      papers.push(...result.value.papers);
+      if (result.value.papers.length) {
+        sourcesUsed.push(adapter.name);
+      }
+      sourceDiagnostics.push({
+        source: adapter.name,
+        query: input.query,
+        status: result.value.papers.length ? "success" : "empty",
+        resultCount: result.value.papers.length,
+        cached: result.value.cached,
+        message: result.value.papers.length ? undefined : "No papers returned."
+      });
+      if (!result.value.papers.length) {
         warnings.push(`${adapter.name} returned no papers.`);
       }
       return;
     }
 
-    warnings.push(
-      `${adapter.name} failed: ${
-        result.reason instanceof Error ? result.reason.message : "unknown error"
-      }`
-    );
+    const message =
+      result.reason instanceof Error ? result.reason.message : "unknown error";
+    sourceDiagnostics.push({
+      source: adapter.name,
+      query: input.query,
+      status: "failed",
+      resultCount: 0,
+      cached: false,
+      message
+    });
+    warnings.push(`${adapter.name} failed: ${message}`);
   });
-
-  if (!papers.length) {
-    throw new Error(
-      warnings.length
-        ? `All selected sources failed or returned no papers. ${warnings.join(" ")}`
-        : "All selected sources failed or returned no papers."
-    );
-  }
 
   return {
     papers,
     sourcesUsed,
-    warnings
+    warnings,
+    sourceDiagnostics
   };
 }
 
@@ -124,6 +142,7 @@ export async function searchAllSources(input: SearchPapersInput & {
   const papers: NormalizedPaper[] = [];
   const sourcesUsed = new Set<ResearchSource>();
   const warnings: string[] = [];
+  const sourceDiagnostics: SourceSearchDiagnostic[] = [];
 
   settled.forEach((result, index) => {
     const variant = queryVariants[index] ?? input.query;
@@ -132,9 +151,21 @@ export async function searchAllSources(input: SearchPapersInput & {
       papers.push(...result.value.papers);
       result.value.sourcesUsed.forEach((source) => sourcesUsed.add(source));
       warnings.push(...result.value.warnings);
+      sourceDiagnostics.push(...result.value.sourceDiagnostics);
       return;
     }
 
+    sourceDiagnostics.push(
+      ...input.sources.map((source) => ({
+        source,
+        query: variant,
+        status: "failed" as const,
+        resultCount: 0,
+        cached: false,
+        message:
+          result.reason instanceof Error ? result.reason.message : "unknown error"
+      }))
+    );
     warnings.push(
       `query variant "${variant}" failed: ${
         result.reason instanceof Error ? result.reason.message : "unknown error"
@@ -153,6 +184,7 @@ export async function searchAllSources(input: SearchPapersInput & {
   return {
     papers,
     sourcesUsed: [...sourcesUsed],
-    warnings
+    warnings,
+    sourceDiagnostics
   };
 }

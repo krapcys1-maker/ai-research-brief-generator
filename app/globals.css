@@ -182,6 +182,52 @@ textarea {
   font-variant-numeric: tabular-nums;
 }
 
+.source-diagnostic-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.source-diagnostic {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfcfe;
+}
+
+.source-diagnostic p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.source-diagnostic dl {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.source-diagnostic dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.source-diagnostic dt {
+  font-weight: 750;
+}
+
+.source-diagnostic dd {
+  margin: 0;
+  color: var(--foreground);
+  text-align: right;
+}
+
 .score-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -299,7 +345,8 @@ textarea {
 @media (max-width: 760px) {
   .metric-grid,
   .diagnostics-grid,
-  .score-grid {
+  .score-grid,
+  .source-diagnostic-list {
     grid-template-columns: 1fr;
   }
 

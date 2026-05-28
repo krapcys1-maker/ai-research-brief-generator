@@ -114,6 +114,10 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Added `requestedSources` to `searchSummary` so the app can show user-selected sources separately from successful sources.
 - Updated result diagnostics, Markdown export, prompt schema example, fixtures, and pipeline tests for requested-vs-successful source tracking.
 - Verified `npm test`, `npm run lint`, and `npm run build` after the `requestedSources` update.
+- Added per-adapter/query `sourceDiagnostics` with source, query, status, result count, cache flag, and optional message.
+- Rendered adapter diagnostics in the brief result page and included them in Markdown export.
+- Added pipeline test coverage to ensure source diagnostics are stored in `searchSummary`.
+- Verified `npm test`, `npm run lint`, and `npm run build` after the source diagnostics update.
 
 ## Important Current Decisions
 
@@ -127,4 +131,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Next practical options: add per-adapter/query diagnostics, add a small API/source health panel, or add durable persistence when ready to move beyond process memory.
+Next practical options: add a small API/source health panel, add result history/search on the home page, or add durable persistence when ready to move beyond process memory.

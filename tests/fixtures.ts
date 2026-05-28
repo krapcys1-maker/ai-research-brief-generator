@@ -79,6 +79,15 @@ export function createBrief(overrides: Partial<ResearchBrief> = {}): ResearchBri
       totalAfterDeduplication: 1,
       totalUsedInBrief: 1,
       queryVariants: ["retrieval augmented generation"],
+      sourceDiagnostics: [
+        {
+          source: "mock",
+          query: "retrieval augmented generation",
+          status: "success",
+          resultCount: 1,
+          cached: false
+        }
+      ],
       warnings: []
     },
     bibliography: [

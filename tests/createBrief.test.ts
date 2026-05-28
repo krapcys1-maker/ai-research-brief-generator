@@ -147,4 +147,65 @@ describe("createBrief", () => {
       )
     ).toBe(true);
   });
+
+  it("stores per-source query diagnostics from source search", async () => {
+    const record = await createBrief(
+      {
+        query: "retrieval augmented generation",
+        maxPapers: 5,
+        sources: ["mock", "openalex"]
+      },
+      {
+        search: async ({ query }) => ({
+          papers: [
+            {
+              id: "paper_1",
+              title: "Retrieval-Augmented Generation for Medical Diagnosis",
+              abstract: "A study about grounded generation in clinical settings.",
+              authors: ["Ada Researcher"],
+              year: 2024,
+              publishedAt: "2024-01-01",
+              doi: "10.1000/example",
+              arxivId: null,
+              semanticScholarId: null,
+              openAlexId: null,
+              sourceUrls: ["https://example.org/paper"],
+              pdfUrl: null,
+              venue: "Example Journal",
+              citationCount: 10,
+              influentialCitationCount: 1,
+              source: "mock"
+            }
+          ],
+          sourcesUsed: ["mock"],
+          warnings: ["openalex returned no papers."],
+          sourceDiagnostics: [
+            {
+              source: "mock",
+              query,
+              status: "success",
+              resultCount: 1,
+              cached: false
+            },
+            {
+              source: "openalex",
+              query,
+              status: "empty",
+              resultCount: 0,
+              cached: false,
+              message: "No papers returned."
+            }
+          ]
+        }),
+        synthesize: async (input) => createSyntheticBrief(input)
+      }
+    );
+
+    expect(record.brief.searchSummary.sourceDiagnostics).toHaveLength(2);
+    expect(record.brief.searchSummary.sourceDiagnostics[1]).toMatchObject({
+      source: "openalex",
+      status: "empty",
+      resultCount: 0
+    });
+  });
 });

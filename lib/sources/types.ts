@@ -38,3 +38,12 @@ export type SourceAdapter = {
   name: ResearchSource;
   searchPapers(input: SearchPapersInput): Promise<NormalizedPaper[]>;
 };
+
+export type SourceSearchDiagnostic = {
+  source: ResearchSource;
+  query: string;
+  status: "success" | "empty" | "failed";
+  resultCount: number;
+  cached: boolean;
+  message?: string;
+};
