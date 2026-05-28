@@ -163,6 +163,15 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Added a manual `Refresh` control to the Source health panel.
 - Added refresh/loading and last-updated states for source health diagnostics.
 - Verified the home page renders the Source health panel and refresh control locally.
+- Verified the full live-source flow with PostgreSQL and durable source cache enabled:
+  - generated a Polish brief using arXiv, OpenAlex, and Semantic Scholar source selection
+  - confirmed the final brief kept `outputLanguage: pl`
+  - confirmed all cited `sourcePaperIds` resolve to selected papers
+  - confirmed persistent source cache records were created in PostgreSQL
+  - restarted the dev server and generated the same live-source query again
+  - confirmed the second run used persisted source cache entries (`cached: true` diagnostics)
+  - confirmed both generated live-source briefs are listed by `GET /api/briefs`
+  - confirmed the second live-source brief renders successfully at `/briefs/[id]`
 
 ## Important Current Decisions
 
