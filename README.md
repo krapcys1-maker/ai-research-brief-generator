@@ -36,6 +36,7 @@ academic APIs → normalized papers → dedupe → ranking → structured AI syn
 - Semantic Scholar can work without a key but may rate limit; add `SEMANTIC_SCHOLAR_API_KEY` later for better reliability.
 - Source API responses are cached in memory for the MVP. The cache resets when the server restarts.
 - Search uses deterministic query expansion. Polish queries may generate English academic search variants, while the final brief language still follows the original query.
+- Brief persistence uses an in-memory repository by default. A Prisma/PostgreSQL repository is prepared and is selected automatically when `DATABASE_URL` is present.
 
 ## How to run locally
 
@@ -56,6 +57,23 @@ npm run dev
 ```
 
 4. Open `http://localhost:3000`.
+
+Optional PostgreSQL persistence:
+
+1. Add `DATABASE_URL=postgresql://...` to `.env`.
+2. Generate Prisma Client:
+
+```bash
+npm run prisma:generate
+```
+
+3. Apply migrations:
+
+```bash
+npm run prisma:migrate
+```
+
+Without `DATABASE_URL`, the app safely falls back to in-memory storage.
 
 Useful checks:
 

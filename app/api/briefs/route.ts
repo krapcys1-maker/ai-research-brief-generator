@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { createBrief } from "@/lib/pipeline/createBrief";
-import { inMemoryBriefRepository } from "@/lib/storage/inMemoryBriefStore";
+import { getBriefRepository } from "@/lib/storage/repository";
 
 function errorResponse(message: string, status = 400) {
   return NextResponse.json(
@@ -42,7 +42,9 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
+  const briefRepository = await getBriefRepository();
+
   return NextResponse.json({
-    briefs: await inMemoryBriefRepository.listSummaries()
+    briefs: await briefRepository.listSummaries()
   });
 }

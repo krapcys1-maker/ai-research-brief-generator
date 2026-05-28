@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Brief {
+  id             String   @id
+  query          String
+  outputLanguage String
+  generatedAt    DateTime
+  title          String
+  tldr           String
+  briefJson      Json
+
+  totalFound Int
+  totalUsed  Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  papers BriefPaper[]
+}
+
+model Paper {
+  id                         String    @id
+  title                      String
+  abstract                   String?
+  authorsJson                Json
+  year                       Int?
+  publishedAt                DateTime?
+  doi                        String?
+  arxivId                    String?
+  semanticScholarId          String?
+  openAlexId                 String?
+  sourceUrlsJson             Json
+  pdfUrl                     String?
+  venue                      String?
+  citationCount              Int?
+  influentialCitationCount   Int?
+  source                     String
+  normalizedTitle            String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  briefs BriefPaper[]
+
+  @@index([doi])
+  @@index([arxivId])
+  @@index([semanticScholarId])
+  @@index([openAlexId])
+  @@index([normalizedTitle])
+}
+
+model BriefPaper {
+  id String @id @default(cuid())
+
+  briefId String
+  paperId String
+
+  relevanceScore       Float?
+  citationScore        Float?
+  recencyScore         Float?
+  completenessScore    Float?
+  sourceQualityScore   Float?
+  identifierScore      Float?
+  qualityScore         Float?
+  finalScore           Float?
+  usedInBrief          Boolean @default(true)
+
+  brief Brief @relation(fields: [briefId], references: [id], onDelete: Cascade)
+  paper Paper @relation(fields: [paperId], references: [id], onDelete: Cascade)
+
+  @@unique([briefId, paperId])
+}
+
+model ApiCache {
+  id        String   @id @default(cuid())
+  cacheKey  String   @unique
+  source    String
+  query     String
+  response  Json
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+}

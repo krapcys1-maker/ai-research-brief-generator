@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { researchBriefToMarkdown } from "@/lib/export/markdown";
-import { inMemoryBriefRepository } from "@/lib/storage/inMemoryBriefStore";
+import { getBriefRepository } from "@/lib/storage/repository";
 
 function safeFilename(input: string) {
   return input
@@ -28,7 +28,8 @@ export async function GET(
     );
   }
 
-  const record = await inMemoryBriefRepository.getById(id);
+  const briefRepository = await getBriefRepository();
+  const record = await briefRepository.getById(id);
 
   if (!record) {
     return NextResponse.json(

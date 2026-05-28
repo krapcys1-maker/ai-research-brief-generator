@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BriefRenderer } from "@/components/brief/BriefRenderer";
-import { inMemoryBriefRepository } from "@/lib/storage/inMemoryBriefStore";
+import { getBriefRepository } from "@/lib/storage/repository";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +11,8 @@ export default async function BriefPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const record = await inMemoryBriefRepository.getById(id);
+  const briefRepository = await getBriefRepository();
+  const record = await briefRepository.getById(id);
 
   if (!record) {
     notFound();

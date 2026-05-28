@@ -29,13 +29,13 @@
 ## Phase 3 — Durable Persistence
 
 - [x] Add storage repository contract for future persistence.
-- [ ] Prepare Prisma.
-- [ ] Add PostgreSQL connection.
-- [ ] Create models: `Brief`, `Paper`, `BriefPaper`, `ApiCache`.
-- [ ] Add migration.
-- [ ] Save generated brief to database.
-- [ ] Save selected papers to database.
-- [ ] Load brief result page from database.
+- [x] Prepare Prisma.
+- [x] Add PostgreSQL connection.
+- [x] Create models: `Brief`, `Paper`, `BriefPaper`, `ApiCache`.
+- [x] Add migration.
+- [x] Save generated brief to database.
+- [x] Save selected papers to database.
+- [x] Load brief result page from database.
 
 ## Phase 4 — Source Adapters
 

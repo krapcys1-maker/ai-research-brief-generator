@@ -130,6 +130,15 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Refactored brief storage callers to use `inMemoryBriefRepository` instead of direct store helper functions.
 - Added repository contract test coverage for save, get, list, summary, and clear behavior.
 - Verified `npm test`, `npm run lint`, and `npm run build` after the storage repository update.
+- Added Prisma and `@prisma/client` dependencies.
+- Added PostgreSQL Prisma schema and initial SQL migration for `Brief`, `Paper`, `BriefPaper`, and `ApiCache`.
+- Added `PrismaBriefRepository` behind the existing `BriefRepository` contract.
+- Added repository selector that uses Prisma when `DATABASE_URL` is configured and otherwise falls back to in-memory storage.
+- Added Prisma scripts: `npm run prisma:generate` and `npm run prisma:migrate`.
+- Ran `npm run prisma:generate` successfully.
+- Verified `prisma/schema.prisma` with a temporary placeholder PostgreSQL URL.
+- Did not run database migration because no PostgreSQL connection was confirmed in this session.
+- Local `.env` currently needs a valid PostgreSQL `DATABASE_URL` before `npm run prisma:migrate` can be run; secret values were not printed.
 
 ## Important Current Decisions
 
@@ -143,4 +152,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Next practical options: add Prisma/PostgreSQL behind the `BriefRepository` contract when ready, add a manual source-health refresh control, or polish the UI with a component library.
+Next practical options: point `DATABASE_URL` at PostgreSQL and run `npm run prisma:migrate`, add a manual source-health refresh control, or polish the UI with a component library.
