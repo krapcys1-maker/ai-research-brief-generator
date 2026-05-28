@@ -11,6 +11,7 @@ const POLISH_MARKERS = [
   "ź",
   "ż",
   " czy ",
+  " dlaczego ",
   " jak ",
   " oraz ",
   " wpływ ",

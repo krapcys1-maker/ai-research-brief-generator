@@ -145,7 +145,7 @@ See `docs/REMEDIATION_PLAN.md` for the full audit-based repair plan.
 - [x] Add an evidence boundary/disclaimer to the brief UI and Markdown export.
 - [x] Improve DOI visibility as a first-class paper identifier.
 - [x] Add claim-level evidence snippets and support validation.
-- [ ] Add controlled `Ask this brief` Q&A over selected papers after evidence validation.
+- [x] Add controlled `Ask this brief` Q&A over selected papers after evidence validation.
 - [x] Simplify brief result UX so non-technical users see takeaways before diagnostics.
 - [ ] Simplify source preflight language for non-technical users.
 - [ ] Restructure docs into product spec, current state, roadmap, and changelog.

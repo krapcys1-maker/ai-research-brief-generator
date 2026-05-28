@@ -72,6 +72,43 @@ export const EvidenceLinkSchema = z.object({
 
 export type EvidenceLink = z.infer<typeof EvidenceLinkSchema>;
 
+export const BriefQuestionRequestSchema = z.object({
+  question: z.string().trim().min(3).max(500)
+});
+
+export type BriefQuestionRequest = z.infer<typeof BriefQuestionRequestSchema>;
+
+export const BriefAnswerClaimSchema = z.object({
+  claim: z.string().min(1),
+  explanation: z.string().min(1),
+  sourcePaperIds: z.array(z.string().min(1)).min(1),
+  evidence: z.array(EvidenceLinkSchema).min(1)
+});
+
+export type BriefAnswerClaim = z.infer<typeof BriefAnswerClaimSchema>;
+
+export const BriefAnswerSchema = z
+  .object({
+    question: z.string().min(1),
+    outputLanguage: z.string().min(2),
+    answer: z.string().min(1),
+    confidence: z.enum(["low", "medium", "high"]),
+    notAnswerableFromSources: z.boolean(),
+    claims: z.array(BriefAnswerClaimSchema).default([]),
+    suggestedFollowUpQuestions: z.array(z.string().min(1)).default([])
+  })
+  .superRefine((value, ctx) => {
+    if (!value.notAnswerableFromSources && value.claims.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Answerable responses must include at least one sourced claim.",
+        path: ["claims"]
+      });
+    }
+  });
+
+export type BriefAnswer = z.infer<typeof BriefAnswerSchema>;
+
 export const KeyFindingSchema = z.object({
   finding: z.string().min(1),
   explanation: z.string().min(1),

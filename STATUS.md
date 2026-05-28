@@ -242,6 +242,12 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Simplified the brief result page so the top of the report leads with the bottom line, confidence, evidence base, reading path, and priority takeaways.
 - Moved technical source diagnostics and evidence-boundary metrics into a collapsed "Source and Quality Details" section.
 - Added a visual Playwright smoke check for an existing Polish brief and confirmed the new section order plus no horizontal overflow on desktop or a 390px mobile viewport.
+- Added controlled `Ask this brief` Q&A through `POST /api/briefs/[id]/questions`.
+- Added `BriefAnswer` and `BriefQuestionRequest` Zod schemas.
+- Added source-grounded answer synthesis that answers only from the selected papers and returns source-backed claims with evidence snippets.
+- Added Q&A grounding validation so answer claims cannot cite unknown papers and evidence snippets must overlap selected paper metadata.
+- Added an `Ask This Brief` panel to the brief result UI with confidence, not-answerable state, claims, evidence snippets, and source links.
+- Verified a real local Polish Q&A request against an existing brief returned `outputLanguage: pl` with validated source-backed claims.
 
 ## Important Current Decisions
 
@@ -255,4 +261,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Follow `docs/REMEDIATION_PLAN.md`. The highest-priority next step is to add controlled `Ask this brief` Q&A over selected papers, with evidence snippets and source-only answers.
+Follow `docs/REMEDIATION_PLAN.md`. The highest-priority next step is to simplify source preflight language for non-technical users, then restructure the docs into current state, roadmap, and changelog.

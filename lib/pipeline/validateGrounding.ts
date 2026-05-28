@@ -45,7 +45,7 @@ function tokenize(value: string) {
     .filter((token) => token.length >= 4 && !STOPWORDS.has(token));
 }
 
-function hasEvidenceOverlap(evidenceText: string, paper: NormalizedPaper) {
+export function hasEvidenceOverlap(evidenceText: string, paper: NormalizedPaper) {
   const evidenceTokens = new Set(tokenize(evidenceText));
   const paperTokens = new Set(
     tokenize(`${paper.title} ${paper.abstract ?? ""} ${paper.venue ?? ""}`)
@@ -59,6 +59,40 @@ function hasEvidenceOverlap(evidenceText: string, paper: NormalizedPaper) {
   const requiredOverlap = evidenceTokens.size <= 3 ? 1 : 2;
 
   return overlap.length >= requiredOverlap;
+}
+
+export function validateEvidenceLinks(input: {
+  evidence: EvidenceLink[];
+  sourcePaperIds: string[];
+  section: string;
+  papers: NormalizedPaper[];
+}) {
+  if (!input.evidence.length) {
+    throw new Error(`${input.section} has no evidence snippets`);
+  }
+
+  const papersById = new Map(input.papers.map((paper) => [paper.id, paper]));
+  const sourcePaperIds = new Set(input.sourcePaperIds);
+
+  for (const evidence of input.evidence) {
+    const paper = papersById.get(evidence.paperId);
+
+    if (!paper) {
+      throw new Error(`${input.section} evidence cites unknown paperId: ${evidence.paperId}`);
+    }
+
+    if (!sourcePaperIds.has(evidence.paperId)) {
+      throw new Error(
+        `${input.section} evidence paperId is missing from sourcePaperIds: ${evidence.paperId}`
+      );
+    }
+
+    if (!hasEvidenceOverlap(evidence.evidenceText, paper)) {
+      throw new Error(
+        `${input.section} evidence is not supported by selected paper metadata: ${evidence.paperId}`
+      );
+    }
+  }
 }
 
 export function validateBriefGrounding(
@@ -86,31 +120,14 @@ export function validateBriefGrounding(
     section: string;
     allowsWeakSupport?: boolean;
   }) {
-    if (!input.evidence.length) {
-      throw new Error(`${input.section} has no evidence snippets`);
-    }
-
-    const sourcePaperIds = new Set(input.sourcePaperIds);
+    validateEvidenceLinks({
+      evidence: input.evidence,
+      sourcePaperIds: input.sourcePaperIds,
+      section: input.section,
+      papers
+    });
 
     for (const evidence of input.evidence) {
-      const paper = papersById.get(evidence.paperId);
-
-      if (!paper) {
-        throw new Error(`${input.section} evidence cites unknown paperId: ${evidence.paperId}`);
-      }
-
-      if (!sourcePaperIds.has(evidence.paperId)) {
-        throw new Error(
-          `${input.section} evidence paperId is missing from sourcePaperIds: ${evidence.paperId}`
-        );
-      }
-
-      if (!hasEvidenceOverlap(evidence.evidenceText, paper)) {
-        throw new Error(
-          `${input.section} evidence is not supported by selected paper metadata: ${evidence.paperId}`
-        );
-      }
-
       if (evidence.supportLevel === "weak" && input.allowsWeakSupport === false) {
         throw new Error(`${input.section} has weak evidence without uncertainty caveats`);
       }

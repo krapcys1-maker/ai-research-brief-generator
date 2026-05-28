@@ -201,6 +201,8 @@ Acceptance criteria:
 
 ### 7. Add controlled "Ask this brief" Q&A
 
+Status: completed for source-bounded single-turn Q&A.
+
 Problem:
 
 Users naturally want to ask follow-up questions such as "why were transformers chosen?" or "what benefits do these papers claim?", but a generic chat would undermine the product's source-grounded promise.
@@ -243,6 +245,14 @@ Implementation plan:
 5. Reuse or extend claim-level evidence validation.
 6. Render citations and evidence snippets under each answer.
 7. Add hard refusal behavior for unsupported questions.
+
+Current implementation:
+
+- `POST /api/briefs/[id]/questions` loads only the requested brief and its selected papers.
+- Answers are validated with `BriefAnswerSchema`.
+- Answer claims must cite selected paper IDs and evidence snippets that overlap selected paper metadata.
+- Unsupported questions can return `notAnswerableFromSources: true` with no claims.
+- The UI renders an `Ask This Brief` panel with answer confidence, claims, citations, evidence, and follow-up question chips.
 
 Acceptance criteria:
 

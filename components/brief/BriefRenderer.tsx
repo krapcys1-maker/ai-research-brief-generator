@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { EvidenceLink, ResearchBrief } from "@/lib/ai/schemas";
+import type { FormEvent } from "react";
+import type { BriefAnswer, EvidenceLink, ResearchBrief } from "@/lib/ai/schemas";
 import type { NormalizedPaper } from "@/lib/sources/types";
 import { PaperCard } from "@/components/brief/PaperCard";
 import { getEvidenceBoundary } from "@/lib/brief/evidenceBoundary";
@@ -508,6 +509,135 @@ function SourceAndQualityDetails({
   );
 }
 
+function AskBriefPanel({
+  briefId,
+  papersById,
+  onSelect
+}: {
+  briefId: string;
+  papersById: Map<string, NormalizedPaper>;
+  onSelect: (id: string) => void;
+}) {
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState<BriefAnswer | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const trimmedQuestion = question.trim();
+
+    if (!trimmedQuestion) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/briefs/${briefId}/questions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ question: trimmedQuestion })
+      });
+      const payload = (await response.json()) as {
+        status?: string;
+        error?: string;
+        answer?: BriefAnswer;
+      };
+
+      if (!response.ok || !payload.answer) {
+        throw new Error(payload.error ?? "Could not answer this question.");
+      }
+
+      setAnswer(payload.answer);
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Could not answer this question."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <Section title="Ask This Brief">
+      <form className="ask-brief-form" onSubmit={handleSubmit}>
+        <label htmlFor="brief-question">Question</label>
+        <textarea
+          id="brief-question"
+          value={question}
+          onChange={(event) => setQuestion(event.target.value)}
+          placeholder="Dlaczego te artykuly zostaly wybrane?"
+          disabled={isSubmitting}
+          rows={3}
+        />
+        <button type="submit" disabled={isSubmitting || question.trim().length < 3}>
+          {isSubmitting ? "Answering..." : "Ask"}
+        </button>
+      </form>
+
+      {error ? <div className="ask-brief-error">{error}</div> : null}
+
+      {answer ? (
+        <article className="ask-brief-answer">
+          <div className="token-list">
+            <span className="badge">Language: {answer.outputLanguage}</span>
+            <span className="badge">Confidence: {answer.confidence}</span>
+            {answer.notAnswerableFromSources ? (
+              <span className="badge">not answerable from selected sources</span>
+            ) : null}
+          </div>
+          <p>{answer.answer}</p>
+
+          {answer.claims.length ? (
+            <div className="ask-brief-claims">
+              {answer.claims.map((claim) => (
+                <article key={claim.claim}>
+                  <h3>{claim.claim}</h3>
+                  <p>{claim.explanation}</p>
+                  <SourceRefs
+                    ids={claim.sourcePaperIds}
+                    papersById={papersById}
+                    onSelect={onSelect}
+                  />
+                  <EvidenceList
+                    evidence={claim.evidence}
+                    papersById={papersById}
+                    onSelect={onSelect}
+                  />
+                </article>
+              ))}
+            </div>
+          ) : null}
+
+          {answer.suggestedFollowUpQuestions.length ? (
+            <div className="ask-brief-followups">
+              <h3>Follow-up questions</h3>
+              <div className="token-list">
+                {answer.suggestedFollowUpQuestions.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    className="citation"
+                    onClick={() => setQuestion(item)}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </article>
+      ) : null}
+    </Section>
+  );
+}
+
 
 function WarningSummary({ warnings }: { warnings: string[] }) {
   if (!warnings.length) {
@@ -818,6 +948,12 @@ export function BriefRenderer({
 
       <PriorityTakeaways
         brief={brief}
+        papersById={papersById}
+        onSelect={setSelectedPaperId}
+      />
+
+      <AskBriefPanel
+        briefId={brief.id}
         papersById={papersById}
         onSelect={setSelectedPaperId}
       />
