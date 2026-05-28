@@ -73,7 +73,7 @@ npm run prisma:generate
 npm run prisma:migrate
 ```
 
-Without `DATABASE_URL`, the app safely falls back to in-memory storage.
+Without `DATABASE_URL`, or when `DATABASE_URL` is not a PostgreSQL URL, the app safely falls back to in-memory storage and reports the active storage mode in the Source health panel.
 
 Useful checks:
 

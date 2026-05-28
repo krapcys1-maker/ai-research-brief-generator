@@ -139,6 +139,9 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Verified `prisma/schema.prisma` with a temporary placeholder PostgreSQL URL.
 - Did not run database migration because no PostgreSQL connection was confirmed in this session.
 - Local `.env` currently needs a valid PostgreSQL `DATABASE_URL` before `npm run prisma:migrate` can be run; secret values were not printed.
+- Hardened repository selection so invalid non-PostgreSQL `DATABASE_URL` values fall back to in-memory storage instead of loading Prisma.
+- Added active storage mode and persistence warning to `/api/source-cache` and the Source health panel.
+- Added repository selection tests for missing, invalid, and valid PostgreSQL `DATABASE_URL` values.
 
 ## Important Current Decisions
 

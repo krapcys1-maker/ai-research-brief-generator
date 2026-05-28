@@ -3,6 +3,12 @@
 import { useEffect, useState } from "react";
 
 type SourceHealthResponse = {
+  persistence: {
+    mode: "memory" | "postgresql";
+    hasDatabaseUrl: boolean;
+    hasValidPostgresUrl: boolean;
+    warning: string | null;
+  };
   cache: {
     active: number;
     expired: number;
@@ -86,6 +92,10 @@ export function SourceHealthPanel() {
 
       <div className="source-health-metrics">
         <div>
+          <span>Storage mode</span>
+          <strong>{data?.persistence.mode ?? "memory"}</strong>
+        </div>
+        <div>
           <span>Active cache</span>
           <strong>{data?.cache.active ?? 0}</strong>
         </div>
@@ -98,6 +108,10 @@ export function SourceHealthPanel() {
           <strong>{data?.sourceHealth.totalDiagnostics ?? 0}</strong>
         </div>
       </div>
+
+      {data?.persistence.warning ? (
+        <div className="source-health-error">{data.persistence.warning}</div>
+      ) : null}
 
       <div className="source-health-grid">
         {(data?.sourceHealth.bySource ?? []).map((source) => (
