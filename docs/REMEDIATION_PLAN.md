@@ -375,6 +375,8 @@ Acceptance criteria:
 
 ### 12. Simplify primary brief UX
 
+Status: partially completed for the brief result page.
+
 Problem:
 
 The product should lead with research value, not diagnostics.
@@ -397,6 +399,12 @@ Implementation plan:
 1. Add a high-level "What this gives you" summary to generated brief UI.
 2. Keep score details and adapter diagnostics behind collapsible sections.
 3. Improve paper cards around "why read this paper".
+
+Current implementation:
+
+- The result page now leads with bottom line, confidence, evidence base, reading path, and priority takeaways.
+- Technical source diagnostics and evidence-boundary metrics are collapsed under "Source and Quality Details".
+- Remaining follow-up: simplify source preflight language and improve paper-level "why read this" explanations.
 
 Acceptance criteria:
 

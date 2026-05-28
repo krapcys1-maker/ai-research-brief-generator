@@ -239,6 +239,9 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Added production fail-fast rate-limit configuration checks so public deployments no longer silently fall back to per-instance memory counters.
 - Added `ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true` as an explicit temporary single-instance demo escape hatch.
 - Added unit and route tests for memory limiting, Upstash limiting, production misconfiguration, and blocked requests.
+- Simplified the brief result page so the top of the report leads with the bottom line, confidence, evidence base, reading path, and priority takeaways.
+- Moved technical source diagnostics and evidence-boundary metrics into a collapsed "Source and Quality Details" section.
+- Added a visual Playwright smoke check for an existing Polish brief and confirmed the new section order plus no horizontal overflow on desktop or a 390px mobile viewport.
 
 ## Important Current Decisions
 
@@ -252,4 +255,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Follow `docs/REMEDIATION_PLAN.md`. The highest-priority next step is to simplify the brief UX for non-technical users and then add controlled `Ask this brief` Q&A over selected papers.
+Follow `docs/REMEDIATION_PLAN.md`. The highest-priority next step is to add controlled `Ask this brief` Q&A over selected papers, with evidence snippets and source-only answers.

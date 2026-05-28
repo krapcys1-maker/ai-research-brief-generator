@@ -275,7 +275,57 @@ function QualitySummary({
   );
 }
 
-function EvidenceBoundaryPanel({
+function BriefAtAGlance({
+  brief,
+  papers
+}: {
+  brief: ResearchBrief;
+  papers: NormalizedPaper[];
+}) {
+  const quality = getBriefQuality(brief, papers);
+  const sourceCounts = getPaperSourceCounts(papers);
+  const boundary = getEvidenceBoundary({
+    outputLanguage: brief.outputLanguage,
+    papers
+  });
+  const cautionCount =
+    brief.researchGaps.length + brief.controversiesOrUncertainties.length;
+
+  return (
+    <section className="brief-glance surface" aria-label="Brief at a glance">
+      <div className="brief-glance-main">
+        <span className="metric-label">Bottom line</span>
+        <p>{brief.tldr}</p>
+      </div>
+      <div className="brief-glance-grid">
+        <div>
+          <span className="metric-label">Confidence</span>
+          <strong>{quality.label}</strong>
+          <p>{quality.description}</p>
+        </div>
+        <div>
+          <span className="metric-label">Evidence base</span>
+          <strong>
+            {boundary.metrics.papersWithAbstracts}/{boundary.metrics.totalPapers} with abstracts
+          </strong>
+          <p>
+            {sourceCounts.map(([source, count]) => `${source}: ${count}`).join(", ")}
+          </p>
+        </div>
+        <div>
+          <span className="metric-label">Review focus</span>
+          <strong>{cautionCount} open issues</strong>
+          <p>
+            {brief.searchSummary.warnings.length} source warning(s),{" "}
+            {boundary.metrics.papersWithDoi} DOI-backed paper(s)
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function EvidenceBoundaryContent({
   brief,
   papers
 }: {
@@ -288,7 +338,7 @@ function EvidenceBoundaryPanel({
   });
 
   return (
-    <Section title={boundary.title}>
+    <>
       <p style={{ margin: "0 0 12px", lineHeight: 1.65 }}>
         {boundary.summary}
       </p>
@@ -315,6 +365,72 @@ function EvidenceBoundaryPanel({
           <li key={item}>{item}</li>
         ))}
       </ul>
+    </>
+  );
+}
+
+function PriorityTakeaways({
+  brief,
+  papersById,
+  onSelect
+}: {
+  brief: ResearchBrief;
+  papersById: Map<string, NormalizedPaper>;
+  onSelect: (id: string) => void;
+}) {
+  const mainFindings = brief.keyFindings.slice(0, 3);
+  const cautions = [
+    ...brief.researchGaps.map((item) => ({
+      title: item.gap,
+      detail: item.whyItMatters,
+      sourcePaperIds: item.sourcePaperIds
+    })),
+    ...brief.controversiesOrUncertainties.map((item) => ({
+      title: item.issue,
+      detail: item.explanation,
+      sourcePaperIds: item.sourcePaperIds
+    }))
+  ].slice(0, 3);
+
+  return (
+    <Section title="Priority Takeaways">
+      <div className="takeaway-grid">
+        <div>
+          <h3>Best-supported points</h3>
+          <div className="takeaway-list">
+            {mainFindings.map((item) => (
+              <article key={item.finding}>
+                <h4>{formatNarrativeText(item.finding, papersById)}</h4>
+                <p>{formatNarrativeText(item.explanation, papersById)}</p>
+                <div className="takeaway-meta">
+                  <span className="badge">{item.confidence}</span>
+                  <SourceRefs
+                    ids={item.sourcePaperIds}
+                    papersById={papersById}
+                    onSelect={onSelect}
+                  />
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+        <div>
+          <h3>Check before relying on it</h3>
+          <div className="takeaway-list">
+            {cautions.map((item) => (
+              <article key={item.title}>
+                <h4>{formatNarrativeText(item.title, papersById)}</h4>
+                <p>{formatNarrativeText(item.detail, papersById)}</p>
+                <SourceRefs
+                  ids={item.sourcePaperIds}
+                  papersById={papersById}
+                  onSelect={onSelect}
+                />
+              </article>
+            ))}
+          </div>
+        </div>
+      </div>
     </Section>
   );
 }
@@ -337,6 +453,10 @@ function ReadingPath({
 
   return (
     <Section title="Start Reading Here">
+      <p className="section-lede">
+        Highest-ranked papers selected for this brief, with quick access to
+        abstracts, DOI metadata, and bibliography links.
+      </p>
       <div className="reading-path">
         {topPapers.map((paper, index) => (
           <article key={paper.id}>
@@ -345,6 +465,12 @@ function ReadingPath({
             <p>
               {formatCitationLabel(paper, paper.id)}
               {paper.venue ? `, ${paper.venue}` : ""}
+            </p>
+            <p>
+              Relevance {typeof paper.relevanceScore === "number"
+                ? paper.relevanceScore.toFixed(2)
+                : "N/A"}
+              {paper.doi ? " - DOI available" : ""}
             </p>
             <button
               type="button"
@@ -357,6 +483,28 @@ function ReadingPath({
         ))}
       </div>
     </Section>
+  );
+}
+
+function SourceAndQualityDetails({
+  brief,
+  papers
+}: {
+  brief: ResearchBrief;
+  papers: NormalizedPaper[];
+}) {
+  return (
+    <details className="surface diagnostics-details">
+      <summary>Source and Quality Details</summary>
+      <div className="stack">
+        <QualitySummary brief={brief} papers={papers} />
+        <div className="details-panel">
+          <h3 className="compact-heading">Evidence boundary</h3>
+          <EvidenceBoundaryContent brief={brief} papers={papers} />
+        </div>
+        <SearchDiagnostics brief={brief} papers={papers} />
+      </div>
+    </details>
   );
 }
 
@@ -399,8 +547,7 @@ function SearchDiagnostics({
   const sourceCounts = getPaperSourceCounts(papers);
 
   return (
-    <details className="surface diagnostics-details">
-      <summary>Technical Source Diagnostics</summary>
+    <div className="technical-diagnostics">
       <div className="metric-grid">
         <div className="metric">
           <span className="metric-label">Found</span>
@@ -507,7 +654,7 @@ function SearchDiagnostics({
           </div>
         </div>
       ) : null}
-    </details>
+    </div>
   );
 }
 
@@ -665,17 +812,15 @@ export function BriefRenderer({
         </div>
       </header>
 
-      <QualitySummary brief={brief} papers={papers} />
-
-      <EvidenceBoundaryPanel brief={brief} papers={papers} />
-
-      <Section title="TL;DR">
-        <p style={{ margin: 0, lineHeight: 1.65 }}>{brief.tldr}</p>
-      </Section>
+      <BriefAtAGlance brief={brief} papers={papers} />
 
       <ReadingPath papers={papers} onSelect={setSelectedPaperId} />
 
-      <SearchDiagnostics brief={brief} papers={papers} />
+      <PriorityTakeaways
+        brief={brief}
+        papersById={papersById}
+        onSelect={setSelectedPaperId}
+      />
 
       <Section title="Executive Summary">
         <p style={{ lineHeight: 1.65 }}>
@@ -825,6 +970,8 @@ export function BriefRenderer({
           ))}
         </ol>
       </Section>
+
+      <SourceAndQualityDetails brief={brief} papers={papers} />
 
       <Section title="Bibliography">
         <div className="stack">

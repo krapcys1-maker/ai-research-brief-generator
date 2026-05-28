@@ -329,6 +329,49 @@ textarea {
   line-height: 1.5;
 }
 
+.brief-glance {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+}
+
+.brief-glance-main {
+  display: grid;
+  gap: 8px;
+}
+
+.brief-glance-main p {
+  margin: 0;
+  font-size: 1.08rem;
+  line-height: 1.65;
+}
+
+.brief-glance-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.brief-glance-grid > div,
+.details-panel {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fbfcfe;
+}
+
+.brief-glance-grid strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.15rem;
+}
+
+.brief-glance-grid p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 .evidence-boundary-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -376,6 +419,64 @@ textarea {
 .reading-path p {
   color: var(--muted);
   line-height: 1.45;
+}
+
+.section-lede {
+  margin: 0 0 14px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.takeaway-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.takeaway-grid h3 {
+  margin: 0 0 10px;
+  font-size: 1rem;
+}
+
+.takeaway-list {
+  display: grid;
+  gap: 12px;
+}
+
+.takeaway-list article {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fbfcfe;
+}
+
+.takeaway-list h4,
+.takeaway-list p {
+  margin: 0;
+}
+
+.takeaway-list h4 {
+  font-size: 0.98rem;
+  line-height: 1.4;
+}
+
+.takeaway-list p {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.takeaway-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.technical-diagnostics {
+  display: grid;
+  gap: 18px;
 }
 
 .score-grid {
@@ -1060,9 +1161,11 @@ textarea {
   .diagnostics-grid,
   .score-grid,
   .source-diagnostic-list,
+  .brief-glance-grid,
   .quality-panel,
   .evidence-boundary-grid,
   .reading-path,
+  .takeaway-grid,
   .preflight-metrics,
   .source-health-metrics,
   .source-health-grid {
