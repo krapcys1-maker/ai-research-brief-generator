@@ -160,6 +160,9 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Kept source API cache provider-agnostic and backward-compatible with in-memory cache when PostgreSQL is not enabled.
 - Updated source cache diagnostics to show primary, persistent, and memory cache counts.
 - Added PostgreSQL integration coverage proving source API cache records can be restored after clearing the memory cache.
+- Added a manual `Refresh` control to the Source health panel.
+- Added refresh/loading and last-updated states for source health diagnostics.
+- Verified the home page renders the Source health panel and refresh control locally.
 
 ## Important Current Decisions
 
@@ -173,4 +176,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Next practical options: add a manual source-health refresh control, run a full live-source generation with durable source cache enabled, or polish the UI with a component library.
+Next practical options: run a full live-source generation with durable source cache enabled, add persisted source diagnostics, or polish the UI with a component library.

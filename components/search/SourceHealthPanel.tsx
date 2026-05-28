@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type SourceHealthResponse = {
   persistence: {
@@ -49,11 +49,35 @@ type SourceHealthResponse = {
 export function SourceHealthPanel() {
   const [data, setData] = useState<SourceHealthResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
+
+  const loadHealth = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      const response = await fetch("/api/source-cache");
+      const payload = (await response.json()) as SourceHealthResponse;
+
+      if (!response.ok) {
+        throw new Error("Could not load source health.");
+      }
+
+      setData(payload);
+      setError(null);
+      setLastUpdatedAt(new Date().toLocaleTimeString());
+    } catch (caught) {
+      setError(
+        caught instanceof Error ? caught.message : "Could not load source health."
+      );
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function loadHealth() {
+    async function loadHealthIfActive() {
       try {
         const response = await fetch("/api/source-cache");
         const payload = (await response.json()) as SourceHealthResponse;
@@ -65,6 +89,7 @@ export function SourceHealthPanel() {
         if (!cancelled) {
           setData(payload);
           setError(null);
+          setLastUpdatedAt(new Date().toLocaleTimeString());
         }
       } catch (caught) {
         if (!cancelled) {
@@ -77,8 +102,8 @@ export function SourceHealthPanel() {
       }
     }
 
-    void loadHealth();
-    const interval = window.setInterval(loadHealth, 15000);
+    void loadHealthIfActive();
+    const interval = window.setInterval(loadHealthIfActive, 15000);
 
     return () => {
       cancelled = true;
@@ -93,7 +118,24 @@ export function SourceHealthPanel() {
           <h2>Source health</h2>
           <p>Cache and recent adapter diagnostics for this dev process.</p>
         </div>
-        <span className="badge">{data ? "live" : "loading"}</span>
+        <div className="source-health-actions">
+          {lastUpdatedAt ? (
+            <span className="source-health-updated">{lastUpdatedAt}</span>
+          ) : null}
+          <span className="badge">
+            {isRefreshing ? "refreshing" : data ? "live" : "loading"}
+          </span>
+          <button
+            type="button"
+            className="source-health-refresh"
+            disabled={isRefreshing}
+            onClick={() => {
+              void loadHealth();
+            }}
+          >
+            Refresh
+          </button>
+        </div>
       </div>
 
       {error ? (

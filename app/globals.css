@@ -348,6 +348,42 @@ textarea {
   align-items: flex-start;
 }
 
+.source-health-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  align-items: center;
+}
+
+.source-health-updated {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.source-health-refresh {
+  min-height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 10px;
+  background: #fff;
+  color: var(--foreground);
+  font-size: 0.86rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.source-health-refresh:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.source-health-refresh:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
 .source-health h2,
 .source-health h3,
 .source-health p {
@@ -528,6 +564,10 @@ textarea {
 
   .source-health-header {
     display: grid;
+  }
+
+  .source-health-actions {
+    justify-content: flex-start;
   }
 
   .research-grid {
