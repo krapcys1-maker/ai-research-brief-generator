@@ -200,6 +200,14 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Collapsed detailed source diagnostics behind a technical details section so the main report reads more like a useful research brief.
 - Cleaned OpenAlex text metadata to remove control characters and broken replacement glyphs before papers are shown or sent into synthesis.
 - Smoke-tested an existing rendered brief page on `localhost:3000` and confirmed the new quality, reading path, diagnostics, and human citation UI are present.
+- Ran a full visual Playwright smoke test through Chrome:
+  - opened the home page
+  - filled the research form with a Polish query
+  - generated a real brief through the UI
+  - opened source details from a citation
+  - verified Markdown export
+  - checked the mobile viewport for horizontal overflow
+- Fixed mobile rendering by adding the Next.js viewport metadata and allowing brief sections to shrink/wrap inside narrow screens.
 
 ## Important Current Decisions
 

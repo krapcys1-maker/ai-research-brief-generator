@@ -48,10 +48,23 @@ textarea {
 }
 
 .surface {
+  max-width: 100%;
+  min-width: 0;
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 8px;
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+}
+
+.surface,
+.surface p,
+.surface h1,
+.surface h2,
+.surface h3,
+.surface li,
+.surface dd,
+.surface a {
+  overflow-wrap: anywhere;
 }
 
 .badge {
@@ -90,6 +103,10 @@ textarea {
 .stack {
   display: grid;
   gap: 16px;
+}
+
+.stack > * {
+  min-width: 0;
 }
 
 .metric-grid {
