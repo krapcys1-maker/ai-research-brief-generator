@@ -449,6 +449,66 @@ textarea {
   margin-top: 10px;
 }
 
+.home-diagnostics-grid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.75fr) minmax(0, 1.25fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.brief-history {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+}
+
+.brief-history-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.brief-history h2,
+.brief-history p {
+  margin: 0;
+}
+
+.brief-history h2 {
+  font-size: 1.1rem;
+}
+
+.brief-history p {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.brief-history-list {
+  display: grid;
+  gap: 10px;
+}
+
+.brief-history-list a {
+  display: grid;
+  gap: 7px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfcfe;
+  text-decoration: none;
+}
+
+.brief-history-list strong {
+  line-height: 1.35;
+}
+
+.brief-history-list span:not(.badge),
+.brief-history-list time {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
 .research-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
@@ -471,6 +531,10 @@ textarea {
   }
 
   .research-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-diagnostics-grid {
     grid-template-columns: 1fr;
   }
 

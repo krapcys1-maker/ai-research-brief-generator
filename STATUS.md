@@ -123,6 +123,9 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Extended `/api/source-cache` with cache stats, source health summary, and recent diagnostics.
 - Added unit test coverage for the source diagnostics store.
 - Verified `npm test`, `npm run lint`, and `npm run build` after the source health panel update.
+- Updated home page copy to mention mock and live academic sources.
+- Added a recent brief history panel using `GET /api/briefs` and the in-memory brief store.
+- Verified `npm test`, `npm run lint`, and `npm run build` after the home page history update.
 
 ## Important Current Decisions
 
@@ -136,4 +139,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Next practical options: add result history/search on the home page, improve homepage copy to reflect real source adapters, or add durable persistence when ready to move beyond process memory.
+Next practical options: add durable persistence when ready to move beyond process memory, add a manual source-health refresh control, or polish the UI with a component library.

@@ -1,3 +1,4 @@
+import { BriefHistoryPanel } from "@/components/search/BriefHistoryPanel";
 import { ResearchForm } from "@/components/search/ResearchForm";
 import { SourceHealthPanel } from "@/components/search/SourceHealthPanel";
 
@@ -25,8 +26,9 @@ export default function HomePage() {
             AI Research Brief Generator
           </h1>
           <p style={{ color: "var(--muted)", fontSize: "1.08rem", lineHeight: 1.7 }}>
-            Generate a structured research brief from mock academic paper data,
-            with source IDs validated before the result is shown.
+            Generate a structured research brief from mock data or live academic
+            sources, with every claim validated against selected paper IDs before
+            the result is shown.
           </p>
         </div>
       </section>
@@ -36,7 +38,10 @@ export default function HomePage() {
       </section>
 
       <section className="container" style={{ padding: "0 0 64px" }}>
-        <SourceHealthPanel />
+        <div className="home-diagnostics-grid">
+          <BriefHistoryPanel />
+          <SourceHealthPanel />
+        </div>
       </section>
     </main>
   );
