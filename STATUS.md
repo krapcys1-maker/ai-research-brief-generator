@@ -148,6 +148,14 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Added an optional PostgreSQL integration test for `PrismaBriefRepository`.
 - Verified PostgreSQL repository persistence by saving, loading, listing, and summarizing a brief record in the local database.
 - Updated local run documentation with the Docker/PostgreSQL workflow.
+- Verified the full durable flow with the app running against local PostgreSQL:
+  - generated a Polish mock-source brief through `POST /api/briefs`
+  - confirmed `outputLanguage: pl`
+  - confirmed all `sourcePaperIds` resolve to selected papers
+  - restarted the dev server
+  - confirmed the same brief still loads from PostgreSQL by ID
+  - confirmed `/briefs/[id]` renders successfully
+  - confirmed `/api/source-cache` reports `mode: postgresql`
 
 ## Important Current Decisions
 
@@ -161,4 +169,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Next practical options: test the full UI with durable PostgreSQL persistence enabled, add a manual source-health refresh control, or polish the UI with a component library.
+Next practical options: add a manual source-health refresh control, add persisted source API cache storage, or polish the UI with a component library.
