@@ -12,14 +12,16 @@ import { validateBriefGrounding } from "@/lib/pipeline/validateGrounding";
 import type { NormalizedPaper } from "@/lib/sources/types";
 import type { OutputLanguage } from "@/lib/utils/language";
 
-export async function synthesizeBrief(input: {
+export type SynthesizeBriefInput = {
   id: string;
   query: string;
   outputLanguage: OutputLanguage;
   queryVariants: string[];
   papers: NormalizedPaper[];
   searchSummary: ResearchBrief["searchSummary"];
-}) {
+};
+
+export async function synthesizeBrief(input: SynthesizeBriefInput) {
   const provider = createAIProvider();
   let lastError: unknown;
 

@@ -65,6 +65,8 @@ npm test
 npm run build
 ```
 
+The test suite covers core pure modules plus the mock-paper brief pipeline and the `/api/briefs` route without calling DeepSeek.
+
 Optional cache diagnostic:
 
 ```bash

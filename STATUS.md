@@ -85,6 +85,10 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Added unit tests for language detection, query expansion, deduplication, and source-grounding validation.
 - Fixed title normalization so punctuation becomes spacing instead of merging words during deduplication.
 - Verified `npm test`, `npm run lint`, and `npm run build`.
+- Added dependency injection to `createBrief` so the full pipeline can be tested without calling DeepSeek.
+- Added tests for the mock-paper brief pipeline and Polish output-language handling.
+- Added tests for `POST /api/briefs` success and controlled missing-provider-key failure responses.
+- Verified `npm test` now covers 14 tests across 6 test files.
 
 ## Important Current Decisions
 
@@ -98,4 +102,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Improve source quality/ranking further with better normalization and source result diagnostics, or add durable persistence when ready to move beyond process memory.
+Next practical options: add source/result diagnostics in the UI, improve ranking with per-source quality signals, or add durable persistence when ready to move beyond process memory.

@@ -39,3 +39,7 @@ export function listBriefRecords() {
     b.createdAt.localeCompare(a.createdAt)
   );
 }
+
+export function clearBriefStore() {
+  store.clear();
+}
