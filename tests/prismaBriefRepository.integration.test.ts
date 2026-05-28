@@ -8,6 +8,13 @@ import {
   getSourceCacheStats,
   setCachedSourcePapers
 } from "@/lib/storage/sourceApiCache";
+import {
+  clearSourceDiagnostics,
+  clearSourceDiagnosticsMemoryForTests,
+  getRecentSourceDiagnostics,
+  getSourceHealthSummary,
+  recordSourceDiagnostics
+} from "@/lib/storage/sourceDiagnosticsStore";
 
 const hasPostgresDatabaseUrl =
   process.env.DATABASE_URL?.startsWith("postgresql://") ||
@@ -20,7 +27,9 @@ describeWithPostgres("prismaBriefRepository", () => {
   beforeEach(async () => {
     await prismaBriefRepository.clear();
     await prisma.apiCache.deleteMany();
+    await clearSourceDiagnostics();
     clearSourceApiMemoryCacheForTests();
+    clearSourceDiagnosticsMemoryForTests();
   });
 
   afterAll(async () => {
@@ -85,5 +94,39 @@ describeWithPostgres("prismaBriefRepository", () => {
     expect(cached).toEqual([paper]);
     expect(stats.persistent.active).toBe(1);
     expect(stats.active).toBe(1);
+  });
+
+  it("persists source diagnostics across memory resets", async () => {
+    await recordSourceDiagnostics([
+      {
+        source: "openalex",
+        query: "retrieval augmented generation diagnostics test",
+        status: "success",
+        resultCount: 2,
+        cached: true
+      }
+    ]);
+    clearSourceDiagnosticsMemoryForTests();
+
+    const recent = await getRecentSourceDiagnostics(5);
+    const summary = await getSourceHealthSummary();
+
+    expect(recent).toHaveLength(1);
+    expect(recent[0]?.source).toBe("openalex");
+    expect(recent[0]?.cached).toBe(true);
+    expect(summary).toEqual({
+      totalDiagnostics: 1,
+      bySource: [
+        {
+          source: "openalex",
+          success: 1,
+          empty: 0,
+          failed: 0,
+          cached: 1,
+          lastStatus: "success",
+          lastMessage: null
+        }
+      ]
+    });
   });
 });

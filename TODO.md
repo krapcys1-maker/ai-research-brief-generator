@@ -116,6 +116,7 @@
 
 - [x] Add source/API health panel.
 - [x] Add manual refresh control for source/API health panel.
+- [x] Persist source diagnostics in PostgreSQL when `DATABASE_URL` is enabled.
 - [x] Add recent brief history on home page.
 - [ ] Add user accounts.
 - [ ] Add saved topics.

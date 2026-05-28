@@ -174,7 +174,7 @@ export async function searchAllSources(input: SearchPapersInput & {
     );
   });
 
-  recordSourceDiagnostics(sourceDiagnostics);
+  await recordSourceDiagnostics(sourceDiagnostics);
 
   if (!papers.length) {
     throw new Error(

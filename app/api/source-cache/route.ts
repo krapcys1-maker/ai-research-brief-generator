@@ -15,7 +15,7 @@ export async function GET() {
   return NextResponse.json({
     persistence: getPersistenceStatus(),
     cache: await getSourceCacheStats(),
-    sourceHealth: getSourceHealthSummary(),
-    recentDiagnostics: getRecentSourceDiagnostics(12)
+    sourceHealth: await getSourceHealthSummary(),
+    recentDiagnostics: await getRecentSourceDiagnostics(12)
   });
 }

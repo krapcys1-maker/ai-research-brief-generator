@@ -172,6 +172,11 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
   - confirmed the second run used persisted source cache entries (`cached: true` diagnostics)
   - confirmed both generated live-source briefs are listed by `GET /api/briefs`
   - confirmed the second live-source brief renders successfully at `/briefs/[id]`
+- Added persisted source diagnostics using a new Prisma `SourceDiagnostic` model.
+- Added a Prisma migration for source diagnostics and applied it to the local PostgreSQL container.
+- Kept source diagnostics backward-compatible with in-memory storage when PostgreSQL is not enabled.
+- Added PostgreSQL integration coverage proving diagnostics can be restored after clearing memory state.
+- Verified `/api/source-cache` returns persisted diagnostics in `mode: postgresql`.
 
 ## Important Current Decisions
 
@@ -185,4 +190,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Next practical options: run a full live-source generation with durable source cache enabled, add persisted source diagnostics, or polish the UI with a component library.
+Next practical options: polish the UI with a component library, add production rate limiting, or add saved topics/user accounts.

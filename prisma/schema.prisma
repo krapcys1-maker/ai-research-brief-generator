@@ -87,3 +87,17 @@ model ApiCache {
   createdAt DateTime @default(now())
   expiresAt DateTime
 }
+
+model SourceDiagnostic {
+  id          String   @id @default(cuid())
+  source      String
+  query       String
+  status      String
+  resultCount Int
+  cached      Boolean
+  message     String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([source])
+}

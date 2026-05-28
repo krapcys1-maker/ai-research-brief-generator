@@ -1,18 +1,20 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   clearSourceDiagnostics,
+  clearSourceDiagnosticsMemoryForTests,
   getRecentSourceDiagnostics,
   getSourceHealthSummary,
   recordSourceDiagnostics
 } from "@/lib/storage/sourceDiagnosticsStore";
 
 describe("sourceDiagnosticsStore", () => {
-  beforeEach(() => {
-    clearSourceDiagnostics();
+  beforeEach(async () => {
+    await clearSourceDiagnostics();
+    clearSourceDiagnosticsMemoryForTests();
   });
 
-  it("summarizes recent source diagnostics by source", () => {
-    recordSourceDiagnostics([
+  it("summarizes recent source diagnostics by source", async () => {
+    await recordSourceDiagnostics([
       {
         source: "mock",
         query: "retrieval augmented generation",
@@ -37,7 +39,8 @@ describe("sourceDiagnosticsStore", () => {
       }
     ]);
 
-    const summary = getSourceHealthSummary();
+    const summary = await getSourceHealthSummary();
+    const recent = await getRecentSourceDiagnostics(1);
 
     expect(summary.totalDiagnostics).toBe(3);
     expect(summary.bySource).toContainEqual({
@@ -58,6 +61,6 @@ describe("sourceDiagnosticsStore", () => {
       lastStatus: "failed",
       lastMessage: "rate limited"
     });
-    expect(getRecentSourceDiagnostics(1)[0].query).toBe("grounded generation");
+    expect(recent[0]?.query).toBe("grounded generation");
   });
 });
