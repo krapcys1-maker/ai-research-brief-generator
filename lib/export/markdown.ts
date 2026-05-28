@@ -49,7 +49,7 @@ export function researchBriefToMarkdown(input: {
     outputLanguage: brief.outputLanguage,
     papers
   });
-  const sourceQuality = getSourceQualitySummary(papers);
+  const sourceQuality = getSourceQualitySummary(papers, brief.query);
   const lines: string[] = [];
 
   lines.push(`# ${brief.title}`);
@@ -86,6 +86,12 @@ export function researchBriefToMarkdown(input: {
   lines.push(`- Average relevance: ${sourceQuality.metrics.averageRelevance.toFixed(2)}`);
   lines.push(`- Strong query matches: ${sourceQuality.metrics.highRelevancePapers}`);
   lines.push(`- Low query matches: ${sourceQuality.metrics.lowRelevancePapers}`);
+  lines.push(
+    `- Direct query-title/abstract matches: ${sourceQuality.metrics.strongQueryAlignmentPapers}`
+  );
+  lines.push(
+    `- Weak query-title/abstract matches: ${sourceQuality.metrics.weakQueryAlignmentPapers}`
+  );
   if (sourceQuality.strengths.length) {
     lines.push("- Strengths: " + sourceQuality.strengths.join("; "));
   }
@@ -199,13 +205,23 @@ export function researchBriefToMarkdown(input: {
   lines.push("## Bibliography");
   lines.push("");
   for (const paper of papers) {
-    const insight = getPaperInsight(paper);
+    const insight = getPaperInsight(paper, undefined, brief.query);
 
     lines.push(`### [${paper.id}] ${paper.title}`);
     lines.push("");
     lines.push(`- Source: ${paper.source}`);
     lines.push(`- Role: ${insight.role}`);
     lines.push(`- Why read this: ${insight.whyRead}`);
+    if (insight.queryAlignment) {
+      lines.push(`- Query alignment: ${insight.queryAlignment.label} (${insight.queryAlignment.combinedScore.toFixed(2)})`);
+      lines.push(`- Query alignment detail: title ${insight.queryAlignment.titleScore.toFixed(2)}, abstract ${insight.queryAlignment.abstractScore.toFixed(2)}`);
+      if (insight.queryAlignment.matchedTerms.length) {
+        lines.push(`- Matched query terms: ${insight.queryAlignment.matchedTerms.join(", ")}`);
+      }
+      if (insight.queryAlignment.missingTerms.length) {
+        lines.push(`- Missing query terms: ${insight.queryAlignment.missingTerms.join(", ")}`);
+      }
+    }
     if (insight.strengths.length) {
       lines.push(`- Strengths: ${insight.strengths.join("; ")}`);
     }

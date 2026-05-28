@@ -41,8 +41,8 @@ The app supports:
 
 ## Latest Completed Step
 
-Added deterministic source-quality and paper-level reading guidance. Preflight, the reading path, source drawer, bibliography cards, and Markdown export now explain why a paper was selected, what kind of source it is, and which metadata limitations should be checked.
+Added query-title/abstract alignment as an explicit source coverage signal. Preflight, the reading path, source drawer, bibliography cards, quality details, and Markdown export now show direct/partial/weak topic matches, title and abstract scores, and matched query terms.
 
 ## Next Recommended Step
 
-Follow `docs/ROADMAP.md`. The next practical product step is adding query-title alignment as an explicit quality signal, then adapter contract tests for arXiv, Semantic Scholar, and OpenAlex response drift.
+Follow `docs/ROADMAP.md`. The next practical product step is adapter contract tests for arXiv, Semantic Scholar, and OpenAlex response drift.

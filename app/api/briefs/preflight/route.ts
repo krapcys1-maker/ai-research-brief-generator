@@ -35,7 +35,7 @@ export async function POST(request: Request) {
         url: paper.sourceUrls[0] ?? null,
         relevanceScore: paper.relevanceScore ?? null,
         finalScore: paper.finalScore ?? null,
-        insight: getPaperInsight(paper)
+        insight: getPaperInsight(paper, undefined, preflight.request.query)
       }))
     });
   } catch (error) {

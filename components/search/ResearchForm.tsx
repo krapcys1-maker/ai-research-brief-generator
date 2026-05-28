@@ -38,6 +38,14 @@ type PreflightPaper = {
     whyRead: string;
     strengths: string[];
     limitations: string[];
+    queryAlignment?: {
+      label: string;
+      titleScore: number;
+      abstractScore: number;
+      combinedScore: number;
+      matchedTerms: string[];
+      missingTerms: string[];
+    };
   };
 };
 
@@ -253,6 +261,23 @@ function SourcePreflightPanel({
                   <p className="preflight-paper-reason">
                     {paper.insight.whyRead}
                   </p>
+                ) : null}
+                {paper.insight?.queryAlignment ? (
+                  <div className="query-alignment">
+                    <span className="metric-label">Query alignment</span>
+                    <strong>
+                      {paper.insight.queryAlignment.label} (
+                      {paper.insight.queryAlignment.combinedScore.toFixed(2)})
+                    </strong>
+                    {paper.insight.queryAlignment.matchedTerms.length ? (
+                      <p>
+                        Matched:{" "}
+                        {paper.insight.queryAlignment.matchedTerms
+                          .slice(0, 8)
+                          .join(", ")}
+                      </p>
+                    ) : null}
+                  </div>
                 ) : null}
                 <p>
                   {paper.authors.slice(0, 3).join(", ")}

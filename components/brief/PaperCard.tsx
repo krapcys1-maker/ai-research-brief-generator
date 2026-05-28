@@ -28,9 +28,15 @@ function ScoreBar({
   );
 }
 
-export function PaperCard({ paper }: { paper: NormalizedPaper }) {
+export function PaperCard({
+  paper,
+  query
+}: {
+  paper: NormalizedPaper;
+  query?: string;
+}) {
   const doiUrl = getDoiUrl(paper.doi);
-  const insight = getPaperInsight(paper);
+  const insight = getPaperInsight(paper, undefined, query);
   const scoreRows = [
     ["Relevance", paper.relevanceScore],
     ["Citations", paper.citationScore],
@@ -57,6 +63,24 @@ export function PaperCard({ paper }: { paper: NormalizedPaper }) {
           <span className="metric-label">Why read this</span>
           <p>{insight.whyRead}</p>
         </div>
+        {insight.queryAlignment ? (
+          <div className="query-alignment">
+            <span className="metric-label">Query alignment</span>
+            <strong>
+              {insight.queryAlignment.label} (
+              {insight.queryAlignment.combinedScore.toFixed(2)})
+            </strong>
+            <p>
+              Title {insight.queryAlignment.titleScore.toFixed(2)}, abstract{" "}
+              {insight.queryAlignment.abstractScore.toFixed(2)}
+            </p>
+            {insight.queryAlignment.matchedTerms.length ? (
+              <p>
+                Matched: {insight.queryAlignment.matchedTerms.slice(0, 8).join(", ")}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
         {insight.limitations.length ? (
           <div>
             <span className="metric-label">Check before relying on it</span>

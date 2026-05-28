@@ -5,6 +5,16 @@ export type PaperInsight = {
   whyRead: string;
   strengths: string[];
   limitations: string[];
+  queryAlignment?: PaperQueryAlignment;
+};
+
+export type PaperQueryAlignment = {
+  label: "Direct topic match" | "Partial topic match" | "Weak topic match";
+  titleScore: number;
+  abstractScore: number;
+  combinedScore: number;
+  matchedTerms: string[];
+  missingTerms: string[];
 };
 
 export type SourceQualitySummary = {
@@ -21,6 +31,8 @@ export type SourceQualitySummary = {
     lowRelevancePapers: number;
     sourceDiversity: number;
     averageRelevance: number;
+    strongQueryAlignmentPapers: number;
+    weakQueryAlignmentPapers: number;
   };
   strengths: string[];
   cautions: string[];
@@ -28,6 +40,36 @@ export type SourceQualitySummary = {
 
 function round2(value: number) {
   return Math.round(value * 100) / 100;
+}
+
+const STOP_TERMS = new Set([
+  "and",
+  "for",
+  "from",
+  "how",
+  "the",
+  "with",
+  "systematic",
+  "review",
+  "survey",
+  "benchmark",
+  "evaluation"
+]);
+
+function tokenize(text: string) {
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((term) => term.length > 1 && !STOP_TERMS.has(term))
+    .flatMap((term) =>
+      term.endsWith("s") && term.length > 3 ? [term, term.slice(0, -1)] : [term]
+    );
+}
+
+function uniqueTerms(terms: string[]) {
+  return [...new Set(terms)];
 }
 
 function isLiveSource(paper: NormalizedPaper) {
@@ -68,17 +110,24 @@ function getRole(paper: NormalizedPaper, currentYear: number) {
 
 export function getPaperInsight(
   paper: NormalizedPaper,
-  currentYear = new Date().getFullYear()
+  currentYear = new Date().getFullYear(),
+  query?: string
 ): PaperInsight {
   const strengths: string[] = [];
   const limitations: string[] = [];
   const relevance = paper.relevanceScore ?? 0;
   const citations = paper.citationCount ?? 0;
   const role = getRole(paper, currentYear);
+  const queryAlignment = query ? getPaperQueryAlignment(paper, query) : undefined;
 
-  if (relevance >= 0.65) {
+  if (queryAlignment?.combinedScore && queryAlignment.combinedScore >= 0.65) {
+    strengths.push("direct query-title/abstract alignment");
+  } else if (relevance >= 0.65) {
     strengths.push("strong title/abstract match to the query");
-  } else if (relevance >= 0.35) {
+  } else if (
+    (queryAlignment?.combinedScore && queryAlignment.combinedScore >= 0.35) ||
+    relevance >= 0.35
+  ) {
     strengths.push("reasonable topical match");
   } else {
     limitations.push("weak query match, so verify whether it really fits");
@@ -125,12 +174,50 @@ export function getPaperInsight(
     role,
     whyRead,
     strengths,
-    limitations
+    limitations,
+    queryAlignment
+  };
+}
+
+export function getPaperQueryAlignment(
+  paper: NormalizedPaper,
+  query: string
+): PaperQueryAlignment {
+  const queryTerms = uniqueTerms(tokenize(query)).slice(0, 12);
+  const titleTerms = new Set(tokenize(paper.title));
+  const abstractTerms = new Set(tokenize(`${paper.abstract ?? ""} ${paper.venue ?? ""}`));
+  const matchedTerms = queryTerms.filter(
+    (term) => titleTerms.has(term) || abstractTerms.has(term)
+  );
+  const missingTerms = queryTerms.filter((term) => !matchedTerms.includes(term));
+  const divisor = Math.max(1, queryTerms.length);
+  const titleScore = round2(
+    queryTerms.filter((term) => titleTerms.has(term)).length / divisor
+  );
+  const abstractScore = round2(
+    queryTerms.filter((term) => abstractTerms.has(term)).length / divisor
+  );
+  const combinedScore = round2(Math.min(1, titleScore * 0.7 + abstractScore * 0.3));
+  const label =
+    combinedScore >= 0.65
+      ? "Direct topic match"
+      : combinedScore >= 0.3
+        ? "Partial topic match"
+        : "Weak topic match";
+
+  return {
+    label,
+    titleScore,
+    abstractScore,
+    combinedScore,
+    matchedTerms,
+    missingTerms
   };
 }
 
 export function getSourceQualitySummary(
-  papers: NormalizedPaper[]
+  papers: NormalizedPaper[],
+  query?: string
 ): SourceQualitySummary {
   const totalPapers = papers.length;
   const livePapers = papers.filter(isLiveSource).length;
@@ -149,6 +236,15 @@ export function getSourceQualitySummary(
       totalPapers
     : 0;
   const sourceDiversity = new Set(papers.map((paper) => paper.source)).size;
+  const queryAlignments = query
+    ? papers.map((paper) => getPaperQueryAlignment(paper, query))
+    : [];
+  const strongQueryAlignmentPapers = queryAlignments.filter(
+    (alignment) => alignment.combinedScore >= 0.65
+  ).length;
+  const weakQueryAlignmentPapers = queryAlignments.filter(
+    (alignment) => alignment.combinedScore < 0.3
+  ).length;
   const strengths: string[] = [];
   const cautions: string[] = [];
 
@@ -180,11 +276,18 @@ export function getSourceQualitySummary(
     strengths.push("evidence comes from multiple source types");
   }
 
+  if (query && strongQueryAlignmentPapers >= Math.max(1, totalPapers * 0.35)) {
+    strengths.push("several papers directly match the query wording");
+  } else if (query && weakQueryAlignmentPapers >= Math.max(1, totalPapers * 0.5)) {
+    cautions.push("many selected papers only weakly match the query wording");
+  }
+
   const label =
     totalPapers >= 6 &&
     livePapers >= totalPapers * 0.6 &&
     papersWithAbstracts >= totalPapers * 0.7 &&
-    highRelevancePapers >= totalPapers * 0.5
+    highRelevancePapers >= totalPapers * 0.5 &&
+    (!query || weakQueryAlignmentPapers < totalPapers * 0.5)
       ? "Strong source base"
       : totalPapers >= 2 && averageRelevance >= 0.25
         ? "Usable source base"
@@ -210,7 +313,9 @@ export function getSourceQualitySummary(
       highRelevancePapers,
       lowRelevancePapers,
       sourceDiversity,
-      averageRelevance: round2(averageRelevance)
+      averageRelevance: round2(averageRelevance),
+      strongQueryAlignmentPapers,
+      weakQueryAlignmentPapers
     },
     strengths,
     cautions

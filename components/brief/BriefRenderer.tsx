@@ -254,7 +254,7 @@ function QualitySummary({
 }) {
   const quality = getBriefQuality(brief, papers);
   const sourceCounts = getPaperSourceCounts(papers);
-  const sourceQuality = getSourceQualitySummary(papers);
+  const sourceQuality = getSourceQualitySummary(papers, brief.query);
 
   return (
     <section className="quality-panel" aria-label="Brief quality summary">
@@ -287,6 +287,14 @@ function QualitySummary({
           {sourceQuality.metrics.highRelevancePapers} strong match,{" "}
           {brief.searchSummary.warnings.length} warning(s)
         </p>
+      </div>
+      <div>
+        <span className="metric-label">Query alignment</span>
+        <strong>
+          {sourceQuality.metrics.strongQueryAlignmentPapers} direct /{" "}
+          {sourceQuality.metrics.weakQueryAlignmentPapers} weak
+        </strong>
+        <p>Direct matches are papers whose title/abstract terms closely match the query.</p>
       </div>
       {sourceQuality.strengths.length ? (
         <div>
@@ -474,9 +482,11 @@ function PriorityTakeaways({
 
 function ReadingPath({
   papers,
+  query,
   onSelect
 }: {
   papers: NormalizedPaper[];
+  query: string;
   onSelect: (id: string) => void;
 }) {
   const topPapers = papers
@@ -497,12 +507,36 @@ function ReadingPath({
       <div className="reading-path">
         {topPapers.map((paper, index) => (
           <article key={paper.id}>
+            {(() => {
+              const insight = getPaperInsight(paper, undefined, query);
+
+              return (
+                <>
             <div className="token-list">
               <span className="badge">#{index + 1}</span>
-              <span className="badge">{getPaperInsight(paper).role}</span>
+              <span className="badge">{insight.role}</span>
+              {insight.queryAlignment ? (
+                <span className="badge">{insight.queryAlignment.label}</span>
+              ) : null}
             </div>
             <h3>{paper.title}</h3>
-            <p className="reading-path-reason">{getPaperInsight(paper).whyRead}</p>
+            <p className="reading-path-reason">{insight.whyRead}</p>
+            {insight.queryAlignment ? (
+              <div className="query-alignment">
+                <span className="metric-label">Query alignment</span>
+                <strong>{insight.queryAlignment.combinedScore.toFixed(2)}</strong>
+                <p>
+                  Title {insight.queryAlignment.titleScore.toFixed(2)}, abstract{" "}
+                  {insight.queryAlignment.abstractScore.toFixed(2)}
+                </p>
+                {insight.queryAlignment.matchedTerms.length ? (
+                  <p>
+                    Matched:{" "}
+                    {insight.queryAlignment.matchedTerms.slice(0, 8).join(", ")}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
             <p>
               {formatCitationLabel(paper, paper.id)}
               {paper.venue ? `, ${paper.venue}` : ""}
@@ -520,6 +554,9 @@ function ReadingPath({
             >
               Source details
             </button>
+                </>
+              );
+            })()}
           </article>
         ))}
       </div>
@@ -830,9 +867,11 @@ function SearchDiagnostics({
 
 function SourceDrawer({
   paper,
+  query,
   onClose
 }: {
   paper: NormalizedPaper | null;
+  query: string;
   onClose: () => void;
 }) {
   if (!paper) {
@@ -840,7 +879,7 @@ function SourceDrawer({
   }
 
   const doiUrl = getDoiUrl(paper.doi);
-  const insight = getPaperInsight(paper);
+  const insight = getPaperInsight(paper, undefined, query);
 
   return (
     <div
@@ -923,6 +962,25 @@ function SourceDrawer({
             <span className="metric-label">Why this paper</span>
             <p>{insight.whyRead}</p>
           </div>
+          {insight.queryAlignment ? (
+            <div className="query-alignment">
+              <span className="metric-label">Query alignment</span>
+              <strong>
+                {insight.queryAlignment.label} (
+                {insight.queryAlignment.combinedScore.toFixed(2)})
+              </strong>
+              <p>
+                Title {insight.queryAlignment.titleScore.toFixed(2)}, abstract{" "}
+                {insight.queryAlignment.abstractScore.toFixed(2)}
+              </p>
+              {insight.queryAlignment.matchedTerms.length ? (
+                <p>
+                  Matched:{" "}
+                  {insight.queryAlignment.matchedTerms.slice(0, 8).join(", ")}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           {insight.limitations.length ? (
             <div>
               <span className="metric-label">Limitations</span>
@@ -1002,7 +1060,11 @@ export function BriefRenderer({
 
       <BriefAtAGlance brief={brief} papers={papers} />
 
-      <ReadingPath papers={papers} onSelect={setSelectedPaperId} />
+      <ReadingPath
+        papers={papers}
+        query={brief.query}
+        onSelect={setSelectedPaperId}
+      />
 
       <PriorityTakeaways
         brief={brief}
@@ -1170,11 +1232,15 @@ export function BriefRenderer({
       <Section title="Bibliography">
         <div className="stack">
           {papers.map((paper) => (
-            <PaperCard key={paper.id} paper={paper} />
+            <PaperCard key={paper.id} paper={paper} query={brief.query} />
           ))}
         </div>
       </Section>
-      <SourceDrawer paper={selectedPaper} onClose={() => setSelectedPaperId(null)} />
+      <SourceDrawer
+        paper={selectedPaper}
+        query={brief.query}
+        onClose={() => setSelectedPaperId(null)}
+      />
     </div>
   );
 }

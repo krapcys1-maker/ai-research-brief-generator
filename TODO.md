@@ -4,7 +4,6 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 
 ## Next
 
-- [ ] Add query-title alignment as an explicit source coverage signal.
 - [ ] Add adapter contract tests for arXiv, Semantic Scholar, and OpenAlex response drift.
 
 ## Production Readiness

@@ -65,6 +65,8 @@ describe("researchBriefToMarkdown", () => {
     expect(markdown).toContain("## Source Quality");
     expect(markdown).toContain("**Weak source base:**");
     expect(markdown).toContain("- Strong query matches: 1");
+    expect(markdown).toContain("- Direct query-title/abstract matches:");
+    expect(markdown).toContain("- Weak query-title/abstract matches:");
     expect(markdown).toContain("**Evidence:**");
     expect(markdown).toContain(
       "- [paper_1] (direct) grounded generation in clinical settings"
@@ -88,6 +90,8 @@ describe("researchBriefToMarkdown", () => {
     expect(markdown).toContain("- Source: openalex");
     expect(markdown).toContain("- Role:");
     expect(markdown).toContain("- Why read this:");
+    expect(markdown).toContain("- Query alignment:");
+    expect(markdown).toContain("- Query alignment detail:");
     expect(markdown).toContain("- Strengths:");
     expect(markdown).toContain("- Influential citation count: 7");
     expect(markdown).toContain("- Final score: 0.86");

@@ -17,11 +17,14 @@ describe("paperInsights", () => {
         relevanceScore: 0.72,
         citationCount: 20
       }),
-      2026
+      2026,
+      "retrieval augmented generation medicine"
     );
 
     expect(insight.role).toBe("Benchmark or evaluation");
-    expect(insight.whyRead).toContain("strong title/abstract match");
+    expect(insight.queryAlignment?.label).toBe("Direct topic match");
+    expect(insight.queryAlignment?.matchedTerms).toContain("retrieval");
+    expect(insight.whyRead).toContain("direct query-title/abstract alignment");
     expect(insight.strengths).toContain("DOI available");
     expect(insight.limitations).toEqual([]);
   });
@@ -56,14 +59,16 @@ describe("paperInsights", () => {
   it("summarizes source quality signals across selected papers", () => {
     const summary = getSourceQualitySummary([
       createPaper({
+        title: "Retrieval-Augmented Generation for Medicine",
         source: "openalex",
-        abstract: "A useful abstract.",
+        abstract: "Retrieval augmented generation for medical evidence.",
         doi: "10.1000/a",
         relevanceScore: 0.8
       }),
       createPaper({
+        title: "Augmented Generation for Clinical Question Answering",
         source: "arxiv",
-        abstract: "Another useful abstract.",
+        abstract: "Generation systems retrieve clinical and medical evidence.",
         doi: null,
         arxivId: "2401.00001",
         relevanceScore: 0.55
@@ -74,12 +79,13 @@ describe("paperInsights", () => {
         doi: null,
         relevanceScore: 0.1
       })
-    ]);
+    ], "retrieval augmented generation medicine");
 
     expect(summary.metrics.totalPapers).toBe(3);
     expect(summary.metrics.livePapers).toBe(2);
     expect(summary.metrics.papersWithAbstracts).toBe(2);
     expect(summary.metrics.highRelevancePapers).toBe(2);
+    expect(summary.metrics.strongQueryAlignmentPapers).toBeGreaterThan(0);
     expect(summary.cautions).toContain("few DOI-backed identifiers");
   });
 });
