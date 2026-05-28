@@ -266,6 +266,8 @@ Do not implement this before claim-level evidence validation. Without evidence s
 
 ### 8. Strengthen source coverage assessment
 
+Status: partially completed.
+
 Problem:
 
 Current source preflight is useful but still technical and heuristic.
@@ -294,6 +296,13 @@ Implementation plan:
    - query-title alignment
 3. Make poor coverage block generation by default.
 4. Polish the preflight UI language and reduce technical wording.
+
+Current implementation:
+
+- The home preflight panel now uses user-facing labels: "Looks ready", "Usable with caution", and "Not enough evidence yet".
+- Candidate count, source mix, and warning count are shown as the primary summary.
+- Technical counts such as found, deduped, selected, and average relevance are collapsed under "Technical source details".
+- Remaining follow-up: add richer coverage dimensions such as abstract coverage, identifier coverage, source diversity, and query-title alignment.
 
 Acceptance criteria:
 

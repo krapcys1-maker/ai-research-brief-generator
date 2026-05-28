@@ -248,6 +248,10 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Added Q&A grounding validation so answer claims cannot cite unknown papers and evidence snippets must overlap selected paper metadata.
 - Added an `Ask This Brief` panel to the brief result UI with confidence, not-answerable state, claims, evidence snippets, and source links.
 - Verified a real local Polish Q&A request against an existing brief returned `outputLanguage: pl` with validated source-backed claims.
+- Simplified source preflight language on the home page so users see "Looks ready", "Usable with caution", or "Not enough evidence yet" instead of raw coverage labels.
+- Moved technical source preflight metrics behind a collapsed "Technical source details" section.
+- Updated preflight warnings and generation quality-gate messages to use user-facing explanations instead of pipeline wording.
+- Ran a Playwright preflight smoke check against `AI agents in software engineering`; the simplified panel rendered after a successful `/api/briefs/preflight` response with no horizontal overflow.
 
 ## Important Current Decisions
 
@@ -261,4 +265,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Follow `docs/REMEDIATION_PLAN.md`. The highest-priority next step is to simplify source preflight language for non-technical users, then restructure the docs into current state, roadmap, and changelog.
+Follow `docs/REMEDIATION_PLAN.md`. The highest-priority next step is to restructure the docs into current state, roadmap, and changelog.

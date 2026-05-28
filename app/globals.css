@@ -903,6 +903,21 @@ textarea {
   background: #fbfcfe;
 }
 
+.preflight-panel.good {
+  border-color: #99f6e4;
+  background: #f0fdfa;
+}
+
+.preflight-panel.limited {
+  border-color: #fed7aa;
+  background: #fff7ed;
+}
+
+.preflight-panel.poor {
+  border-color: #fecaca;
+  background: #fff1f2;
+}
+
 .preflight-header {
   display: flex;
   justify-content: space-between;
@@ -926,6 +941,39 @@ textarea {
 .preflight-block li {
   color: var(--muted);
   line-height: 1.5;
+}
+
+.preflight-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.preflight-summary-grid div {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.preflight-summary-grid span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.preflight-summary-grid strong {
+  display: block;
+  margin-top: 3px;
+  font-size: 1.05rem;
+}
+
+.preflight-summary-grid p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.4;
 }
 
 .preflight-metrics {
@@ -998,6 +1046,22 @@ textarea {
 .preflight-paper-list h4 {
   font-size: 0.92rem;
   line-height: 1.35;
+}
+
+.preflight-technical {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+.preflight-technical summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 750;
+}
+
+.preflight-technical[open] summary {
+  margin-bottom: 10px;
 }
 
 .example-panel {
@@ -1267,6 +1331,7 @@ textarea {
   .evidence-boundary-grid,
   .reading-path,
   .takeaway-grid,
+  .preflight-summary-grid,
   .preflight-metrics,
   .source-health-metrics,
   .source-health-grid {

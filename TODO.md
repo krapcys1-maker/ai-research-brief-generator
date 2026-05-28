@@ -147,5 +147,5 @@ See `docs/REMEDIATION_PLAN.md` for the full audit-based repair plan.
 - [x] Add claim-level evidence snippets and support validation.
 - [x] Add controlled `Ask this brief` Q&A over selected papers after evidence validation.
 - [x] Simplify brief result UX so non-technical users see takeaways before diagnostics.
-- [ ] Simplify source preflight language for non-technical users.
+- [x] Simplify source preflight language for non-technical users.
 - [ ] Restructure docs into product spec, current state, roadmap, and changelog.

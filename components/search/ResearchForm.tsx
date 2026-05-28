@@ -49,6 +49,29 @@ type PreflightPayload = {
   papers: PreflightPaper[];
 };
 
+function getQualityGateCopy(qualityGate: QualityGatePayload) {
+  if (qualityGate.canSynthesize === false || qualityGate.coverage === "poor") {
+    return {
+      title: "Not enough evidence",
+      summary:
+        "The selected sources do not give enough support for a reliable brief yet."
+    };
+  }
+
+  if (qualityGate.coverage === "good") {
+    return {
+      title: "Sources look good",
+      summary: "The selected papers look strong enough for a grounded brief."
+    };
+  }
+
+  return {
+    title: "Limited evidence",
+    summary:
+      "The selected papers are usable, but the final brief should be checked carefully."
+  };
+}
+
 const sourceOptions: { value: SourceOption; label: string }[] = [
   { value: "mock", label: "Mock" },
   { value: "arxiv", label: "arXiv" },
@@ -71,6 +94,66 @@ function formatScore(value: number | null) {
   return typeof value === "number" ? value.toFixed(2) : "N/A";
 }
 
+function getPreflightCopy(preflight: PreflightPayload) {
+  const { qualityGate } = preflight;
+
+  if (qualityGate.canSynthesize === false || qualityGate.coverage === "poor") {
+    return {
+      title: "Not enough evidence yet",
+      badge: "revise topic",
+      summary:
+        "The current source set is too weak for a reliable brief. Try a broader query or enable more sources before generating.",
+      tone: "poor" as const
+    };
+  }
+
+  if (qualityGate.coverage === "good") {
+    return {
+      title: "Looks ready",
+      badge: "ready",
+      summary:
+        "The selected papers look strong enough to generate a source-grounded brief.",
+      tone: "good" as const
+    };
+  }
+
+  return {
+    title: "Usable with caution",
+    badge: "limited",
+    summary:
+      "The app found usable papers, but the brief may need extra source checking.",
+    tone: "limited" as const
+  };
+}
+
+function formatPreflightWarning(warning: string) {
+  if (warning.includes("mock/demo records")) {
+    return "Only demo/mock papers were selected even though live sources were requested.";
+  }
+
+  if (warning.includes("weak lexical relevance")) {
+    return "Some selected papers may only loosely match the query.";
+  }
+
+  if (warning.includes("limited source coverage")) {
+    return "The topic has limited source coverage in the selected sources.";
+  }
+
+  if (warning.includes("live source results were unavailable")) {
+    return "Live sources were unavailable or not relevant enough for selection.";
+  }
+
+  if (warning.includes("429")) {
+    return "One source temporarily rate-limited the request.";
+  }
+
+  if (warning.toLowerCase().includes("aborted")) {
+    return "One source timed out before returning results.";
+  }
+
+  return warning;
+}
+
 function SourcePreflightPanel({
   preflight,
   onUseSuggestion
@@ -78,47 +161,51 @@ function SourcePreflightPanel({
   preflight: PreflightPayload;
   onUseSuggestion: (suggestion: string) => void;
 }) {
+  const copy = getPreflightCopy(preflight);
+  const livePaperCount = preflight.qualityGate.livePaperCount;
+  const mockPaperCount = preflight.qualityGate.mockPaperCount;
+
   return (
-    <section className="preflight-panel" aria-live="polite">
+    <section className={`preflight-panel ${copy.tone}`} aria-live="polite">
       <div className="preflight-header">
         <div>
-          <h2>Source preflight</h2>
-          <p>
-            Coverage: <strong>{preflight.qualityGate.coverage}</strong>
-          </p>
+          <span className="metric-label">Source check</span>
+          <h2>{copy.title}</h2>
+          <p>{copy.summary}</p>
         </div>
-        <span className="badge">
-          {preflight.qualityGate.canSynthesize === false
-            ? "review needed"
-            : "ready"}
-        </span>
+        <span className="badge">{copy.badge}</span>
       </div>
 
-      <div className="preflight-metrics">
+      <div className="preflight-summary-grid">
         <div>
-          <span>Found</span>
-          <strong>{preflight.searchSummary.totalFound}</strong>
-        </div>
-        <div>
-          <span>After dedupe</span>
-          <strong>{preflight.searchSummary.totalAfterDeduplication}</strong>
-        </div>
-        <div>
-          <span>Selected</span>
+          <span>Candidate papers</span>
           <strong>{preflight.searchSummary.totalUsedInBrief}</strong>
+          <p>selected for the brief</p>
         </div>
         <div>
-          <span>Avg relevance</span>
-          <strong>{preflight.qualityGate.averageRelevance.toFixed(2)}</strong>
+          <span>Source mix</span>
+          <strong>
+            {livePaperCount} live / {mockPaperCount} mock
+          </strong>
+          <p>live sources are preferred when relevant</p>
+        </div>
+        <div>
+          <span>Warnings</span>
+          <strong>{preflight.searchSummary.warnings.length}</strong>
+          <p>
+            {preflight.searchSummary.warnings.length
+              ? "source issues to review"
+              : "no source issues"}
+          </p>
         </div>
       </div>
 
       {preflight.qualityGate.reasons.length ? (
         <div className="preflight-block">
-          <h3>Quality notes</h3>
+          <h3>Before generating</h3>
           <ul>
             {preflight.qualityGate.reasons.map((reason) => (
-              <li key={reason}>{reason}</li>
+              <li key={reason}>{formatPreflightWarning(reason)}</li>
             ))}
           </ul>
         </div>
@@ -126,7 +213,9 @@ function SourcePreflightPanel({
 
       {preflight.qualityGate.suggestions.length ? (
         <div className="preflight-block">
-          <h3>Suggested next queries</h3>
+          <h3>
+            {copy.tone === "good" ? "Optional refinement" : "Try a better query"}
+          </h3>
           <div className="preflight-suggestion-list">
             {preflight.qualityGate.suggestions.map((suggestion) => (
               <button
@@ -142,7 +231,7 @@ function SourcePreflightPanel({
       ) : null}
 
       <div className="preflight-block">
-        <h3>Top papers</h3>
+        <h3>Read first</h3>
         {preflight.papers.length ? (
           <div className="preflight-paper-list">
             {preflight.papers.slice(0, 5).map((paper) => (
@@ -155,7 +244,7 @@ function SourcePreflightPanel({
                 </p>
                 {paper.doi ? (
                   <p>
-                    DOI{" "}
+                    DOI:{" "}
                     {getDoiUrl(paper.doi) ? (
                       <a
                         href={getDoiUrl(paper.doi) ?? undefined}
@@ -170,8 +259,16 @@ function SourcePreflightPanel({
                   </p>
                 ) : null}
                 <p>
-                  Relevance {formatScore(paper.relevanceScore)} - Final{" "}
-                  {formatScore(paper.finalScore)}
+                  Match strength: {formatScore(paper.relevanceScore)}
+                  {paper.url ? (
+                    <>
+                      {" "}
+                      -{" "}
+                      <a href={paper.url} target="_blank" rel="noreferrer">
+                        source
+                      </a>
+                    </>
+                  ) : null}
                 </p>
               </article>
             ))}
@@ -183,14 +280,36 @@ function SourcePreflightPanel({
 
       {preflight.searchSummary.warnings.length ? (
         <div className="preflight-block">
-          <h3>Warnings</h3>
+          <h3>Source issues</h3>
           <ul>
             {preflight.searchSummary.warnings.slice(0, 5).map((warning) => (
-              <li key={warning}>{warning}</li>
+              <li key={warning}>{formatPreflightWarning(warning)}</li>
             ))}
           </ul>
         </div>
       ) : null}
+
+      <details className="preflight-technical">
+        <summary>Technical source details</summary>
+        <div className="preflight-metrics">
+          <div>
+            <span>Found</span>
+            <strong>{preflight.searchSummary.totalFound}</strong>
+          </div>
+          <div>
+            <span>After dedupe</span>
+            <strong>{preflight.searchSummary.totalAfterDeduplication}</strong>
+          </div>
+          <div>
+            <span>Selected</span>
+            <strong>{preflight.searchSummary.totalUsedInBrief}</strong>
+          </div>
+          <div>
+            <span>Avg relevance</span>
+            <strong>{preflight.qualityGate.averageRelevance.toFixed(2)}</strong>
+          </div>
+        </div>
+      </details>
     </section>
   );
 }
@@ -449,24 +568,23 @@ export function ResearchForm({ examples }: ResearchFormProps) {
           <div className={`form-alert ${errorKind}`} role="alert">
             <strong>
               {qualityGate
-                ? "Research quality gate"
+                ? getQualityGateCopy(qualityGate).title
                 : errorKind === "warning"
                   ? "Rate limit"
                   : "Generation error"}
             </strong>
-            <span>{error}</span>
+            <span>{qualityGate ? getQualityGateCopy(qualityGate).summary : error}</span>
             {qualityGate ? (
               <div className="quality-gate-alert">
                 <div className="quality-gate-metrics">
-                  <span>Coverage: {qualityGate.coverage}</span>
-                  <span>Papers: {qualityGate.selectedPaperCount}</span>
-                  <span>Live: {qualityGate.livePaperCount}</span>
-                  <span>Avg relevance: {qualityGate.averageRelevance.toFixed(2)}</span>
+                  <span>{qualityGate.selectedPaperCount} selected papers</span>
+                  <span>{qualityGate.livePaperCount} live-source papers</span>
+                  <span>{qualityGate.warningCount} source warnings</span>
                 </div>
                 {qualityGate.reasons.length ? (
                   <ul>
                     {qualityGate.reasons.map((reason) => (
-                      <li key={reason}>{reason}</li>
+                      <li key={reason}>{formatPreflightWarning(reason)}</li>
                     ))}
                   </ul>
                 ) : null}
