@@ -177,6 +177,10 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Kept source diagnostics backward-compatible with in-memory storage when PostgreSQL is not enabled.
 - Added PostgreSQL integration coverage proving diagnostics can be restored after clearing memory state.
 - Verified `/api/source-cache` returns persisted diagnostics in `mode: postgresql`.
+- Added in-memory rate limiting for `POST /api/briefs` to protect costly DeepSeek/source generation requests.
+- Added configurable rate limit environment variables: `BRIEF_RATE_LIMIT_MAX` and `BRIEF_RATE_LIMIT_WINDOW_MS`.
+- Added `429` responses with `Retry-After` and `X-RateLimit-*` headers when the generation limit is exceeded.
+- Added route test coverage for successful rate limit headers and blocked requests.
 
 ## Important Current Decisions
 
@@ -190,4 +194,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Next practical options: polish the UI with a component library, add production rate limiting, or add saved topics/user accounts.
+Next practical options: polish the UI with a component library, add saved topics/user accounts, or prepare production deploy documentation.

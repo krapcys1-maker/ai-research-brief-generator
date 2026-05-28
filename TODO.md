@@ -114,6 +114,7 @@
 
 ## Later
 
+- [x] Add in-memory rate limiting for costly brief generation requests.
 - [x] Add source/API health panel.
 - [x] Add manual refresh control for source/API health panel.
 - [x] Persist source diagnostics in PostgreSQL when `DATABASE_URL` is enabled.

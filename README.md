@@ -44,6 +44,8 @@ academic APIs → normalized papers → dedupe → ranking → structured AI syn
    - `AI_PROVIDER=deepseek`
    - `AI_MODEL=deepseek-v4-pro`
    - `DEEPSEEK_API_KEY=...`
+   - optional `BRIEF_RATE_LIMIT_MAX=5`
+   - optional `BRIEF_RATE_LIMIT_WINDOW_MS=600000`
 2. Install dependencies:
 
 ```bash
