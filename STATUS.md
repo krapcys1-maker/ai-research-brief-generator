@@ -142,12 +142,18 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Hardened repository selection so invalid non-PostgreSQL `DATABASE_URL` values fall back to in-memory storage instead of loading Prisma.
 - Added active storage mode and persistence warning to `/api/source-cache` and the Source health panel.
 - Added repository selection tests for missing, invalid, and valid PostgreSQL `DATABASE_URL` values.
+- Added `docker-compose.yml` with a local PostgreSQL 16 service for development.
+- Started the local PostgreSQL container and confirmed it is healthy.
+- Ran Prisma migrations successfully against the local PostgreSQL container.
+- Added an optional PostgreSQL integration test for `PrismaBriefRepository`.
+- Verified PostgreSQL repository persistence by saving, loading, listing, and summarizing a brief record in the local database.
+- Updated local run documentation with the Docker/PostgreSQL workflow.
 
 ## Important Current Decisions
 
 - Build Phase 1 and Phase 2 first.
 - Real academic source adapters exist, but the app still supports mock data and graceful partial failures.
-- Do not add PostgreSQL or Prisma yet.
+- PostgreSQL/Prisma persistence is now available behind the repository contract, while invalid or missing `DATABASE_URL` still falls back to in-memory storage.
 - Do not add authentication, payments, PDF parsing, or autonomous web browsing.
 - All AI output must be structured and validated with Zod.
 - Every key finding, major theme, research gap, and uncertainty must include `sourcePaperIds`.
@@ -155,4 +161,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Next practical options: point `DATABASE_URL` at PostgreSQL and run `npm run prisma:migrate`, add a manual source-health refresh control, or polish the UI with a component library.
+Next practical options: test the full UI with durable PostgreSQL persistence enabled, add a manual source-health refresh control, or polish the UI with a component library.

@@ -31,11 +31,14 @@
 - [x] Add storage repository contract for future persistence.
 - [x] Prepare Prisma.
 - [x] Add PostgreSQL connection.
+- [x] Add local Docker PostgreSQL service.
 - [x] Create models: `Brief`, `Paper`, `BriefPaper`, `ApiCache`.
 - [x] Add migration.
+- [x] Run migration against local PostgreSQL.
 - [x] Save generated brief to database.
 - [x] Save selected papers to database.
 - [x] Load brief result page from database.
+- [x] Add optional PostgreSQL repository integration test.
 
 ## Phase 4 — Source Adapters
 

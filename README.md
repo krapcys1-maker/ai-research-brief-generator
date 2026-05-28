@@ -60,20 +60,34 @@ npm run dev
 
 Optional PostgreSQL persistence:
 
-1. Add `DATABASE_URL=postgresql://...` to `.env`.
-2. Generate Prisma Client:
+1. Start the local PostgreSQL container:
+
+```bash
+docker compose up -d postgres
+```
+
+2. Add a PostgreSQL `DATABASE_URL` to `.env`, or set it only for the current shell/session.
+3. Generate Prisma Client:
 
 ```bash
 npm run prisma:generate
 ```
 
-3. Apply migrations:
+4. Apply migrations:
 
 ```bash
 npm run prisma:migrate
 ```
 
 Without `DATABASE_URL`, or when `DATABASE_URL` is not a PostgreSQL URL, the app safely falls back to in-memory storage and reports the active storage mode in the Source health panel.
+
+Optional PostgreSQL integration check:
+
+```bash
+npm test -- tests/prismaBriefRepository.integration.test.ts
+```
+
+This integration test is skipped unless `DATABASE_URL` points to PostgreSQL.
 
 Useful checks:
 
