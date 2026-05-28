@@ -47,12 +47,12 @@ Use this stack unless the user explicitly changes it:
 - Next.js App Router
 - TypeScript
 - Tailwind CSS
-- shadcn/ui
+- shadcn/ui optional; current UI uses custom CSS
 - Zod
 - AI provider abstraction in `lib/ai`
 - DeepSeek V4 Pro as the default AI provider/model
-- Optional later: Upstash Redis for API cache
-- Later: Prisma and PostgreSQL for durable persistence
+- Upstash Redis REST for production rate limiting
+- Prisma and PostgreSQL for optional durable persistence
 
 Default AI configuration:
 
@@ -936,13 +936,13 @@ OPENALEX_API_KEY=""
 
 Only the key for the selected AI provider is required. For the MVP default, use `DEEPSEEK_API_KEY`.
 
-Do not add `DATABASE_URL` or PostgreSQL setup yet. The MVP starts with mock data and in-memory/mock storage.
+Historical MVP note: the first implementation started without `DATABASE_URL` or PostgreSQL. Current implementation supports optional PostgreSQL/Prisma persistence behind the repository contract. See `docs/CURRENT_STATE.md`.
 
 ---
 
 ## Build order
 
-Follow this exact order. Do not skip ahead.
+Historical build order. For active work, use `docs/ROADMAP.md` and `TODO.md`.
 
 ### Phase 1 — project skeleton
 
@@ -1021,7 +1021,7 @@ Tech stack:
 - Next.js App Router
 - TypeScript
 - Tailwind CSS
-- shadcn/ui
+- shadcn/ui optional; current UI uses custom CSS
 - Zod
 - provider-agnostic AI abstraction
 - DeepSeek V4 Pro as the default model
@@ -1031,7 +1031,7 @@ The user enters a research topic. The app searches academic paper sources, norma
 
 Important rule:
 This is not a generic chatbot. It is a source-grounded research pipeline.
-Use mock/in-memory storage for the MVP. Do not add PostgreSQL or Prisma yet.
+Use mock/in-memory storage for the earliest MVP path. Current implementation also supports optional PostgreSQL/Prisma behind `BriefRepository`; preserve that contract.
 Configure AI with `AI_PROVIDER`, `AI_MODEL`, and `DEEPSEEK_API_KEY`, defaulting to `provider: deepseek` and `model: deepseek-v4-pro`.
 Keep AI provider logic swappable through an abstraction.
 If the user query is Polish, the final brief must be generated in Polish.

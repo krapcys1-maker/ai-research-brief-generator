@@ -368,6 +368,8 @@ Acceptance criteria:
 
 ### 11. Clean up documentation structure
 
+Status: completed for the current docs pass.
+
 Problem:
 
 Current docs mix historical instructions, implemented state, and future roadmap.
@@ -387,6 +389,17 @@ Implementation plan:
 2. Move old phase history to `docs/CHANGELOG.md` or archive it.
 3. Update `PROJECT.md` so it no longer contradicts implemented PostgreSQL support.
 4. Decide whether shadcn/ui remains in scope.
+
+Current implementation:
+
+- Added `docs/CURRENT_STATE.md` for implemented behavior.
+- Added `docs/PRODUCT_SPEC.md` for product rules and intended value.
+- Added `docs/ROADMAP.md` for prioritized future work.
+- Added `docs/CHANGELOG.md` for major milestone history.
+- Shortened `STATUS.md` into a current snapshot.
+- Reworked `TODO.md` into active work only.
+- Updated `README.md`, `PROJECT.md`, `docs/ARCHITECTURE.md`, and `docs/MVP_SPEC.md` so historical MVP notes no longer contradict optional PostgreSQL support.
+- Marked shadcn/ui as optional because the current app uses custom CSS.
 
 Acceptance criteria:
 
@@ -458,15 +471,13 @@ Recommended order:
 
 ## Immediate Execution Order
 
-Recommended next 5 implementation steps:
+The original P0/P1 repair sequence is mostly complete. The next recommended implementation steps are now:
 
-1. Disable or scope public recent brief history.
-2. Add production fail-fast for invalid persistence.
-3. Add evidence boundary/disclaimer to UI and Markdown export.
-4. Improve DOI visibility as a first-class source identifier.
-5. Add claim-level evidence schema and validation.
-6. Add Redis/KV rate limiting backend.
+1. Add richer source coverage assessment.
+2. Improve paper-level "why read this paper" explanations.
+3. Add adapter contract tests for source API response drift.
+4. Add embeddings provider abstraction.
+5. Add hybrid retrieval.
+6. Move long generation to a job flow.
 
-After those are in place, the best product expansion is controlled `Ask this brief` Q&A over selected papers.
-
-This sequence reduces the highest product and production risks before adding more features.
+Use `docs/ROADMAP.md` as the active planning source.

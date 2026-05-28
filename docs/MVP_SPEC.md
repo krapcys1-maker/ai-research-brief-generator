@@ -1,5 +1,7 @@
 # MVP Spec — AI Research Brief Generator
 
+This document describes the historical MVP baseline. For implemented behavior, use `docs/CURRENT_STATE.md`. For future work, use `docs/ROADMAP.md`.
+
 ## User story
 
 As a user, I want to enter a research topic and receive a concise research brief grounded in academic paper metadata and abstracts.
@@ -17,7 +19,7 @@ As a user, I want to enter a research topic and receive a concise research brief
 9. Top papers are selected.
 10. AI generates a structured brief through a provider-agnostic AI abstraction.
 11. Brief is validated.
-12. Brief is saved to mock/in-memory storage.
+12. Brief is saved through the repository contract. The original MVP used mock/in-memory storage; the current app can also use PostgreSQL through Prisma.
 13. User sees result page.
 
 ## MVP acceptance criteria
@@ -54,4 +56,4 @@ As a user, I want to enter a research topic and receive a concise research brief
 - social media scraping
 - knowledge graph
 - multi-agent architecture
-- PostgreSQL or Prisma persistence
+- PostgreSQL or Prisma persistence in the original baseline. Current implementation supports optional PostgreSQL behind the repository contract.

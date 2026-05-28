@@ -1,102 +1,134 @@
-# AI Research Brief Generator — Cursor Pack
+# AI Research Brief Generator
 
-## Jak użyć
+Source-grounded research brief generator built with Next.js.
 
-1. Wrzuć te pliki do głównego folderu projektu.
-2. Otwórz projekt w Cursorze.
-3. Otwórz `CURSOR_START_PROMPT.md`.
-4. Skopiuj pierwszy prompt do Cursor Plan Mode.
-5. Nie każ Cursorowi budować wszystkiego naraz. Najpierw Phase 1 i Phase 2.
-
-## Najważniejsze pliki
-
-- `PROJECT.md` — główna specyfikacja projektu.
-- `TODO.md` — kolejność budowy.
-- `CURSOR_START_PROMPT.md` — gotowy prompt startowy.
-- `.cursor/rules/*.mdc` — stałe reguły dla Cursor Agenta.
-- `docs/ARCHITECTURE.md` — architektura.
-- `docs/MVP_SPEC.md` — zakres MVP.
-- `docs/PROMPTS.md` — prompty AI.
-- `docs/DEPLOYMENT.md` — deployment checklist and production runtime notes.
-
-## Główna zasada
-
-To nie jest chatbot. To pipeline:
+This is not a generic chatbot. The core flow is:
 
 ```text
-academic APIs → normalized papers → dedupe → ranking → structured AI synthesis → source-validated brief
+user query -> academic sources -> normalized papers -> dedupe/ranking -> quality gate -> structured AI synthesis -> grounding validation -> brief UI/export
 ```
 
-## MVP defaults
+## Key Docs
 
-- Start without PostgreSQL. Use mock data and in-memory/mock storage first.
-- Use a provider-agnostic AI abstraction.
-- Default AI config: `provider: deepseek`, `model: deepseek-v4-pro`.
-- Read AI config from `AI_PROVIDER`, `AI_MODEL`, and `DEEPSEEK_API_KEY`.
-- Academic sources currently supported: mock data, arXiv, Semantic Scholar, OpenAlex.
-- Semantic Scholar can work without a key but may rate limit; add `SEMANTIC_SCHOLAR_API_KEY` later for better reliability.
-- Source API responses are cached in memory for the MVP. The cache resets when the server restarts.
-- Search uses deterministic query expansion. Polish queries may generate English academic search variants, while the final brief language still follows the original query.
-- Brief persistence uses an in-memory repository by default. A Prisma/PostgreSQL repository is prepared and is selected automatically when `DATABASE_URL` is present.
+- `docs/CURRENT_STATE.md` - what works now
+- `docs/PRODUCT_SPEC.md` - product rules and intended value
+- `docs/ROADMAP.md` - prioritized future work
+- `docs/CHANGELOG.md` - major milestone history
+- `docs/REMEDIATION_PLAN.md` - risk-driven repair plan
+- `docs/DEPLOYMENT.md` - production/runtime notes
+- `docs/ARCHITECTURE.md` - module boundaries
+- `docs/PROMPTS.md` - AI prompt guidance
+- `PROJECT.md` - original product specification and planning context
+- `TODO.md` - active work only
 
-## How to run locally
+## Current Capabilities
 
-1. Create or update `.env` with:
-   - `AI_PROVIDER=deepseek`
-   - `AI_MODEL=deepseek-v4-pro`
-   - `DEEPSEEK_API_KEY=...`
-   - optional `BRIEF_RATE_LIMIT_MAX=5`
-   - optional `BRIEF_RATE_LIMIT_WINDOW_MS=600000`
-   - optional `RATE_LIMIT_BACKEND=memory`
-   - optional `PUBLIC_BRIEF_HISTORY_ENABLED=true`
-2. Install dependencies:
+- Source adapters: mock, arXiv, Semantic Scholar, OpenAlex.
+- Source preflight before AI generation.
+- Research Quality Gate for weak source coverage.
+- Paper normalization, dedupe, ranking, and top-paper selection.
+- DeepSeek V4 Pro structured synthesis through a provider abstraction.
+- Zod validation for AI outputs.
+- Claim-level source IDs and evidence snippets.
+- Controlled `Ask This Brief` Q&A over selected papers.
+- Markdown export.
+- Optional PostgreSQL/Prisma persistence.
+- Source API cache and source diagnostics.
+- Production safeguards for public history, persistence, and rate limiting.
+
+## Environment
+
+Required for AI generation:
+
+```bash
+AI_PROVIDER=deepseek
+AI_MODEL=deepseek-v4-pro
+DEEPSEEK_API_KEY=...
+```
+
+Optional source/API settings:
+
+```bash
+SEMANTIC_SCHOLAR_API_KEY=...
+```
+
+Optional local/development settings:
+
+```bash
+PUBLIC_BRIEF_HISTORY_ENABLED=true
+BRIEF_RATE_LIMIT_MAX=5
+BRIEF_RATE_LIMIT_WINDOW_MS=600000
+RATE_LIMIT_BACKEND=memory
+```
+
+Optional PostgreSQL persistence:
+
+```bash
+DATABASE_URL=postgresql://...
+```
+
+Production rate limiting should use Upstash Redis REST:
+
+```bash
+RATE_LIMIT_BACKEND=upstash
+UPSTASH_REDIS_REST_URL=...
+UPSTASH_REDIS_REST_TOKEN=...
+```
+
+Production requires valid PostgreSQL by default. Temporary demos can explicitly opt into non-durable memory mode:
+
+```bash
+ALLOW_MEMORY_STORAGE_IN_PRODUCTION=true
+ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true
+```
+
+## Run Locally
+
+Install dependencies:
 
 ```bash
 npm install
 ```
 
-3. Start the app:
+Start the app:
 
 ```bash
 npm run dev
 ```
 
-4. Open `http://localhost:3000`.
+Open:
 
-Optional PostgreSQL persistence:
+```text
+http://localhost:3000
+```
 
-1. Start the local PostgreSQL container:
+## Optional Local PostgreSQL
+
+Start PostgreSQL:
 
 ```bash
 docker compose up -d postgres
 ```
 
-2. Add a PostgreSQL `DATABASE_URL` to `.env`, or set it only for the current shell/session.
-3. Generate Prisma Client:
+Generate Prisma Client:
 
 ```bash
 npm run prisma:generate
 ```
 
-4. Apply migrations:
+Apply migrations:
 
 ```bash
 npm run prisma:migrate
 ```
 
-With PostgreSQL enabled, generated briefs, selected papers, source API cache records, and source diagnostics are persisted through Prisma. In local development, without `DATABASE_URL`, or when `DATABASE_URL` is not a PostgreSQL URL, the app falls back to in-memory storage and reports the active storage mode in the Source health panel.
+## Checks
 
-In production, a valid PostgreSQL `DATABASE_URL` is required by default. The app fails fast instead of silently switching to non-durable memory storage. For temporary demos only, set `ALLOW_MEMORY_STORAGE_IN_PRODUCTION=true`.
-
-Public recent brief history is enabled by default in local development and disabled by default in production. Set `PUBLIC_BRIEF_HISTORY_ENABLED=true` only when global brief summaries are safe to expose.
-
-Rate limiting uses in-memory counters in local development. In production, configure a shared Upstash Redis REST backend so limits work across instances:
-
-- `RATE_LIMIT_BACKEND=upstash`
-- `UPSTASH_REDIS_REST_URL=...`
-- `UPSTASH_REDIS_REST_TOKEN=...`
-
-For temporary single-instance demos only, set `ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true`.
+```bash
+npm test
+npm run lint
+npm run build
+```
 
 Optional PostgreSQL integration check:
 
@@ -104,19 +136,9 @@ Optional PostgreSQL integration check:
 npm test -- tests/prismaBriefRepository.integration.test.ts
 ```
 
-This integration test is skipped unless `DATABASE_URL` points to PostgreSQL.
+The PostgreSQL integration test is skipped unless `DATABASE_URL` points to PostgreSQL.
 
-Useful checks:
-
-```bash
-npm run lint
-npm test
-npm run build
-```
-
-The test suite covers core pure modules plus the mock-paper brief pipeline and the `/api/briefs` route without calling DeepSeek.
-
-Optional cache diagnostic:
+## Diagnostics
 
 ```bash
 curl http://localhost:3000/api/source-cache

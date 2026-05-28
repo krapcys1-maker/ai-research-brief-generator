@@ -1,268 +1,48 @@
 # Project Status
 
-## Current State
+Last updated: 2026-05-28
 
-This folder now contains a working Next.js App Router MVP implementation.
+## Current Snapshot
 
-The app works as a source-grounded research pipeline, not as a generic chatbot.
+AI Research Brief Generator is a working source-grounded research brief prototype.
 
-## Completed
+The app supports:
 
-- Reviewed the project files:
-  - `README.md`
-  - `PROJECT.md`
-  - `TODO.md`
-  - `CURSOR_START_PROMPT.md`
-  - `docs/ARCHITECTURE.md`
-  - `docs/MVP_SPEC.md`
-  - `docs/PROMPTS.md`
-  - `.cursor/rules/*.mdc`
-  - `.env` variable names only, without reading or logging secret values
-- Confirmed that there is no git repository initialized in this folder.
-- Added language rules to the project plan:
-  - detect the language of the user query
-  - generate the final research brief in the same language
-  - keep paper titles, author names, journal names, venue names, and DOI values unchanged
-  - if the query is Polish, summaries, explanations, findings, gaps, uncertainties, and recommendations must be in Polish
-- Updated the project plan to use a provider-agnostic AI architecture.
-- Set DeepSeek V4 Pro as the default AI configuration:
-  - provider: `deepseek`
-  - model: `deepseek-v4-pro`
-- Updated environment configuration expectations:
-  - `AI_PROVIDER`
-  - `AI_MODEL`
-  - `DEEPSEEK_API_KEY`
-- Updated MVP storage plan:
-  - no PostgreSQL in MVP
-  - no Prisma in MVP
-  - use mock data and in-memory/mock storage first
-  - keep persistence-ready types for later database work
-- Added rule that search query expansion may produce English queries, but the final report language must match the original user query language.
-- Created the Next.js App Router project scaffold.
-- Added TypeScript, Tailwind CSS, ESLint, and build configuration.
-- Added mock academic paper data.
-- Implemented source adapter types and a mock source adapter.
-- Implemented Zod schemas for request, papers, and research brief output.
-- Implemented deduplication, scoring, top-paper selection, and source-grounding validation.
-- Implemented provider-agnostic AI client with DeepSeek as the current provider.
-- Implemented DeepSeek structured JSON synthesis with one retry for validation/grounding failures.
-- Implemented controlled missing-key error for `DEEPSEEK_API_KEY`.
-- Implemented global in-memory brief storage for the MVP.
-- Implemented `POST /api/briefs`, `GET /api/briefs`, and `GET /api/briefs/[id]`.
-- Implemented home page form and `/briefs/[id]` result page.
-- Verified a Polish query generated a brief with `outputLanguage: pl`.
-- Verified cited `sourcePaperIds` exist in the selected paper list.
-- Verified `npm run lint` passes.
-- Verified `npm run build` passes.
-- Initialized a local git repository.
-- Created public GitHub repository `krapcys1-maker/ai-research-brief-generator`.
-- Published branch `codex/initial-mvp` to GitHub.
-- Confirmed `.env`, `.next`, and `node_modules` are ignored and not included in the committed tree.
-- Added interactive source drawer for citation/source inspection.
-- Added Markdown export function and `GET /api/export/[id]?format=markdown`.
-- Added export link on the brief result page.
-- Added `searchSummary.warnings` support for future graceful source-adapter failures.
-- Verified `npm run lint` and `npm run build` after the export/source drawer changes.
-- Implemented real academic source adapters:
-  - arXiv Atom API
-  - Semantic Scholar Graph API
-  - OpenAlex Works API
-- Wired source selection into the home form.
-- Added optional year range inputs to the home form.
-- Added source search orchestration with `Promise.allSettled`.
-- Added timeout/retry helper for external source requests.
-- Verified arXiv and OpenAlex return papers for a small test query.
-- Verified Semantic Scholar 429 rate limiting is captured as a warning rather than crashing the whole search.
-- Verified multi-source search can continue with arXiv and OpenAlex when Semantic Scholar is rate limited.
-- Added in-memory TTL cache for source API results.
-- Added `GET /api/source-cache` diagnostics with aggregate cache counts only.
-- Verified repeated source searches hit cache instead of repeating external calls.
-- Added deterministic query expansion for source search.
-- Added Polish-to-English academic query variants while preserving the final brief language.
-- Wired query variants into multi-source search and AI synthesis metadata.
-- Verified expanded search can return papers from arXiv/OpenAlex for a Polish hallucination query.
-- Added Vitest test setup.
-- Added unit tests for language detection, query expansion, deduplication, and source-grounding validation.
-- Fixed title normalization so punctuation becomes spacing instead of merging words during deduplication.
-- Verified `npm test`, `npm run lint`, and `npm run build`.
-- Added dependency injection to `createBrief` so the full pipeline can be tested without calling DeepSeek.
-- Added tests for the mock-paper brief pipeline and Polish output-language handling.
-- Added tests for `POST /api/briefs` success and controlled missing-provider-key failure responses.
-- Verified `npm test` now covers 14 tests across 6 test files.
-- Added source/result diagnostics to the brief UI:
-  - requested sources
-  - selected paper source distribution
-  - total found, after deduplication, and used in brief counts
-  - query variants and source warnings
-- Fixed brief metadata handling so `id`, `query`, `outputLanguage`, `generatedAt`, and `searchSummary` remain app-controlled instead of model-controlled.
-- Added a unit test for app-controlled AI synthesis metadata.
-- Verified `npm test`, `npm run lint`, and `npm run build` after the diagnostics UI change.
-- Improved paper ranking with per-source quality priors, identifier scoring, influential-citation blending, and explicit scoring breakdown fields.
-- Added scoring tests to confirm metadata quality helps when relevance is comparable while relevance remains the strongest signal.
-- Verified `npm test`, `npm run lint`, and `npm run build` after the scoring update.
-- Added score breakdowns to bibliography paper cards, including final score plus relevance, citations, recency, completeness, source, and identifier scores.
-- Verified `npm test`, `npm run lint`, and `npm run build` after the score breakdown UI change.
-- Extended Markdown export with query variants, warnings, paper source metadata, influential citations, final score, and score breakdowns.
-- Added Markdown export test coverage for search diagnostics and paper scores.
-- Verified `npm test`, `npm run lint`, and `npm run build` after the export metadata update.
-- Added a loading/progress panel to the research form for long synchronous DeepSeek generations.
-- Disabled form controls while a brief is being generated to prevent duplicate or conflicting submissions.
-- Verified `npm test`, `npm run lint`, and `npm run build` after the progress UI update.
-- Improved result-page warning visibility by grouping repeated source/query warnings and showing warning counts in the brief header and diagnostics section.
-- Renamed the source diagnostics label from requested sources to successful sources to match the current `sourcesUsed` meaning.
-- Verified `npm test`, `npm run lint`, and `npm run build` after the warning UI update.
-- Added `requestedSources` to `searchSummary` so the app can show user-selected sources separately from successful sources.
-- Updated result diagnostics, Markdown export, prompt schema example, fixtures, and pipeline tests for requested-vs-successful source tracking.
-- Verified `npm test`, `npm run lint`, and `npm run build` after the `requestedSources` update.
-- Added per-adapter/query `sourceDiagnostics` with source, query, status, result count, cache flag, and optional message.
-- Rendered adapter diagnostics in the brief result page and included them in Markdown export.
-- Added pipeline test coverage to ensure source diagnostics are stored in `searchSummary`.
-- Verified `npm test`, `npm run lint`, and `npm run build` after the source diagnostics update.
-- Added a source/API health panel to the home page using `/api/source-cache`.
-- Added an in-memory source diagnostics store with recent diagnostics and per-source health summary.
-- Extended `/api/source-cache` with cache stats, source health summary, and recent diagnostics.
-- Added unit test coverage for the source diagnostics store.
-- Verified `npm test`, `npm run lint`, and `npm run build` after the source health panel update.
-- Updated home page copy to mention mock and live academic sources.
-- Added a recent brief history panel using `GET /api/briefs` and the in-memory brief store.
-- Verified `npm test`, `npm run lint`, and `npm run build` after the home page history update.
-- Added `lib/storage/types.ts` with a `BriefRepository` contract for future durable persistence.
-- Refactored brief storage callers to use `inMemoryBriefRepository` instead of direct store helper functions.
-- Added repository contract test coverage for save, get, list, summary, and clear behavior.
-- Verified `npm test`, `npm run lint`, and `npm run build` after the storage repository update.
-- Added Prisma and `@prisma/client` dependencies.
-- Added PostgreSQL Prisma schema and initial SQL migration for `Brief`, `Paper`, `BriefPaper`, and `ApiCache`.
-- Added `PrismaBriefRepository` behind the existing `BriefRepository` contract.
-- Added repository selector that uses Prisma when `DATABASE_URL` is configured and otherwise falls back to in-memory storage.
-- Added Prisma scripts: `npm run prisma:generate` and `npm run prisma:migrate`.
-- Ran `npm run prisma:generate` successfully.
-- Verified `prisma/schema.prisma` with a temporary placeholder PostgreSQL URL.
-- Did not run database migration because no PostgreSQL connection was confirmed in this session.
-- Local `.env` currently needs a valid PostgreSQL `DATABASE_URL` before `npm run prisma:migrate` can be run; secret values were not printed.
-- Hardened repository selection so invalid non-PostgreSQL `DATABASE_URL` values fall back to in-memory storage instead of loading Prisma.
-- Added active storage mode and persistence warning to `/api/source-cache` and the Source health panel.
-- Added repository selection tests for missing, invalid, and valid PostgreSQL `DATABASE_URL` values.
-- Added `docker-compose.yml` with a local PostgreSQL 16 service for development.
-- Started the local PostgreSQL container and confirmed it is healthy.
-- Ran Prisma migrations successfully against the local PostgreSQL container.
-- Added an optional PostgreSQL integration test for `PrismaBriefRepository`.
-- Verified PostgreSQL repository persistence by saving, loading, listing, and summarizing a brief record in the local database.
-- Updated local run documentation with the Docker/PostgreSQL workflow.
-- Verified the full durable flow with the app running against local PostgreSQL:
-  - generated a Polish mock-source brief through `POST /api/briefs`
-  - confirmed `outputLanguage: pl`
-  - confirmed all `sourcePaperIds` resolve to selected papers
-  - restarted the dev server
-  - confirmed the same brief still loads from PostgreSQL by ID
-  - confirmed `/briefs/[id]` renders successfully
-  - confirmed `/api/source-cache` reports `mode: postgresql`
-- Added persisted source API cache storage using the existing Prisma `ApiCache` model when PostgreSQL is enabled.
-- Kept source API cache provider-agnostic and backward-compatible with in-memory cache when PostgreSQL is not enabled.
-- Updated source cache diagnostics to show primary, persistent, and memory cache counts.
-- Added PostgreSQL integration coverage proving source API cache records can be restored after clearing the memory cache.
-- Added a manual `Refresh` control to the Source health panel.
-- Added refresh/loading and last-updated states for source health diagnostics.
-- Verified the home page renders the Source health panel and refresh control locally.
-- Verified the full live-source flow with PostgreSQL and durable source cache enabled:
-  - generated a Polish brief using arXiv, OpenAlex, and Semantic Scholar source selection
-  - confirmed the final brief kept `outputLanguage: pl`
-  - confirmed all cited `sourcePaperIds` resolve to selected papers
-  - confirmed persistent source cache records were created in PostgreSQL
-  - restarted the dev server and generated the same live-source query again
-  - confirmed the second run used persisted source cache entries (`cached: true` diagnostics)
-  - confirmed both generated live-source briefs are listed by `GET /api/briefs`
-  - confirmed the second live-source brief renders successfully at `/briefs/[id]`
-- Added persisted source diagnostics using a new Prisma `SourceDiagnostic` model.
-- Added a Prisma migration for source diagnostics and applied it to the local PostgreSQL container.
-- Kept source diagnostics backward-compatible with in-memory storage when PostgreSQL is not enabled.
-- Added PostgreSQL integration coverage proving diagnostics can be restored after clearing memory state.
-- Verified `/api/source-cache` returns persisted diagnostics in `mode: postgresql`.
-- Added in-memory rate limiting for `POST /api/briefs` to protect costly DeepSeek/source generation requests.
-- Added configurable rate limit environment variables: `BRIEF_RATE_LIMIT_MAX` and `BRIEF_RATE_LIMIT_WINDOW_MS`.
-- Added `429` responses with `Retry-After` and `X-RateLimit-*` headers when the generation limit is exceeded.
-- Added route test coverage for successful rate limit headers and blocked requests.
-- Added `docs/DEPLOYMENT.md` with production environment variables, Prisma migration guidance, runtime checks, rate-limit notes, secrets handling, and a pre-deploy checklist.
-- Linked the deployment guide from `README.md`.
-- Polished the home research form by replacing inline styles with reusable form, source-option, action, and example-panel classes.
-- Improved generation error UI so rate-limit responses show as a distinct warning with retry timing.
-- Updated recent brief history copy to match the active repository model instead of saying memory-only.
-- Verified the home page renders the polished form, example panel, source health panel, and updated history copy locally.
-- Improved query expansion normalization for Polish queries with diacritics, typos, and transformer-related terms.
-- Updated scoring to evaluate relevance against query variants instead of only the raw user query.
-- Reduced mock source scoring weight and penalized papers with zero or weak relevance.
-- Updated top-paper selection so relevant live-source papers are preferred over weak mock fallback papers.
-- Added quality warnings when final selected papers are mock-only despite live sources or have weak query relevance.
-- Added tests covering query-variant scoring and live-paper selection over mock fallback.
-- Improved the brief result page so citation buttons show human labels such as author/year while still preserving raw source IDs in source details.
-- Replaced raw inline source IDs in rendered narrative text with readable author/year references.
-- Added a brief quality summary with source mix, live/mock counts, average relevance, and warning count.
-- Added a "Start Reading Here" section that surfaces the three strongest selected papers before the technical diagnostics.
-- Collapsed detailed source diagnostics behind a technical details section so the main report reads more like a useful research brief.
-- Cleaned OpenAlex text metadata to remove control characters and broken replacement glyphs before papers are shown or sent into synthesis.
-- Smoke-tested an existing rendered brief page on `localhost:3000` and confirmed the new quality, reading path, diagnostics, and human citation UI are present.
-- Ran a full visual Playwright smoke test through Chrome:
-  - opened the home page
-  - filled the research form with a Polish query
-  - generated a real brief through the UI
-  - opened source details from a citation
-  - verified Markdown export
-  - checked the mobile viewport for horizontal overflow
-- Fixed mobile rendering by adding the Next.js viewport metadata and allowing brief sections to shrink/wrap inside narrow screens.
-- Fixed a browser-detected hydration mismatch by replacing locale-dependent generated-date rendering with a deterministic UTC format.
-- Ran a five-topic research-quality QA pass and saved notes in `docs/QA_REPORT.md`.
-- Improved query expansion, relevance scoring, paper selection, and source-cache behavior based on QA findings.
-- Added a Research Quality Gate before AI synthesis so weak source coverage returns a controlled `422` response instead of calling DeepSeek.
-- Updated the home form to show quality-gate reasons, source coverage metrics, and suggested next queries.
-- Added `POST /api/briefs/preflight` so the app can inspect source coverage before calling the AI provider.
-- Added a Source Preflight panel on the home form with found/deduped/selected counts, average relevance, top paper previews, warnings, and suggested query refinements.
-- Refactored `createBrief` to reuse the same preflight path as generation, keeping the preview and final synthesis consistent.
-- Added tests for the preflight pipeline and preflight API route.
-- Ran manual Playwright browser checks for source preflight on a good query, quality-gate warning on a weak/noisy query, full brief generation for `AI agents in software engineering`, rendered result sections, source IDs, external bibliography links, and mobile overflow.
-- Reviewed the product audit against the real code and docs.
-- Added `docs/REMEDIATION_PLAN.md` with P0/P1/P2 repair priorities covering privacy, persistence, rate limiting, claim-level evidence, source quality, UX, and documentation cleanup.
-- Extended the remediation plan with DOI-as-first-class-source handling and a guarded future `Ask this brief` Q&A feature that must answer only from selected papers with evidence snippets.
-- Added `PUBLIC_BRIEF_HISTORY_ENABLED` so public recent brief history can be disabled independently of brief generation.
-- Changed production defaults so public brief history is disabled unless explicitly enabled.
-- Protected `GET /api/briefs` with the same public-history setting and hid the home recent-history panel when disabled.
-- Added production fail-fast persistence checks so missing or invalid PostgreSQL `DATABASE_URL` no longer silently falls back to in-memory brief storage.
-- Added `ALLOW_MEMORY_STORAGE_IN_PRODUCTION=true` as an explicit temporary demo escape hatch for non-durable production memory mode.
-- Added an evidence boundary to the brief UI and Markdown export so users can see that current synthesis is grounded in metadata/abstracts, not parsed full-text PDFs.
-- Promoted DOI to a first-class source identifier with consistent DOI links in paper cards, source details, preflight previews, and Markdown export.
-- Hardened grounding validation so AI-generated bibliography entries cannot introduce DOI values that differ from selected paper metadata.
-- Added claim-level evidence schema for executive summaries, key findings, themes, gaps, and uncertainties.
-- Updated AI synthesis prompts to require evidence snippets with `paperId`, `evidenceText`, and `supportLevel`.
-- Hardened grounding validation so each evidence snippet must cite a selected paper, appear in the item's `sourcePaperIds`, and overlap with the paper title/abstract/metadata.
-- Rendered evidence snippets in the brief UI and Markdown export.
-- Added a shared rate-limit backend abstraction for costly `POST /api/briefs` generation.
-- Kept in-memory rate limiting as the local development and test backend.
-- Added Upstash Redis REST rate limiting for production with `RATE_LIMIT_BACKEND=upstash`, `UPSTASH_REDIS_REST_URL`, and `UPSTASH_REDIS_REST_TOKEN`.
-- Added production fail-fast rate-limit configuration checks so public deployments no longer silently fall back to per-instance memory counters.
-- Added `ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true` as an explicit temporary single-instance demo escape hatch.
-- Added unit and route tests for memory limiting, Upstash limiting, production misconfiguration, and blocked requests.
-- Simplified the brief result page so the top of the report leads with the bottom line, confidence, evidence base, reading path, and priority takeaways.
-- Moved technical source diagnostics and evidence-boundary metrics into a collapsed "Source and Quality Details" section.
-- Added a visual Playwright smoke check for an existing Polish brief and confirmed the new section order plus no horizontal overflow on desktop or a 390px mobile viewport.
-- Added controlled `Ask this brief` Q&A through `POST /api/briefs/[id]/questions`.
-- Added `BriefAnswer` and `BriefQuestionRequest` Zod schemas.
-- Added source-grounded answer synthesis that answers only from the selected papers and returns source-backed claims with evidence snippets.
-- Added Q&A grounding validation so answer claims cannot cite unknown papers and evidence snippets must overlap selected paper metadata.
-- Added an `Ask This Brief` panel to the brief result UI with confidence, not-answerable state, claims, evidence snippets, and source links.
-- Verified a real local Polish Q&A request against an existing brief returned `outputLanguage: pl` with validated source-backed claims.
-- Simplified source preflight language on the home page so users see "Looks ready", "Usable with caution", or "Not enough evidence yet" instead of raw coverage labels.
-- Moved technical source preflight metrics behind a collapsed "Technical source details" section.
-- Updated preflight warnings and generation quality-gate messages to use user-facing explanations instead of pipeline wording.
-- Ran a Playwright preflight smoke check against `AI agents in software engineering`; the simplified panel rendered after a successful `/api/briefs/preflight` response with no horizontal overflow.
+- mock, arXiv, Semantic Scholar, and OpenAlex source adapters
+- source preflight and Research Quality Gate
+- paper normalization, dedupe, ranking, and top-paper selection
+- DeepSeek V4 Pro structured synthesis through a provider abstraction
+- Zod validation for AI outputs
+- claim-level `sourcePaperIds` and evidence snippets
+- Markdown export
+- controlled `Ask This Brief` Q&A over selected papers
+- optional PostgreSQL/Prisma persistence
+- source API cache and source diagnostics
+- production fail-fast persistence and shared Upstash rate limiting
+
+## Current Docs
+
+- Current implemented behavior: `docs/CURRENT_STATE.md`
+- Future work: `docs/ROADMAP.md`
+- Major milestone history: `docs/CHANGELOG.md`
+- Risk-driven repair plan: `docs/REMEDIATION_PLAN.md`
+- Deployment notes: `docs/DEPLOYMENT.md`
 
 ## Important Current Decisions
 
-- Build Phase 1 and Phase 2 first.
-- Real academic source adapters exist, but the app still supports mock data and graceful partial failures.
-- PostgreSQL/Prisma persistence is now available behind the repository contract, while invalid or missing `DATABASE_URL` falls back to in-memory storage only outside production unless the explicit demo escape hatch is enabled.
-- Do not add authentication, payments, PDF parsing, or autonomous web browsing.
-- All AI output must be structured and validated with Zod.
-- Every key finding, major theme, research gap, and uncertainty must include `sourcePaperIds`.
-- Every cited paper ID must exist in the selected paper list.
+- This is a controlled research pipeline, not a generic chatbot.
+- The app can run locally without PostgreSQL, but production requires PostgreSQL unless an explicit temporary demo escape hatch is set.
+- DeepSeek is the default implemented AI provider, but the architecture remains provider-agnostic.
+- AI output must be structured and validated with Zod.
+- Important claims must include valid selected-paper IDs and evidence snippets.
+- The current evidence boundary is metadata/abstract grounding, not full-text PDF verification.
+- Public recent history is disabled by default in production.
+- shadcn/ui is optional and not currently implemented.
+
+## Latest Completed Step
+
+Simplified source preflight language so users see whether sources are ready, limited, or too weak before generation. Technical preflight metrics are now collapsed behind `Technical source details`.
 
 ## Next Recommended Step
 
-Follow `docs/REMEDIATION_PLAN.md`. The highest-priority next step is to restructure the docs into current state, roadmap, and changelog.
+Follow `docs/ROADMAP.md`. The next practical product step is richer source coverage assessment, especially abstract coverage, DOI/identifier coverage, source diversity, and query-title alignment.

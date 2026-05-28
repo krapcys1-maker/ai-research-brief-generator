@@ -68,9 +68,14 @@ Read AI configuration from `AI_PROVIDER`, `AI_MODEL`, and the selected provider 
 
 ### `lib/storage/`
 
-Mock/in-memory storage for the MVP, with persistence-ready types. Prisma and PostgreSQL are a later durable persistence phase.
+Storage is accessed through the `BriefRepository` contract in `lib/storage/types.ts`.
 
-The app should access brief persistence through the `BriefRepository` contract in `lib/storage/types.ts`. The current implementation is `inMemoryBriefRepository`; future Prisma/PostgreSQL persistence should implement the same contract before replacing the in-memory repository.
+Current implementations:
+
+- `inMemoryBriefRepository` for local development, tests, and temporary demo mode.
+- `prismaBriefRepository` for PostgreSQL-backed persistence when `DATABASE_URL` is configured.
+
+The repository selector chooses PostgreSQL when `DATABASE_URL` points to PostgreSQL. In production, missing or invalid PostgreSQL configuration fails fast unless `ALLOW_MEMORY_STORAGE_IN_PRODUCTION=true` is explicitly set for a temporary non-durable demo.
 
 ## Dependency direction
 
@@ -91,8 +96,14 @@ components → external academic APIs
 components → AI provider SDK directly
 ```
 
-## First implementation strategy
+## Implementation Strategy
 
-Start with mock data. Do not touch real academic APIs until the UI, types, and mock pipeline work end-to-end.
+The project started with mock data and in-memory storage, then added real source adapters and optional PostgreSQL persistence behind stable contracts.
 
-Do not add PostgreSQL in the MVP. Use mock/in-memory storage first, while keeping types ready for later database persistence.
+New work should preserve those boundaries:
+
+- UI components do not call source APIs or AI providers directly.
+- Source adapters return normalized paper data.
+- Pipeline code owns orchestration, quality gates, scoring, and validation.
+- AI code returns structured JSON only.
+- Storage code stays behind repository contracts.
