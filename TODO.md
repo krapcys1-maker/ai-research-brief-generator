@@ -4,7 +4,7 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 
 ## Next
 
-- [ ] Add adapter contract tests for arXiv, Semantic Scholar, and OpenAlex response drift.
+- [ ] Add deployment smoke checks for preflight, generation, Q&A, export, and source health.
 
 ## Production Readiness
 

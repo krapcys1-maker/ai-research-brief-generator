@@ -41,8 +41,8 @@ The app supports:
 
 ## Latest Completed Step
 
-Added query-title/abstract alignment as an explicit source coverage signal. Preflight, the reading path, source drawer, bibliography cards, quality details, and Markdown export now show direct/partial/weak topic matches, title and abstract scores, and matched query terms.
+Added adapter contract tests for arXiv, Semantic Scholar, and OpenAlex. The tests use fixture API responses, avoid live network calls, and verify URL parameters, field normalization, malformed-record filtering, DOI handling, PDF/source URLs, author mapping, year filtering, and OpenAlex abstract reconstruction.
 
 ## Next Recommended Step
 
-Follow `docs/ROADMAP.md`. The next practical product step is adapter contract tests for arXiv, Semantic Scholar, and OpenAlex response drift.
+Follow `docs/ROADMAP.md`. The next practical product step is deployment smoke checks for preflight, generation, Q&A, export, and source health.
