@@ -65,6 +65,7 @@
 - [x] Implement recency score.
 - [x] Implement completeness score.
 - [x] Add source quality and identifier signals.
+- [x] Penalize weak relevance and prevent mock papers from dominating live-source selections.
 - [x] Select top N papers.
 
 ## Phase 6 — AI Synthesis

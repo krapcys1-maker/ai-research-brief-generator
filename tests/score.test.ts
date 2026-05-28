@@ -86,4 +86,48 @@ describe("scorePapers", () => {
 
     expect(selectTopPapers(scored, 1)[0].id).toBe("relevant_recent");
   });
+
+  it("uses query variants for relevance scoring", () => {
+    const scored = scorePapers(
+      [
+        createPaper({
+          id: "transformer_paper",
+          title: "Attention Is All You Need",
+          abstract: "Transformers use self attention for sequence modeling.",
+          source: "arxiv",
+          citationCount: 100,
+          influentialCitationCount: 10
+        })
+      ],
+      "transformers artificial intelligence networks"
+    );
+
+    expect(scored[0].relevanceScore).toBeGreaterThan(0);
+  });
+
+  it("prefers relevant live papers over mock papers when both are available", () => {
+    const scored = scorePapers(
+      [
+        createPaper({
+          id: "mock_off_topic",
+          title: "Federated Learning for Healthcare Informatics",
+          abstract: "Privacy preserving healthcare model training.",
+          source: "mock",
+          citationCount: 10000,
+          influentialCitationCount: 1000
+        }),
+        createPaper({
+          id: "live_transformer",
+          title: "Transformer Attention Mechanisms in Language Models",
+          abstract: "A study of transformers and self attention.",
+          source: "arxiv",
+          citationCount: 5,
+          influentialCitationCount: 1
+        })
+      ],
+      "transformer attention language models"
+    );
+
+    expect(selectTopPapers(scored, 1)[0].id).toBe("live_transformer");
+  });
 });

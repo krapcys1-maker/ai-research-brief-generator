@@ -210,4 +210,83 @@ describe("createBrief", () => {
       resultCount: 0
     });
   });
+
+  it("prioritizes relevant live papers over weak mock fallback papers", async () => {
+    const record = await createBrief(
+      {
+        query: "Jak dzialaja transformery w sieciach ai",
+        maxPapers: 5,
+        sources: ["mock", "arxiv"]
+      },
+      {
+        search: async ({ query }) => ({
+          papers: [
+            {
+              id: "mock_irrelevant",
+              title: "Federated Learning for Healthcare Informatics",
+              abstract: "A privacy-preserving healthcare training review.",
+              authors: ["Ada Researcher"],
+              year: 2024,
+              publishedAt: "2024-01-01",
+              doi: "10.1000/mock",
+              arxivId: null,
+              semanticScholarId: null,
+              openAlexId: null,
+              sourceUrls: ["https://example.org/mock"],
+              pdfUrl: null,
+              venue: "Mock Journal",
+              citationCount: 9000,
+              influentialCitationCount: 900,
+              source: "mock"
+            },
+            {
+              id: "arxiv_transformer",
+              title: "Transformer Attention Mechanisms in Language Models",
+              abstract:
+                "Transformers use self-attention networks for sequence modeling.",
+              authors: ["Grace Researcher"],
+              year: 2024,
+              publishedAt: "2024-02-01",
+              doi: null,
+              arxivId: "2401.00001",
+              semanticScholarId: null,
+              openAlexId: null,
+              sourceUrls: ["https://arxiv.org/abs/2401.00001"],
+              pdfUrl: "https://arxiv.org/pdf/2401.00001",
+              venue: "arXiv",
+              citationCount: 5,
+              influentialCitationCount: 1,
+              source: "arxiv"
+            }
+          ],
+          sourcesUsed: ["mock", "arxiv"],
+          warnings: [],
+          sourceDiagnostics: [
+            {
+              source: "mock",
+              query,
+              status: "success",
+              resultCount: 1,
+              cached: false
+            },
+            {
+              source: "arxiv",
+              query,
+              status: "success",
+              resultCount: 1,
+              cached: false
+            }
+          ]
+        }),
+        synthesize: async (input) => createSyntheticBrief(input)
+      }
+    );
+
+    expect(record.papers[0]?.id).toBe("arxiv_transformer");
+    expect(record.papers[0]?.source).toBe("arxiv");
+    expect(record.papers[0]?.relevanceScore).toBeGreaterThan(0);
+    expect(record.brief.searchSummary.warnings).not.toContain(
+      "brief quality warning: selected papers are mock/demo records only, even though live sources were requested."
+    );
+  });
 });

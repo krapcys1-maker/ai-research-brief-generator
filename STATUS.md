@@ -187,6 +187,12 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Improved generation error UI so rate-limit responses show as a distinct warning with retry timing.
 - Updated recent brief history copy to match the active repository model instead of saying memory-only.
 - Verified the home page renders the polished form, example panel, source health panel, and updated history copy locally.
+- Improved query expansion normalization for Polish queries with diacritics, typos, and transformer-related terms.
+- Updated scoring to evaluate relevance against query variants instead of only the raw user query.
+- Reduced mock source scoring weight and penalized papers with zero or weak relevance.
+- Updated top-paper selection so relevant live-source papers are preferred over weak mock fallback papers.
+- Added quality warnings when final selected papers are mock-only despite live sources or have weak query relevance.
+- Added tests covering query-variant scoring and live-paper selection over mock fallback.
 
 ## Important Current Decisions
 
@@ -200,4 +206,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Next practical options: polish the brief result page, add saved topics/user accounts, or add Redis/KV-backed rate limiting for multi-instance production.
+Next practical options: polish the brief result page quality warnings, add saved topics/user accounts, or add Redis/KV-backed rate limiting for multi-instance production.

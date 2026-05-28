@@ -5,13 +5,15 @@ const SOURCE_QUALITY_PRIORS: Record<NormalizedPaper["source"], number> = {
   semantic_scholar: 0.92,
   openalex: 0.9,
   arxiv: 0.82,
-  mock: 0.75
+  mock: 0.45
 };
 
 function tokenize(text: string) {
   return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
-    .split(/\W+/)
+    .split(/[^\p{L}\p{N}]+/u)
     .filter((term) => term.length > 2);
 }
 
@@ -45,7 +47,14 @@ function getCompletenessScore(paper: NormalizedPaper) {
 }
 
 export function scorePapers(papers: NormalizedPaper[], query: string) {
-  const queryTerms = new Set(tokenize(query));
+  return scorePapersForQueries(papers, [query]);
+}
+
+export function scorePapersForQueries(
+  papers: NormalizedPaper[],
+  queries: string[]
+) {
+  const queryTerms = new Set(queries.flatMap(tokenize));
   const currentYear = new Date().getFullYear();
   const maxCitationLog = Math.max(
     1,
@@ -63,7 +72,7 @@ export function scorePapers(papers: NormalizedPaper[], query: string) {
       const haystack = tokenize(`${paper.title} ${paper.abstract ?? ""} ${paper.venue ?? ""}`);
       const matches = haystack.filter((term) => queryTerms.has(term)).length;
       const relevanceScore = queryTerms.size
-        ? clamp01(matches / queryTerms.size)
+        ? clamp01(matches / Math.min(queryTerms.size, 8))
         : 0.5;
       const citationVolumeScore =
         Math.log((paper.citationCount ?? 0) + 1) / maxCitationLog;
@@ -84,13 +93,17 @@ export function scorePapers(papers: NormalizedPaper[], query: string) {
         completenessScore * 0.2 +
         sourceQualityScore * 0.15 +
         identifierScore * 0.15;
-      const finalScore =
+      const rawFinalScore =
         relevanceScore * 0.5 +
         citationScore * 0.18 +
         recencyScore * 0.12 +
         completenessScore * 0.08 +
         sourceQualityScore * 0.07 +
         identifierScore * 0.05;
+      const lowRelevancePenalty =
+        relevanceScore === 0 ? 0.3 : relevanceScore < 0.12 ? 0.65 : 1;
+      const mockPenalty = paper.source === "mock" ? 0.72 : 1;
+      const finalScore = rawFinalScore * lowRelevancePenalty * mockPenalty;
 
       return {
         ...paper,
@@ -108,5 +121,25 @@ export function scorePapers(papers: NormalizedPaper[], query: string) {
 }
 
 export function selectTopPapers(papers: NormalizedPaper[], maxPapers: number) {
-  return papers.slice(0, maxPapers);
+  const nonMock = papers.filter((paper) => paper.source !== "mock");
+  const mock = papers.filter((paper) => paper.source === "mock");
+  const relevantNonMock = nonMock.filter(
+    (paper) => (paper.relevanceScore ?? 0) >= 0.08
+  );
+  const relevantMock = mock.filter((paper) => (paper.relevanceScore ?? 0) >= 0.08);
+
+  if (relevantNonMock.length) {
+    return [
+      ...relevantNonMock,
+      ...relevantMock,
+      ...nonMock.filter((paper) => !relevantNonMock.includes(paper)),
+      ...mock.filter((paper) => !relevantMock.includes(paper))
+    ].slice(0, maxPapers);
+  }
+
+  return [
+    ...relevantMock,
+    ...nonMock,
+    ...mock.filter((paper) => !relevantMock.includes(paper))
+  ].slice(0, maxPapers);
 }

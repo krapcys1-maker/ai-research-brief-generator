@@ -1,36 +1,57 @@
 import type { OutputLanguage } from "@/lib/utils/language";
 
 const polishToEnglishTerms: Record<string, string> = {
-  halucynacji: "hallucination",
-  halucynacje: "hallucination",
-  wykrywanie: "detection",
+  agentow: "agents",
+  ai: "artificial intelligence",
   detekcja: "detection",
-  modelach: "models",
-  modeli: "models",
-  jezykowych: "language",
-  językowych: "language",
-  medycznej: "medical",
-  medycznych: "medical",
   diagnozie: "diagnosis",
   diagnostyce: "diagnosis",
-  zdrowiu: "healthcare",
-  uczenie: "learning",
-  maszynowe: "machine",
-  prywatnosc: "privacy",
-  prywatność: "privacy",
+  dzialaja: "",
   grafowe: "graph",
   grafowych: "graph",
+  halucynacje: "hallucination",
+  halucynacji: "hallucination",
+  jak: "",
+  jezykowych: "language",
   lekow: "drug",
-  leków: "drug",
-  agentow: "agents",
-  agentów: "agents",
-  oprogramowania: "software engineering"
+  maszynowe: "machine",
+  medycznej: "medical",
+  medycznych: "medical",
+  modelach: "models",
+  modeli: "models",
+  oprogramowania: "software engineering",
+  prywatnosc: "privacy",
+  sieciach: "networks",
+  sieci: "networks",
+  transformerach: "transformers",
+  transformery: "transformers",
+  transformey: "transformers",
+  uczenie: "learning",
+  wykrywanie: "detection",
+  zdrowiu: "healthcare"
 };
 
-const polishStopWords = new Set(["w", "we", "z", "ze", "na", "do", "i", "oraz"]);
+const polishStopWords = new Set([
+  "w",
+  "we",
+  "z",
+  "ze",
+  "na",
+  "do",
+  "i",
+  "oraz"
+]);
 
 function normalizeWhitespace(value: string) {
   return value.replace(/\s+/g, " ").trim();
+}
+
+function normalizeLookupTerm(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[.,;:!?()[\]{}"']/g, "");
 }
 
 function unique(values: string[]) {
@@ -52,15 +73,13 @@ function translatePolishTerms(query: string) {
   return query
     .split(/\s+/)
     .map((word) => {
-      const normalized = word
-        .toLowerCase()
-        .replace(/[.,;:!?()[\]{}"']/g, "");
+      const normalized = normalizeLookupTerm(word);
 
       if (polishStopWords.has(normalized)) {
         return "";
       }
 
-      return polishToEnglishTerms[normalized] ?? word;
+      return polishToEnglishTerms[normalized] ?? normalized;
     })
     .filter(Boolean)
     .join(" ");

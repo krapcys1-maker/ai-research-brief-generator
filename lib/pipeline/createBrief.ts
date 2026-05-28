@@ -5,7 +5,7 @@ import {
   type SynthesizeBriefInput
 } from "@/lib/ai/synthesizeBrief";
 import { dedupePapers } from "@/lib/pipeline/dedupe";
-import { scorePapers, selectTopPapers } from "@/lib/pipeline/score";
+import { scorePapersForQueries, selectTopPapers } from "@/lib/pipeline/score";
 import { searchAllSources } from "@/lib/sources";
 import type { ResearchSource } from "@/lib/sources/types";
 import type { NormalizedPaper } from "@/lib/sources/types";
@@ -34,6 +34,29 @@ function createSearchSummary(input: {
   warnings: string[];
   queryVariants: string[];
 }): ResearchBrief["searchSummary"] {
+  const selectedSources = new Set(input.selected.map((paper) => paper.source));
+  const requestedLiveSources = input.requestedSources.filter(
+    (source) => source !== "mock"
+  );
+  const selectedOnlyMock =
+    input.selected.length > 0 &&
+    input.selected.every((paper) => paper.source === "mock");
+  const averageRelevance =
+    input.selected.reduce((sum, paper) => sum + (paper.relevanceScore ?? 0), 0) /
+    Math.max(1, input.selected.length);
+  const qualityWarnings = [
+    selectedOnlyMock && requestedLiveSources.length
+      ? "brief quality warning: selected papers are mock/demo records only, even though live sources were requested."
+      : null,
+    averageRelevance < 0.12
+      ? "brief quality warning: selected papers have weak lexical relevance to the query."
+      : null,
+    requestedLiveSources.some((source) => !selectedSources.has(source)) &&
+    selectedOnlyMock
+      ? "brief quality warning: live source results were unavailable or not relevant enough for final selection."
+      : null
+  ].filter((warning): warning is string => Boolean(warning));
+
   return {
     requestedSources: input.requestedSources,
     sourcesUsed: input.sourcesUsed,
@@ -42,7 +65,7 @@ function createSearchSummary(input: {
     totalUsedInBrief: input.selected.length,
     queryVariants: input.queryVariants,
     sourceDiagnostics: input.sourceDiagnostics,
-    warnings: input.warnings
+    warnings: [...input.warnings, ...qualityWarnings]
   };
 }
 
@@ -74,7 +97,7 @@ export async function createBrief(
   }
 
   const deduped = dedupePapers(rawPapers);
-  const scored = scorePapers(deduped, input.query);
+  const scored = scorePapersForQueries(deduped, queryVariants);
   const selected = selectTopPapers(scored, input.maxPapers);
 
   if (!selected.length) {
