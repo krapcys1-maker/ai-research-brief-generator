@@ -111,6 +111,9 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Improved result-page warning visibility by grouping repeated source/query warnings and showing warning counts in the brief header and diagnostics section.
 - Renamed the source diagnostics label from requested sources to successful sources to match the current `sourcesUsed` meaning.
 - Verified `npm test`, `npm run lint`, and `npm run build` after the warning UI update.
+- Added `requestedSources` to `searchSummary` so the app can show user-selected sources separately from successful sources.
+- Updated result diagnostics, Markdown export, prompt schema example, fixtures, and pipeline tests for requested-vs-successful source tracking.
+- Verified `npm test`, `npm run lint`, and `npm run build` after the `requestedSources` update.
 
 ## Important Current Decisions
 
@@ -124,4 +127,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Next practical options: add explicit requested-vs-successful source tracking to `searchSummary`, add per-adapter/query diagnostics, or add durable persistence when ready to move beyond process memory.
+Next practical options: add per-adapter/query diagnostics, add a small API/source health panel, or add durable persistence when ready to move beyond process memory.

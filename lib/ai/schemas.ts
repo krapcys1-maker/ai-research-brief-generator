@@ -129,6 +129,7 @@ export const ResearchBriefSchema = z.object({
     .min(1),
   suggestedNextQuestions: z.array(z.string().min(1)).min(1),
   searchSummary: z.object({
+    requestedSources: z.array(ResearchSourceSchema),
     sourcesUsed: z.array(z.string()),
     totalFound: z.number().int().nonnegative(),
     totalAfterDeduplication: z.number().int().nonnegative(),

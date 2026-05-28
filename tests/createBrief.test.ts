@@ -121,6 +121,8 @@ describe("createBrief", () => {
 
     expect(record.brief.id).toMatch(/^brief_/);
     expect(record.papers.length).toBeGreaterThan(0);
+    expect(record.brief.searchSummary.requestedSources).toEqual(["mock"]);
+    expect(record.brief.searchSummary.sourcesUsed).toEqual(["mock"]);
     expect(record.brief.searchSummary.totalUsedInBrief).toBe(record.papers.length);
     expect(getBriefRecord(record.brief.id)?.brief.id).toBe(record.brief.id);
   });

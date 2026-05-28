@@ -7,6 +7,7 @@ describe("researchBriefToMarkdown", () => {
     const markdown = researchBriefToMarkdown({
       brief: createBrief({
         searchSummary: {
+          requestedSources: ["mock", "arxiv", "openalex"],
           sourcesUsed: ["mock", "openalex"],
           totalFound: 12,
           totalAfterDeduplication: 8,
@@ -35,7 +36,8 @@ describe("researchBriefToMarkdown", () => {
     });
 
     expect(markdown).toContain("## Search Summary");
-    expect(markdown).toContain("- Sources used: mock, openalex");
+    expect(markdown).toContain("- Requested sources: mock, arxiv, openalex");
+    expect(markdown).toContain("- Successful sources: mock, openalex");
     expect(markdown).toContain("### Query Variants");
     expect(markdown).toContain("- grounded generation healthcare");
     expect(markdown).toContain("- Warnings: semantic_scholar failed: rate limited");

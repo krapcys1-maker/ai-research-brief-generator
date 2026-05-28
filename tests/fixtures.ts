@@ -73,6 +73,7 @@ export function createBrief(overrides: Partial<ResearchBrief> = {}): ResearchBri
     ],
     suggestedNextQuestions: ["How should citations be audited?"],
     searchSummary: {
+      requestedSources: ["mock"],
       sourcesUsed: ["mock"],
       totalFound: 1,
       totalAfterDeduplication: 1,

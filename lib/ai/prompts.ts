@@ -130,6 +130,7 @@ The JSON object must match this shape exactly:
   ],
   "suggestedNextQuestions": ["question in the final report language"],
   "searchSummary": {
+    "requestedSources": ["mock"],
     "sourcesUsed": ["mock"],
     "totalFound": ${input.papers.length},
     "totalAfterDeduplication": ${input.papers.length},

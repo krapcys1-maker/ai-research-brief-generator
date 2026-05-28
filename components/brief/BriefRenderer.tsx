@@ -128,6 +128,17 @@ function SearchDiagnostics({
 
       <div className="diagnostics-grid">
         <div>
+          <h3 className="compact-heading">Requested sources</h3>
+          <div className="token-list">
+            {brief.searchSummary.requestedSources.map((source) => (
+              <span className="badge" key={source}>
+                {source}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div>
           <h3 className="compact-heading">Successful sources</h3>
           <div className="token-list">
             {brief.searchSummary.sourcesUsed.map((source) => (

@@ -28,11 +28,13 @@ function createSearchSummary(input: {
   raw: NormalizedPaper[];
   deduped: NormalizedPaper[];
   selected: NormalizedPaper[];
+  requestedSources: ResearchSource[];
   sourcesUsed: ResearchSource[];
   warnings: string[];
   queryVariants: string[];
 }): ResearchBrief["searchSummary"] {
   return {
+    requestedSources: input.requestedSources,
     sourcesUsed: input.sourcesUsed,
     totalFound: input.raw.length,
     totalAfterDeduplication: input.deduped.length,
@@ -83,6 +85,7 @@ export async function createBrief(
     raw: rawPapers,
     deduped,
     selected,
+    requestedSources: input.sources,
     sourcesUsed: searchResult.sourcesUsed,
     warnings: searchResult.warnings,
     queryVariants

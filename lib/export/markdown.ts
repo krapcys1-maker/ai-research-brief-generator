@@ -93,7 +93,8 @@ export function researchBriefToMarkdown(input: {
 
   lines.push("## Search Summary");
   lines.push("");
-  lines.push(`- Sources used: ${brief.searchSummary.sourcesUsed.join(", ")}`);
+  lines.push(`- Requested sources: ${brief.searchSummary.requestedSources.join(", ")}`);
+  lines.push(`- Successful sources: ${brief.searchSummary.sourcesUsed.join(", ")}`);
   lines.push(`- Total found: ${brief.searchSummary.totalFound}`);
   lines.push(`- Total after deduplication: ${brief.searchSummary.totalAfterDeduplication}`);
   lines.push(`- Total used in brief: ${brief.searchSummary.totalUsedInBrief}`);
