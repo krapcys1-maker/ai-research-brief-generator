@@ -28,6 +28,7 @@
 
 ## Phase 3 — Durable Persistence
 
+- [x] Add storage repository contract for future persistence.
 - [ ] Prepare Prisma.
 - [ ] Add PostgreSQL connection.
 - [ ] Create models: `Brief`, `Paper`, `BriefPaper`, `ApiCache`.

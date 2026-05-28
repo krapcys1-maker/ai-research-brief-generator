@@ -70,6 +70,8 @@ Read AI configuration from `AI_PROVIDER`, `AI_MODEL`, and the selected provider 
 
 Mock/in-memory storage for the MVP, with persistence-ready types. Prisma and PostgreSQL are a later durable persistence phase.
 
+The app should access brief persistence through the `BriefRepository` contract in `lib/storage/types.ts`. The current implementation is `inMemoryBriefRepository`; future Prisma/PostgreSQL persistence should implement the same contract before replacing the in-memory repository.
+
 ## Dependency direction
 
 Correct:

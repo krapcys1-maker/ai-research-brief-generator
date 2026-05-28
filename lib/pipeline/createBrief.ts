@@ -9,7 +9,7 @@ import { scorePapers, selectTopPapers } from "@/lib/pipeline/score";
 import { searchAllSources } from "@/lib/sources";
 import type { ResearchSource } from "@/lib/sources/types";
 import type { NormalizedPaper } from "@/lib/sources/types";
-import { saveBriefWithPapers } from "@/lib/storage/inMemoryBriefStore";
+import { inMemoryBriefRepository } from "@/lib/storage/inMemoryBriefStore";
 import { detectQueryLanguage } from "@/lib/utils/language";
 
 export type CreateBriefDependencies = {
@@ -103,7 +103,7 @@ export async function createBrief(
     searchSummary
   });
 
-  return saveBriefWithPapers({
+  return inMemoryBriefRepository.saveWithPapers({
     brief,
     papers: selected
   });

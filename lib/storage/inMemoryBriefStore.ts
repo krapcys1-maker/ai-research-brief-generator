@@ -1,11 +1,8 @@
-import type { ResearchBrief } from "@/lib/ai/schemas";
-import type { NormalizedPaper } from "@/lib/sources/types";
-
-export type StoredBrief = {
-  brief: ResearchBrief;
-  papers: NormalizedPaper[];
-  createdAt: string;
-};
+import type {
+  BriefRepository,
+  SaveBriefInput,
+  StoredBrief
+} from "@/lib/storage/types";
 
 const globalForBriefStore = globalThis as typeof globalThis & {
   __researchBriefStore?: Map<string, StoredBrief>;
@@ -17,29 +14,44 @@ const store =
 
 globalForBriefStore.__researchBriefStore = store;
 
-export function saveBriefWithPapers(input: {
-  brief: ResearchBrief;
-  papers: NormalizedPaper[];
-}) {
-  const record: StoredBrief = {
-    ...input,
-    createdAt: new Date().toISOString()
+function toSummary(record: StoredBrief) {
+  return {
+    id: record.brief.id,
+    title: record.brief.title,
+    query: record.brief.query,
+    generatedAt: record.brief.generatedAt,
+    outputLanguage: record.brief.outputLanguage,
+    createdAt: record.createdAt
   };
-
-  store.set(input.brief.id, record);
-  return record;
 }
 
-export function getBriefRecord(id: string) {
-  return store.get(id) ?? null;
-}
+export const inMemoryBriefRepository: BriefRepository = {
+  async saveWithPapers(input: SaveBriefInput) {
+    const record: StoredBrief = {
+      ...input,
+      createdAt: new Date().toISOString()
+    };
 
-export function listBriefRecords() {
-  return [...store.values()].sort((a, b) =>
-    b.createdAt.localeCompare(a.createdAt)
-  );
-}
+    store.set(input.brief.id, record);
+    return record;
+  },
 
-export function clearBriefStore() {
-  store.clear();
-}
+  async getById(id: string) {
+    return store.get(id) ?? null;
+  },
+
+  async list() {
+    return [...store.values()].sort((a, b) =>
+      b.createdAt.localeCompare(a.createdAt)
+    );
+  },
+
+  async listSummaries() {
+    const records = await this.list();
+    return records.map(toSummary);
+  },
+
+  async clear() {
+    store.clear();
+  }
+};

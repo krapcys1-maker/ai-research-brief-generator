@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { createBrief } from "@/lib/pipeline/createBrief";
-import { clearBriefStore, getBriefRecord } from "@/lib/storage/inMemoryBriefStore";
+import { inMemoryBriefRepository } from "@/lib/storage/inMemoryBriefStore";
 import type { ResearchBrief } from "@/lib/ai/schemas";
 import type { SynthesizeBriefInput } from "@/lib/ai/synthesizeBrief";
 
@@ -103,8 +103,8 @@ function createSyntheticBrief(input: SynthesizeBriefInput): ResearchBrief {
 }
 
 describe("createBrief", () => {
-  beforeEach(() => {
-    clearBriefStore();
+  beforeEach(async () => {
+    await inMemoryBriefRepository.clear();
   });
 
   it("runs the mock pipeline and stores a grounded brief without calling AI", async () => {
@@ -124,7 +124,9 @@ describe("createBrief", () => {
     expect(record.brief.searchSummary.requestedSources).toEqual(["mock"]);
     expect(record.brief.searchSummary.sourcesUsed).toEqual(["mock"]);
     expect(record.brief.searchSummary.totalUsedInBrief).toBe(record.papers.length);
-    expect(getBriefRecord(record.brief.id)?.brief.id).toBe(record.brief.id);
+    expect(
+      (await inMemoryBriefRepository.getById(record.brief.id))?.brief.id
+    ).toBe(record.brief.id);
   });
 
   it("detects Polish output language before synthesis", async () => {

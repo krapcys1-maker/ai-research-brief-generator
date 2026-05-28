@@ -126,6 +126,10 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Updated home page copy to mention mock and live academic sources.
 - Added a recent brief history panel using `GET /api/briefs` and the in-memory brief store.
 - Verified `npm test`, `npm run lint`, and `npm run build` after the home page history update.
+- Added `lib/storage/types.ts` with a `BriefRepository` contract for future durable persistence.
+- Refactored brief storage callers to use `inMemoryBriefRepository` instead of direct store helper functions.
+- Added repository contract test coverage for save, get, list, summary, and clear behavior.
+- Verified `npm test`, `npm run lint`, and `npm run build` after the storage repository update.
 
 ## Important Current Decisions
 
@@ -139,4 +143,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Next practical options: add durable persistence when ready to move beyond process memory, add a manual source-health refresh control, or polish the UI with a component library.
+Next practical options: add Prisma/PostgreSQL behind the `BriefRepository` contract when ready, add a manual source-health refresh control, or polish the UI with a component library.

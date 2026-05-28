@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { createBrief } from "@/lib/pipeline/createBrief";
-import { listBriefRecords } from "@/lib/storage/inMemoryBriefStore";
+import { inMemoryBriefRepository } from "@/lib/storage/inMemoryBriefStore";
 
 function errorResponse(message: string, status = 400) {
   return NextResponse.json(
@@ -43,12 +43,6 @@ export async function POST(request: Request) {
 
 export async function GET() {
   return NextResponse.json({
-    briefs: listBriefRecords().map((record) => ({
-      id: record.brief.id,
-      title: record.brief.title,
-      query: record.brief.query,
-      generatedAt: record.brief.generatedAt,
-      outputLanguage: record.brief.outputLanguage
-    }))
+    briefs: await inMemoryBriefRepository.listSummaries()
   });
 }

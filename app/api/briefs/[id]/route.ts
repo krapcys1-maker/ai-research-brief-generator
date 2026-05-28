@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { getBriefRecord } from "@/lib/storage/inMemoryBriefStore";
+import { inMemoryBriefRepository } from "@/lib/storage/inMemoryBriefStore";
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const record = getBriefRecord(id);
+  const record = await inMemoryBriefRepository.getById(id);
 
   if (!record) {
     return NextResponse.json(
