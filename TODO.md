@@ -101,6 +101,7 @@
 - [x] Add `GET /api/export/[id]?format=markdown`.
 - [x] Add export button.
 - [x] Include bibliography in export.
+- [x] Include search diagnostics and paper scores in export.
 
 ## Later
 

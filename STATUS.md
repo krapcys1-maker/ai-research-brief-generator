@@ -102,6 +102,9 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Verified `npm test`, `npm run lint`, and `npm run build` after the scoring update.
 - Added score breakdowns to bibliography paper cards, including final score plus relevance, citations, recency, completeness, source, and identifier scores.
 - Verified `npm test`, `npm run lint`, and `npm run build` after the score breakdown UI change.
+- Extended Markdown export with query variants, warnings, paper source metadata, influential citations, final score, and score breakdowns.
+- Added Markdown export test coverage for search diagnostics and paper scores.
+- Verified `npm test`, `npm run lint`, and `npm run build` after the export metadata update.
 
 ## Important Current Decisions
 
@@ -115,4 +118,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Next practical options: add richer source diagnostics per adapter/query, add Markdown export coverage for source/search metadata, or add durable persistence when ready to move beyond process memory.
+Next practical options: add richer source diagnostics per adapter/query, add a minimal loading/progress experience for long DeepSeek runs, or add durable persistence when ready to move beyond process memory.

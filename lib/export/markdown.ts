@@ -9,6 +9,10 @@ function clean(value: string | null | undefined) {
   return value?.trim() ? value.trim() : "N/A";
 }
 
+function score(value: number | undefined) {
+  return typeof value === "number" ? value.toFixed(2) : "N/A";
+}
+
 export function researchBriefToMarkdown(input: {
   brief: ResearchBrief;
   papers: NormalizedPaper[];
@@ -93,9 +97,14 @@ export function researchBriefToMarkdown(input: {
   lines.push(`- Total found: ${brief.searchSummary.totalFound}`);
   lines.push(`- Total after deduplication: ${brief.searchSummary.totalAfterDeduplication}`);
   lines.push(`- Total used in brief: ${brief.searchSummary.totalUsedInBrief}`);
-  lines.push(`- Query variants: ${brief.searchSummary.queryVariants.join("; ")}`);
   if (brief.searchSummary.warnings.length) {
     lines.push(`- Warnings: ${brief.searchSummary.warnings.join("; ")}`);
+  }
+  lines.push("");
+  lines.push("### Query Variants");
+  lines.push("");
+  for (const query of brief.searchSummary.queryVariants) {
+    lines.push(`- ${query}`);
   }
   lines.push("");
 
@@ -104,12 +113,16 @@ export function researchBriefToMarkdown(input: {
   for (const paper of papers) {
     lines.push(`### [${paper.id}] ${paper.title}`);
     lines.push("");
+    lines.push(`- Source: ${paper.source}`);
     lines.push(`- Authors: ${paper.authors.join(", ")}`);
     lines.push(`- Year: ${clean(paper.year?.toString())}`);
     lines.push(`- Venue: ${clean(paper.venue)}`);
     lines.push(`- DOI: ${clean(paper.doi)}`);
     lines.push(`- URL: ${clean(paper.sourceUrls[0])}`);
     lines.push(`- Citation count: ${clean(paper.citationCount?.toString())}`);
+    lines.push(`- Influential citation count: ${clean(paper.influentialCitationCount?.toString())}`);
+    lines.push(`- Final score: ${score(paper.finalScore)}`);
+    lines.push(`- Score breakdown: relevance ${score(paper.relevanceScore)}, citations ${score(paper.citationScore)}, recency ${score(paper.recencyScore)}, completeness ${score(paper.completenessScore)}, source ${score(paper.sourceQualityScore)}, identifiers ${score(paper.identifierScore)}`);
     if (paper.abstract) {
       lines.push(`- Abstract: ${paper.abstract}`);
     }
