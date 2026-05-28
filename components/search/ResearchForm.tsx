@@ -11,6 +11,7 @@ type ResearchFormProps = {
 
 type QualityGatePayload = {
   coverage: "good" | "limited" | "poor";
+  canSynthesize?: boolean;
   selectedPaperCount: number;
   livePaperCount: number;
   mockPaperCount: number;
@@ -18,6 +19,33 @@ type QualityGatePayload = {
   warningCount: number;
   reasons: string[];
   suggestions: string[];
+};
+
+type PreflightPaper = {
+  id: string;
+  title: string;
+  authors: string[];
+  year: number | null;
+  venue: string | null;
+  source: string;
+  doi: string | null;
+  url: string | null;
+  relevanceScore: number | null;
+  finalScore: number | null;
+};
+
+type PreflightPayload = {
+  status: string;
+  outputLanguage: string;
+  queryVariants: string[];
+  qualityGate: QualityGatePayload;
+  searchSummary: {
+    totalFound: number;
+    totalAfterDeduplication: number;
+    totalUsedInBrief: number;
+    warnings: string[];
+  };
+  papers: PreflightPaper[];
 };
 
 const sourceOptions: { value: SourceOption; label: string }[] = [
@@ -38,6 +66,118 @@ const progressSteps = [
   "Saving result"
 ];
 
+function formatScore(value: number | null) {
+  return typeof value === "number" ? value.toFixed(2) : "N/A";
+}
+
+function SourcePreflightPanel({
+  preflight,
+  onUseSuggestion
+}: {
+  preflight: PreflightPayload;
+  onUseSuggestion: (suggestion: string) => void;
+}) {
+  return (
+    <section className="preflight-panel" aria-live="polite">
+      <div className="preflight-header">
+        <div>
+          <h2>Source preflight</h2>
+          <p>
+            Coverage: <strong>{preflight.qualityGate.coverage}</strong>
+          </p>
+        </div>
+        <span className="badge">
+          {preflight.qualityGate.canSynthesize === false
+            ? "review needed"
+            : "ready"}
+        </span>
+      </div>
+
+      <div className="preflight-metrics">
+        <div>
+          <span>Found</span>
+          <strong>{preflight.searchSummary.totalFound}</strong>
+        </div>
+        <div>
+          <span>After dedupe</span>
+          <strong>{preflight.searchSummary.totalAfterDeduplication}</strong>
+        </div>
+        <div>
+          <span>Selected</span>
+          <strong>{preflight.searchSummary.totalUsedInBrief}</strong>
+        </div>
+        <div>
+          <span>Avg relevance</span>
+          <strong>{preflight.qualityGate.averageRelevance.toFixed(2)}</strong>
+        </div>
+      </div>
+
+      {preflight.qualityGate.reasons.length ? (
+        <div className="preflight-block">
+          <h3>Quality notes</h3>
+          <ul>
+            {preflight.qualityGate.reasons.map((reason) => (
+              <li key={reason}>{reason}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {preflight.qualityGate.suggestions.length ? (
+        <div className="preflight-block">
+          <h3>Suggested next queries</h3>
+          <div className="preflight-suggestion-list">
+            {preflight.qualityGate.suggestions.map((suggestion) => (
+              <button
+                key={suggestion}
+                type="button"
+                onClick={() => onUseSuggestion(suggestion)}
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <div className="preflight-block">
+        <h3>Top papers</h3>
+        {preflight.papers.length ? (
+          <div className="preflight-paper-list">
+            {preflight.papers.slice(0, 5).map((paper) => (
+              <article key={paper.id}>
+                <span className="badge">{paper.source}</span>
+                <h4>{paper.title}</h4>
+                <p>
+                  {paper.authors.slice(0, 3).join(", ")}
+                  {paper.year ? ` (${paper.year})` : ""}
+                </p>
+                <p>
+                  Relevance {formatScore(paper.relevanceScore)} - Final{" "}
+                  {formatScore(paper.finalScore)}
+                </p>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p>No papers passed the current quality threshold.</p>
+        )}
+      </div>
+
+      {preflight.searchSummary.warnings.length ? (
+        <div className="preflight-block">
+          <h3>Warnings</h3>
+          <ul>
+            {preflight.searchSummary.warnings.slice(0, 5).map((warning) => (
+              <li key={warning}>{warning}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 export function ResearchForm({ examples }: ResearchFormProps) {
   const router = useRouter();
   const [query, setQuery] = useState(examples[0] ?? "");
@@ -52,8 +192,11 @@ export function ResearchForm({ examples }: ResearchFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [errorKind, setErrorKind] = useState<"error" | "warning">("error");
   const [qualityGate, setQualityGate] = useState<QualityGatePayload | null>(null);
+  const [preflight, setPreflight] = useState<PreflightPayload | null>(null);
   const [loading, setLoading] = useState(false);
+  const [checkingSources, setCheckingSources] = useState(false);
   const [progressStep, setProgressStep] = useState(0);
+  const busy = loading || checkingSources;
 
   useEffect(() => {
     if (!loading) {
@@ -80,10 +223,71 @@ export function ResearchForm({ examples }: ResearchFormProps) {
     });
   }
 
+  function getRequestPayload() {
+    return {
+      query,
+      maxPapers,
+      sources,
+      fromYear: fromYear ? Number(fromYear) : undefined,
+      toYear: toYear ? Number(toYear) : undefined
+    };
+  }
+
+  function applySuggestion(suggestion: string) {
+    setQuery(suggestion.replace(/^Try this broader query:\s*/i, ""));
+    setPreflight(null);
+    setError(null);
+    setQualityGate(null);
+  }
+
+  async function checkSources() {
+    setError(null);
+    setQualityGate(null);
+    setPreflight(null);
+    setErrorKind("error");
+    setCheckingSources(true);
+
+    try {
+      const response = await fetch("/api/briefs/preflight", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(getRequestPayload())
+      });
+      const payload = (await response.json()) as PreflightPayload & {
+        error?: string;
+      };
+
+      if (!response.ok || payload.status !== "completed") {
+        throw new Error(payload.error ?? "Source preflight failed.");
+      }
+
+      setPreflight(payload);
+      if (payload.qualityGate.coverage === "poor") {
+        setErrorKind("warning");
+        setQualityGate(payload.qualityGate);
+        setError(
+          payload.qualityGate.reasons[0] ??
+            "The selected sources are too weak for a reliable brief."
+        );
+      }
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : "Source preflight failed unexpectedly."
+      );
+    } finally {
+      setCheckingSources(false);
+    }
+  }
+
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
     setQualityGate(null);
+    setPreflight(null);
     setErrorKind("error");
     setProgressStep(0);
     setLoading(true);
@@ -94,13 +298,7 @@ export function ResearchForm({ examples }: ResearchFormProps) {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-          query,
-          maxPapers,
-          sources,
-          fromYear: fromYear ? Number(fromYear) : undefined,
-          toYear: toYear ? Number(toYear) : undefined
-        })
+        body: JSON.stringify(getRequestPayload())
       });
 
       const payload = (await response.json()) as {
@@ -151,7 +349,7 @@ export function ResearchForm({ examples }: ResearchFormProps) {
             className="form-control form-textarea"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            disabled={loading}
+            disabled={busy}
             minLength={3}
             maxLength={300}
             required
@@ -166,7 +364,7 @@ export function ResearchForm({ examples }: ResearchFormProps) {
               className="form-control"
               value={maxPapers}
               onChange={(event) => setMaxPapers(Number(event.target.value))}
-              disabled={loading}
+              disabled={busy}
             >
               <option value={10}>10 papers</option>
               <option value={15}>15 papers</option>
@@ -181,7 +379,7 @@ export function ResearchForm({ examples }: ResearchFormProps) {
               className="form-control"
               value={fromYear}
               onChange={(event) => setFromYear(event.target.value)}
-              disabled={loading}
+              disabled={busy}
               inputMode="numeric"
               placeholder="2020"
               min={1900}
@@ -196,7 +394,7 @@ export function ResearchForm({ examples }: ResearchFormProps) {
               className="form-control"
               value={toYear}
               onChange={(event) => setToYear(event.target.value)}
-              disabled={loading}
+              disabled={busy}
               inputMode="numeric"
               placeholder="2026"
               min={1900}
@@ -221,7 +419,7 @@ export function ResearchForm({ examples }: ResearchFormProps) {
                 <input
                   type="checkbox"
                   checked={sources.includes(source.value)}
-                  disabled={loading}
+                  disabled={busy}
                   onChange={() => toggleSource(source.value)}
                 />
                 <span>{source.label}</span>
@@ -263,9 +461,7 @@ export function ResearchForm({ examples }: ResearchFormProps) {
                         <button
                           key={suggestion}
                           type="button"
-                          onClick={() =>
-                            setQuery(suggestion.replace(/^Try this broader query:\s*/i, ""))
-                          }
+                          onClick={() => applySuggestion(suggestion)}
                         >
                           {suggestion}
                         </button>
@@ -305,13 +501,30 @@ export function ResearchForm({ examples }: ResearchFormProps) {
           </div>
         ) : null}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="primary-action"
-        >
-          {loading ? "Generating..." : "Generate Brief"}
-        </button>
+        {preflight ? (
+          <SourcePreflightPanel
+            preflight={preflight}
+            onUseSuggestion={applySuggestion}
+          />
+        ) : null}
+
+        <div className="form-actions">
+          <button
+            type="button"
+            disabled={busy}
+            className="secondary-action"
+            onClick={checkSources}
+          >
+            {checkingSources ? "Checking..." : "Check Sources"}
+          </button>
+          <button
+            type="submit"
+            disabled={busy}
+            className="primary-action"
+          >
+            {loading ? "Generating..." : "Generate Brief"}
+          </button>
+        </div>
       </form>
 
       <aside className="surface example-panel">
@@ -325,7 +538,7 @@ export function ResearchForm({ examples }: ResearchFormProps) {
               key={example}
               type="button"
               onClick={() => setQuery(example)}
-              disabled={loading}
+              disabled={busy}
               className="example-button"
             >
               {example}

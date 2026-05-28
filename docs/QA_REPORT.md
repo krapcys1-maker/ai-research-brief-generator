@@ -42,6 +42,7 @@ Test topics:
 - Changed paper selection so weak mock fallback records no longer fill a brief when live-source papers are requested.
 - Changed the pipeline to return a controlled “no relevant papers” error instead of synthesizing from irrelevant papers.
 - Changed source API cache behavior so empty responses are not persisted and old empty cache records are ignored.
+- Added source preflight so users can inspect source coverage, top papers, and quality warnings before triggering AI synthesis.
 
 ## Retest Results
 
@@ -64,3 +65,4 @@ Test topics:
 - arXiv intermittently returns timeouts or `429`; this is handled as a source warning.
 - The app should eventually distinguish “link blocked by publisher” from “dead link” in diagnostics.
 - A dedicated visual smoke test could be added to the repo later with Playwright as a dev dependency.
+- The current source preflight UI is functional, but it should eventually explain quality signals in simpler product language.

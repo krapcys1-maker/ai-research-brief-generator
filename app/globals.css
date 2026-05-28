@@ -602,13 +602,148 @@ textarea {
   cursor: pointer;
 }
 
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.secondary-action {
+  width: fit-content;
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--accent-strong);
+  padding: 12px 18px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .primary-action:hover:not(:disabled) {
   background: var(--accent-strong);
+}
+
+.secondary-action:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: #f8fffd;
 }
 
 .primary-action:disabled {
   background: #78918d;
   cursor: wait;
+}
+
+.secondary-action:disabled {
+  color: var(--muted);
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.preflight-panel {
+  display: grid;
+  gap: 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fbfcfe;
+}
+
+.preflight-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.preflight-header h2,
+.preflight-header p,
+.preflight-block h3,
+.preflight-block h4,
+.preflight-block p {
+  margin: 0;
+}
+
+.preflight-header h2 {
+  font-size: 1rem;
+}
+
+.preflight-header p,
+.preflight-block p,
+.preflight-block li {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.preflight-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.preflight-metrics div,
+.preflight-paper-list article {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  background: #fff;
+}
+
+.preflight-metrics span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.preflight-metrics strong {
+  display: block;
+  margin-top: 3px;
+}
+
+.preflight-block {
+  display: grid;
+  gap: 8px;
+}
+
+.preflight-block h3 {
+  font-size: 0.92rem;
+}
+
+.preflight-block ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.preflight-suggestion-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.preflight-suggestion-list button {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 10px;
+  background: #fff;
+  color: var(--accent-strong);
+  cursor: pointer;
+  font-size: 0.84rem;
+  font-weight: 750;
+}
+
+.preflight-paper-list {
+  display: grid;
+  gap: 8px;
+}
+
+.preflight-paper-list article {
+  display: grid;
+  gap: 6px;
+}
+
+.preflight-paper-list h4 {
+  font-size: 0.92rem;
+  line-height: 1.35;
 }
 
 .example-panel {
@@ -875,6 +1010,7 @@ textarea {
   .source-diagnostic-list,
   .quality-panel,
   .reading-path,
+  .preflight-metrics,
   .source-health-metrics,
   .source-health-grid {
     grid-template-columns: 1fr;

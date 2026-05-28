@@ -213,6 +213,11 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Improved query expansion, relevance scoring, paper selection, and source-cache behavior based on QA findings.
 - Added a Research Quality Gate before AI synthesis so weak source coverage returns a controlled `422` response instead of calling DeepSeek.
 - Updated the home form to show quality-gate reasons, source coverage metrics, and suggested next queries.
+- Added `POST /api/briefs/preflight` so the app can inspect source coverage before calling the AI provider.
+- Added a Source Preflight panel on the home form with found/deduped/selected counts, average relevance, top paper previews, warnings, and suggested query refinements.
+- Refactored `createBrief` to reuse the same preflight path as generation, keeping the preview and final synthesis consistent.
+- Added tests for the preflight pipeline and preflight API route.
+- Ran manual Playwright browser checks for source preflight on a good query, quality-gate warning on a weak/noisy query, full brief generation for `AI agents in software engineering`, rendered result sections, source IDs, external bibliography links, and mobile overflow.
 
 ## Important Current Decisions
 
@@ -226,4 +231,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Next practical options: polish the brief result page quality warnings, add saved topics/user accounts, or add Redis/KV-backed rate limiting for multi-instance production.
+Next practical options: make the source preflight panel more user-friendly in Polish, add a dedicated Playwright smoke test to the repo, or add Redis/KV-backed rate limiting for multi-instance production.
