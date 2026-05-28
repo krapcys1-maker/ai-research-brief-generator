@@ -218,6 +218,8 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Refactored `createBrief` to reuse the same preflight path as generation, keeping the preview and final synthesis consistent.
 - Added tests for the preflight pipeline and preflight API route.
 - Ran manual Playwright browser checks for source preflight on a good query, quality-gate warning on a weak/noisy query, full brief generation for `AI agents in software engineering`, rendered result sections, source IDs, external bibliography links, and mobile overflow.
+- Reviewed the product audit against the real code and docs.
+- Added `docs/REMEDIATION_PLAN.md` with P0/P1/P2 repair priorities covering privacy, persistence, rate limiting, claim-level evidence, source quality, UX, and documentation cleanup.
 
 ## Important Current Decisions
 
@@ -231,4 +233,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Next practical options: make the source preflight panel more user-friendly in Polish, add a dedicated Playwright smoke test to the repo, or add Redis/KV-backed rate limiting for multi-instance production.
+Follow `docs/REMEDIATION_PLAN.md`. The highest-priority next step is to disable or scope public recent brief history before public deployment.
