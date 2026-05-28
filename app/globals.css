@@ -530,6 +530,54 @@ textarea {
   line-height: 1.5;
 }
 
+.quality-gate-alert {
+  display: grid;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.quality-gate-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.quality-gate-metrics span {
+  border: 1px solid #fed7aa;
+  border-radius: 999px;
+  padding: 2px 8px;
+  background: #fff;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.quality-gate-alert ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.quality-gate-suggestions {
+  display: grid;
+  gap: 8px;
+}
+
+.quality-gate-suggestions > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.quality-gate-suggestions button {
+  border: 1px solid #fed7aa;
+  border-radius: 999px;
+  padding: 4px 10px;
+  background: #fff;
+  color: var(--warning);
+  cursor: pointer;
+  font-size: 0.84rem;
+  font-weight: 750;
+}
+
 .form-alert.error {
   border: 1px solid #fecaca;
   background: #fff1f2;

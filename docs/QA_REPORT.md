@@ -35,6 +35,7 @@ Test topics:
 
 - Added Polish-to-English query expansion for stem-cell and burn-treatment terms.
 - Added domain-specific query variants for burn-wound stem-cell searches.
+- Added a Research Quality Gate before AI synthesis to block reports when selected sources are too weak.
 - Changed scoring to ignore generic expansion terms when computing relevance.
 - Changed scoring to weight title matches more strongly than abstract/venue matches.
 - Added light plural normalization for English terms such as `agents`, `cells`, `burns`, and `transformers`.

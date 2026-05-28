@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { createBrief } from "@/lib/pipeline/createBrief";
+import { ResearchQualityGateError } from "@/lib/pipeline/qualityGate";
 import { checkRateLimit, getClientIp } from "@/lib/security/rateLimit";
 import { getBriefRepository } from "@/lib/storage/repository";
 
@@ -58,6 +59,17 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof ZodError) {
       return errorResponse(error.issues.map((issue) => issue.message).join("; "));
+    }
+
+    if (error instanceof ResearchQualityGateError) {
+      return NextResponse.json(
+        {
+          status: "quality_gate_failed",
+          error: error.message,
+          qualityGate: error.qualityGate
+        },
+        { status: 422 }
+      );
     }
 
     const message =

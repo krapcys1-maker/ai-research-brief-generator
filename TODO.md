@@ -107,6 +107,7 @@
 - [x] Add per-adapter/query source diagnostics.
 - [x] Add human citation labels, brief quality summary, reading path, and collapsed technical diagnostics.
 - [x] Run multi-topic research-quality QA and improve relevance selection based on findings.
+- [x] Add Research Quality Gate before AI synthesis to block weak source coverage.
 
 ## Phase 8 — Export
 

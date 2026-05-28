@@ -5,6 +5,10 @@ import {
   type SynthesizeBriefInput
 } from "@/lib/ai/synthesizeBrief";
 import { dedupePapers } from "@/lib/pipeline/dedupe";
+import {
+  evaluateResearchQuality,
+  ResearchQualityGateError
+} from "@/lib/pipeline/qualityGate";
 import { scorePapersForQueries, selectTopPapers } from "@/lib/pipeline/score";
 import { searchAllSources } from "@/lib/sources";
 import type { ResearchSource } from "@/lib/sources/types";
@@ -102,11 +106,15 @@ export async function createBrief(
   const deduped = dedupePapers(rawPapers);
   const scored = scorePapersForQueries(deduped, queryVariants);
   const selected = selectTopPapers(scored, input.maxPapers);
+  const qualityGate = evaluateResearchQuality({
+    request: input,
+    selected,
+    warnings: searchResult.warnings,
+    queryVariants
+  });
 
-  if (!selected.length) {
-    throw new Error(
-      "No relevant papers were available after deduplication and scoring. Try a broader query or different sources."
-    );
+  if (!qualityGate.canSynthesize) {
+    throw new ResearchQualityGateError(qualityGate);
   }
 
   const id = createBriefId();

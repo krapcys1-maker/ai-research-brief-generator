@@ -177,10 +177,28 @@ describe("createBrief", () => {
               citationCount: 10,
               influentialCitationCount: 1,
               source: "mock"
+            },
+            {
+              id: "paper_2",
+              title: "Retrieval-Augmented Generation for Clinical Question Answering",
+              abstract: "A second grounded generation study for clinical settings.",
+              authors: ["Ben Researcher"],
+              year: 2024,
+              publishedAt: "2024-02-01",
+              doi: "10.1000/example-2",
+              arxivId: null,
+              semanticScholarId: null,
+              openAlexId: "W123",
+              sourceUrls: ["https://example.org/paper-2"],
+              pdfUrl: null,
+              venue: "Example Journal",
+              citationCount: 8,
+              influentialCitationCount: 1,
+              source: "openalex"
             }
           ],
-          sourcesUsed: ["mock"],
-          warnings: ["openalex returned no papers."],
+          sourcesUsed: ["mock", "openalex"],
+          warnings: [],
           sourceDiagnostics: [
             {
               source: "mock",
@@ -192,10 +210,9 @@ describe("createBrief", () => {
             {
               source: "openalex",
               query,
-              status: "empty",
-              resultCount: 0,
-              cached: false,
-              message: "No papers returned."
+              status: "success",
+              resultCount: 1,
+              cached: false
             }
           ]
         }),
@@ -206,8 +223,8 @@ describe("createBrief", () => {
     expect(record.brief.searchSummary.sourceDiagnostics).toHaveLength(2);
     expect(record.brief.searchSummary.sourceDiagnostics[1]).toMatchObject({
       source: "openalex",
-      status: "empty",
-      resultCount: 0
+      status: "success",
+      resultCount: 1
     });
   });
 
@@ -257,6 +274,25 @@ describe("createBrief", () => {
               citationCount: 5,
               influentialCitationCount: 1,
               source: "arxiv"
+            },
+            {
+              id: "arxiv_transformer_2",
+              title: "Self Attention Networks for Transformer Language Models",
+              abstract:
+                "A second paper about transformers, self-attention, and language model networks.",
+              authors: ["Alan Researcher"],
+              year: 2024,
+              publishedAt: "2024-03-01",
+              doi: null,
+              arxivId: "2401.00002",
+              semanticScholarId: null,
+              openAlexId: null,
+              sourceUrls: ["https://arxiv.org/abs/2401.00002"],
+              pdfUrl: "https://arxiv.org/pdf/2401.00002",
+              venue: "arXiv",
+              citationCount: 4,
+              influentialCitationCount: 1,
+              source: "arxiv"
             }
           ],
           sourcesUsed: ["mock", "arxiv"],
@@ -282,7 +318,7 @@ describe("createBrief", () => {
       }
     );
 
-    expect(record.papers[0]?.id).toBe("arxiv_transformer");
+    expect(record.papers[0]?.id).toMatch(/^arxiv_transformer/);
     expect(record.papers[0]?.source).toBe("arxiv");
     expect(record.papers[0]?.relevanceScore).toBeGreaterThan(0);
     expect(record.brief.searchSummary.warnings).not.toContain(

@@ -211,6 +211,8 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Fixed a browser-detected hydration mismatch by replacing locale-dependent generated-date rendering with a deterministic UTC format.
 - Ran a five-topic research-quality QA pass and saved notes in `docs/QA_REPORT.md`.
 - Improved query expansion, relevance scoring, paper selection, and source-cache behavior based on QA findings.
+- Added a Research Quality Gate before AI synthesis so weak source coverage returns a controlled `422` response instead of calling DeepSeek.
+- Updated the home form to show quality-gate reasons, source coverage metrics, and suggested next queries.
 
 ## Important Current Decisions
 

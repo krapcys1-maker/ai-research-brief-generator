@@ -9,6 +9,17 @@ type ResearchFormProps = {
   examples: string[];
 };
 
+type QualityGatePayload = {
+  coverage: "good" | "limited" | "poor";
+  selectedPaperCount: number;
+  livePaperCount: number;
+  mockPaperCount: number;
+  averageRelevance: number;
+  warningCount: number;
+  reasons: string[];
+  suggestions: string[];
+};
+
 const sourceOptions: { value: SourceOption; label: string }[] = [
   { value: "mock", label: "Mock" },
   { value: "arxiv", label: "arXiv" },
@@ -21,6 +32,7 @@ const progressSteps = [
   "Searching academic sources",
   "Normalizing and deduplicating papers",
   "Ranking selected sources",
+  "Checking research quality",
   "Generating structured brief",
   "Validating citations",
   "Saving result"
@@ -39,6 +51,7 @@ export function ResearchForm({ examples }: ResearchFormProps) {
   ]);
   const [error, setError] = useState<string | null>(null);
   const [errorKind, setErrorKind] = useState<"error" | "warning">("error");
+  const [qualityGate, setQualityGate] = useState<QualityGatePayload | null>(null);
   const [loading, setLoading] = useState(false);
   const [progressStep, setProgressStep] = useState(0);
 
@@ -70,6 +83,7 @@ export function ResearchForm({ examples }: ResearchFormProps) {
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+    setQualityGate(null);
     setErrorKind("error");
     setProgressStep(0);
     setLoading(true);
@@ -92,6 +106,8 @@ export function ResearchForm({ examples }: ResearchFormProps) {
       const payload = (await response.json()) as {
         briefId?: string;
         error?: string;
+        status?: string;
+        qualityGate?: QualityGatePayload;
       };
 
       if (!response.ok || !payload.briefId) {
@@ -103,6 +119,12 @@ export function ResearchForm({ examples }: ResearchFormProps) {
               ? `Too many generation requests. Try again in about ${retryAfter} seconds.`
               : "Too many generation requests. Try again shortly."
           );
+        }
+
+        if (response.status === 422 && payload.qualityGate) {
+          setErrorKind("warning");
+          setQualityGate(payload.qualityGate);
+          throw new Error(payload.error ?? "The selected sources are too weak for a reliable brief.");
         }
 
         throw new Error(payload.error ?? "Brief generation failed.");
@@ -210,8 +232,49 @@ export function ResearchForm({ examples }: ResearchFormProps) {
 
         {error ? (
           <div className={`form-alert ${errorKind}`} role="alert">
-            <strong>{errorKind === "warning" ? "Rate limit" : "Generation error"}</strong>
+            <strong>
+              {qualityGate
+                ? "Research quality gate"
+                : errorKind === "warning"
+                  ? "Rate limit"
+                  : "Generation error"}
+            </strong>
             <span>{error}</span>
+            {qualityGate ? (
+              <div className="quality-gate-alert">
+                <div className="quality-gate-metrics">
+                  <span>Coverage: {qualityGate.coverage}</span>
+                  <span>Papers: {qualityGate.selectedPaperCount}</span>
+                  <span>Live: {qualityGate.livePaperCount}</span>
+                  <span>Avg relevance: {qualityGate.averageRelevance.toFixed(2)}</span>
+                </div>
+                {qualityGate.reasons.length ? (
+                  <ul>
+                    {qualityGate.reasons.map((reason) => (
+                      <li key={reason}>{reason}</li>
+                    ))}
+                  </ul>
+                ) : null}
+                {qualityGate.suggestions.length ? (
+                  <div className="quality-gate-suggestions">
+                    <strong>Try next</strong>
+                    <div>
+                      {qualityGate.suggestions.map((suggestion) => (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          onClick={() =>
+                            setQuery(suggestion.replace(/^Try this broader query:\s*/i, ""))
+                          }
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         ) : null}
 

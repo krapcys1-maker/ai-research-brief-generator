@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createBrief as mockedCreateBrief } from "@/lib/pipeline/createBrief";
+import { ResearchQualityGateError } from "@/lib/pipeline/qualityGate";
 import { resetRateLimitForTests } from "@/lib/security/rateLimit";
 import { createBrief as createBriefFixture } from "./fixtures";
 
@@ -66,6 +67,40 @@ describe("POST /api/briefs", () => {
     expect(response.status).toBe(503);
     expect(payload.status).toBe("error");
     expect(payload.error).toContain("DEEPSEEK_API_KEY");
+  });
+
+  it("returns quality gate details when sources are too weak", async () => {
+    createBriefMock.mockRejectedValueOnce(
+      new ResearchQualityGateError({
+        coverage: "poor",
+        canSynthesize: false,
+        selectedPaperCount: 0,
+        livePaperCount: 0,
+        mockPaperCount: 0,
+        averageRelevance: 0,
+        warningCount: 1,
+        reasons: ["No relevant papers were available after deduplication and scoring."],
+        suggestions: ["Try this broader query: stem cells burn treatment"]
+      })
+    );
+
+    const { POST } = await import("@/app/api/briefs/route");
+    const response = await POST(
+      new Request("http://localhost/api/briefs", {
+        method: "POST",
+        body: JSON.stringify({
+          query: "komórki macierzyste",
+          maxPapers: 5,
+          sources: ["mock", "openalex"]
+        })
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(422);
+    expect(payload.status).toBe("quality_gate_failed");
+    expect(payload.qualityGate.coverage).toBe("poor");
+    expect(payload.qualityGate.suggestions[0]).toContain("stem cells");
   });
 
   it("rate limits costly brief generation requests per client", async () => {
