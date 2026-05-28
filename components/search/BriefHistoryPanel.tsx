@@ -55,7 +55,7 @@ export function BriefHistoryPanel() {
       <div className="brief-history-header">
         <div>
           <h2>Recent briefs</h2>
-          <p>Stored in memory for the current dev server process.</p>
+          <p>Loaded from the active brief repository.</p>
         </div>
         <span className="badge">{briefs.length}</span>
       </div>
@@ -77,7 +77,8 @@ export function BriefHistoryPanel() {
         </div>
       ) : (
         <p className="source-health-empty">
-          No briefs generated yet. Create one to see it here.
+          No briefs yet. Generate one from mock or live sources to start the
+          history.
         </p>
       )}
     </aside>

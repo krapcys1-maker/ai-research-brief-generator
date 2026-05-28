@@ -183,6 +183,10 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Added route test coverage for successful rate limit headers and blocked requests.
 - Added `docs/DEPLOYMENT.md` with production environment variables, Prisma migration guidance, runtime checks, rate-limit notes, secrets handling, and a pre-deploy checklist.
 - Linked the deployment guide from `README.md`.
+- Polished the home research form by replacing inline styles with reusable form, source-option, action, and example-panel classes.
+- Improved generation error UI so rate-limit responses show as a distinct warning with retry timing.
+- Updated recent brief history copy to match the active repository model instead of saying memory-only.
+- Verified the home page renders the polished form, example panel, source health panel, and updated history copy locally.
 
 ## Important Current Decisions
 
@@ -196,4 +200,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Next practical options: polish the UI with a component library, add saved topics/user accounts, or add Redis/KV-backed rate limiting for multi-instance production.
+Next practical options: polish the brief result page, add saved topics/user accounts, or add Redis/KV-backed rate limiting for multi-instance production.

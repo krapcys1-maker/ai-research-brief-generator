@@ -97,6 +97,7 @@
 - [x] Add clickable citations.
 - [x] Add source drawer.
 - [x] Add warnings for failed sources.
+- [x] Improve home form styling and rate-limit feedback.
 - [x] Add source/result diagnostics.
 - [x] Show paper score breakdowns.
 - [x] Add loading/progress state for brief generation.
