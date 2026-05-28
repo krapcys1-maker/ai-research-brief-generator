@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { formatDoi, getDoiUrl } from "@/lib/sources/doi";
 
 type SourceOption = "mock" | "arxiv" | "semantic_scholar" | "openalex";
 
@@ -152,6 +153,22 @@ function SourcePreflightPanel({
                   {paper.authors.slice(0, 3).join(", ")}
                   {paper.year ? ` (${paper.year})` : ""}
                 </p>
+                {paper.doi ? (
+                  <p>
+                    DOI{" "}
+                    {getDoiUrl(paper.doi) ? (
+                      <a
+                        href={getDoiUrl(paper.doi) ?? undefined}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {formatDoi(paper.doi)}
+                      </a>
+                    ) : (
+                      formatDoi(paper.doi)
+                    )}
+                  </p>
+                ) : null}
                 <p>
                   Relevance {formatScore(paper.relevanceScore)} - Final{" "}
                   {formatScore(paper.finalScore)}

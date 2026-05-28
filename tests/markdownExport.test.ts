@@ -62,6 +62,9 @@ describe("researchBriefToMarkdown", () => {
     expect(markdown).toContain("- Papers with abstracts: 1/1");
     expect(markdown).toContain("- Papers with PDF links: 1/1");
     expect(markdown).toContain("- Papers with DOI: 1/1");
+    expect(markdown).toContain(
+      "- DOI: [10.1000/example](https://doi.org/10.1000/example)"
+    );
     expect(markdown).toContain("## Search Summary");
     expect(markdown).toContain("- Requested sources: mock, arxiv, openalex");
     expect(markdown).toContain("- Successful sources: mock, openalex");

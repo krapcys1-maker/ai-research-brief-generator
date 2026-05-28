@@ -6,6 +6,7 @@ export function validateBriefGrounding(
   papers: NormalizedPaper[]
 ) {
   const paperIds = new Set(papers.map((paper) => paper.id));
+  const papersById = new Map(papers.map((paper) => [paper.id, paper]));
 
   function assertValidPaperIds(ids: string[], section: string) {
     if (!ids.length) {
@@ -47,8 +48,16 @@ export function validateBriefGrounding(
   }
 
   for (const item of brief.bibliography) {
-    if (!paperIds.has(item.paperId)) {
+    const paper = papersById.get(item.paperId);
+
+    if (!paper) {
       throw new Error(`bibliography cites unknown paperId: ${item.paperId}`);
+    }
+
+    if (item.doi !== paper.doi) {
+      throw new Error(
+        `bibliography DOI mismatch for paperId: ${item.paperId}`
+      );
     }
   }
 }

@@ -1,6 +1,7 @@
 import type { ResearchBrief } from "@/lib/ai/schemas";
 import type { NormalizedPaper } from "@/lib/sources/types";
 import { getEvidenceBoundary } from "@/lib/brief/evidenceBoundary";
+import { formatDoi, getDoiUrl } from "@/lib/sources/doi";
 
 function sourceList(ids: string[]) {
   return ids.map((id) => `[${id}]`).join(" ");
@@ -12,6 +13,12 @@ function clean(value: string | null | undefined) {
 
 function score(value: number | undefined) {
   return typeof value === "number" ? value.toFixed(2) : "N/A";
+}
+
+function doiMarkdown(value: string | null | undefined) {
+  const url = getDoiUrl(value);
+
+  return url ? `[${formatDoi(value)}](${url})` : "N/A";
 }
 
 export function researchBriefToMarkdown(input: {
@@ -156,7 +163,7 @@ export function researchBriefToMarkdown(input: {
     lines.push(`- Authors: ${paper.authors.join(", ")}`);
     lines.push(`- Year: ${clean(paper.year?.toString())}`);
     lines.push(`- Venue: ${clean(paper.venue)}`);
-    lines.push(`- DOI: ${clean(paper.doi)}`);
+    lines.push(`- DOI: ${doiMarkdown(paper.doi)}`);
     lines.push(`- URL: ${clean(paper.sourceUrls[0])}`);
     lines.push(`- Citation count: ${clean(paper.citationCount?.toString())}`);
     lines.push(`- Influential citation count: ${clean(paper.influentialCitationCount?.toString())}`);

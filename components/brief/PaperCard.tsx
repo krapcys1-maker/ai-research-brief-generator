@@ -1,4 +1,5 @@
 import type { NormalizedPaper } from "@/lib/sources/types";
+import { formatDoi, getDoiUrl } from "@/lib/sources/doi";
 
 function formatScore(score: number | undefined) {
   return typeof score === "number" ? score.toFixed(2) : "N/A";
@@ -27,6 +28,7 @@ function ScoreBar({
 }
 
 export function PaperCard({ paper }: { paper: NormalizedPaper }) {
+  const doiUrl = getDoiUrl(paper.doi);
   const scoreRows = [
     ["Relevance", paper.relevanceScore],
     ["Citations", paper.citationScore],
@@ -79,7 +81,15 @@ export function PaperCard({ paper }: { paper: NormalizedPaper }) {
         {paper.doi ? (
           <div>
             <dt style={{ display: "inline", fontWeight: 750 }}>DOI: </dt>
-            <dd style={{ display: "inline", margin: 0 }}>{paper.doi}</dd>
+            <dd style={{ display: "inline", margin: 0 }}>
+              {doiUrl ? (
+                <a href={doiUrl} target="_blank" rel="noreferrer">
+                  {formatDoi(paper.doi)}
+                </a>
+              ) : (
+                formatDoi(paper.doi)
+              )}
+            </dd>
           </div>
         ) : null}
         {paper.sourceUrls[0] ? (

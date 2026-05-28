@@ -42,4 +42,23 @@ describe("validateBriefGrounding", () => {
       "has no sourcePaperIds"
     );
   });
+
+  it("rejects bibliography DOI values that do not match selected paper metadata", () => {
+    const brief = createBrief({
+      bibliography: [
+        {
+          paperId: "paper_1",
+          title: "Retrieval-Augmented Generation for Medical Diagnosis",
+          authors: ["Ada Researcher"],
+          year: 2024,
+          url: "https://example.org/paper",
+          doi: "10.9999/invented"
+        }
+      ]
+    });
+
+    expect(() => validateBriefGrounding(brief, [createPaper()])).toThrow(
+      "bibliography DOI mismatch"
+    );
+  });
 });

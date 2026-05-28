@@ -227,6 +227,8 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Added production fail-fast persistence checks so missing or invalid PostgreSQL `DATABASE_URL` no longer silently falls back to in-memory brief storage.
 - Added `ALLOW_MEMORY_STORAGE_IN_PRODUCTION=true` as an explicit temporary demo escape hatch for non-durable production memory mode.
 - Added an evidence boundary to the brief UI and Markdown export so users can see that current synthesis is grounded in metadata/abstracts, not parsed full-text PDFs.
+- Promoted DOI to a first-class source identifier with consistent DOI links in paper cards, source details, preflight previews, and Markdown export.
+- Hardened grounding validation so AI-generated bibliography entries cannot introduce DOI values that differ from selected paper metadata.
 
 ## Important Current Decisions
 

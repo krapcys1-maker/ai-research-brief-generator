@@ -5,6 +5,7 @@ import type { ResearchBrief } from "@/lib/ai/schemas";
 import type { NormalizedPaper } from "@/lib/sources/types";
 import { PaperCard } from "@/components/brief/PaperCard";
 import { getEvidenceBoundary } from "@/lib/brief/evidenceBoundary";
+import { formatDoi, getDoiUrl } from "@/lib/sources/doi";
 
 function SourceRefs({
   ids,
@@ -485,6 +486,8 @@ function SourceDrawer({
     return null;
   }
 
+  const doiUrl = getDoiUrl(paper.doi);
+
   return (
     <div
       role="dialog"
@@ -549,7 +552,15 @@ function SourceDrawer({
           </div>
           <div>
             <dt style={{ display: "inline", fontWeight: 800 }}>DOI: </dt>
-            <dd style={{ display: "inline", margin: 0 }}>{paper.doi ?? "N/A"}</dd>
+            <dd style={{ display: "inline", margin: 0 }}>
+              {doiUrl ? (
+                <a href={doiUrl} target="_blank" rel="noreferrer">
+                  {formatDoi(paper.doi)}
+                </a>
+              ) : (
+                formatDoi(paper.doi)
+              )}
+            </dd>
           </div>
         </dl>
         {paper.abstract ? <p style={{ lineHeight: 1.6 }}>{paper.abstract}</p> : null}
