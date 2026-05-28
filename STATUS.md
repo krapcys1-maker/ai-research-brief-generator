@@ -220,6 +220,7 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Ran manual Playwright browser checks for source preflight on a good query, quality-gate warning on a weak/noisy query, full brief generation for `AI agents in software engineering`, rendered result sections, source IDs, external bibliography links, and mobile overflow.
 - Reviewed the product audit against the real code and docs.
 - Added `docs/REMEDIATION_PLAN.md` with P0/P1/P2 repair priorities covering privacy, persistence, rate limiting, claim-level evidence, source quality, UX, and documentation cleanup.
+- Extended the remediation plan with DOI-as-first-class-source handling and a guarded future `Ask this brief` Q&A feature that must answer only from selected papers with evidence snippets.
 
 ## Important Current Decisions
 

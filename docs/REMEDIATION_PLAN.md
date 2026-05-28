@@ -135,7 +135,33 @@ Acceptance criteria:
 
 ## P1: Biggest Research Quality Improvements
 
-### 5. Add claim-level evidence grounding
+### 5. Treat DOI as a first-class source identifier
+
+Problem:
+
+DOI is already present in the `NormalizedPaper` type and bibliography, but the product should make it more prominent because it is one of the strongest stable identifiers for scholarly sources.
+
+Target behavior:
+
+- DOI is shown clearly wherever a paper is shown.
+- DOI is rendered as a clickable `https://doi.org/...` link when present.
+- DOI is included in Markdown export.
+- DOI remains source-provided only. AI must never invent or repair DOI values.
+- DOI continues to be used as a high-priority deduplication key.
+
+Implementation plan:
+
+1. Audit paper cards, bibliography, source drawer, Markdown export, and preflight previews for DOI visibility.
+2. Add a small DOI link helper that formats DOI consistently.
+3. Prefer DOI as the user-facing stable reference when it exists, while preserving internal `paperId`.
+4. Add tests proving generated/synthesized AI output cannot introduce DOI values outside selected paper metadata.
+
+Acceptance criteria:
+
+- A user can quickly open the canonical DOI page for papers that provide DOI metadata.
+- No DOI value is ever model-generated.
+
+### 6. Add claim-level evidence grounding
 
 Problem:
 
@@ -170,7 +196,62 @@ Acceptance criteria:
 - A key finding cannot pass with only a real paper ID and unsupported prose.
 - Users can see why a source supports a claim.
 
-### 6. Strengthen source coverage assessment
+### 7. Add controlled "Ask this brief" Q&A
+
+Problem:
+
+Users naturally want to ask follow-up questions such as "why were transformers chosen?" or "what benefits do these papers claim?", but a generic chat would undermine the product's source-grounded promise.
+
+Target behavior:
+
+Add a controlled Q&A mode over one generated brief:
+
+- answers only from the selected papers for that brief
+- every answer includes cited `paperId` values and DOI links when available
+- every important claim includes evidence snippets
+- if the selected papers do not support an answer, the system says so
+- no open-web browsing
+- no global chat over all stored data
+- no model-generated DOI, author, title, URL, or venue values
+
+Suggested schema:
+
+```ts
+type BriefQuestionAnswer = {
+  answer: string;
+  confidence: "low" | "medium" | "high";
+  notAnswerableFromSources: boolean;
+  claims: {
+    claim: string;
+    sourcePaperIds: string[];
+    evidenceSnippets: string[];
+    supportLevel: "direct" | "indirect" | "weak";
+  }[];
+  suggestedFollowUpQuestions: string[];
+};
+```
+
+Implementation plan:
+
+1. Add `POST /api/briefs/[id]/questions`.
+2. Load only the brief and selected papers for that `id`.
+3. Prompt the AI to answer only from selected paper metadata/abstracts.
+4. Validate the response with Zod.
+5. Reuse or extend claim-level evidence validation.
+6. Render citations and evidence snippets under each answer.
+7. Add hard refusal behavior for unsupported questions.
+
+Acceptance criteria:
+
+- A question about the selected literature gets a grounded answer with evidence.
+- A question not answerable from the selected papers returns a clear "not supported by these sources" answer.
+- The Q&A feature does not behave like a general chatbot.
+
+Recommendation:
+
+Do not implement this before claim-level evidence validation. Without evidence snippets, Q&A would create a high risk of false citation.
+
+### 8. Strengthen source coverage assessment
 
 Problem:
 
@@ -206,7 +287,7 @@ Acceptance criteria:
 - A weak/off-topic query is blocked with actionable suggestions.
 - A good query explains why it is good enough.
 
-### 7. Add hybrid retrieval
+### 9. Add hybrid retrieval
 
 Problem:
 
@@ -235,7 +316,7 @@ Acceptance criteria:
 - Top papers improve on queries where exact keywords are weak.
 - App still works when embeddings are disabled.
 
-### 8. Move generation to jobs
+### 10. Move generation to jobs
 
 Problem:
 
@@ -263,7 +344,7 @@ Acceptance criteria:
 
 ## P2: Product and UX
 
-### 9. Clean up documentation structure
+### 11. Clean up documentation structure
 
 Problem:
 
@@ -289,7 +370,7 @@ Acceptance criteria:
 
 - A new contributor can tell the difference between "implemented", "planned", and "historical".
 
-### 10. Simplify primary brief UX
+### 12. Simplify primary brief UX
 
 Problem:
 
@@ -318,7 +399,7 @@ Acceptance criteria:
 
 - A non-technical user can understand the brief value in under 30 seconds.
 
-### 11. Decide shadcn/ui scope
+### 13. Decide shadcn/ui scope
 
 Problem:
 
@@ -333,7 +414,7 @@ Recommendation:
 
 Keep current custom CSS for now unless the UI starts needing many reusable states. Treat shadcn/ui as optional, not required.
 
-### 12. Later research features
+### 14. Later research features
 
 Recommended order:
 
@@ -352,7 +433,10 @@ Recommended next 5 implementation steps:
 1. Disable or scope public recent brief history.
 2. Add production fail-fast for invalid persistence.
 3. Add evidence boundary/disclaimer to UI and Markdown export.
-4. Add claim-level evidence schema and validation.
-5. Add Redis/KV rate limiting backend.
+4. Improve DOI visibility as a first-class source identifier.
+5. Add claim-level evidence schema and validation.
+6. Add Redis/KV rate limiting backend.
+
+After those are in place, the best product expansion is controlled `Ask this brief` Q&A over selected papers.
 
 This sequence reduces the highest product and production risks before adding more features.
