@@ -44,6 +44,88 @@ function Section({
   );
 }
 
+function getPaperSourceCounts(papers: NormalizedPaper[]) {
+  const counts = papers.reduce<Record<string, number>>((acc, paper) => {
+    acc[paper.source] = (acc[paper.source] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+}
+
+function SearchDiagnostics({
+  brief,
+  papers
+}: {
+  brief: ResearchBrief;
+  papers: NormalizedPaper[];
+}) {
+  const sourceCounts = getPaperSourceCounts(papers);
+
+  return (
+    <Section title="Source Diagnostics">
+      <div className="metric-grid">
+        <div className="metric">
+          <span className="metric-label">Found</span>
+          <strong>{brief.searchSummary.totalFound}</strong>
+        </div>
+        <div className="metric">
+          <span className="metric-label">After dedupe</span>
+          <strong>{brief.searchSummary.totalAfterDeduplication}</strong>
+        </div>
+        <div className="metric">
+          <span className="metric-label">Used in brief</span>
+          <strong>{brief.searchSummary.totalUsedInBrief}</strong>
+        </div>
+      </div>
+
+      <div className="diagnostics-grid">
+        <div>
+          <h3 className="compact-heading">Sources requested</h3>
+          <div className="token-list">
+            {brief.searchSummary.sourcesUsed.map((source) => (
+              <span className="badge" key={source}>
+                {source}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h3 className="compact-heading">Selected paper sources</h3>
+          <div className="token-list">
+            {sourceCounts.map(([source, count]) => (
+              <span className="badge" key={source}>
+                {source}: {count}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 18 }}>
+        <h3 className="compact-heading">Query variants</h3>
+        <ol className="compact-list">
+          {brief.searchSummary.queryVariants.map((query) => (
+            <li key={query}>{query}</li>
+          ))}
+        </ol>
+      </div>
+
+      {brief.searchSummary.warnings.length ? (
+        <div style={{ marginTop: 18 }}>
+          <h3 className="compact-heading">Warnings</h3>
+          <ul className="compact-list warning-list">
+            {brief.searchSummary.warnings.map((warning) => (
+              <li key={warning}>{warning}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </Section>
+  );
+}
+
 function SourceDrawer({
   paper,
   onClose
@@ -205,6 +287,8 @@ export function BriefRenderer({
       <Section title="TL;DR">
         <p style={{ margin: 0, lineHeight: 1.65 }}>{brief.tldr}</p>
       </Section>
+
+      <SearchDiagnostics brief={brief} papers={papers} />
 
       <Section title="Executive Summary">
         <p style={{ lineHeight: 1.65 }}>{brief.executiveSummary.paragraph}</p>

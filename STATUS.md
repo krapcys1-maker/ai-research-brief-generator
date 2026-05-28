@@ -89,6 +89,14 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Added tests for the mock-paper brief pipeline and Polish output-language handling.
 - Added tests for `POST /api/briefs` success and controlled missing-provider-key failure responses.
 - Verified `npm test` now covers 14 tests across 6 test files.
+- Added source/result diagnostics to the brief UI:
+  - requested sources
+  - selected paper source distribution
+  - total found, after deduplication, and used in brief counts
+  - query variants and source warnings
+- Fixed brief metadata handling so `id`, `query`, `outputLanguage`, `generatedAt`, and `searchSummary` remain app-controlled instead of model-controlled.
+- Added a unit test for app-controlled AI synthesis metadata.
+- Verified `npm test`, `npm run lint`, and `npm run build` after the diagnostics UI change.
 
 ## Important Current Decisions
 
@@ -102,4 +110,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Next practical options: add source/result diagnostics in the UI, improve ranking with per-source quality signals, or add durable persistence when ready to move beyond process memory.
+Next practical options: improve ranking with per-source quality signals, add richer source diagnostics per adapter/query, or add durable persistence when ready to move beyond process memory.

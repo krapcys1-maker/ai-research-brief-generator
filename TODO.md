@@ -91,6 +91,7 @@
 - [x] Add clickable citations.
 - [x] Add source drawer.
 - [x] Add warnings for failed sources.
+- [x] Add source/result diagnostics.
 
 ## Phase 8 — Export
 

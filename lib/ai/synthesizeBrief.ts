@@ -40,11 +40,7 @@ export async function synthesizeBrief(input: SynthesizeBriefInput) {
         id: input.id,
         query: input.query,
         outputLanguage: input.outputLanguage,
-        generatedAt:
-          typeof (rawObject as { generatedAt?: unknown }).generatedAt ===
-          "string"
-            ? (rawObject as { generatedAt: string }).generatedAt
-            : new Date().toISOString(),
+        generatedAt: new Date().toISOString(),
         searchSummary: input.searchSummary
       });
 
