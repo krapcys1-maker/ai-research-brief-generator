@@ -55,6 +55,20 @@ function normalizeDoi(value: string | null | undefined) {
   return value.replace(/^https?:\/\/doi\.org\//i, "");
 }
 
+function cleanText(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  const cleaned = value
+    .replace(/[\u0000-\u001f\u007f-\u009f]/g, "")
+    .replace(/[�]+/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return cleaned || null;
+}
+
 export const openAlexSourceAdapter: SourceAdapter = {
   name: "openalex",
   async searchPapers(input) {
@@ -89,7 +103,7 @@ export const openAlexSourceAdapter: SourceAdapter = {
     return (payload.results ?? [])
       .map<NormalizedPaper | null>((work) => {
         const openAlexId = work.ids?.openalex ?? work.id ?? null;
-        const title = work.title ?? work.display_name ?? null;
+        const title = cleanText(work.title ?? work.display_name ?? null);
 
         if (!openAlexId || !title) {
           return null;
@@ -98,10 +112,11 @@ export const openAlexSourceAdapter: SourceAdapter = {
         return {
           id: `openalex:${openAlexId.replace(/^https?:\/\/openalex\.org\//i, "")}`,
           title,
-          abstract: reconstructAbstract(work.abstract_inverted_index),
+          abstract: cleanText(reconstructAbstract(work.abstract_inverted_index)),
           authors:
             work.authorships
               ?.map((authorship) => authorship.author?.display_name)
+              .map((author) => cleanText(author))
               .filter(Boolean) as string[],
           year: work.publication_year ?? null,
           publishedAt: work.publication_date ?? null,
@@ -113,7 +128,7 @@ export const openAlexSourceAdapter: SourceAdapter = {
             work.primary_location?.landing_page_url ?? openAlexId
           ].filter(Boolean) as string[],
           pdfUrl: work.primary_location?.pdf_url ?? null,
-          venue: work.primary_location?.source?.display_name ?? null,
+          venue: cleanText(work.primary_location?.source?.display_name),
           citationCount: work.cited_by_count ?? null,
           influentialCitationCount: null,
           source: "openalex"

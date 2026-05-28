@@ -193,6 +193,13 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Updated top-paper selection so relevant live-source papers are preferred over weak mock fallback papers.
 - Added quality warnings when final selected papers are mock-only despite live sources or have weak query relevance.
 - Added tests covering query-variant scoring and live-paper selection over mock fallback.
+- Improved the brief result page so citation buttons show human labels such as author/year while still preserving raw source IDs in source details.
+- Replaced raw inline source IDs in rendered narrative text with readable author/year references.
+- Added a brief quality summary with source mix, live/mock counts, average relevance, and warning count.
+- Added a "Start Reading Here" section that surfaces the three strongest selected papers before the technical diagnostics.
+- Collapsed detailed source diagnostics behind a technical details section so the main report reads more like a useful research brief.
+- Cleaned OpenAlex text metadata to remove control characters and broken replacement glyphs before papers are shown or sent into synthesis.
+- Smoke-tested an existing rendered brief page on `localhost:3000` and confirmed the new quality, reading path, diagnostics, and human citation UI are present.
 
 ## Important Current Decisions
 

@@ -105,6 +105,7 @@
 - [x] Improve source warning visibility in result UI.
 - [x] Track requested and successful sources separately.
 - [x] Add per-adapter/query source diagnostics.
+- [x] Add human citation labels, brief quality summary, reading path, and collapsed technical diagnostics.
 
 ## Phase 8 — Export
 

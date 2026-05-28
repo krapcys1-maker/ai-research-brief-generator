@@ -78,6 +78,13 @@ textarea {
   font-size: 0.78rem;
   font-weight: 650;
   text-decoration: none;
+  cursor: pointer;
+}
+
+.source-ref-list {
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .stack {
@@ -226,6 +233,80 @@ textarea {
   margin: 0;
   color: var(--foreground);
   text-align: right;
+}
+
+.diagnostics-details {
+  padding: 22px;
+}
+
+.diagnostics-details summary {
+  cursor: pointer;
+  color: var(--foreground);
+  font-size: 1.1rem;
+  font-weight: 750;
+}
+
+.diagnostics-details summary::marker {
+  color: var(--accent);
+}
+
+.diagnostics-details[open] summary {
+  margin-bottom: 16px;
+}
+
+.quality-panel {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.quality-panel > div {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fbfcfe;
+}
+
+.quality-panel strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.25rem;
+}
+
+.quality-panel p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.reading-path {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.reading-path article {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fbfcfe;
+}
+
+.reading-path h3,
+.reading-path p {
+  margin: 0;
+}
+
+.reading-path h3 {
+  font-size: 0.98rem;
+  line-height: 1.35;
+}
+
+.reading-path p {
+  color: var(--muted);
+  line-height: 1.45;
 }
 
 .score-grid {
@@ -727,6 +808,8 @@ textarea {
   .diagnostics-grid,
   .score-grid,
   .source-diagnostic-list,
+  .quality-panel,
+  .reading-path,
   .source-health-metrics,
   .source-health-grid {
     grid-template-columns: 1fr;

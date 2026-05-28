@@ -7,22 +7,24 @@ import { PaperCard } from "@/components/brief/PaperCard";
 
 function SourceRefs({
   ids,
+  papersById,
   onSelect
 }: {
   ids: string[];
+  papersById: Map<string, NormalizedPaper>;
   onSelect: (id: string) => void;
 }) {
   return (
-    <span style={{ display: "inline-flex", gap: 6, flexWrap: "wrap" }}>
+    <span className="source-ref-list">
       {ids.map((id) => (
         <button
           key={id}
           type="button"
           onClick={() => onSelect(id)}
           className="citation"
-          style={{ cursor: "pointer" }}
+          title={id}
         >
-          {id}
+          {formatCitationLabel(papersById.get(id), id)}
         </button>
       ))}
     </span>
@@ -53,6 +55,64 @@ function getPaperSourceCounts(papers: NormalizedPaper[]) {
   return Object.entries(counts).sort((a, b) => b[1] - a[1]);
 }
 
+function getFirstAuthorLastName(paper: NormalizedPaper | undefined) {
+  const firstAuthor = paper?.authors[0]?.trim();
+  if (!firstAuthor) {
+    return null;
+  }
+
+  const parts = firstAuthor.split(/\s+/);
+  return parts.at(-1) ?? firstAuthor;
+}
+
+function formatCitationLabel(paper: NormalizedPaper | undefined, fallback: string) {
+  const author = getFirstAuthorLastName(paper);
+  if (author && paper?.year) {
+    return `${author} ${paper.year}`;
+  }
+
+  if (author) {
+    return author;
+  }
+
+  return fallback.replace(/^openalex:/, "");
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function getReadableCitationTokens(papersById: Map<string, NormalizedPaper>) {
+  const tokenMap = new Map<string, string>();
+
+  papersById.forEach((paper, id) => {
+    const label = formatCitationLabel(paper, id);
+    const tokens = [
+      id,
+      id.replace(/^openalex:/, ""),
+      id.replace(/^arxiv:/, ""),
+      paper.openAlexId,
+      paper.arxivId,
+      paper.semanticScholarId
+    ].filter(Boolean) as string[];
+
+    tokens.forEach((token) => tokenMap.set(token, label));
+  });
+
+  return [...tokenMap.entries()].sort((a, b) => b[0].length - a[0].length);
+}
+
+function formatNarrativeText(text: string, papersById: Map<string, NormalizedPaper>) {
+  return getReadableCitationTokens(papersById).reduce((result, [token, label]) => {
+    const pattern = new RegExp(
+      `(^|[^A-Za-z0-9:_-])(${escapeRegExp(token)})(?=$|[^A-Za-z0-9:_-])`,
+      "g"
+    );
+
+    return result.replace(pattern, (_match, prefix: string) => `${prefix}${label}`);
+  }, text);
+}
+
 function getWarningGroups(warnings: string[]) {
   const groups = warnings.reduce<
     Record<string, { label: string; detail: string; count: number }>
@@ -60,7 +120,8 @@ function getWarningGroups(warnings: string[]) {
     const sourceMatch = warning.match(/^([a-z_]+) (failed|returned no papers):?\s*(.*)$/i);
     const queryMatch = warning.match(/^query variant "(.+)" failed:\s*(.*)$/i);
     const label = sourceMatch?.[1] ?? (queryMatch ? "query variant" : "pipeline");
-    const detail = sourceMatch?.[3] || queryMatch?.[2] || warning;
+    const rawDetail = sourceMatch?.[3] || queryMatch?.[2] || warning;
+    const detail = formatWarningDetail(rawDetail);
     const key = `${label}:${detail}`;
 
     acc[key] = acc[key] ?? { label, detail, count: 0 };
@@ -71,6 +132,142 @@ function getWarningGroups(warnings: string[]) {
 
   return Object.values(groups).sort((a, b) => b.count - a.count);
 }
+
+function formatWarningDetail(detail: string) {
+  const normalized = detail.trim();
+  if (!normalized || normalized === ".") {
+    return "No useful details returned by the source.";
+  }
+
+  if (normalized.includes("429")) {
+    return "The source temporarily rate-limited the request.";
+  }
+
+  if (normalized.toLowerCase().includes("aborted")) {
+    return "The source request timed out before returning results.";
+  }
+
+  return normalized;
+}
+
+function getBriefQuality(brief: ResearchBrief, papers: NormalizedPaper[]) {
+  const mockCount = papers.filter((paper) => paper.source === "mock").length;
+  const liveCount = papers.length - mockCount;
+  const averageRelevance =
+    papers.reduce((sum, paper) => sum + (paper.relevanceScore ?? 0), 0) /
+    Math.max(1, papers.length);
+  const hasQualityWarning = brief.searchSummary.warnings.some((warning) =>
+    warning.startsWith("brief quality warning:")
+  );
+
+  if (!papers.length || hasQualityWarning || averageRelevance < 0.12) {
+    return {
+      label: "Needs review",
+      description:
+        "The selected papers may not cover the query well enough. Treat this as a starting point.",
+      averageRelevance,
+      mockCount,
+      liveCount
+    };
+  }
+
+  if (liveCount >= Math.max(3, papers.length * 0.6) && averageRelevance >= 0.45) {
+    return {
+      label: "Good",
+      description:
+        "The brief is mostly grounded in live source records with strong query relevance.",
+      averageRelevance,
+      mockCount,
+      liveCount
+    };
+  }
+
+  return {
+    label: "Usable",
+    description:
+      "The brief has usable source coverage, but some claims should be checked against the bibliography.",
+    averageRelevance,
+    mockCount,
+    liveCount
+  };
+}
+
+function QualitySummary({
+  brief,
+  papers
+}: {
+  brief: ResearchBrief;
+  papers: NormalizedPaper[];
+}) {
+  const quality = getBriefQuality(brief, papers);
+  const sourceCounts = getPaperSourceCounts(papers);
+
+  return (
+    <section className="quality-panel" aria-label="Brief quality summary">
+      <div>
+        <span className="metric-label">Brief quality</span>
+        <strong>{quality.label}</strong>
+        <p>{quality.description}</p>
+      </div>
+      <div>
+        <span className="metric-label">Source mix</span>
+        <strong>
+          {quality.liveCount} live / {quality.mockCount} mock
+        </strong>
+        <p>
+          {sourceCounts.map(([source, count]) => `${source}: ${count}`).join(", ")}
+        </p>
+      </div>
+      <div>
+        <span className="metric-label">Average relevance</span>
+        <strong>{quality.averageRelevance.toFixed(2)}</strong>
+        <p>{brief.searchSummary.warnings.length} source warning(s)</p>
+      </div>
+    </section>
+  );
+}
+
+function ReadingPath({
+  papers,
+  onSelect
+}: {
+  papers: NormalizedPaper[];
+  onSelect: (id: string) => void;
+}) {
+  const topPapers = papers
+    .slice()
+    .sort((a, b) => (b.finalScore ?? 0) - (a.finalScore ?? 0))
+    .slice(0, 3);
+
+  if (!topPapers.length) {
+    return null;
+  }
+
+  return (
+    <Section title="Start Reading Here">
+      <div className="reading-path">
+        {topPapers.map((paper, index) => (
+          <article key={paper.id}>
+            <span className="badge">#{index + 1}</span>
+            <h3>{paper.title}</h3>
+            <p>
+              {formatCitationLabel(paper, paper.id)}
+              {paper.venue ? `, ${paper.venue}` : ""}
+            </p>
+            <button
+              type="button"
+              className="citation"
+              onClick={() => onSelect(paper.id)}
+            >
+              Source details
+            </button>
+          </article>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
 
 function WarningSummary({ warnings }: { warnings: string[] }) {
   if (!warnings.length) {
@@ -110,7 +307,8 @@ function SearchDiagnostics({
   const sourceCounts = getPaperSourceCounts(papers);
 
   return (
-    <Section title="Source Diagnostics">
+    <details className="surface diagnostics-details">
+      <summary>Technical Source Diagnostics</summary>
       <div className="metric-grid">
         <div className="metric">
           <span className="metric-label">Found</span>
@@ -217,7 +415,7 @@ function SearchDiagnostics({
           </div>
         </div>
       ) : null}
-    </Section>
+    </details>
   );
 }
 
@@ -365,16 +563,23 @@ export function BriefRenderer({
         </div>
       </header>
 
+      <QualitySummary brief={brief} papers={papers} />
+
       <Section title="TL;DR">
         <p style={{ margin: 0, lineHeight: 1.65 }}>{brief.tldr}</p>
       </Section>
 
+      <ReadingPath papers={papers} onSelect={setSelectedPaperId} />
+
       <SearchDiagnostics brief={brief} papers={papers} />
 
       <Section title="Executive Summary">
-        <p style={{ lineHeight: 1.65 }}>{brief.executiveSummary.paragraph}</p>
+        <p style={{ lineHeight: 1.65 }}>
+          {formatNarrativeText(brief.executiveSummary.paragraph, papersById)}
+        </p>
         <SourceRefs
           ids={brief.executiveSummary.sourcePaperIds}
+          papersById={papersById}
           onSelect={setSelectedPaperId}
         />
       </Section>
@@ -384,18 +589,24 @@ export function BriefRenderer({
           {brief.keyFindings.map((item) => (
             <article key={item.finding} style={{ lineHeight: 1.6 }}>
               <h3 style={{ margin: "0 0 6px", fontSize: "1.05rem" }}>
-                {item.finding}
+                {formatNarrativeText(item.finding, papersById)}
               </h3>
-              <p style={{ margin: "0 0 8px" }}>{item.explanation}</p>
+              <p style={{ margin: "0 0 8px" }}>
+                {formatNarrativeText(item.explanation, papersById)}
+              </p>
               <p style={{ margin: "0 0 8px", color: "var(--muted)" }}>
                 Confidence: {item.confidence}
               </p>
               {item.caveats.length ? (
                 <p style={{ margin: "0 0 8px", color: "var(--warning)" }}>
-                  Caveats: {item.caveats.join("; ")}
+                  Caveats: {formatNarrativeText(item.caveats.join("; "), papersById)}
                 </p>
               ) : null}
-              <SourceRefs ids={item.sourcePaperIds} onSelect={setSelectedPaperId} />
+              <SourceRefs
+                ids={item.sourcePaperIds}
+                papersById={papersById}
+                onSelect={setSelectedPaperId}
+              />
             </article>
           ))}
         </div>
@@ -406,10 +617,16 @@ export function BriefRenderer({
           {brief.majorThemes.map((item) => (
             <article key={item.theme} style={{ lineHeight: 1.6 }}>
               <h3 style={{ margin: "0 0 6px", fontSize: "1.05rem" }}>
-                {item.theme}
+                {formatNarrativeText(item.theme, papersById)}
               </h3>
-              <p style={{ margin: "0 0 8px" }}>{item.description}</p>
-              <SourceRefs ids={item.sourcePaperIds} onSelect={setSelectedPaperId} />
+              <p style={{ margin: "0 0 8px" }}>
+                {formatNarrativeText(item.description, papersById)}
+              </p>
+              <SourceRefs
+                ids={item.sourcePaperIds}
+                papersById={papersById}
+                onSelect={setSelectedPaperId}
+              />
             </article>
           ))}
         </div>
@@ -420,9 +637,13 @@ export function BriefRenderer({
           {brief.influentialPapers.map((item) => (
             <article key={item.paperId} style={{ lineHeight: 1.6 }}>
               <h3 style={{ margin: "0 0 6px", fontSize: "1.05rem" }}>
-                <a href={`#${item.paperId}`}>{item.paperId}</a>
+                <a href={`#${item.paperId}`} title={item.paperId}>
+                  {formatCitationLabel(papersById.get(item.paperId), item.paperId)}
+                </a>
               </h3>
-              <p style={{ margin: 0 }}>{item.reason}</p>
+              <p style={{ margin: 0 }}>
+                {formatNarrativeText(item.reason, papersById)}
+              </p>
             </article>
           ))}
         </div>
@@ -433,10 +654,16 @@ export function BriefRenderer({
           {brief.researchGaps.map((item) => (
             <article key={item.gap} style={{ lineHeight: 1.6 }}>
               <h3 style={{ margin: "0 0 6px", fontSize: "1.05rem" }}>
-                {item.gap}
+                {formatNarrativeText(item.gap, papersById)}
               </h3>
-              <p style={{ margin: "0 0 8px" }}>{item.whyItMatters}</p>
-              <SourceRefs ids={item.sourcePaperIds} onSelect={setSelectedPaperId} />
+              <p style={{ margin: "0 0 8px" }}>
+                {formatNarrativeText(item.whyItMatters, papersById)}
+              </p>
+              <SourceRefs
+                ids={item.sourcePaperIds}
+                papersById={papersById}
+                onSelect={setSelectedPaperId}
+              />
             </article>
           ))}
         </div>
@@ -447,10 +674,16 @@ export function BriefRenderer({
           {brief.controversiesOrUncertainties.map((item) => (
             <article key={item.issue} style={{ lineHeight: 1.6 }}>
               <h3 style={{ margin: "0 0 6px", fontSize: "1.05rem" }}>
-                {item.issue}
+                {formatNarrativeText(item.issue, papersById)}
               </h3>
-              <p style={{ margin: "0 0 8px" }}>{item.explanation}</p>
-              <SourceRefs ids={item.sourcePaperIds} onSelect={setSelectedPaperId} />
+              <p style={{ margin: "0 0 8px" }}>
+                {formatNarrativeText(item.explanation, papersById)}
+              </p>
+              <SourceRefs
+                ids={item.sourcePaperIds}
+                papersById={papersById}
+                onSelect={setSelectedPaperId}
+              />
             </article>
           ))}
         </div>
