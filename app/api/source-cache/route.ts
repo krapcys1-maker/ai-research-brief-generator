@@ -10,11 +10,11 @@ import {
 import { getPersistenceStatus } from "@/lib/storage/repository";
 
 export async function GET() {
-  clearExpiredSourceCache();
+  await clearExpiredSourceCache();
 
   return NextResponse.json({
     persistence: getPersistenceStatus(),
-    cache: getSourceCacheStats(),
+    cache: await getSourceCacheStats(),
     sourceHealth: getSourceHealthSummary(),
     recentDiagnostics: getRecentSourceDiagnostics(12)
   });

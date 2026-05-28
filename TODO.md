@@ -49,6 +49,7 @@
 - [x] Add retry with exponential backoff.
 - [x] Add graceful failure with `Promise.allSettled`.
 - [x] Add API cache.
+- [x] Persist source API cache in PostgreSQL when `DATABASE_URL` is enabled.
 - [x] Add deterministic query expansion for source search.
 
 ## Phase 5 — Paper Processing

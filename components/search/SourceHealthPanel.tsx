@@ -13,6 +13,16 @@ type SourceHealthResponse = {
     active: number;
     expired: number;
     total: number;
+    memory?: {
+      active: number;
+      expired: number;
+      total: number;
+    };
+    persistent?: {
+      active: number;
+      expired: number;
+      total: number;
+    };
   };
   sourceHealth: {
     totalDiagnostics: number;
@@ -96,11 +106,19 @@ export function SourceHealthPanel() {
           <strong>{data?.persistence.mode ?? "memory"}</strong>
         </div>
         <div>
-          <span>Active cache</span>
+          <span>Primary cache</span>
           <strong>{data?.cache.active ?? 0}</strong>
         </div>
         <div>
-          <span>Total cache</span>
+          <span>Persistent cache</span>
+          <strong>{data?.cache.persistent?.active ?? 0}</strong>
+        </div>
+        <div>
+          <span>Memory cache</span>
+          <strong>{data?.cache.memory?.active ?? 0}</strong>
+        </div>
+        <div>
+          <span>Total primary</span>
           <strong>{data?.cache.total ?? 0}</strong>
         </div>
         <div>

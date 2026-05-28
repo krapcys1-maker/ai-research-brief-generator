@@ -41,7 +41,7 @@ async function searchSourcesForOneQuery(input: SearchPapersInput & {
         fromYear: input.fromYear,
         toYear: input.toYear
       };
-      const cached = getCachedSourcePapers({
+      const cached = await getCachedSourcePapers({
         source: adapter.name,
         ...searchInput
       });
@@ -54,7 +54,7 @@ async function searchSourcesForOneQuery(input: SearchPapersInput & {
       }
 
       const papers = await adapter.searchPapers(searchInput);
-      setCachedSourcePapers(
+      await setCachedSourcePapers(
         {
           source: adapter.name,
           ...searchInput

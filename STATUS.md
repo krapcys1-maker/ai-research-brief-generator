@@ -156,6 +156,10 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
   - confirmed the same brief still loads from PostgreSQL by ID
   - confirmed `/briefs/[id]` renders successfully
   - confirmed `/api/source-cache` reports `mode: postgresql`
+- Added persisted source API cache storage using the existing Prisma `ApiCache` model when PostgreSQL is enabled.
+- Kept source API cache provider-agnostic and backward-compatible with in-memory cache when PostgreSQL is not enabled.
+- Updated source cache diagnostics to show primary, persistent, and memory cache counts.
+- Added PostgreSQL integration coverage proving source API cache records can be restored after clearing the memory cache.
 
 ## Important Current Decisions
 
@@ -169,4 +173,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Next practical options: add a manual source-health refresh control, add persisted source API cache storage, or polish the UI with a component library.
+Next practical options: add a manual source-health refresh control, run a full live-source generation with durable source cache enabled, or polish the UI with a component library.

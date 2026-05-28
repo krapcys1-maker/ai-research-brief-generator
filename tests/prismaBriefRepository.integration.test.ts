@@ -2,6 +2,12 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { createBrief, createPaper } from "@/tests/fixtures";
 import { prisma } from "@/lib/storage/prismaClient";
 import { prismaBriefRepository } from "@/lib/storage/prismaBriefRepository";
+import {
+  clearSourceApiMemoryCacheForTests,
+  getCachedSourcePapers,
+  getSourceCacheStats,
+  setCachedSourcePapers
+} from "@/lib/storage/sourceApiCache";
 
 const hasPostgresDatabaseUrl =
   process.env.DATABASE_URL?.startsWith("postgresql://") ||
@@ -13,6 +19,8 @@ const describeWithPostgres = hasPostgresDatabaseUrl ? describe : describe.skip;
 describeWithPostgres("prismaBriefRepository", () => {
   beforeEach(async () => {
     await prismaBriefRepository.clear();
+    await prisma.apiCache.deleteMany();
+    clearSourceApiMemoryCacheForTests();
   });
 
   afterAll(async () => {
@@ -52,5 +60,30 @@ describeWithPostgres("prismaBriefRepository", () => {
         createdAt: saved.createdAt
       }
     ]);
+  });
+
+  it("persists source API cache records across memory cache resets", async () => {
+    const cacheInput = {
+      source: "arxiv" as const,
+      query: "retrieval augmented generation persistence test",
+      maxResults: 3
+    };
+    const paper = createPaper({
+      id: "paper_source_cache_integration",
+      source: "arxiv",
+      arxivId: "2601.00001"
+    });
+
+    expect(await getCachedSourcePapers(cacheInput)).toBeNull();
+
+    await setCachedSourcePapers(cacheInput, [paper], 1000 * 60);
+    clearSourceApiMemoryCacheForTests();
+
+    const cached = await getCachedSourcePapers(cacheInput);
+    const stats = await getSourceCacheStats();
+
+    expect(cached).toEqual([paper]);
+    expect(stats.persistent.active).toBe(1);
+    expect(stats.active).toBe(1);
   });
 });
