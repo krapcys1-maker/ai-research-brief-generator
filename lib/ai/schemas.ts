@@ -44,6 +44,11 @@ export const NormalizedPaperSchema = z.object({
   influentialCitationCount: z.number().int().nullable(),
   source: z.union([ResearchSourceSchema, z.literal("merged")]),
   relevanceScore: z.number().optional(),
+  citationScore: z.number().optional(),
+  recencyScore: z.number().optional(),
+  completenessScore: z.number().optional(),
+  sourceQualityScore: z.number().optional(),
+  identifierScore: z.number().optional(),
   qualityScore: z.number().optional(),
   finalScore: z.number().optional()
 });

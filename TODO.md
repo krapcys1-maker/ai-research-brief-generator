@@ -59,6 +59,7 @@
 - [x] Implement citation score.
 - [x] Implement recency score.
 - [x] Implement completeness score.
+- [x] Add source quality and identifier signals.
 - [x] Select top N papers.
 
 ## Phase 6 — AI Synthesis

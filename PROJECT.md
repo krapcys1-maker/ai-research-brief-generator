@@ -575,21 +575,25 @@ Use simple scoring first.
 
 ```text
 finalScore =
-  relevanceScore * 0.55 +
-  citationScore * 0.25 +
-  recencyScore * 0.15 +
-  completenessScore * 0.05
+  relevanceScore * 0.50 +
+  citationScore * 0.18 +
+  recencyScore * 0.12 +
+  completenessScore * 0.08 +
+  sourceQualityScore * 0.07 +
+  identifierScore * 0.05
 ```
 
 Relevance can be simple keyword matching first. Do not add embeddings until the base app works.
 
-Citation score should use log scaling:
+Citation score should use log scaling and may blend total citations with influential citations:
 
 ```ts
 const citationScore = Math.log((citationCount ?? 0) + 1);
 ```
 
 Do not over-prioritize citation counts because new papers will be unfairly punished.
+
+Source quality and identifier scores are lightweight metadata signals. They should reward papers with stronger source provenance and stable identifiers such as DOI, arXiv ID, Semantic Scholar ID, OpenAlex ID, and source URLs without overriding query relevance.
 
 ---
 

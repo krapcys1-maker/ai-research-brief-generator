@@ -97,6 +97,9 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 - Fixed brief metadata handling so `id`, `query`, `outputLanguage`, `generatedAt`, and `searchSummary` remain app-controlled instead of model-controlled.
 - Added a unit test for app-controlled AI synthesis metadata.
 - Verified `npm test`, `npm run lint`, and `npm run build` after the diagnostics UI change.
+- Improved paper ranking with per-source quality priors, identifier scoring, influential-citation blending, and explicit scoring breakdown fields.
+- Added scoring tests to confirm metadata quality helps when relevance is comparable while relevance remains the strongest signal.
+- Verified `npm test`, `npm run lint`, and `npm run build` after the scoring update.
 
 ## Important Current Decisions
 
@@ -110,4 +113,4 @@ The app works as a source-grounded research pipeline, not as a generic chatbot.
 
 ## Next Recommended Step
 
-Next practical options: improve ranking with per-source quality signals, add richer source diagnostics per adapter/query, or add durable persistence when ready to move beyond process memory.
+Next practical options: add richer source diagnostics per adapter/query, improve the result UI with visible score breakdowns, or add durable persistence when ready to move beyond process memory.
