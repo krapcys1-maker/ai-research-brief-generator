@@ -34,6 +34,7 @@ type PreflightPaper = {
   relevanceScore: number | null;
   semanticScore: number | null;
   finalScore: number | null;
+  metadataWarnings?: string[];
   insight?: {
     role: string;
     whyRead: string;
@@ -191,6 +192,10 @@ function formatPreflightWarning(warning: string) {
     return "One source timed out before returning results.";
   }
 
+  if (warning.startsWith("metadata warning:")) {
+    return warning.replace("metadata warning:", "Metadata:");
+  }
+
   return warning;
 }
 
@@ -319,6 +324,14 @@ function SourcePreflightPanel({
                 {paper.insight?.limitations.length ? (
                   <p className="preflight-paper-warning">
                     Check: {paper.insight.limitations.slice(0, 2).join("; ")}
+                  </p>
+                ) : null}
+                {paper.metadataWarnings?.length ? (
+                  <p className="preflight-paper-warning">
+                    {paper.metadataWarnings
+                      .slice(0, 2)
+                      .map(formatPreflightWarning)
+                      .join("; ")}
                   </p>
                 ) : null}
                 {paper.doi ? (

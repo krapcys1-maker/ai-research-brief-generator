@@ -18,6 +18,7 @@ Last updated: 2026-05-28
   - source diversity
   - citation/recency balance tuning
 - Expand retrieval benchmarks with more gold queries from real live-source results.
+- Expand metadata-quality rules with more recorded live-source anomalies and canonical paper fixtures.
 - Add more claim/evidence benchmark fixtures for methodological claims, such as sample size, study design, and evaluation setting.
 
 ## P2: Product UX

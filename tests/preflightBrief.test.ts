@@ -72,4 +72,51 @@ describe("preflightBrief", () => {
     expect(result.qualityGate.canSynthesize).toBe(false);
     expect(result.warnings[0]).toContain("All query variants failed");
   });
+
+  it("adds metadata warnings to the preflight summary and quality gate", async () => {
+    const result = await preflightBrief(
+      {
+        query: "how transformers work",
+        maxPapers: 5,
+        sources: ["openalex"]
+      },
+      {
+        search: async () => ({
+          papers: [
+            createPaper({
+              id: "openalex:W2626778328",
+              title: "Attention Is All You Need",
+              abstract: "Transformer architectures use self-attention.",
+              source: "openalex",
+              openAlexId: "W2626778328",
+              doi: "10.1000/unexpected",
+              sourceUrls: ["https://openalex.org/W2626778328"],
+              year: 2025
+            }),
+            createPaper({
+              id: "paper_2",
+              title: "Transformer Attention Mechanisms",
+              abstract: "Self-attention supports transformer language models.",
+              source: "openalex",
+              openAlexId: "W2"
+            })
+          ],
+          sourcesUsed: ["openalex"],
+          warnings: [],
+          sourceDiagnostics: []
+        })
+      }
+    );
+
+    expect(result.warnings).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining("metadata warning:"),
+        expect.stringContaining("normally cited as a 2017 paper")
+      ])
+    );
+    expect(result.searchSummary.warnings).toEqual(
+      expect.arrayContaining([expect.stringContaining("metadata warning:")])
+    );
+    expect(result.qualityGate.warningCount).toBeGreaterThan(0);
+  });
 });

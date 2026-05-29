@@ -41,8 +41,8 @@ The app supports:
 
 ## Latest Completed Step
 
-Tuned broad/foundational transformer retrieval. Transformer query expansion now includes the canonical `Attention Is All You Need` title, and ranking applies a general exact-title boost so foundational papers do not lose to derivative titles that merely contain more matching words.
+Added metadata-quality warnings for suspicious live-source records. The app now flags known canonical papers when source metadata reports unexpected chronology or identifiers, and these warnings surface in source preflight, brief paper details, source drawers, search summary warnings, and Markdown export.
 
 ## Next Recommended Step
 
-Run both benchmark suites against a real production embedding provider and tune hybrid ranking weights from the observed failures. Then add metadata-quality checks for suspicious live-source records, such as foundational papers with incorrect publication years from OpenAlex.
+Run both benchmark suites against a real production embedding provider and tune hybrid ranking weights from the observed failures. Then expand metadata-quality rules with additional recorded live-source anomalies from OpenAlex/arXiv/Semantic Scholar.

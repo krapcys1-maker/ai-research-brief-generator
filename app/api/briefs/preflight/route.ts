@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { preflightBrief } from "@/lib/pipeline/preflightBrief";
+import { getPaperMetadataWarnings } from "@/lib/pipeline/metadataQuality";
 import { getPaperInsight } from "@/lib/pipeline/paperInsights";
 
 function errorResponse(message: string, status = 400) {
@@ -36,6 +37,7 @@ export async function POST(request: Request) {
         relevanceScore: paper.relevanceScore ?? null,
         semanticScore: paper.semanticScore ?? null,
         finalScore: paper.finalScore ?? null,
+        metadataWarnings: getPaperMetadataWarnings(paper),
         insight: getPaperInsight(
           paper,
           undefined,

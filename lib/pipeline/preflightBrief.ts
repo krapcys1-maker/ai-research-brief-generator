@@ -5,6 +5,7 @@ import {
 } from "@/lib/ai/schemas";
 import { generateQueryVariants } from "@/lib/ai/generateQueryVariants";
 import { dedupePapers } from "@/lib/pipeline/dedupe";
+import { getPapersMetadataWarnings } from "@/lib/pipeline/metadataQuality";
 import {
   evaluateResearchQuality,
   type ResearchQualityGateResult
@@ -128,10 +129,12 @@ export async function preflightBrief(
     queryVariants
   );
   const selectedPapers = selectTopPapers(scoredPapers, request.maxPapers);
+  const metadataWarnings = getPapersMetadataWarnings(selectedPapers);
+  const warnings = [...searchResult.warnings, ...metadataWarnings];
   const qualityGate = evaluateResearchQuality({
     request,
     selected: selectedPapers,
-    warnings: searchResult.warnings,
+    warnings,
     queryVariants
   });
   const searchSummary = createSearchSummary({
@@ -141,7 +144,7 @@ export async function preflightBrief(
     requestedSources: request.sources,
     sourcesUsed: searchResult.sourcesUsed,
     sourceDiagnostics: searchResult.sourceDiagnostics,
-    warnings: searchResult.warnings,
+    warnings,
     queryVariants
   });
 
@@ -155,7 +158,7 @@ export async function preflightBrief(
     selectedPapers,
     sourcesUsed: searchResult.sourcesUsed,
     sourceDiagnostics: searchResult.sourceDiagnostics,
-    warnings: searchResult.warnings,
+    warnings,
     searchSummary,
     qualityGate
   };

@@ -79,7 +79,8 @@ describe("POST /api/briefs/preflight", () => {
     expect(payload.papers[0]).toMatchObject({
       id: "paper_1",
       title: "AI Agents in Software Engineering",
-      source: "openalex"
+      source: "openalex",
+      metadataWarnings: []
     });
   });
 });

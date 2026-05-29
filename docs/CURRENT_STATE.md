@@ -51,6 +51,7 @@ user query -> generation job -> source adapters -> normalized papers -> dedupe/r
 - Retrieval benchmark fixtures, gold-query tests, and `npm run benchmark:retrieval` for acronyms, Polish/English variants, typo recovery, interdisciplinary topics, comparison queries, and domain-specific query expansion. The benchmark also writes ignored JSON/Markdown reports under `benchmark-results/` for provider comparisons.
 - Source-quality benchmark fixtures and `npm run benchmark:source-quality` for recorded live-source failure modes, including broad transformer queries that should prefer foundational papers over derivative title matches.
 - Ranking includes an exact-title boost so canonical title searches can surface foundational papers instead of derivative titles with extra keyword overlap.
+- Metadata-quality warnings flag suspicious live-source records, including known canonical papers with unexpected publication years or non-canonical identifiers, and surface those warnings in preflight, brief source details, and Markdown export.
 - Claim/evidence benchmark fixtures for direct, indirect, weak, unsupported-claim, overclaim, numeric, statistical-significance, and comparative cases.
 - Repeatable deployment smoke check through `npm run smoke:deploy`.
 
@@ -93,6 +94,7 @@ ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true
 ## Known Limits
 
 - The app grounds on selected paper metadata and abstracts, not parsed full-text PDFs.
+- Metadata-quality warnings are advisory checks, not a full bibliographic authority system.
 - Absolute, numeric, statistical, and comparative validation is heuristic; it is not a substitute for full-text methodological verification.
 - Scoring is still heuristic, but now combines lexical/title/abstract relevance with a local semantic embedding signal.
 - The local embedding provider is not a replacement for model-grade embeddings; production deployments can configure an OpenAI-compatible embeddings endpoint, and retrieval quality still needs tuning against the larger benchmark set.

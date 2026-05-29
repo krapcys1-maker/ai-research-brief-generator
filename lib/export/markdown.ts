@@ -3,6 +3,7 @@ import type { EvidenceLink } from "@/lib/ai/schemas";
 import type { NormalizedPaper } from "@/lib/sources/types";
 import { getEvidenceBoundary } from "@/lib/brief/evidenceBoundary";
 import { formatDoi, getDoiUrl } from "@/lib/sources/doi";
+import { getPaperMetadataWarnings } from "@/lib/pipeline/metadataQuality";
 import {
   getPaperInsight,
   getSourceQualitySummary
@@ -206,6 +207,7 @@ export function researchBriefToMarkdown(input: {
   lines.push("");
   for (const paper of papers) {
     const insight = getPaperInsight(paper, undefined, brief.query);
+    const metadataWarnings = getPaperMetadataWarnings(paper);
 
     lines.push(`### [${paper.id}] ${paper.title}`);
     lines.push("");
@@ -227,6 +229,13 @@ export function researchBriefToMarkdown(input: {
     }
     if (insight.limitations.length) {
       lines.push(`- Limitations: ${insight.limitations.join("; ")}`);
+    }
+    if (metadataWarnings.length) {
+      lines.push(
+        `- Metadata warnings: ${metadataWarnings
+          .map((warning) => warning.replace("metadata warning:", "").trim())
+          .join("; ")}`
+      );
     }
     lines.push(`- Authors: ${paper.authors.join(", ")}`);
     lines.push(`- Year: ${clean(paper.year?.toString())}`);

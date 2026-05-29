@@ -99,4 +99,35 @@ describe("researchBriefToMarkdown", () => {
       "- Score breakdown: relevance 0.91, semantic N/A, citations 0.72, recency 0.83, completeness 1.00, source 0.90, identifiers 0.80"
     );
   });
+
+  it("includes metadata warnings in bibliography entries", () => {
+    const markdown = researchBriefToMarkdown({
+      brief: createBrief({
+        query: "how transformers work",
+        searchSummary: {
+          requestedSources: ["openalex"],
+          sourcesUsed: ["openalex"],
+          totalFound: 1,
+          totalAfterDeduplication: 1,
+          totalUsedInBrief: 1,
+          queryVariants: ["Attention Is All You Need"],
+          sourceDiagnostics: [],
+          warnings: []
+        }
+      }),
+      papers: [
+        createPaper({
+          id: "openalex:W2626778328",
+          title: "Attention Is All You Need",
+          year: 2025,
+          source: "openalex",
+          doi: "10.1000/unexpected",
+          sourceUrls: ["https://openalex.org/W2626778328"]
+        })
+      ]
+    });
+
+    expect(markdown).toContain("- Metadata warnings:");
+    expect(markdown).toContain("normally cited as a 2017 paper");
+  });
 });
