@@ -49,6 +49,7 @@ user query -> generation job -> source adapters -> normalized papers -> dedupe/r
 - Vitest coverage for core pipeline, schemas, routes, storage, source diagnostics, grounding, Q&A, rate limiting, and export.
 - Adapter contract tests for arXiv, Semantic Scholar, and OpenAlex response-shape drift.
 - Retrieval benchmark fixtures, gold-query tests, and `npm run benchmark:retrieval` for acronyms, Polish/English variants, typo recovery, interdisciplinary topics, comparison queries, and domain-specific query expansion. The benchmark also writes ignored JSON/Markdown reports under `benchmark-results/` for provider comparisons.
+- Source-quality benchmark fixtures and `npm run benchmark:source-quality` for recorded live-source failure modes, including broad transformer queries that should prefer foundational papers over derivative title matches.
 - Claim/evidence benchmark fixtures for direct, indirect, weak, unsupported-claim, overclaim, numeric, statistical-significance, and comparative cases.
 - Repeatable deployment smoke check through `npm run smoke:deploy`.
 
@@ -103,6 +104,7 @@ ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true
 ```bash
 npm test
 npm run benchmark:retrieval
+npm run benchmark:source-quality
 npm run lint
 npm run build
 ```

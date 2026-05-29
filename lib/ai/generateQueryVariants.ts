@@ -138,7 +138,7 @@ export function generateQueryVariants(input: {
         ? [
             "transformer self attention neural networks",
             "transformer architecture language models",
-            "attention is all you need transformer"
+            "transformer self attention sequence transduction"
           ]
       : [];
 

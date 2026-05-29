@@ -41,8 +41,8 @@ The app supports:
 
 ## Latest Completed Step
 
-Ran a manual source-quality audit against local endpoints. Fixed three issues found during the audit: transformer typo queries now get stronger canonical English variants, escaped newline titles are normalized during dedupe, and generation jobs now fail with a controlled timeout instead of staying `running` indefinitely.
+Added a source-quality benchmark for recorded live-source failure modes. `npm run benchmark:source-quality` now checks that broad transformer queries prefer foundational papers over derivative title matches, and that stem-cell burn queries stay focused on treatment papers instead of drifting to generic stem-cell or cosmetics records.
 
 ## Next Recommended Step
 
-Run the retrieval gold benchmark against a real production embedding provider and tune hybrid ranking weights from the observed failures. Also add a source-quality benchmark from real OpenAlex/arXiv results, because broad transformer queries can still select derivative "attention is all you need" papers rather than foundational transformer papers.
+Run both benchmark suites against a real production embedding provider and tune hybrid ranking weights from the observed failures.

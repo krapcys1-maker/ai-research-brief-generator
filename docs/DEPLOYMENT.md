@@ -102,6 +102,7 @@ Before deploy, verify locally:
 npm install
 npm test
 npm run benchmark:retrieval
+npm run benchmark:source-quality
 npm run lint
 npm run build
 ```
@@ -113,6 +114,8 @@ The test suite does not call DeepSeek by default. PostgreSQL integration tests a
 ```bash
 RETRIEVAL_BENCHMARK_MIN_TOP1=0.85
 RETRIEVAL_BENCHMARK_MIN_RECALL=0.85
+SOURCE_QUALITY_BENCHMARK_MIN_TOP1=0.90
+SOURCE_QUALITY_BENCHMARK_MIN_RECALL=0.90
 ```
 
 It also writes local ignored artifacts for comparison across providers:
@@ -120,6 +123,8 @@ It also writes local ignored artifacts for comparison across providers:
 ```text
 benchmark-results/retrieval-gold-latest.json
 benchmark-results/retrieval-gold-latest.md
+benchmark-results/source-quality-latest.json
+benchmark-results/source-quality-latest.md
 ```
 
 ## Runtime Checks

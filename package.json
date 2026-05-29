@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "benchmark:retrieval": "tsx scripts/retrieval-gold-benchmark.ts",
+    "benchmark:source-quality": "tsx scripts/source-quality-benchmark.ts",
     "smoke:deploy": "node scripts/deployment-smoke.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev"
