@@ -41,8 +41,8 @@ The app supports:
 
 ## Latest Completed Step
 
-Added metadata-quality warnings for suspicious live-source records. The app now flags known canonical papers when source metadata reports unexpected chronology or identifiers, and these warnings surface in source preflight, brief paper details, source drawers, search summary warnings, and Markdown export.
+Added an embedding provider check command. `npm run embedding:check` verifies whether the app is using local fallback or a configured OpenAI-compatible embedding provider, validates returned vector shape, and reports missing configuration without printing secrets.
 
 ## Next Recommended Step
 
-Run both benchmark suites against a real production embedding provider and tune hybrid ranking weights from the observed failures. Then expand metadata-quality rules with additional recorded live-source anomalies from OpenAlex/arXiv/Semantic Scholar.
+Configure a real production embedding provider in deployment, run `npm run embedding:check`, then run both benchmark suites and tune hybrid ranking weights from the observed failures.

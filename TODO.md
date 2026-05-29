@@ -4,7 +4,8 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 
 ## Next
 
-- [ ] Configure and evaluate a production embedding provider.
+- [x] Add a production embedding provider configuration check.
+- [ ] Configure a real production embedding provider in deployment and compare benchmark reports.
 - [ ] Add more gold retrieval queries from live OpenAlex/arXiv examples.
 - [ ] Expand source-quality fixtures with more recorded live-source failures.
 - [x] Add metadata-quality checks for suspicious live-source records.

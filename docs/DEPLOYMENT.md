@@ -101,6 +101,7 @@ Before deploy, verify locally:
 ```bash
 npm install
 npm test
+npm run embedding:check
 npm run benchmark:retrieval
 npm run benchmark:source-quality
 npm run lint
@@ -108,6 +109,8 @@ npm run build
 ```
 
 The test suite does not call DeepSeek by default. PostgreSQL integration tests are skipped unless `DATABASE_URL` points to PostgreSQL.
+
+`npm run embedding:check` validates the effective embedding provider, vector shape, and missing configuration without printing API keys.
 
 `npm run benchmark:retrieval` uses the configured embeddings provider and fails when retrieval quality drops below the configured thresholds. Defaults:
 
@@ -208,6 +211,7 @@ The repository already ignores `.env`, `.next`, and `node_modules`.
 - [ ] `ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION` is not set for real production deployments.
 - [ ] `PUBLIC_BRIEF_HISTORY_ENABLED` is unset or `false` unless public history is intentional.
 - [ ] Production embeddings are configured, or local embeddings are intentionally accepted for the deployment.
+- [ ] `npm run embedding:check` succeeds with the intended embedding provider.
 - [ ] `npx prisma migrate deploy` succeeds.
 - [ ] `npm run build` succeeds.
 - [ ] `BRIEF_RATE_LIMIT_MAX` and `BRIEF_RATE_LIMIT_WINDOW_MS` are set.

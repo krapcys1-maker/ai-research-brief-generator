@@ -29,6 +29,7 @@ user query -> generation job -> source adapters -> normalized papers -> dedupe/r
 - Embeddings provider abstraction with:
   - local hash-ngram embeddings by default,
   - optional OpenAI-compatible embeddings through `EMBEDDING_PROVIDER=openai_compatible`.
+- Embedding provider diagnostics through `npm run embedding:check`, which validates the effective provider and vector shape without printing secrets.
 - Deterministic paper-level reading guidance, source-quality summaries, and query-title/abstract alignment signals.
 - Research Quality Gate that blocks weak source coverage before calling the AI provider.
 - Provider-agnostic AI wrapper with DeepSeek as the implemented default:
@@ -106,6 +107,7 @@ ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true
 
 ```bash
 npm test
+npm run embedding:check
 npm run benchmark:retrieval
 npm run benchmark:source-quality
 npm run lint

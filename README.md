@@ -144,11 +144,12 @@ npm run build
 Retrieval benchmark:
 
 ```bash
+npm run embedding:check
 npm run benchmark:retrieval
 npm run benchmark:source-quality
 ```
 
-This uses the configured embedding provider. With no embedding env vars, it uses local hash-ngram embeddings. After configuring `EMBEDDING_PROVIDER=openai_compatible`, run the same command to compare retrieval quality.
+`npm run embedding:check` verifies the configured embedding provider without printing secrets. The benchmark commands use the configured embedding provider. With no embedding env vars, they use local hash-ngram embeddings. After configuring `EMBEDDING_PROVIDER=openai_compatible`, run the same commands to compare retrieval quality.
 
 The commands write ignored local reports to:
 

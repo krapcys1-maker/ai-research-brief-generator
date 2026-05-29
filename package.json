@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "test": "vitest run",
+    "embedding:check": "tsx scripts/embedding-provider-check.ts",
     "benchmark:retrieval": "tsx scripts/retrieval-gold-benchmark.ts",
     "benchmark:source-quality": "tsx scripts/source-quality-benchmark.ts",
     "smoke:deploy": "node scripts/deployment-smoke.mjs",
