@@ -41,7 +41,7 @@ The app supports:
 
 ## Latest Completed Step
 
-Added an optional OpenAI-compatible embeddings provider. The app still defaults to local hash-ngram embeddings, but deployments can now set `EMBEDDING_PROVIDER=openai_compatible`, `EMBEDDING_BASE_URL`, `EMBEDDING_API_KEY`, and `EMBEDDING_MODEL` for model-grade semantic retrieval. If the embeddings provider is unavailable, ranking falls back to lexical scoring instead of failing generation.
+Added a repeatable retrieval benchmark command. `npm run benchmark:retrieval` now runs the gold-query suite against the configured embedding provider and reports top-1 accuracy, mean recall@5, and excluded-source failures.
 
 ## Next Recommended Step
 

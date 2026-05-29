@@ -141,6 +141,14 @@ npm run lint
 npm run build
 ```
 
+Retrieval benchmark:
+
+```bash
+npm run benchmark:retrieval
+```
+
+This uses the configured embedding provider. With no embedding env vars, it uses local hash-ngram embeddings. After configuring `EMBEDDING_PROVIDER=openai_compatible`, run the same command to compare retrieval quality.
+
 Optional PostgreSQL integration check:
 
 ```bash

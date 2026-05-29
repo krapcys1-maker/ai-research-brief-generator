@@ -101,11 +101,19 @@ Before deploy, verify locally:
 ```bash
 npm install
 npm test
+npm run benchmark:retrieval
 npm run lint
 npm run build
 ```
 
 The test suite does not call DeepSeek by default. PostgreSQL integration tests are skipped unless `DATABASE_URL` points to PostgreSQL.
+
+`npm run benchmark:retrieval` uses the configured embeddings provider and fails when retrieval quality drops below the configured thresholds. Defaults:
+
+```bash
+RETRIEVAL_BENCHMARK_MIN_TOP1=0.85
+RETRIEVAL_BENCHMARK_MIN_RECALL=0.85
+```
 
 ## Runtime Checks
 
