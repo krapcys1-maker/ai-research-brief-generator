@@ -1,6 +1,6 @@
 # Project Status
 
-Last updated: 2026-05-28
+Last updated: 2026-05-29
 
 ## Current Snapshot
 
@@ -41,7 +41,7 @@ The app supports:
 
 ## Latest Completed Step
 
-Added a repeatable retrieval benchmark command. `npm run benchmark:retrieval` now runs the gold-query suite against the configured embedding provider and reports top-1 accuracy, mean recall@5, and excluded-source failures.
+Added persisted retrieval benchmark artifacts. `npm run benchmark:retrieval` now still reports top-1 accuracy, mean recall@5, and excluded-source failures in the terminal, and also writes ignored local JSON/Markdown reports under `benchmark-results/` so provider and scoring changes can be compared later.
 
 ## Next Recommended Step
 

@@ -2,6 +2,7 @@ node_modules
 .next
 out
 dist
+benchmark-results
 .env
 .env*.local
 npm-debug.log*

@@ -149,6 +149,13 @@ npm run benchmark:retrieval
 
 This uses the configured embedding provider. With no embedding env vars, it uses local hash-ngram embeddings. After configuring `EMBEDDING_PROVIDER=openai_compatible`, run the same command to compare retrieval quality.
 
+The command writes ignored local reports to:
+
+```text
+benchmark-results/retrieval-gold-latest.json
+benchmark-results/retrieval-gold-latest.md
+```
+
 Optional PostgreSQL integration check:
 
 ```bash

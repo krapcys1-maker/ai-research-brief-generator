@@ -115,6 +115,13 @@ RETRIEVAL_BENCHMARK_MIN_TOP1=0.85
 RETRIEVAL_BENCHMARK_MIN_RECALL=0.85
 ```
 
+It also writes local ignored artifacts for comparison across providers:
+
+```text
+benchmark-results/retrieval-gold-latest.json
+benchmark-results/retrieval-gold-latest.md
+```
+
 ## Runtime Checks
 
 After deploy, check:

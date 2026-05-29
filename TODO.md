@@ -19,6 +19,7 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 - [x] Add hybrid retrieval with lexical and semantic scoring.
 - [x] Add optional OpenAI-compatible embeddings provider.
 - [x] Add repeatable retrieval benchmark command.
+- [x] Persist local retrieval benchmark JSON/Markdown reports for provider comparisons.
 - [ ] Tune hybrid retrieval with model-grade embeddings and larger benchmarks.
 - [ ] Add PDF/full-text ingestion with explicit full-text evidence boundaries.
 

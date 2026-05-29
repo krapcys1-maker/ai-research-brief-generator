@@ -1,4 +1,6 @@
 import { evaluateGoldQueries } from "@/lib/benchmarks/retrievalGold";
+import { mkdir, writeFile } from "node:fs/promises";
+import { dirname } from "node:path";
 
 function pct(value: number) {
   return `${(value * 100).toFixed(1)}%`;
@@ -17,9 +19,64 @@ function numberEnv(name: string, fallback: number) {
 
 const minTop1 = numberEnv("RETRIEVAL_BENCHMARK_MIN_TOP1", 0.85);
 const minRecall = numberEnv("RETRIEVAL_BENCHMARK_MIN_RECALL", 0.85);
+const jsonOutputPath =
+  process.env.RETRIEVAL_BENCHMARK_JSON ?? "benchmark-results/retrieval-gold-latest.json";
+const markdownOutputPath =
+  process.env.RETRIEVAL_BENCHMARK_MARKDOWN ??
+  "benchmark-results/retrieval-gold-latest.md";
+
+async function writeTextFile(path: string, content: string) {
+  await mkdir(dirname(path), { recursive: true });
+  await writeFile(path, content, "utf8");
+}
+
+function renderMarkdownReport(input: {
+  generatedAt: string;
+  minTop1: number;
+  minRecall: number;
+  result: Awaited<ReturnType<typeof evaluateGoldQueries>>;
+}) {
+  const lines = [
+    "# Retrieval Gold Benchmark",
+    "",
+    `Generated at: ${input.generatedAt}`,
+    `Provider: ${input.result.provider}`,
+    `Cases: ${input.result.caseCount}`,
+    `Top-1 accuracy: ${pct(input.result.top1Accuracy)}`,
+    `Mean recall@5: ${pct(input.result.meanRecallAt5)}`,
+    `Excluded top failures: ${input.result.excludedFailureCount}`,
+    `Thresholds: top1 >= ${pct(input.minTop1)}, recall@5 >= ${pct(input.minRecall)}, excluded failures = 0`,
+    "",
+    "## Cases",
+    ""
+  ];
+
+  for (const item of input.result.results) {
+    const status =
+      item.top1Hit && item.recallAt5 === 1 && item.excludedTopFailures.length === 0
+        ? "PASS"
+        : "CHECK";
+
+    lines.push(`### ${status} ${item.name}`);
+    lines.push("");
+    lines.push(`- Query: ${item.query}`);
+    lines.push(`- Selected: ${item.selectedIds.join(", ") || "none"}`);
+    lines.push(`- Expected: ${item.expectedTopIds.join(", ")}`);
+    lines.push(`- Recall@5: ${pct(item.recallAt5)}`);
+
+    if (item.excludedTopFailures.length) {
+      lines.push(`- Excluded in top set: ${item.excludedTopFailures.join(", ")}`);
+    }
+
+    lines.push("");
+  }
+
+  return `${lines.join("\n").trim()}\n`;
+}
 
 async function main() {
   const result = await evaluateGoldQueries();
+  const generatedAt = new Date().toISOString();
 
   console.log("Retrieval gold benchmark");
   console.log(`Provider: ${result.provider}`);
@@ -50,6 +107,31 @@ async function main() {
     result.top1Accuracy < minTop1 ||
     result.meanRecallAt5 < minRecall ||
     result.excludedFailureCount > 0;
+
+  const report = {
+    generatedAt,
+    thresholds: {
+      minTop1,
+      minRecall,
+      excludedFailureCount: 0
+    },
+    result
+  };
+
+  await writeTextFile(jsonOutputPath, `${JSON.stringify(report, null, 2)}\n`);
+  await writeTextFile(
+    markdownOutputPath,
+    renderMarkdownReport({
+      generatedAt,
+      minTop1,
+      minRecall,
+      result
+    })
+  );
+
+  console.log("");
+  console.log(`Wrote JSON report: ${jsonOutputPath}`);
+  console.log(`Wrote Markdown report: ${markdownOutputPath}`);
 
   if (failed) {
     console.error("");
