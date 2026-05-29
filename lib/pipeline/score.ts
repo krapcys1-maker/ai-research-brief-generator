@@ -32,6 +32,16 @@ const STOP_TERMS = new Set([
 
 const MIN_RELEVANCE_FOR_SELECTION = 0.2;
 
+function normalizeForPhraseMatch(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function tokenize(text: string) {
   return text
     .normalize("NFD")
@@ -90,6 +100,7 @@ function scorePapersForQueriesWithSemantic(
   semanticScores = new Map<string, number>()
 ) {
   const queryTerms = new Set(queries.flatMap(tokenize));
+  const normalizedQueries = queries.map(normalizeForPhraseMatch).filter(Boolean);
   const currentYear = new Date().getFullYear();
   const maxCitationLog = Math.max(
     1,
@@ -105,6 +116,12 @@ function scorePapersForQueriesWithSemantic(
   return papers
     .map((paper) => {
       const titleTerms = new Set(tokenize(paper.title));
+      const normalizedTitle = normalizeForPhraseMatch(paper.title);
+      const exactTitleScore = normalizedQueries.some(
+        (query) => query === normalizedTitle
+      )
+        ? 1
+        : 0;
       const abstractTerms = new Set(tokenize(`${paper.abstract ?? ""} ${paper.venue ?? ""}`));
       const titleMatches = [...queryTerms].filter((term) => titleTerms.has(term)).length;
       const abstractMatches = [...queryTerms].filter((term) =>
@@ -141,7 +158,8 @@ function scorePapersForQueriesWithSemantic(
         recencyScore * 0.1 +
         completenessScore * 0.07 +
         sourceQualityScore * 0.06 +
-        identifierScore * 0.05;
+        identifierScore * 0.05 +
+        exactTitleScore * 0.12;
       const lowRelevancePenalty =
         relevanceScore === 0 && semanticScore < 0.18
           ? 0.3
@@ -160,6 +178,7 @@ function scorePapersForQueriesWithSemantic(
         completenessScore,
         sourceQualityScore,
         identifierScore,
+        exactTitleScore,
         qualityScore,
         finalScore
       };

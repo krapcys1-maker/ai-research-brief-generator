@@ -128,7 +128,34 @@ describe("retrieval benchmark fixtures", () => {
     });
 
     expect(variants).toContain("transformers networks artificial intelligence");
+    expect(variants).toContain("Attention Is All You Need");
     expectSelectedIds(selected, ["transformers"]);
+  });
+
+  it("prioritizes exact title matches over derivative title matches", async () => {
+    const { selected } = await rankFixture({
+      query: "Attention Is All You Need",
+      papers: [
+        createPaper({
+          id: "foundation",
+          title: "Attention Is All You Need",
+          abstract:
+            "The Transformer architecture uses self-attention for sequence transduction.",
+          source: "openalex",
+          citationCount: 5000
+        }),
+        createPaper({
+          id: "derivative",
+          title: "Attention Is All You Need for Video Frame Interpolation",
+          abstract:
+            "A derivative application paper using attention for video frame interpolation.",
+          source: "openalex",
+          citationCount: 10000
+        })
+      ]
+    });
+
+    expectSelectedIds(selected, ["foundation"]);
   });
 
   it("prioritizes stem-cell burn treatment over generic stem-cell papers", async () => {

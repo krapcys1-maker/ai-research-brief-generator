@@ -136,9 +136,9 @@ export function generateQueryVariants(input: {
       : expandedTranslated.includes("transformers") ||
           expandedTranslated.includes("transformer")
         ? [
+            "Attention Is All You Need",
             "transformer self attention neural networks",
-            "transformer architecture language models",
-            "transformer self attention sequence transduction"
+            "transformer architecture language models"
           ]
       : [];
 

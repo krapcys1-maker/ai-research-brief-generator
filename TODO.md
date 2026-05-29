@@ -7,6 +7,7 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 - [ ] Configure and evaluate a production embedding provider.
 - [ ] Add more gold retrieval queries from live OpenAlex/arXiv examples.
 - [ ] Expand source-quality fixtures with more recorded live-source failures.
+- [ ] Add metadata-quality checks for suspicious live-source records.
 
 ## Production Readiness
 
@@ -24,6 +25,7 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 - [x] Add transformer-specific query expansion for Polish typo recovery.
 - [x] Normalize escaped whitespace in paper title dedupe.
 - [x] Add live-source source-quality benchmarks for broad/foundational queries.
+- [x] Add exact-title ranking boost for foundational source selection.
 - [ ] Tune hybrid retrieval with model-grade embeddings and larger benchmarks.
 - [ ] Add PDF/full-text ingestion with explicit full-text evidence boundaries.
 

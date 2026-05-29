@@ -41,8 +41,8 @@ The app supports:
 
 ## Latest Completed Step
 
-Added a source-quality benchmark for recorded live-source failure modes. `npm run benchmark:source-quality` now checks that broad transformer queries prefer foundational papers over derivative title matches, and that stem-cell burn queries stay focused on treatment papers instead of drifting to generic stem-cell or cosmetics records.
+Tuned broad/foundational transformer retrieval. Transformer query expansion now includes the canonical `Attention Is All You Need` title, and ranking applies a general exact-title boost so foundational papers do not lose to derivative titles that merely contain more matching words.
 
 ## Next Recommended Step
 
-Run both benchmark suites against a real production embedding provider and tune hybrid ranking weights from the observed failures.
+Run both benchmark suites against a real production embedding provider and tune hybrid ranking weights from the observed failures. Then add metadata-quality checks for suspicious live-source records, such as foundational papers with incorrect publication years from OpenAlex.
