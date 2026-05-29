@@ -41,8 +41,10 @@ async function waitForJob(id: string) {
 
 describe("brief jobs", () => {
   afterEach(() => {
+    vi.useRealTimers();
     vi.resetAllMocks();
     resetBriefJobsForTests();
+    delete process.env.BRIEF_JOB_TIMEOUT_MS;
   });
 
   it("stores completed job status and brief ID", async () => {
@@ -95,6 +97,20 @@ describe("brief jobs", () => {
     expect(finalJob.error).toContain("DEEPSEEK_API_KEY");
   });
 
+  it("fails jobs that exceed the configured timeout", async () => {
+    vi.useFakeTimers();
+    process.env.BRIEF_JOB_TIMEOUT_MS = "10";
+    createBriefMock.mockReturnValueOnce(new Promise(() => undefined));
+
+    const job = createBriefJob(request);
+
+    await vi.advanceTimersByTimeAsync(10);
+    const finalJob = getBriefJob(job.id);
+
+    expect(finalJob?.status).toBe("failed");
+    expect(finalJob?.error).toContain("timed out");
+  });
+
   it("exposes jobs through the job status route", async () => {
     createBriefMock.mockResolvedValueOnce({
       brief: createBriefFixture({ id: "brief_route_done" }),
@@ -129,4 +145,3 @@ describe("brief jobs", () => {
     expect(payload.status).toBe("not_found");
   });
 });
-

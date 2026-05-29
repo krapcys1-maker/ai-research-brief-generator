@@ -5,6 +5,13 @@ import { createPaper } from "./fixtures";
 describe("dedupePapers", () => {
   it("normalizes titles for duplicate detection", () => {
     expect(normalizeTitle("  RAG: For Medicine! ")).toBe("rag for medicine");
+    expect(
+      normalizeTitle(
+        "Cross-Attention is All You Need: Adapting Pretrained Transformers for\\n Machine Translation"
+      )
+    ).toBe(
+      "cross attention is all you need adapting pretrained transformers for machine translation"
+    );
   });
 
   it("deduplicates by DOI before title", () => {

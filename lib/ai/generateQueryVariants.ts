@@ -133,6 +133,13 @@ export function generateQueryVariants(input: {
           "mesenchymal stem cells burn wound treatment",
           "stem cell therapy burn wounds"
         ]
+      : expandedTranslated.includes("transformers") ||
+          expandedTranslated.includes("transformer")
+        ? [
+            "transformer self attention neural networks",
+            "transformer architecture language models",
+            "attention is all you need transformer"
+          ]
       : [];
 
   const variants = unique([

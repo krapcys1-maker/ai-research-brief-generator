@@ -2,6 +2,7 @@ import type { NormalizedPaper } from "@/lib/sources/types";
 
 export function normalizeTitle(title: string) {
   return title
+    .replace(/\\[nrt]/g, " ")
     .toLowerCase()
     .replace(/[^\w\s]/g, " ")
     .replace(/\s+/g, " ")

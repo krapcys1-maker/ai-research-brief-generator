@@ -41,8 +41,8 @@ The app supports:
 
 ## Latest Completed Step
 
-Added persisted retrieval benchmark artifacts. `npm run benchmark:retrieval` now still reports top-1 accuracy, mean recall@5, and excluded-source failures in the terminal, and also writes ignored local JSON/Markdown reports under `benchmark-results/` so provider and scoring changes can be compared later.
+Ran a manual source-quality audit against local endpoints. Fixed three issues found during the audit: transformer typo queries now get stronger canonical English variants, escaped newline titles are normalized during dedupe, and generation jobs now fail with a controlled timeout instead of staying `running` indefinitely.
 
 ## Next Recommended Step
 
-Run the retrieval gold benchmark against a real production embedding provider and tune hybrid ranking weights from the observed failures.
+Run the retrieval gold benchmark against a real production embedding provider and tune hybrid ranking weights from the observed failures. Also add a source-quality benchmark from real OpenAlex/arXiv results, because broad transformer queries can still select derivative "attention is all you need" papers rather than foundational transformer papers.

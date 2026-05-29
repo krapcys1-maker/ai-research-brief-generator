@@ -33,6 +33,34 @@ const jobs =
 
 globalForBriefJobs.__researchBriefJobs = jobs;
 
+function numberEnv(name: string, fallback: number) {
+  const raw = process.env[name];
+
+  if (!raw) {
+    return fallback;
+  }
+
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function withJobTimeout<T>(promise: Promise<T>) {
+  const timeoutMs = numberEnv("BRIEF_JOB_TIMEOUT_MS", 180000);
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+
+  const timeoutPromise = new Promise<T>((_resolve, reject) => {
+    timeout = setTimeout(() => {
+      reject(new Error(`Brief generation job timed out after ${timeoutMs} ms.`));
+    }, timeoutMs);
+  });
+
+  return Promise.race([promise, timeoutPromise]).finally(() => {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+  });
+}
+
 function createJobId() {
   return `job_${Date.now().toString(36)}_${Math.random()
     .toString(36)
@@ -112,7 +140,7 @@ export async function runBriefJob(id: string) {
   updateJob(id, { status: "running", error: undefined, qualityGate: undefined });
 
   try {
-    const record = await createBrief(job.request);
+    const record = await withJobTimeout(createBrief(job.request));
     updateJob(id, {
       status: "completed",
       briefId: record.brief.id
