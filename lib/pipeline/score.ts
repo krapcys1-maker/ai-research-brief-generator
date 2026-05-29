@@ -193,16 +193,25 @@ function paperEmbeddingText(paper: NormalizedPaper) {
 export async function scorePapersForQueriesHybrid(
   papers: NormalizedPaper[],
   queries: string[],
-  provider: EmbeddingProvider = createEmbeddingProvider()
+  provider?: EmbeddingProvider
 ) {
   if (!papers.length) {
     return [];
   }
 
-  const [queryEmbeddings, paperEmbeddings] = await Promise.all([
-    provider.embed(queries),
-    provider.embed(papers.map(paperEmbeddingText))
-  ]);
+  let queryEmbeddings: number[][];
+  let paperEmbeddings: number[][];
+
+  try {
+    const embeddingProvider = provider ?? createEmbeddingProvider();
+    [queryEmbeddings, paperEmbeddings] = await Promise.all([
+      embeddingProvider.embed(queries),
+      embeddingProvider.embed(papers.map(paperEmbeddingText))
+    ]);
+  } catch {
+    return scorePapersForQueriesWithSemantic(papers, queries);
+  }
+
   const semanticScores = new Map<string, number>();
 
   for (const [index, paper] of papers.entries()) {

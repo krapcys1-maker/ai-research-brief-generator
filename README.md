@@ -61,6 +61,17 @@ BRIEF_RATE_LIMIT_WINDOW_MS=600000
 RATE_LIMIT_BACKEND=memory
 ```
 
+Optional model-grade embeddings:
+
+```bash
+EMBEDDING_PROVIDER=openai_compatible
+EMBEDDING_BASE_URL=https://your-embedding-provider.example/v1
+EMBEDDING_API_KEY=...
+EMBEDDING_MODEL=...
+```
+
+When omitted, the app uses local hash-ngram embeddings so development does not require another API key.
+
 Optional PostgreSQL persistence:
 
 ```bash

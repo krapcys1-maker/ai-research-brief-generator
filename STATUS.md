@@ -41,8 +41,8 @@ The app supports:
 
 ## Latest Completed Step
 
-Added a retrieval gold benchmark suite with expected paper IDs across Polish, English, typo, acronym, interdisciplinary, and comparison queries. The benchmark also caught and fixed a scoring weakness where generic terms such as "networks" could over-rank off-topic papers.
+Added an optional OpenAI-compatible embeddings provider. The app still defaults to local hash-ngram embeddings, but deployments can now set `EMBEDDING_PROVIDER=openai_compatible`, `EMBEDDING_BASE_URL`, `EMBEDDING_API_KEY`, and `EMBEDDING_MODEL` for model-grade semantic retrieval. If the embeddings provider is unavailable, ranking falls back to lexical scoring instead of failing generation.
 
 ## Next Recommended Step
 
-Replace the local embedding provider with a model-grade production provider, then use the gold benchmark suite to tune ranking weights.
+Run the retrieval gold benchmark against a real production embedding provider and tune hybrid ranking weights from the observed failures.

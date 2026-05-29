@@ -12,7 +12,7 @@ Last updated: 2026-05-28
 
 ## P1: Research Quality
 
-- Replace the local embedding provider with a production embedding provider.
+- Configure and evaluate a production embedding provider in deployment.
 - Expand hybrid retrieval beyond the current lexical + local semantic signal:
   - model-grade embedding similarity
   - source diversity

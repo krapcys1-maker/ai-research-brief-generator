@@ -58,6 +58,17 @@ SEMANTIC_SCHOLAR_API_KEY=...
 
 Semantic Scholar can run without a key, but anonymous requests are more likely to be rate limited.
 
+Optional production embeddings setting:
+
+```bash
+EMBEDDING_PROVIDER=openai_compatible
+EMBEDDING_BASE_URL=https://your-embedding-provider.example/v1
+EMBEDDING_API_KEY=...
+EMBEDDING_MODEL=...
+```
+
+If these variables are omitted, the app uses local hash-ngram embeddings. That is safe for development and demos, but production research quality should use a model-grade embedding provider. If the configured embeddings provider is temporarily unavailable, ranking falls back to lexical scoring instead of failing brief generation.
+
 ## Database
 
 Use a managed PostgreSQL database in production. The local `docker-compose.yml` PostgreSQL service is for development only.
@@ -176,6 +187,7 @@ The repository already ignores `.env`, `.next`, and `node_modules`.
 - [ ] `UPSTASH_REDIS_REST_TOKEN` is configured.
 - [ ] `ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION` is not set for real production deployments.
 - [ ] `PUBLIC_BRIEF_HISTORY_ENABLED` is unset or `false` unless public history is intentional.
+- [ ] Production embeddings are configured, or local embeddings are intentionally accepted for the deployment.
 - [ ] `npx prisma migrate deploy` succeeds.
 - [ ] `npm run build` succeeds.
 - [ ] `BRIEF_RATE_LIMIT_MAX` and `BRIEF_RATE_LIMIT_WINDOW_MS` are set.
