@@ -333,6 +333,13 @@ First remediation started on 2026-06-02:
   full-text-supported transformer claim. The benchmark now checks evidence
   boundary requirements and `npm run benchmark:claim-check` passes with 100%
   classification accuracy and 0 evidence/similar-work/caveat/boundary failures.
+- Added `npm run benchmark:quality-gate` as a single CI-ready benchmark gate for
+  retrieval, source-quality, and claim-check. Central thresholds are 85%
+  retrieval top-1/recall@5, 90% source-quality top-1/recall@5, 90%
+  claim-check classification accuracy, and zero excluded/requirement failures.
+  Verified with `npm test -- tests/benchmarkQualityGate.test.ts
+  tests/retrievalGoldBenchmark.test.ts tests/sourceQualityBenchmark.test.ts
+  tests/claimCheckBenchmark.test.ts` and `npm run benchmark:quality-gate`.
 
 ## Next Recommended Step
 
@@ -347,8 +354,7 @@ Next highest-value work:
 3. Run `npm run staging:check`, `npx prisma migrate deploy`,
    `npm run embedding:check`, and full `npm run smoke:deploy` against the real
    staging deployment after secrets are configured.
-4. Set quality thresholds to CI for retrieval/source-quality/claim-check.
-5. Add saved Compare With Science report history API/UI and background compare
+4. Add saved Compare With Science report history API/UI and background compare
    polling on top of the new `CompareReport` storage foundation.
-6. Add structured production logs and alerting for AI/provider/source/worker
+5. Add structured production logs and alerting for AI/provider/source/worker
    failures.

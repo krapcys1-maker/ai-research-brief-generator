@@ -49,6 +49,7 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 - [x] Add repeatable retrieval benchmark command.
 - [x] Persist local retrieval benchmark JSON/Markdown reports for provider comparisons.
 - [x] Add combined embedding provider comparison JSON/Markdown report.
+- [x] Add a CI quality gate for retrieval/source-quality/claim-check benchmark thresholds.
 - [x] Add transformer-specific query expansion for Polish typo recovery.
 - [x] Normalize escaped whitespace in paper title dedupe.
 - [x] Add live-source source-quality benchmarks for broad/foundational queries.

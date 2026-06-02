@@ -1,4 +1,5 @@
 import { evaluateSourceQualityCases } from "@/lib/benchmarks/sourceQuality";
+import { resolveBenchmarkQualityThresholds } from "@/lib/benchmarks/qualityThresholds";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
@@ -6,19 +7,9 @@ function pct(value: number) {
   return `${(value * 100).toFixed(1)}%`;
 }
 
-function numberEnv(name: string, fallback: number) {
-  const value = process.env[name];
-
-  if (!value) {
-    return fallback;
-  }
-
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
-
-const minTop1 = numberEnv("SOURCE_QUALITY_BENCHMARK_MIN_TOP1", 0.9);
-const minRecall = numberEnv("SOURCE_QUALITY_BENCHMARK_MIN_RECALL", 0.9);
+const thresholds = resolveBenchmarkQualityThresholds().sourceQuality;
+const minTop1 = thresholds.minTop1;
+const minRecall = thresholds.minRecallAt5;
 const jsonOutputPath =
   process.env.SOURCE_QUALITY_BENCHMARK_JSON ??
   "benchmark-results/source-quality-latest.json";
@@ -108,14 +99,14 @@ async function main() {
   const failed =
     result.top1Accuracy < minTop1 ||
     result.meanRecallAt5 < minRecall ||
-    result.excludedFailureCount > 0;
+    result.excludedFailureCount > thresholds.maxExcludedTopFailures;
 
   const report = {
     generatedAt,
     thresholds: {
       minTop1,
       minRecall,
-      excludedFailureCount: 0
+      excludedFailureCount: thresholds.maxExcludedTopFailures
     },
     result
   };

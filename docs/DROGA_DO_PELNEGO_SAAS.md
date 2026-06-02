@@ -304,7 +304,12 @@ Status: **czesciowo zrobione**.
   full-text-supported transformer case z wymaganym `full_text_supported`;
   `npm test -- tests/claimCheckBenchmark.test.ts tests/claimCheck.test.ts`,
   `npm run benchmark:claim-check`.
-- [ ] Ustalic progi jakosci do CI dla retrieval/source-quality/claim-check.
+- [x] Ustalic progi jakosci do CI dla retrieval/source-quality/claim-check.
+  Zweryfikowano 2026-06-02: dodano centralne progi jakosci i
+  `npm run benchmark:quality-gate` dla retrieval/source-quality/claim-check;
+  `npm test -- tests/benchmarkQualityGate.test.ts
+  tests/retrievalGoldBenchmark.test.ts tests/sourceQualityBenchmark.test.ts
+  tests/claimCheckBenchmark.test.ts`, `npm run benchmark:quality-gate`.
 - [x] Dodac raport porownawczy embedding providerow w `benchmark-results`.
   Zweryfikowano 2026-06-02: `npm run embedding:check`,
   `npm run benchmark:embedding-comparison`. Lokalny baseline przeszedl na
@@ -464,6 +469,8 @@ Wedlug aktualnych zapiskow projekt przeszedl:
 - `npm run benchmark:retrieval` - pass na obecnych fixtures
 - `npm run benchmark:source-quality` - pass na obecnych fixtures
 - `npm run benchmark:claim-check` - pass na obecnych fixtures
+- `npm run benchmark:quality-gate` - pass: retrieval/source-quality/claim-check
+  sa powyzej ustalonych progow CI
 - `SMOKE_SKIP_AI=true npm run smoke:deploy` - pass na lokalnym produkcyjnym
   buildzie
 - `npm run staging:check` - pass na kompletnej, zasymulowanej konfiguracji

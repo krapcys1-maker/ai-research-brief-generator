@@ -1,23 +1,14 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { evaluateClaimCheckCases } from "@/lib/benchmarks/claimCheck";
+import { resolveBenchmarkQualityThresholds } from "@/lib/benchmarks/qualityThresholds";
 
 function pct(value: number) {
   return `${(value * 100).toFixed(1)}%`;
 }
 
-function numberEnv(name: string, fallback: number) {
-  const value = process.env[name];
-
-  if (!value) {
-    return fallback;
-  }
-
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
-
-const minAccuracy = numberEnv("CLAIM_CHECK_BENCHMARK_MIN_ACCURACY", 0.9);
+const thresholds = resolveBenchmarkQualityThresholds().claimCheck;
+const minAccuracy = thresholds.minClassificationAccuracy;
 const jsonOutputPath =
   process.env.CLAIM_CHECK_BENCHMARK_JSON ??
   "benchmark-results/claim-check-latest.json";
@@ -110,7 +101,7 @@ async function main() {
     generatedAt,
     thresholds: {
       minAccuracy,
-      requirementFailures: 0
+      requirementFailures: thresholds.maxRequirementFailures
     },
     result
   };
@@ -131,10 +122,10 @@ async function main() {
 
   const failed =
     result.classificationAccuracy < minAccuracy ||
-    result.evidenceRequirementFailures > 0 ||
-    result.similarWorkRequirementFailures > 0 ||
-    result.caveatRequirementFailures > 0 ||
-    result.evidenceBoundaryRequirementFailures > 0;
+    result.evidenceRequirementFailures > thresholds.maxRequirementFailures ||
+    result.similarWorkRequirementFailures > thresholds.maxRequirementFailures ||
+    result.caveatRequirementFailures > thresholds.maxRequirementFailures ||
+    result.evidenceBoundaryRequirementFailures > thresholds.maxRequirementFailures;
 
   if (failed) {
     console.error("");

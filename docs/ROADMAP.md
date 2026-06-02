@@ -30,6 +30,8 @@ Last updated: 2026-06-02
 - Continue expanding Compare With Science benchmarks beyond the current
   deterministic, recorded live-source, and full-text-supported cases with more
   provider/adapter drift and long-document evidence cases.
+- Keep `npm run benchmark:quality-gate` in CI so retrieval, source-quality, and
+  claim-check regressions fail before deploy.
 
 ## P2: Product UX
 

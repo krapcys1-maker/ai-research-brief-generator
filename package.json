@@ -13,6 +13,7 @@
     "benchmark:retrieval": "tsx scripts/retrieval-gold-benchmark.ts",
     "benchmark:source-quality": "tsx scripts/source-quality-benchmark.ts",
     "benchmark:claim-check": "tsx scripts/claim-check-benchmark.ts",
+    "benchmark:quality-gate": "tsx scripts/benchmark-quality-gate.ts",
     "benchmark:embedding-comparison": "tsx scripts/embedding-provider-comparison.ts",
     "worker:briefs": "tsx scripts/brief-job-worker.ts",
     "worker:fulltext": "tsx scripts/fulltext-ingestion-worker.ts",

@@ -157,6 +157,9 @@ paste/upload text -> extract candidate claims -> user selects claims -> academic
   too-broad, non-scientific, already-known, possible-dead-end, recorded
   live-source abstract evidence, and full-text-supported evidence-boundary
   cases.
+- CI-ready benchmark quality gate through `npm run benchmark:quality-gate`,
+  which runs retrieval, source-quality, and claim-check suites with central
+  thresholds and writes JSON/Markdown reports under `benchmark-results/`.
 - Ranking includes an exact-title boost so canonical title searches can surface foundational papers instead of derivative titles with extra keyword overlap.
 - Metadata-quality warnings flag suspicious live-source records, including known canonical papers with unexpected publication years or non-canonical identifiers, and surface those warnings in preflight, brief source details, and Markdown export.
 - Claim/evidence benchmark fixtures for direct, indirect, weak, unsupported-claim, overclaim, numeric, statistical-significance, and comparative cases.
@@ -264,6 +267,7 @@ npm run embedding:check
 npm run benchmark:retrieval
 npm run benchmark:source-quality
 npm run benchmark:claim-check
+npm run benchmark:quality-gate
 npm run worker:fulltext
 npm run lint
 npm run build
