@@ -113,3 +113,25 @@ describe("app-native user session schema", () => {
     expect(migration).toContain("UserSession_workspaceId_fkey");
   });
 });
+
+describe("full-text ingestion job schema", () => {
+  it("defines durable full-text ingestion jobs with ownership and leases", () => {
+    const schema = readFileSync("prisma/schema.prisma", "utf8");
+    const migration = readFileSync(
+      "prisma/migrations/20260602210500_add_fulltext_ingestion_jobs/migration.sql",
+      "utf8"
+    );
+
+    expect(schema).toContain("model FullTextIngestionJob");
+    expect(schema).toContain("papersJson      Json");
+    expect(schema).toContain("optionsJson     Json?");
+    expect(schema).toContain("resultJson      Json?");
+    expect(schema).toContain("@relation(\"FullTextIngestionJobOwner\"");
+    expect(schema).toContain("@@index([lockedAt])");
+    expect(migration).toContain("CREATE TABLE \"FullTextIngestionJob\"");
+    expect(migration).toContain("\"visibility\" \"BriefVisibility\"");
+    expect(migration).toContain("FullTextIngestionJob_workspaceId_idx");
+    expect(migration).toContain("FullTextIngestionJob_ownerId_fkey");
+    expect(migration).toContain("FullTextIngestionJob_workspaceId_fkey");
+  });
+});

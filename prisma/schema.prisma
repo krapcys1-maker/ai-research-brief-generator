@@ -33,6 +33,8 @@ model User {
   createdBriefs    Brief[]            @relation("BriefCreator")
   ownedBriefJobs   BriefGenerationJob[] @relation("BriefJobOwner")
   createdBriefJobs BriefGenerationJob[] @relation("BriefJobCreator")
+  ownedFullTextIngestionJobs FullTextIngestionJob[] @relation("FullTextIngestionJobOwner")
+  createdFullTextIngestionJobs FullTextIngestionJob[] @relation("FullTextIngestionJobCreator")
   ownedCompareReports   CompareReport[] @relation("CompareReportOwner")
   createdCompareReports CompareReport[] @relation("CompareReportCreator")
   sessions         UserSession[]
@@ -49,6 +51,7 @@ model Workspace {
   members WorkspaceMember[]
   briefs  Brief[]
   briefJobs BriefGenerationJob[]
+  fullTextIngestionJobs FullTextIngestionJob[]
   compareReports CompareReport[]
   sessions UserSession[]
 
@@ -145,6 +148,40 @@ model BriefGenerationJob {
 
   owner     User?      @relation("BriefJobOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   createdBy User?      @relation("BriefJobCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([ownerSessionId])
+  @@index([ownerId])
+  @@index([workspaceId])
+  @@index([createdByUserId])
+  @@index([visibility])
+  @@index([lockedAt])
+  @@index([createdAt])
+}
+
+model FullTextIngestionJob {
+  id              String   @id
+  status          String
+  stage           String?
+  stageStartedAt  DateTime?
+  ownerSessionId  String?
+  ownerId         String?
+  workspaceId     String?
+  createdByUserId String?
+  visibility      BriefVisibility @default(PRIVATE)
+  papersJson      Json
+  optionsJson     Json?
+  resultJson      Json?
+  error           String?
+  attemptCount    Int      @default(0)
+  maxAttempts     Int      @default(2)
+  lockedAt        DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  owner     User?      @relation("FullTextIngestionJobOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  createdBy User?      @relation("FullTextIngestionJobCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
   workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
 
   @@index([status])

@@ -1,6 +1,10 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import type { ResearchBrief } from "@/lib/ai/schemas";
 import type { SynthesizeBriefInput } from "@/lib/ai/synthesizeBrief";
+import {
+  resetFullTextIngestionJobsForTests,
+  runNextFullTextIngestionJob
+} from "@/lib/fulltext/ingestionJobs";
 import { createBrief } from "@/lib/pipeline/createBrief";
 import { inMemoryBriefRepository } from "@/lib/storage/inMemoryBriefStore";
 import type { NormalizedPaper } from "@/lib/sources/types";
@@ -141,6 +145,15 @@ function paperWithId(id: string): NormalizedPaper {
 describe("createBrief full-text resilience", () => {
   beforeEach(async () => {
     await inMemoryBriefRepository.clear();
+    await resetFullTextIngestionJobsForTests();
+    delete process.env.BRIEF_FULL_TEXT_INGESTION_MODE;
+    delete process.env.FULL_TEXT_INGESTION_JOB_AUTORUN;
+  });
+
+  afterEach(async () => {
+    await resetFullTextIngestionJobsForTests();
+    delete process.env.BRIEF_FULL_TEXT_INGESTION_MODE;
+    delete process.env.FULL_TEXT_INGESTION_JOB_AUTORUN;
   });
 
   it("does not fail brief generation when full-text ingestion fails", async () => {
@@ -182,5 +195,91 @@ describe("createBrief full-text resilience", () => {
     expect(record.brief.id).toMatch(/^brief_/);
     expect(record.papers[0].fullTextStatus).toBe("failed");
     expect(record.brief.title).toBe("Full-text resilient brief");
+  });
+
+  it("can defer selected-paper full-text ingestion to a background job", async () => {
+    process.env.BRIEF_FULL_TEXT_INGESTION_MODE = "background";
+    process.env.FULL_TEXT_INGESTION_JOB_AUTORUN = "false";
+
+    const record = await createBrief(
+      {
+        query: "transformer methods",
+        maxPapers: 5,
+        sources: ["arxiv"]
+      },
+      {
+        search: async ({ query }) => ({
+          papers: [
+            paperWithId("arxiv:2401.00001"),
+            paperWithId("arxiv:2401.00002"),
+            paperWithId("arxiv:2401.00003")
+          ],
+          sourcesUsed: ["arxiv"],
+          warnings: [],
+          sourceDiagnostics: [
+            {
+              source: "arxiv",
+              query,
+              status: "success",
+              resultCount: 1,
+              cached: false
+            }
+          ]
+        }),
+        synthesize: async (input) => syntheticBrief(input)
+      },
+      {
+        ownerSessionId: "brief_session_a"
+      }
+    );
+
+    expect(record.papers[0].fullTextStatus).toBe("not_checked");
+
+    const finalJob = await runNextFullTextIngestionJob({
+      ingestFullText: async (papers, options) => {
+        expect(papers.map((item) => item.id)).toEqual([
+          "arxiv:2401.00001",
+          "arxiv:2401.00002",
+          "arxiv:2401.00003"
+        ]);
+        expect(options.limit).toBe(3);
+        expect(options.timeoutMs).toBe(8000);
+
+        return {
+          papers: papers.map((item) => ({
+            ...item,
+            fullTextStatus: "unavailable"
+          })),
+          results: [
+            {
+              paper: papers[0],
+              fullText: {
+                id: "fulltext_background",
+                paperId: papers[0].id,
+                status: "unavailable",
+                sourceType: "none",
+                sourceUrl: null,
+                parserName: null,
+                textHash: null,
+                extractedAt: null,
+                errorMessage: "No open PDF candidate.",
+                qualityScore: null,
+                createdAt: "2026-01-01T00:00:00.000Z",
+                updatedAt: "2026-01-01T00:00:00.000Z"
+              },
+              chunks: []
+            }
+          ]
+        };
+      }
+    });
+
+    expect(finalJob?.status).toBe("completed");
+    expect(finalJob?.ownerSessionId).toBe("brief_session_a");
+    expect(finalJob?.result).toMatchObject({
+          paperCount: 3,
+          processedCount: 1,
+          unavailableCount: 1
+    });
   });
 });

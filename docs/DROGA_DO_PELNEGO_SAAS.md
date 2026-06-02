@@ -127,6 +127,10 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
   Markdown export.
 - [x] Page-range support dla full-text parsera/chunkingu na extracted page
   fixtures i API opcji `FULL_TEXT_PAGE_RANGE`.
+- [x] Background jobs dla ciezszego PDF/full-text ingestion: osobny
+  `FullTextIngestionJob`, repozytoria memory/PostgreSQL, ownership metadata,
+  lease recovery, attempt limits, `BRIEF_FULL_TEXT_INGESTION_MODE=background`
+  i `npm run worker:fulltext`.
 - [x] Deployment smoke obejmuje source health, preflight, documents, compare,
   claim extraction, claim comparison i opcjonalnie AI flow.
 
@@ -160,8 +164,8 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
 6. **PDF/full-text nadal wymaga glebszej obslugi trudnych PDF.**
    Sa recorded PDF fixtures, quality metrics i ostrzezenia w UI/eksporcie dla
    slabej ekstrakcji oraz page-range support w warstwie parser/chunking dla
-   extracted page fixtures. Nadal brakuje background jobs dla ciezszych PDF
-   oraz testow scanned/noisy/table-heavy/failed extraction.
+   extracted page fixtures. Sa tez background jobs dla ciezszych PDF/full-text.
+   Nadal brakuje testow scanned/noisy/table-heavy/failed extraction.
 
 7. **DB-backed worker jest dobry na start, ale nie jest docelowa kolejka.**
    Przy wiekszym ruchu trzeba przejsc na zewnetrzna kolejke lub przynajmniej
@@ -327,7 +331,9 @@ Status: **czesciowo zrobione**.
   tests/fulltextPageRange.test.ts tests/fulltextFetchParseChunk.test.ts
   tests/fulltextDiagnostics.test.ts tests/markdownExport.test.ts`; `npm run
   lint`.
-- [ ] Background jobs dla ciezszego PDF/full-text ingestion.
+- [x] Background jobs dla ciezszego PDF/full-text ingestion.
+  Zweryfikowano 2026-06-02: `npx prisma validate`, `npm test --
+  tests/fulltextIngestionJobs.test.ts tests/createBriefFullText.test.ts`.
 - [ ] Testy scanned PDF / noisy PDF / table-heavy PDF / failed extraction.
 
 Kryterium odbioru P3:

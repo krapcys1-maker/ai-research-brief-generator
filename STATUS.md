@@ -47,6 +47,8 @@ The app supports:
   PDF extraction is low-quality, chunkless, or failed
 - full-text page-range parsing/chunk metadata support for extracted page
   fixtures and `FULL_TEXT_PAGE_RANGE`
+- background full-text ingestion jobs with PostgreSQL persistence, ownership
+  metadata, lease recovery, retry limits, and `npm run worker:fulltext`
 - `CompareReport` schema and repository foundation with user/workspace ownership
 - deployment smoke coverage for source health, preflight, documents, compare, claim extraction, claim comparison, and AI-backed brief flow when not skipped
 - staging readiness preflight through `npm run staging:check`
@@ -301,6 +303,12 @@ First remediation started on 2026-06-02:
   with `npm test -- tests/fulltextPageRange.test.ts
   tests/fulltextFetchParseChunk.test.ts tests/fulltextDiagnostics.test.ts
   tests/markdownExport.test.ts` and `npm run lint`.
+- Added background full-text ingestion jobs for heavier PDF/full-text work:
+  `FullTextIngestionJob` Prisma storage with user/workspace/session ownership,
+  in-memory and PostgreSQL repositories, lease recovery, attempt limits,
+  `BRIEF_FULL_TEXT_INGESTION_MODE=background`, and `npm run worker:fulltext`.
+  Verified with `npx prisma validate` and `npm test --
+  tests/fulltextIngestionJobs.test.ts tests/createBriefFullText.test.ts`.
 
 ## Next Recommended Step
 
@@ -317,6 +325,6 @@ Next highest-value work:
    staging deployment after secrets are configured.
 4. Expand recorded live-source benchmarks for OpenAlex/arXiv/Semantic Scholar
    and Compare With Science.
-5. Add background jobs for heavier PDF/full-text ingestion.
+5. Add scanned/noisy/table-heavy/failed-extraction PDF fixtures and tests.
 6. Add saved Compare With Science report history API/UI and background compare
    polling on top of the new `CompareReport` storage foundation.

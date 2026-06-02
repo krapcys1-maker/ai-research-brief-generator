@@ -53,6 +53,10 @@ BRIEF_SYNTHESIS_MAX_PAPERS=5
 BRIEF_FULL_TEXT_MAX_PAPERS=3
 BRIEF_FULL_TEXT_FETCH_TIMEOUT_MS=8000
 FULL_TEXT_PAGE_RANGE=1-5
+BRIEF_FULL_TEXT_INGESTION_MODE=background
+FULL_TEXT_INGESTION_JOB_AUTORUN=false
+FULL_TEXT_INGESTION_JOB_MAX_ATTEMPTS=2
+FULL_TEXT_INGESTION_JOB_STALE_MS=1200000
 BRIEF_JOB_AUTORUN=false
 BRIEF_JOB_MAX_ATTEMPTS=2
 BRIEF_JOB_STALE_MS=600000
@@ -62,6 +66,10 @@ DEPLOYMENT_PRIVACY_NOTICE=true
 `FULL_TEXT_PAGE_RANGE` is optional. Use it only when a deployment needs to limit
 full-text extraction to a known page window, such as `1-5`; omit it to parse all
 available extracted text.
+
+`BRIEF_FULL_TEXT_INGESTION_MODE=background` defers selected-paper PDF/full-text
+ingestion until after the brief and selected papers are saved. Run
+`npm run worker:fulltext` as a separate process when this mode is enabled.
 
 Session-scoped document upload is disabled in production unless explicitly enabled. For private/internal deployments:
 
@@ -161,6 +169,7 @@ The app uses Prisma for:
 - source diagnostics
 - selected-paper full-text ingestion records
 - selected-paper full-text chunks
+- selected-paper full-text ingestion job records
 - uploaded document metadata
 - uploaded document chunks
 
@@ -259,6 +268,7 @@ npm run embedding:check
 npm run build
 SMOKE_BASE_URL=https://your-staging.example npm run smoke:deploy
 npm run worker:briefs
+npm run worker:fulltext
 ```
 
 After deploy, check:
@@ -321,6 +331,24 @@ worker. The DB-backed worker marks claimed jobs with a lease, resets stale
 `running` jobs after `BRIEF_JOB_STALE_MS`, and fails them after
 `BRIEF_JOB_MAX_ATTEMPTS` exhausted stale leases. A stronger external queue can
 still replace the simple DB-backed worker when multi-instance throughput grows.
+
+Selected-paper full-text ingestion can also run through a separate DB-backed
+worker. Enable background mode in the web process:
+
+```bash
+BRIEF_FULL_TEXT_INGESTION_MODE=background
+FULL_TEXT_INGESTION_JOB_AUTORUN=false
+```
+
+Then run:
+
+```bash
+npm run worker:fulltext
+```
+
+The worker claims `FullTextIngestionJob` records, resets stale `running` jobs
+after `FULL_TEXT_INGESTION_JOB_STALE_MS`, and fails exhausted jobs after
+`FULL_TEXT_INGESTION_JOB_MAX_ATTEMPTS`.
 
 ## Rate Limiting
 
@@ -397,8 +425,11 @@ or the local/demo session fallback. For public multi-user deployment:
 - [ ] `DOCUMENT_UPLOADS_ENABLED` or `ALLOW_SESSION_DOCUMENT_UPLOADS_IN_PRODUCTION` is set only for private/internal upload deployments.
 - [ ] `BRIEF_RATE_LIMIT_MAX` and `BRIEF_RATE_LIMIT_WINDOW_MS` are set.
 - [ ] `npm run worker:briefs` is running as a separate process for production brief generation.
+- [ ] `npm run worker:fulltext` is running if `BRIEF_FULL_TEXT_INGESTION_MODE=background`.
 - [ ] `BRIEF_JOB_AUTORUN=false` is set for production web processes unless a single-process private demo is intentional.
+- [ ] `FULL_TEXT_INGESTION_JOB_AUTORUN=false` is set for production web processes when using the full-text worker.
 - [ ] `BRIEF_JOB_MAX_ATTEMPTS` and `BRIEF_JOB_STALE_MS` are set intentionally for the expected AI latency.
+- [ ] `FULL_TEXT_INGESTION_JOB_MAX_ATTEMPTS` and `FULL_TEXT_INGESTION_JOB_STALE_MS` are set intentionally for expected PDF parsing latency.
 - [ ] `.env` is not committed.
 - [ ] `/api/source-cache` reports `mode: postgresql`.
 - [ ] Missing or failing source adapters produce warnings, not crashes.

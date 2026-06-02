@@ -2,6 +2,7 @@ export * from "@/lib/fulltext/chunkText";
 export * from "@/lib/fulltext/discoverFullText";
 export * from "@/lib/fulltext/fetchPdf";
 export * from "@/lib/fulltext/ingest";
+export * from "@/lib/fulltext/ingestionJobs";
 export * from "@/lib/fulltext/pageRange";
 export * from "@/lib/fulltext/parsePdf";
 export * from "@/lib/fulltext/repository";

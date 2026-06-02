@@ -61,7 +61,7 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 - [ ] Expand Compare With Science benchmarks with recorded live-source and full-text evidence cases.
 - [x] Add UI and Markdown export warnings for weak full-text parser quality.
 - [x] Add page-range support for full-text parser/chunking fixtures.
-- [ ] Improve PDF/full-text ingestion with background jobs for heavier PDFs.
+- [x] Improve PDF/full-text ingestion with background jobs for heavier PDFs.
 
 ## Product UX
 
@@ -69,6 +69,7 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 - [x] Add a controlled timeout for long-running in-process generation jobs.
 - [x] Add PostgreSQL-backed job status and a separate brief worker entrypoint.
 - [x] Add stale job recovery and attempt limits for the DB-backed brief worker.
+- [x] Add PostgreSQL-backed full-text ingestion jobs and a separate full-text worker entrypoint.
 - [ ] Replace the simple DB-backed worker with a stronger external queue/worker when production throughput requires it.
 - [ ] Add user accounts.
 - [ ] Add private saved topics.

@@ -1,6 +1,6 @@
 # Current State
 
-Last updated: 2026-05-29
+Last updated: 2026-06-02
 
 ## Product Shape
 
@@ -22,6 +22,12 @@ For selected academic papers, the app can also attempt legal full-text ingestion
 
 ```text
 selected top papers -> arXiv/pdfUrl discovery -> safe PDF fetch -> plain-text parse -> chunk storage -> full-text evidence for Ask This Brief
+```
+
+For heavier PDF/full-text work, deployments can defer selected-paper ingestion:
+
+```text
+saved brief papers -> FullTextIngestionJob -> full-text worker -> PaperFullText/PaperTextChunk storage
 ```
 
 The third product mode compares user claims with retrieved scientific evidence:
@@ -75,6 +81,11 @@ paste/upload text -> extract candidate claims -> user selects claims -> academic
   - separate `PaperFullText` and `PaperTextChunk` storage, not `Brief.briefJson`.
   - per-paper failure isolation so one failed PDF never blocks brief generation.
   - configurable max papers per brief through `FULL_TEXT_MAX_PAPERS_PER_BRIEF`, defaulting to 10.
+  - optional background ingestion through
+    `BRIEF_FULL_TEXT_INGESTION_MODE=background`, backed by
+    `FullTextIngestionJob` storage and `npm run worker:fulltext`.
+  - background full-text jobs store user/workspace/session ownership metadata,
+    worker leases, attempt counts, result summaries, and errors.
 - Private `Ask My Documents` workspace at `/documents`:
   - PDF/TXT/MD uploads.
   - server-side file validation and max-size enforcement.
@@ -164,6 +175,7 @@ PostgreSQL is available through Prisma when `DATABASE_URL` points to PostgreSQL.
 - source diagnostics
 - paper full-text ingestion records
 - paper full-text chunks
+- full-text ingestion job status records
 - private uploaded document metadata
 - private uploaded document chunks
 
@@ -203,6 +215,13 @@ ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true
 - If a selected paper has no legal PDF, fails fetch, or fails parsing, the app explicitly falls back to abstract/metadata evidence boundaries.
 - Parser-quality warnings are advisory and should prompt manual PDF review
   before relying on method/result/table/statistical claims.
+- Background full-text ingestion is DB-backed and good enough for controlled
+  staging/private beta work. A stronger external queue is still recommended for
+  high-throughput multi-instance production.
+- Background full-text ingestion updates `PaperFullText` and `PaperTextChunk`
+  storage after a brief is saved. Brief source-card status snapshots may still
+  show the original generation-time full-text status until a future UI refresh
+  or status endpoint is added.
 - `Ask My Documents` grounds only on user-uploaded PDF/TXT/MD content. It does not search the web, public paper indexes, or global document data.
 - `Compare With Science` is a retrieved-source comparison, not a definitive scientific, legal, medical, or financial review. It must not be treated as a true/false validator or novelty guarantee.
 - Similar-work detection indicates that related retrieved work exists; it does not prove an idea is definitely new or definitely already exhausted.
@@ -235,6 +254,7 @@ npm run embedding:check
 npm run benchmark:retrieval
 npm run benchmark:source-quality
 npm run benchmark:claim-check
+npm run worker:fulltext
 npm run lint
 npm run build
 ```

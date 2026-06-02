@@ -1,10 +1,12 @@
 # Roadmap
 
-Last updated: 2026-05-29
+Last updated: 2026-06-02
 
 ## P0: Production Readiness
 
-- Replace the in-process generation job runner with a durable queue/worker for multi-instance production.
+- Keep DB-backed brief and full-text workers separated from the web process;
+  replace them with a stronger external queue when multi-instance production
+  throughput requires it.
 - Add authentication and user-scoped private storage before public multi-user document upload.
 - Add session-scoped/private brief history.
 - Keep production PostgreSQL fail-fast behavior enabled.
@@ -36,7 +38,9 @@ Last updated: 2026-05-29
 
 ## P3: Deeper Research Features
 
-- Improve PDF/full-text ingestion with better parser diagnostics, optional page ranges, and controlled background jobs.
+- Improve PDF/full-text ingestion beyond the current parser diagnostics,
+  optional page ranges, and controlled background jobs by adding scanned/noisy
+  PDF fixtures and better OCR/table handling.
 - Improve Compare With Science with background jobs, report persistence, and deeper claim-level evidence ranking.
 - Add citation graph / related work graph.
 - Add weekly research digest after accounts and saved topics exist.

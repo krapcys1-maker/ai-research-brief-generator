@@ -4,6 +4,7 @@ import {
   type SynthesizeBriefInput
 } from "@/lib/ai/synthesizeBrief";
 import { ingestFullTextForPapers } from "@/lib/fulltext/ingest";
+import { createFullTextIngestionJob } from "@/lib/fulltext/ingestionJobs";
 import { ResearchQualityGateError } from "@/lib/pipeline/qualityGate";
 import { preflightBrief } from "@/lib/pipeline/preflightBrief";
 import { searchAllSources } from "@/lib/sources";
@@ -45,6 +46,19 @@ function numberEnv(name: string, fallback: number) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+function getBriefFullTextIngestionOptions() {
+  return {
+    limit: numberEnv("BRIEF_FULL_TEXT_MAX_PAPERS", 3),
+    timeoutMs: numberEnv("BRIEF_FULL_TEXT_FETCH_TIMEOUT_MS", 8000)
+  };
+}
+
+function isBackgroundFullTextIngestionEnabled() {
+  const mode = process.env.BRIEF_FULL_TEXT_INGESTION_MODE?.trim().toLowerCase();
+
+  return mode === "background" || mode === "async";
+}
+
 function limitSearchSummary(
   searchSummary: SynthesizeBriefInput["searchSummary"],
   requestedCount: number,
@@ -70,6 +84,8 @@ export async function createBrief(
   options: CreateBriefOptions = {}
 ) {
   const synthesize = dependencies.synthesize ?? synthesizeBrief;
+  const useBackgroundFullText =
+    !dependencies.ingestFullText && isBackgroundFullTextIngestionEnabled();
   await options.onStage?.("preflight");
   const preflight = await preflightBrief(rawInput, {
     search: dependencies.search ?? searchAllSources
@@ -83,13 +99,19 @@ export async function createBrief(
     const ingest =
       dependencies.ingestFullText ??
       (async (papers: NormalizedPaper[]) => {
+        if (useBackgroundFullText) {
+          return papers.map((paper) => ({
+            ...paper,
+            fullTextStatus: paper.fullTextStatus ?? "not_checked"
+          }));
+        }
+
         if (process.env.NODE_ENV === "test") {
           return papers;
         }
 
         const result = await ingestFullTextForPapers(papers, {
-          limit: numberEnv("BRIEF_FULL_TEXT_MAX_PAPERS", 3),
-          timeoutMs: numberEnv("BRIEF_FULL_TEXT_FETCH_TIMEOUT_MS", 8000)
+          ...getBriefFullTextIngestionOptions()
         });
         return result.papers;
       });
@@ -135,6 +157,22 @@ export async function createBrief(
     createdByUserId: options.createdByUserId ?? null,
     visibility: options.visibility ?? "private"
   });
+
+  if (useBackgroundFullText) {
+    try {
+      await createFullTextIngestionJob(synthesisPapers, {
+        ownerSessionId: options.ownerSessionId ?? null,
+        ownerId: options.ownerId ?? null,
+        workspaceId: options.workspaceId ?? null,
+        createdByUserId: options.createdByUserId ?? null,
+        visibility: options.visibility ?? "private",
+        ingestion: getBriefFullTextIngestionOptions()
+      });
+    } catch {
+      // Brief generation should not fail just because deferred full-text work
+      // could not be queued.
+    }
+  }
 
   await options.onStage?.("completed");
   return record;
