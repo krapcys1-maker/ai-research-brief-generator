@@ -139,6 +139,8 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
   repozytoria memory/PostgreSQL, API i UI w dashboardzie workspace.
 - [x] Saved brief collections: `BriefCollection` ma ownership, walidacje
   dostepu do briefow, repozytoria memory/PostgreSQL, API i UI w dashboardzie.
+- [x] Dokument collections: `DocumentCollection` ma ownership, walidacje
+  dostepu do dokumentow, repozytoria memory/PostgreSQL, API i UI w dashboardzie.
 
 ## Najwieksze braki
 
@@ -179,10 +181,11 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
    Przy wiekszym ruchu trzeba przejsc na zewnetrzna kolejke lub przynajmniej
    wyciagnac stabilny `JobQueue` adapter.
 
-8. **Brakuje produktowej retencji i kolekcji dokumentow.**
+8. **Brakuje produktowej retencji i notatek/udostepniania.**
    Sa briefy, dokumenty, compare, dashboard workspace i saved research
-   projects oraz saved brief collections, ale jeszcze nie ma document
-   collections, export history ani retencji per workspace.
+   projects, saved brief collections oraz document collections, ale jeszcze nie
+   ma notatek/komentarzy, share links, export history ani retencji per
+   workspace.
 
 9. **Brakuje billing/quota/admin.**
    Bez planow, limitow, triala, admin panelu i audit logu to nadal bardziej beta
@@ -410,7 +413,14 @@ Status: **czesciowo zrobione**.
   tests/claimCheckJobsRoute.test.ts tests/claimCheckReportsRoute.test.ts
   tests/compareReportRepository.test.ts tests/claimCheck.test.ts`, `npm run
   lint`.
-- [ ] Dokument collections.
+- [x] Dokument collections.
+  Zweryfikowano 2026-06-02: dodano `DocumentCollection` z
+  session/user/workspace ownership, migracje Prisma, repozytoria
+  memory/PostgreSQL, `GET/POST /api/workspace/document-collections`,
+  walidacje dostepu do wybranych dokumentow oraz formularz/listing w
+  `/workspace`; `npm test -- tests/documentCollectionRepository.test.ts
+  tests/documentCollectionsRoute.test.ts tests/workspaceDashboardRoute.test.ts
+  tests/identitySchema.test.ts`, `npm run lint`.
 - [ ] Notatki lub komentarze do zapisanych papierow.
 - [ ] Share links z kontrola widocznosci.
 - [ ] Export history.

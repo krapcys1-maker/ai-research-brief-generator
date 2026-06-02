@@ -41,6 +41,8 @@ model User {
   createdResearchProjects ResearchProject[] @relation("ResearchProjectCreator")
   ownedBriefCollections   BriefCollection[] @relation("BriefCollectionOwner")
   createdBriefCollections BriefCollection[] @relation("BriefCollectionCreator")
+  ownedDocumentCollections   DocumentCollection[] @relation("DocumentCollectionOwner")
+  createdDocumentCollections DocumentCollection[] @relation("DocumentCollectionCreator")
   sessions         UserSession[]
 }
 
@@ -59,6 +61,7 @@ model Workspace {
   compareReports CompareReport[]
   researchProjects ResearchProject[]
   briefCollections BriefCollection[]
+  documentCollections DocumentCollection[]
   sessions UserSession[]
 
   @@index([ownerId])
@@ -270,6 +273,32 @@ model BriefCollection {
 
   owner     User?      @relation("BriefCollectionOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   createdBy User?      @relation("BriefCollectionCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+
+  @@index([ownerSessionId])
+  @@index([ownerId])
+  @@index([workspaceId])
+  @@index([createdByUserId])
+  @@index([visibility])
+  @@index([createdAt])
+}
+
+model DocumentCollection {
+  id              String   @id
+  ownerSessionId  String?
+  ownerId         String?
+  workspaceId     String?
+  createdByUserId String?
+  visibility      BriefVisibility @default(PRIVATE)
+  title           String
+  description     String?
+  documentIdsJson Json
+  documentCount   Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  owner     User?      @relation("DocumentCollectionOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  createdBy User?      @relation("DocumentCollectionCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
   workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
 
   @@index([ownerSessionId])

@@ -138,6 +138,28 @@ describe("brief collection workspace ownership schema", () => {
   });
 });
 
+describe("document collection workspace ownership schema", () => {
+  it("defines saved document collections with user and workspace ownership", () => {
+    const schema = readFileSync("prisma/schema.prisma", "utf8");
+    const migration = readFileSync(
+      "prisma/migrations/20260602220500_add_document_collections/migration.sql",
+      "utf8"
+    );
+
+    expect(schema).toContain("model DocumentCollection");
+    expect(schema).toContain("ownedDocumentCollections");
+    expect(schema).toContain("documentCollections DocumentCollection[]");
+    expect(schema).toContain("documentIdsJson Json");
+    expect(schema).toContain("@relation(\"DocumentCollectionOwner\"");
+    expect(schema).toContain("@relation(\"DocumentCollectionCreator\"");
+    expect(migration).toContain("CREATE TABLE \"DocumentCollection\"");
+    expect(migration).toContain("\"visibility\" \"BriefVisibility\"");
+    expect(migration).toContain("DocumentCollection_workspaceId_idx");
+    expect(migration).toContain("DocumentCollection_ownerId_fkey");
+    expect(migration).toContain("DocumentCollection_workspaceId_fkey");
+  });
+});
+
 describe("app-native user session schema", () => {
   it("defines durable user sessions with hashed tokens and revocation", () => {
     const schema = readFileSync("prisma/schema.prisma", "utf8");

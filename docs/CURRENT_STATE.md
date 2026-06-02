@@ -154,6 +154,17 @@ paste/upload text -> extract candidate claims -> user selects claims -> academic
     and a recent collections list.
   - Memory and PostgreSQL repositories share the same contract, with Prisma
     migration `20260602215000_add_brief_collections`.
+- Document collections:
+  - `DocumentCollection` stores a title, optional description, selected
+    document IDs, document count, and session/user/workspace ownership metadata.
+  - `GET /api/workspace/document-collections` lists only collections in the
+    current private document session or trusted workspace context.
+  - `POST /api/workspace/document-collections` validates that every selected
+    document is accessible in the current document scope before saving.
+  - `/workspace` includes a collection form based on recent accessible
+    documents and a recent document collections list.
+  - Memory and PostgreSQL repositories share the same contract, with Prisma
+    migration `20260602220500_add_document_collections`.
 - Markdown export through `GET /api/export/[id]?format=markdown`.
 - Optional PostgreSQL/Prisma persistence behind the `BriefRepository` contract.
 - Optional PostgreSQL/Prisma persistence behind the `DocumentRepository` contract for uploaded documents and chunks.
@@ -291,9 +302,9 @@ ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true
   supplied by trusted infrastructure. Brief history remains session-scoped in
   the current prototype.
 - `/workspace` is a scoped product dashboard over existing resources, saved
-  research projects, and saved brief collections. It is not yet a full project
-  management layer: document collections, export history, share links, and
-  onboarding remain future work.
+  research projects, saved brief collections, and document collections. It is
+  not yet a full project management layer: export history, share links,
+  notes/comments, and onboarding remain future work.
 - App-native sessions can resolve durable users/workspaces for brief access, but
   registration/login UI, password or magic-link flow, reset access, account
   settings, audit trail, and full role enforcement are not implemented yet.
@@ -311,6 +322,7 @@ npm run benchmark:quality-gate
 npm test -- tests/workspaceDashboardRoute.test.ts
 npm test -- tests/researchProjectsRoute.test.ts
 npm test -- tests/briefCollectionsRoute.test.ts
+npm test -- tests/documentCollectionsRoute.test.ts
 npm run worker:fulltext
 npm run lint
 npm run build

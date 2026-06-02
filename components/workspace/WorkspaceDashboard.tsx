@@ -23,6 +23,12 @@ type BriefCollectionResponse = {
   error?: string;
 };
 
+type DocumentCollectionResponse = {
+  collection?: WorkspaceDashboardPayload["recentDocumentCollections"][number];
+  status?: string;
+  error?: string;
+};
+
 function formatDate(value: string) {
   return new Date(value).toLocaleString();
 }
@@ -46,8 +52,13 @@ export function WorkspaceDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [projectError, setProjectError] = useState<string | null>(null);
   const [collectionError, setCollectionError] = useState<string | null>(null);
+  const [documentCollectionError, setDocumentCollectionError] = useState<
+    string | null
+  >(null);
   const [isSavingProject, setIsSavingProject] = useState(false);
   const [isSavingCollection, setIsSavingCollection] = useState(false);
+  const [isSavingDocumentCollection, setIsSavingDocumentCollection] =
+    useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   async function fetchDashboard() {
@@ -157,6 +168,44 @@ export function WorkspaceDashboard() {
     }
   }
 
+  async function saveDocumentCollection(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsSavingDocumentCollection(true);
+    setDocumentCollectionError(null);
+
+    try {
+      const form = event.currentTarget;
+      const formData = new FormData(form);
+      const response = await fetch("/api/workspace/document-collections", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          title: formData.get("title"),
+          description: formData.get("description") || null,
+          documentIds: formData.getAll("documentIds")
+        })
+      });
+      const payload = (await response.json()) as DocumentCollectionResponse;
+
+      if (!response.ok || !payload.collection) {
+        throw new Error(payload.error ?? "Could not save document collection.");
+      }
+
+      form.reset();
+      setDashboard(await fetchDashboard());
+    } catch (caught) {
+      setDocumentCollectionError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not save document collection."
+      );
+    } finally {
+      setIsSavingDocumentCollection(false);
+    }
+  }
+
   useEffect(() => {
     let cancelled = false;
 
@@ -245,6 +294,10 @@ export function WorkspaceDashboard() {
           <div className="metric">
             <span className="metric-label">Brief collections</span>
             <strong>{dashboard?.totals.briefCollections ?? 0}</strong>
+          </div>
+          <div className="metric">
+            <span className="metric-label">Doc collections</span>
+            <strong>{dashboard?.totals.documentCollections ?? 0}</strong>
           </div>
         </div>
       </section>
@@ -452,6 +505,85 @@ export function WorkspaceDashboard() {
           </div>
         ) : (
           <div className="source-health-empty">No documents in this scope.</div>
+        )}
+      </section>
+
+      <section className="surface workspace-panel">
+        <div className="workspace-panel-header">
+          <h2>Save document collection</h2>
+          <span className="badge">
+            {dashboard?.totals.documentCollections ?? 0}
+          </span>
+        </div>
+        <form
+          className="workspace-project-form"
+          onSubmit={saveDocumentCollection}
+        >
+          <input
+            className="form-control"
+            name="title"
+            placeholder="Collection title"
+            minLength={3}
+            maxLength={140}
+            required
+          />
+          <input
+            className="form-control"
+            name="description"
+            placeholder="Optional note"
+            maxLength={1000}
+          />
+          {dashboard?.recentDocuments.length ? (
+            <div className="workspace-checkbox-list" aria-label="Collection documents">
+              {dashboard.recentDocuments.map((document) => (
+                <label key={document.id}>
+                  <input type="checkbox" name="documentIds" value={document.id} />{" "}
+                  <span>{document.filename}</span>
+                </label>
+              ))}
+            </div>
+          ) : (
+            <div className="source-health-empty">
+              Upload a document before creating a collection.
+            </div>
+          )}
+          <button
+            className="primary-action"
+            type="submit"
+            disabled={isSavingDocumentCollection || !dashboard?.recentDocuments.length}
+          >
+            {isSavingDocumentCollection ? "Saving..." : "Save collection"}
+          </button>
+        </form>
+        {documentCollectionError ? (
+          <div className="form-alert error">{documentCollectionError}</div>
+        ) : null}
+      </section>
+
+      <section className="surface workspace-panel">
+        <div className="workspace-panel-header">
+          <h2>Document collections</h2>
+          <span className="badge">
+            {dashboard?.totals.documentCollections ?? 0}
+          </span>
+        </div>
+        {dashboard?.recentDocumentCollections.length ? (
+          <div className="workspace-list">
+            {dashboard.recentDocumentCollections.map((collection) => (
+              <Link href="/documents" key={collection.id}>
+                <span className="badge">{collection.documentCount} document(s)</span>
+                <strong>{collection.title}</strong>
+                {collection.description ? <span>{collection.description}</span> : null}
+                <time dateTime={collection.createdAt}>
+                  {formatDate(collection.createdAt)}
+                </time>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="source-health-empty">
+            No document collections in this scope.
+          </div>
         )}
       </section>
 

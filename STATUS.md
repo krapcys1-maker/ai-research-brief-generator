@@ -58,6 +58,9 @@ The app supports:
 - saved brief collections with session/user/workspace ownership,
   `GET/POST /api/workspace/brief-collections`, brief access validation, and
   dashboard UI
+- document collections with session/user/workspace ownership,
+  `GET/POST /api/workspace/document-collections`, document access validation,
+  and dashboard UI
 - deployment smoke coverage for source health, preflight, documents, compare, claim extraction, claim comparison, and AI-backed brief flow when not skipped
 - staging readiness preflight through `npm run staging:check`
 
@@ -382,6 +385,13 @@ First remediation started on 2026-06-02:
   tests/briefCollectionRepository.test.ts tests/briefCollectionsRoute.test.ts
   tests/workspaceDashboardRoute.test.ts tests/identitySchema.test.ts` and
   `npm run lint`.
+- Added document collections: `DocumentCollection` schema and migration,
+  memory/PostgreSQL repositories, session/user/workspace ownership,
+  `GET/POST /api/workspace/document-collections`, access validation for
+  selected document IDs, and a save/list panel in `/workspace`. Verified with
+  `npm test -- tests/documentCollectionRepository.test.ts
+  tests/documentCollectionsRoute.test.ts tests/workspaceDashboardRoute.test.ts
+  tests/identitySchema.test.ts` and `npm run lint`.
 
 ## Next Recommended Step
 
@@ -400,4 +410,4 @@ Next highest-value work:
    failures.
 5. Add a durable DB-backed or external queue adapter for Compare jobs if heavier
    Compare workloads become common.
-6. Add document collections on top of the workspace dashboard.
+6. Add notes/comments for saved papers, then share links and export history.

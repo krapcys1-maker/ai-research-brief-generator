@@ -8,6 +8,9 @@ import type { CompareReportListItem } from "@/lib/claimCheck/reportTypes";
 import type { DocumentAccessContext } from "@/lib/documents/access";
 import type { UserDocument } from "@/lib/documents/schemas";
 import { getDocumentRepository } from "@/lib/documents/repository";
+import { documentCollectionFilterFromAccess } from "@/lib/workspace/documentCollectionAccess";
+import { getDocumentCollectionRepository } from "@/lib/workspace/documentCollectionRepository";
+import type { DocumentCollectionListItem } from "@/lib/workspace/documentCollectionTypes";
 import { researchProjectFilterFromAccess } from "@/lib/workspace/projectAccess";
 import { getResearchProjectRepository } from "@/lib/workspace/projectRepository";
 import type { ResearchProjectListItem } from "@/lib/workspace/projectTypes";
@@ -27,9 +30,11 @@ export type WorkspaceDashboard = {
     compareReports: number;
     researchProjects: number;
     briefCollections: number;
+    documentCollections: number;
   };
   recentResearchProjects: ResearchProjectListItem[];
   recentBriefCollections: BriefCollectionListItem[];
+  recentDocumentCollections: DocumentCollectionListItem[];
   recentBriefs: BriefListItem[];
   recentDocuments: UserDocument[];
   recentCompareReports: CompareReportListItem[];
@@ -57,14 +62,16 @@ export async function getWorkspaceDashboard(input: {
     documentRepository,
     compareReportRepository,
     researchProjectRepository,
-    briefCollectionRepository
+    briefCollectionRepository,
+    documentCollectionRepository
   ] =
     await Promise.all([
       getBriefRepository(),
       getDocumentRepository(),
       getCompareReportRepository(),
       getResearchProjectRepository(),
-      getBriefCollectionRepository()
+      getBriefCollectionRepository(),
+      getDocumentCollectionRepository()
     ]);
 
   const [
@@ -72,20 +79,24 @@ export async function getWorkspaceDashboard(input: {
     documents,
     compareReports,
     researchProjects,
-    briefCollections
+    briefCollections,
+    documentCollections
   ] = await Promise.all([
-      briefRepository.listSummaries(input.briefAccess.source),
-      documentRepository.listDocuments(input.documentAccess.source),
-      compareReportRepository.listSummaries(
-        compareReportFilterFromAccess(input.documentAccess)
-      ),
-      researchProjectRepository.list(
-        researchProjectFilterFromAccess(input.briefAccess)
-      ),
-      briefCollectionRepository.list(
-        briefCollectionFilterFromAccess(input.briefAccess)
-      )
-    ]);
+    briefRepository.listSummaries(input.briefAccess.source),
+    documentRepository.listDocuments(input.documentAccess.source),
+    compareReportRepository.listSummaries(
+      compareReportFilterFromAccess(input.documentAccess)
+    ),
+    researchProjectRepository.list(
+      researchProjectFilterFromAccess(input.briefAccess)
+    ),
+    briefCollectionRepository.list(
+      briefCollectionFilterFromAccess(input.briefAccess)
+    ),
+    documentCollectionRepository.list(
+      documentCollectionFilterFromAccess(input.documentAccess)
+    )
+  ]);
 
   return {
     scope: combinedScope(input.briefAccess, input.documentAccess),
@@ -100,10 +111,12 @@ export async function getWorkspaceDashboard(input: {
         .length,
       compareReports: compareReports.length,
       researchProjects: researchProjects.length,
-      briefCollections: briefCollections.length
+      briefCollections: briefCollections.length,
+      documentCollections: documentCollections.length
     },
     recentResearchProjects: recent(researchProjects),
     recentBriefCollections: recent(briefCollections),
+    recentDocumentCollections: recent(documentCollections),
     recentBriefs: recent(briefs),
     recentDocuments: recent(documents),
     recentCompareReports: recent(compareReports)
