@@ -52,11 +52,16 @@ FULL_TEXT_MAX_PAPERS_PER_BRIEF=10
 BRIEF_SYNTHESIS_MAX_PAPERS=5
 BRIEF_FULL_TEXT_MAX_PAPERS=3
 BRIEF_FULL_TEXT_FETCH_TIMEOUT_MS=8000
+FULL_TEXT_PAGE_RANGE=1-5
 BRIEF_JOB_AUTORUN=false
 BRIEF_JOB_MAX_ATTEMPTS=2
 BRIEF_JOB_STALE_MS=600000
 DEPLOYMENT_PRIVACY_NOTICE=true
 ```
+
+`FULL_TEXT_PAGE_RANGE` is optional. Use it only when a deployment needs to limit
+full-text extraction to a known page window, such as `1-5`; omit it to parse all
+available extracted text.
 
 Session-scoped document upload is disabled in production unless explicitly enabled. For private/internal deployments:
 

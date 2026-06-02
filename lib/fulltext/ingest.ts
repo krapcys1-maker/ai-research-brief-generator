@@ -3,6 +3,7 @@ import { chunkPaperText } from "@/lib/fulltext/chunkText";
 import { discoverFullText } from "@/lib/fulltext/discoverFullText";
 import { fetchPdf, type FetchPdfInput } from "@/lib/fulltext/fetchPdf";
 import { parsePdf, type PdfParseDiagnostics } from "@/lib/fulltext/parsePdf";
+import { parsePageRange, type PageRange } from "@/lib/fulltext/pageRange";
 import { getFullTextRepository } from "@/lib/fulltext/repository";
 import type {
   FullTextIngestionResult,
@@ -20,6 +21,7 @@ export type IngestFullTextOptions = {
   timeoutMs?: number;
   maxBytes?: number;
   includeMockPapers?: boolean;
+  pageRange?: PageRange | null;
 };
 
 function nowIso() {
@@ -29,6 +31,10 @@ function nowIso() {
 function getFullTextLimit() {
   const raw = Number(process.env.FULL_TEXT_MAX_PAPERS_PER_BRIEF);
   return Number.isInteger(raw) && raw > 0 ? raw : 10;
+}
+
+function getConfiguredPageRange() {
+  return parsePageRange(process.env.FULL_TEXT_PAGE_RANGE);
 }
 
 function makeFullTextRecord(input: {
@@ -136,7 +142,9 @@ async function ingestOnePaper(
       timeoutMs: options.timeoutMs,
       maxBytes: options.maxBytes
     });
-    const parsed = await parsePdf(fetched.bytes);
+    const parsed = await parsePdf(fetched.bytes, {
+      pageRange: options.pageRange
+    });
     const fullText = makeFullTextRecord({
       paperId: paper.id,
       status: "parsed",
@@ -151,7 +159,9 @@ async function ingestOnePaper(
     const chunks = chunkPaperText({
       paperId: paper.id,
       fullTextId: fullText.id,
-      text: parsed.text
+      text: parsed.text,
+      pageStart: parsed.pageStart,
+      pageEnd: parsed.pageEnd
     });
 
     await repository.save({ fullText, chunks });
@@ -185,11 +195,17 @@ export async function ingestFullTextForPapers(
 ) {
   const repository = options.repository ?? (await getFullTextRepository());
   const limit = options.limit ?? getFullTextLimit();
+  const pageRange =
+    "pageRange" in options ? options.pageRange ?? null : getConfiguredPageRange();
   const includeMockPapers =
     options.includeMockPapers ??
     ["1", "true", "yes"].includes(
       (process.env.FULL_TEXT_INGEST_MOCK_PAPERS ?? "").toLowerCase()
     );
+  const ingestionOptions = {
+    ...options,
+    pageRange
+  };
   const selected = papers
     .filter((paper) => includeMockPapers || paper.source !== "mock")
     .slice(0, limit);
@@ -198,7 +214,7 @@ export async function ingestFullTextForPapers(
   const results: FullTextIngestionResult[] = [];
 
   for (const paper of selected) {
-    const result = await ingestOnePaper(paper, repository, options);
+    const result = await ingestOnePaper(paper, repository, ingestionOptions);
     resultPapers.set(paper.id, result.paper);
     results.push(result);
   }

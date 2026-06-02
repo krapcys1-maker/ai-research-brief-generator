@@ -45,6 +45,8 @@ The app supports:
 - recorded PDF parser fixture and parser-quality diagnostics for full-text extraction
 - visible full-text parser warnings in source cards and Markdown export when
   PDF extraction is low-quality, chunkless, or failed
+- full-text page-range parsing/chunk metadata support for extracted page
+  fixtures and `FULL_TEXT_PAGE_RANGE`
 - `CompareReport` schema and repository foundation with user/workspace ownership
 - deployment smoke coverage for source health, preflight, documents, compare, claim extraction, claim comparison, and AI-backed brief flow when not skipped
 - staging readiness preflight through `npm run staging:check`
@@ -293,6 +295,12 @@ First remediation started on 2026-06-02:
   parsed full text does not look stronger than it is. Verified with
   `npm test -- tests/fulltextDiagnostics.test.ts tests/markdownExport.test.ts
   tests/fulltextFetchParseChunk.test.ts` and `npm run lint`.
+- Added full-text page-range support in the parser/chunking layer: `N` and
+  `N-M` ranges, selected extracted-page parsing, `pageStart`/`pageEnd` metadata
+  on chunks, and `FULL_TEXT_PAGE_RANGE` plumbing for ingestion options. Verified
+  with `npm test -- tests/fulltextPageRange.test.ts
+  tests/fulltextFetchParseChunk.test.ts tests/fulltextDiagnostics.test.ts
+  tests/markdownExport.test.ts` and `npm run lint`.
 
 ## Next Recommended Step
 
@@ -309,7 +317,6 @@ Next highest-value work:
    staging deployment after secrets are configured.
 4. Expand recorded live-source benchmarks for OpenAlex/arXiv/Semantic Scholar
    and Compare With Science.
-5. Add page-range support and background jobs for heavier PDF/full-text
-   ingestion.
+5. Add background jobs for heavier PDF/full-text ingestion.
 6. Add saved Compare With Science report history API/UI and background compare
    polling on top of the new `CompareReport` storage foundation.

@@ -6,6 +6,8 @@ export type ChunkPaperTextInput = {
   text: string;
   chunkSizeTokens?: number;
   overlapTokens?: number;
+  pageStart?: number | null;
+  pageEnd?: number | null;
 };
 
 const SECTION_PATTERNS = [
@@ -68,8 +70,8 @@ export function chunkPaperText(input: ChunkPaperTextInput): PaperTextChunk[] {
       chunkIndex: index,
       text,
       tokenEstimate: tokenEstimate(text),
-      pageStart: null,
-      pageEnd: null,
+      pageStart: input.pageStart ?? null,
+      pageEnd: input.pageEnd ?? null,
       evidenceLevel: "full_text_supported"
     });
 

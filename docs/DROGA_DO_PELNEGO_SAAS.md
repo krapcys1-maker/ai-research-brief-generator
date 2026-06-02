@@ -125,6 +125,8 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
   dla brief list/detail/export/Q&A/job polling.
 - [x] UI warnings dla slabej jakosci parsowania PDF/full-text w source cards i
   Markdown export.
+- [x] Page-range support dla full-text parsera/chunkingu na extracted page
+  fixtures i API opcji `FULL_TEXT_PAGE_RANGE`.
 - [x] Deployment smoke obejmuje source health, preflight, documents, compare,
   claim extraction, claim comparison i opcjonalnie AI flow.
 
@@ -157,8 +159,9 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
 
 6. **PDF/full-text nadal wymaga glebszej obslugi trudnych PDF.**
    Sa recorded PDF fixtures, quality metrics i ostrzezenia w UI/eksporcie dla
-   slabej ekstrakcji. Nadal brakuje page-range support, background jobs dla
-   ciezszych PDF oraz testow scanned/noisy/table-heavy/failed extraction.
+   slabej ekstrakcji oraz page-range support w warstwie parser/chunking dla
+   extracted page fixtures. Nadal brakuje background jobs dla ciezszych PDF
+   oraz testow scanned/noisy/table-heavy/failed extraction.
 
 7. **DB-backed worker jest dobry na start, ale nie jest docelowa kolejka.**
    Przy wiekszym ruchu trzeba przejsc na zewnetrzna kolejke lub przynajmniej
@@ -319,7 +322,11 @@ Status: **czesciowo zrobione**.
   Zweryfikowano 2026-06-02: `npm test --
   tests/fulltextDiagnostics.test.ts tests/markdownExport.test.ts
   tests/fulltextFetchParseChunk.test.ts`; `npm run lint`.
-- [ ] Page-range support.
+- [x] Page-range support.
+  Zweryfikowano 2026-06-02: `npm test --
+  tests/fulltextPageRange.test.ts tests/fulltextFetchParseChunk.test.ts
+  tests/fulltextDiagnostics.test.ts tests/markdownExport.test.ts`; `npm run
+  lint`.
 - [ ] Background jobs dla ciezszego PDF/full-text ingestion.
 - [ ] Testy scanned PDF / noisy PDF / table-heavy PDF / failed extraction.
 

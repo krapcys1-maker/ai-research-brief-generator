@@ -134,6 +134,8 @@ paste/upload text -> extract candidate claims -> user selects claims -> academic
 - Full-text parser warnings are visible in brief source cards and Markdown
   export when extraction diagnostics show weak text, no chunks, or failed
   parsing.
+- Full-text parser/chunking supports explicit extracted-page ranges (`N` or
+  `N-M`) and records selected `pageStart`/`pageEnd` on chunks.
 - Retrieval benchmark fixtures, gold-query tests, and `npm run benchmark:retrieval` for acronyms, Polish/English variants, typo recovery, interdisciplinary topics, comparison queries, and domain-specific query expansion. The benchmark also writes ignored JSON/Markdown reports under `benchmark-results/` for provider comparisons.
 - Source-quality benchmark fixtures and `npm run benchmark:source-quality` for recorded live-source failure modes, including broad transformer queries that should prefer foundational papers over derivative title matches.
 - Compare With Science benchmark fixtures and `npm run benchmark:claim-check` for supported, partially supported, contradicted, insufficient-evidence, too-broad, non-scientific, already-known, and possible-dead-end classifications.
@@ -194,6 +196,10 @@ ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true
 - Research brief synthesis still primarily uses selected paper metadata and abstracts. Parsed full-text chunks are currently used by Ask This Brief where available.
 - Paper full-text ingestion only uses legal open-access PDF candidates from arXiv IDs or source-provided `pdfUrl` values. It does not bypass paywalls, automate browsers, or crawl uncontrolled sources.
 - PDF parsing is plain-text only. The current full-text slice does not support OCR, figures, tables, images, DOCX, XLSX, or scanned documents.
+- Page-range support is implemented for extracted page-text fixtures and
+  ingestion options. The current live `pdf-parse` path still depends on the
+  parser exposing per-page text before it can physically skip pages during
+  network PDF parsing.
 - If a selected paper has no legal PDF, fails fetch, or fails parsing, the app explicitly falls back to abstract/metadata evidence boundaries.
 - Parser-quality warnings are advisory and should prompt manual PDF review
   before relying on method/result/table/statistical claims.

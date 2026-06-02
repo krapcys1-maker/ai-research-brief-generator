@@ -1,4 +1,6 @@
 import { createHash } from "node:crypto";
+import type { PageRange } from "@/lib/fulltext/pageRange";
+import { selectPageTexts } from "@/lib/fulltext/pageRange";
 
 export type ParsedPdfText = {
   text: string;
@@ -6,6 +8,8 @@ export type ParsedPdfText = {
   parserVersion: string;
   qualityScore: number;
   textHash: string;
+  pageStart: number | null;
+  pageEnd: number | null;
   diagnostics: PdfParseDiagnostics;
 };
 
@@ -24,6 +28,7 @@ export type PdfParseDiagnostics = {
 export type ParseExtractedPdfTextOptions = {
   pageCount?: number | null;
   pageTexts?: string[];
+  pageRange?: PageRange | null;
 };
 
 function cleanExtractedText(value: string) {
@@ -143,12 +148,40 @@ export function createPdfParseDiagnostics(
   };
 }
 
+function getSelectedExtractedText(
+  value: string,
+  options: ParseExtractedPdfTextOptions
+) {
+  if (!options.pageTexts?.length) {
+    return {
+      text: value,
+      pageTexts: undefined,
+      pageStart: null,
+      pageEnd: null
+    };
+  }
+
+  const selected = selectPageTexts(options.pageTexts, options.pageRange);
+
+  return {
+    text: selected.pageTexts.join("\n\n"),
+    pageTexts: selected.pageTexts,
+    pageStart: selected.pageStart,
+    pageEnd: selected.pageEnd
+  };
+}
+
 export function parseExtractedPdfText(
   value: string,
   options: ParseExtractedPdfTextOptions = {}
 ): ParsedPdfText {
-  const text = cleanExtractedText(value);
-  const diagnostics = createPdfParseDiagnostics(value, options);
+  const selected = getSelectedExtractedText(value, options);
+  const text = cleanExtractedText(selected.text);
+  const diagnostics = createPdfParseDiagnostics(selected.text, {
+    ...options,
+    pageCount: selected.pageTexts?.length ?? options.pageCount,
+    pageTexts: selected.pageTexts ?? options.pageTexts
+  });
 
   if (diagnostics.wordCount < 80 || diagnostics.characterCount < 500) {
     throw new Error("Parsed PDF text is too short or unusable.");
@@ -160,6 +193,8 @@ export function parseExtractedPdfText(
     parserVersion: diagnostics.parserVersion,
     qualityScore: diagnostics.qualityScore,
     textHash: hashFullText(text),
+    pageStart: selected.pageStart,
+    pageEnd: selected.pageEnd,
     diagnostics
   };
 }
@@ -183,14 +218,18 @@ function getPdfParsePageCount(result: {
   return null;
 }
 
-export async function parsePdf(bytes: Uint8Array): Promise<ParsedPdfText> {
+export async function parsePdf(
+  bytes: Uint8Array,
+  options: { pageRange?: PageRange | null } = {}
+): Promise<ParsedPdfText> {
   const { PDFParse } = await import("pdf-parse");
   const parser = new PDFParse({ data: Buffer.from(bytes) });
 
   try {
     const result = await parser.getText();
     return parseExtractedPdfText(result.text ?? "", {
-      pageCount: getPdfParsePageCount(result)
+      pageCount: getPdfParsePageCount(result),
+      pageRange: options.pageRange
     });
   } finally {
     await parser.destroy();
