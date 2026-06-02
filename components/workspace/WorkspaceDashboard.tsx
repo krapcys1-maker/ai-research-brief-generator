@@ -29,6 +29,12 @@ type DocumentCollectionResponse = {
   error?: string;
 };
 
+type PaperNoteResponse = {
+  note?: WorkspaceDashboardPayload["recentPaperNotes"][number];
+  status?: string;
+  error?: string;
+};
+
 function formatDate(value: string) {
   return new Date(value).toLocaleString();
 }
@@ -55,10 +61,12 @@ export function WorkspaceDashboard() {
   const [documentCollectionError, setDocumentCollectionError] = useState<
     string | null
   >(null);
+  const [paperNoteError, setPaperNoteError] = useState<string | null>(null);
   const [isSavingProject, setIsSavingProject] = useState(false);
   const [isSavingCollection, setIsSavingCollection] = useState(false);
   const [isSavingDocumentCollection, setIsSavingDocumentCollection] =
     useState(false);
+  const [isSavingPaperNote, setIsSavingPaperNote] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   async function fetchDashboard() {
@@ -206,6 +214,41 @@ export function WorkspaceDashboard() {
     }
   }
 
+  async function savePaperNote(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsSavingPaperNote(true);
+    setPaperNoteError(null);
+
+    try {
+      const form = event.currentTarget;
+      const formData = new FormData(form);
+      const response = await fetch("/api/workspace/paper-notes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          paperId: formData.get("paperId"),
+          note: formData.get("note")
+        })
+      });
+      const payload = (await response.json()) as PaperNoteResponse;
+
+      if (!response.ok || !payload.note) {
+        throw new Error(payload.error ?? "Could not save paper note.");
+      }
+
+      form.reset();
+      setDashboard(await fetchDashboard());
+    } catch (caught) {
+      setPaperNoteError(
+        caught instanceof Error ? caught.message : "Could not save paper note."
+      );
+    } finally {
+      setIsSavingPaperNote(false);
+    }
+  }
+
   useEffect(() => {
     let cancelled = false;
 
@@ -298,6 +341,10 @@ export function WorkspaceDashboard() {
           <div className="metric">
             <span className="metric-label">Doc collections</span>
             <strong>{dashboard?.totals.documentCollections ?? 0}</strong>
+          </div>
+          <div className="metric">
+            <span className="metric-label">Paper notes</span>
+            <strong>{dashboard?.totals.paperNotes ?? 0}</strong>
           </div>
         </div>
       </section>
@@ -479,6 +526,73 @@ export function WorkspaceDashboard() {
         ) : (
           <div className="source-health-empty">
             No brief collections in this scope.
+          </div>
+        )}
+      </section>
+
+      <section className="surface workspace-panel">
+        <div className="workspace-panel-header">
+          <h2>Paper note</h2>
+          <span className="badge">{dashboard?.totals.paperNotes ?? 0}</span>
+        </div>
+        <form className="workspace-project-form" onSubmit={savePaperNote}>
+          {dashboard?.recentPapers.length ? (
+            <select className="form-control" name="paperId" required>
+              <option value="">Select paper</option>
+              {dashboard.recentPapers.map((paper) => (
+                <option value={paper.id} key={paper.id}>
+                  {paper.title}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="source-health-empty">
+              Generate a brief before adding paper notes.
+            </div>
+          )}
+          <textarea
+            className="form-control form-textarea"
+            name="note"
+            placeholder="Add a note or comment"
+            rows={4}
+            minLength={3}
+            maxLength={2000}
+            required
+          />
+          <button
+            className="primary-action"
+            type="submit"
+            disabled={isSavingPaperNote || !dashboard?.recentPapers.length}
+          >
+            {isSavingPaperNote ? "Saving..." : "Save note"}
+          </button>
+        </form>
+        {paperNoteError ? (
+          <div className="form-alert error">{paperNoteError}</div>
+        ) : null}
+      </section>
+
+      <section className="surface workspace-panel">
+        <div className="workspace-panel-header">
+          <h2>Paper notes</h2>
+          <span className="badge">{dashboard?.totals.paperNotes ?? 0}</span>
+        </div>
+        {dashboard?.recentPaperNotes.length ? (
+          <div className="workspace-list">
+            {dashboard.recentPaperNotes.map((note) => (
+              <Link href="/workspace" key={note.id}>
+                <span className="badge">{note.visibility}</span>
+                <strong>{note.paperId}</strong>
+                <span>{note.note}</span>
+                <time dateTime={note.createdAt}>
+                  {formatDate(note.createdAt)}
+                </time>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="source-health-empty">
+            No paper notes in this scope.
           </div>
         )}
       </section>

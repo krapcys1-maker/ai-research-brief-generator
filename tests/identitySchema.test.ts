@@ -160,6 +160,27 @@ describe("document collection workspace ownership schema", () => {
   });
 });
 
+describe("paper note workspace ownership schema", () => {
+  it("defines paper notes with user and workspace ownership", () => {
+    const schema = readFileSync("prisma/schema.prisma", "utf8");
+    const migration = readFileSync(
+      "prisma/migrations/20260602222000_add_paper_notes/migration.sql",
+      "utf8"
+    );
+
+    expect(schema).toContain("model PaperNote");
+    expect(schema).toContain("ownedPaperNotes");
+    expect(schema).toContain("paperNotes PaperNote[]");
+    expect(schema).toContain("note            String");
+    expect(schema).toContain("@relation(\"PaperNoteOwner\"");
+    expect(schema).toContain("@relation(\"PaperNoteCreator\"");
+    expect(migration).toContain("CREATE TABLE \"PaperNote\"");
+    expect(migration).toContain("\"visibility\" \"BriefVisibility\"");
+    expect(migration).toContain("PaperNote_workspaceId_idx");
+    expect(migration).toContain("PaperNote_paperId_fkey");
+  });
+});
+
 describe("app-native user session schema", () => {
   it("defines durable user sessions with hashed tokens and revocation", () => {
     const schema = readFileSync("prisma/schema.prisma", "utf8");

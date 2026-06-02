@@ -11,11 +11,20 @@ import { getDocumentRepository } from "@/lib/documents/repository";
 import { documentCollectionFilterFromAccess } from "@/lib/workspace/documentCollectionAccess";
 import { getDocumentCollectionRepository } from "@/lib/workspace/documentCollectionRepository";
 import type { DocumentCollectionListItem } from "@/lib/workspace/documentCollectionTypes";
+import { paperNoteFilterFromAccess } from "@/lib/workspace/paperNoteAccess";
+import { getPaperNoteRepository } from "@/lib/workspace/paperNoteRepository";
+import type { PaperNoteListItem } from "@/lib/workspace/paperNoteTypes";
 import { researchProjectFilterFromAccess } from "@/lib/workspace/projectAccess";
 import { getResearchProjectRepository } from "@/lib/workspace/projectRepository";
 import type { ResearchProjectListItem } from "@/lib/workspace/projectTypes";
 import { getBriefRepository } from "@/lib/storage/repository";
-import type { BriefListItem } from "@/lib/storage/types";
+import type { BriefListItem, StoredBrief } from "@/lib/storage/types";
+import type { NormalizedPaper } from "@/lib/sources/types";
+
+export type WorkspacePaperListItem = Pick<
+  NormalizedPaper,
+  "id" | "title" | "authors" | "year" | "source"
+>;
 
 export type WorkspaceDashboard = {
   scope: "user" | "session";
@@ -31,10 +40,13 @@ export type WorkspaceDashboard = {
     researchProjects: number;
     briefCollections: number;
     documentCollections: number;
+    paperNotes: number;
   };
   recentResearchProjects: ResearchProjectListItem[];
   recentBriefCollections: BriefCollectionListItem[];
   recentDocumentCollections: DocumentCollectionListItem[];
+  recentPaperNotes: PaperNoteListItem[];
+  recentPapers: WorkspacePaperListItem[];
   recentBriefs: BriefListItem[];
   recentDocuments: UserDocument[];
   recentCompareReports: CompareReportListItem[];
@@ -42,6 +54,26 @@ export type WorkspaceDashboard = {
 
 function recent<T>(items: T[], limit = 5) {
   return items.slice(0, limit);
+}
+
+function recentUniquePapers(briefs: StoredBrief[], limit = 8): WorkspacePaperListItem[] {
+  const papers = new Map<string, WorkspacePaperListItem>();
+
+  for (const brief of briefs) {
+    for (const paper of brief.papers) {
+      if (!papers.has(paper.id)) {
+        papers.set(paper.id, {
+          id: paper.id,
+          title: paper.title,
+          authors: paper.authors,
+          year: paper.year,
+          source: paper.source
+        });
+      }
+    }
+  }
+
+  return [...papers.values()].slice(0, limit);
 }
 
 function combinedScope(
@@ -63,7 +95,8 @@ export async function getWorkspaceDashboard(input: {
     compareReportRepository,
     researchProjectRepository,
     briefCollectionRepository,
-    documentCollectionRepository
+    documentCollectionRepository,
+    paperNoteRepository
   ] =
     await Promise.all([
       getBriefRepository(),
@@ -71,18 +104,22 @@ export async function getWorkspaceDashboard(input: {
       getCompareReportRepository(),
       getResearchProjectRepository(),
       getBriefCollectionRepository(),
-      getDocumentCollectionRepository()
+      getDocumentCollectionRepository(),
+      getPaperNoteRepository()
     ]);
 
   const [
     briefs,
+    briefRecords,
     documents,
     compareReports,
     researchProjects,
     briefCollections,
-    documentCollections
+    documentCollections,
+    paperNotes
   ] = await Promise.all([
     briefRepository.listSummaries(input.briefAccess.source),
+    briefRepository.list(input.briefAccess.source),
     documentRepository.listDocuments(input.documentAccess.source),
     compareReportRepository.listSummaries(
       compareReportFilterFromAccess(input.documentAccess)
@@ -95,6 +132,9 @@ export async function getWorkspaceDashboard(input: {
     ),
     documentCollectionRepository.list(
       documentCollectionFilterFromAccess(input.documentAccess)
+    ),
+    paperNoteRepository.list(
+      paperNoteFilterFromAccess(input.briefAccess)
     )
   ]);
 
@@ -112,11 +152,14 @@ export async function getWorkspaceDashboard(input: {
       compareReports: compareReports.length,
       researchProjects: researchProjects.length,
       briefCollections: briefCollections.length,
-      documentCollections: documentCollections.length
+      documentCollections: documentCollections.length,
+      paperNotes: paperNotes.length
     },
     recentResearchProjects: recent(researchProjects),
     recentBriefCollections: recent(briefCollections),
     recentDocumentCollections: recent(documentCollections),
+    recentPaperNotes: recent(paperNotes),
+    recentPapers: recentUniquePapers(briefRecords),
     recentBriefs: recent(briefs),
     recentDocuments: recent(documents),
     recentCompareReports: recent(compareReports)

@@ -8,6 +8,7 @@ import { createBrief, createPaper } from "@/tests/fixtures";
 import { inMemoryResearchProjectRepository } from "@/lib/workspace/inMemoryResearchProjectRepository";
 import { inMemoryBriefCollectionRepository } from "@/lib/workspace/inMemoryBriefCollectionRepository";
 import { inMemoryDocumentCollectionRepository } from "@/lib/workspace/inMemoryDocumentCollectionRepository";
+import { inMemoryPaperNoteRepository } from "@/lib/workspace/inMemoryPaperNoteRepository";
 
 const compareRequest: ClaimCheckRequest = {
   claims: ["Retrieval augmented generation improves factuality."],
@@ -89,6 +90,7 @@ describe("workspace dashboard API route", () => {
     await inMemoryResearchProjectRepository.clear();
     await inMemoryBriefCollectionRepository.clear();
     await inMemoryDocumentCollectionRepository.clear();
+    await inMemoryPaperNoteRepository.clear();
   });
 
   it("summarizes only resources from the same private sessions", async () => {
@@ -158,6 +160,16 @@ describe("workspace dashboard API route", () => {
       documentIds: ["doc_session_b"],
       ownerSessionId: "doc_session_b"
     });
+    await inMemoryPaperNoteRepository.save({
+      paperId: "paper_1",
+      note: "Session A paper note.",
+      ownerSessionId: "brief_session_a"
+    });
+    await inMemoryPaperNoteRepository.save({
+      paperId: "paper_1",
+      note: "Session B paper note.",
+      ownerSessionId: "brief_session_b"
+    });
 
     const { GET } = await import("@/app/api/workspace/dashboard/route");
     const response = await GET(
@@ -179,7 +191,8 @@ describe("workspace dashboard API route", () => {
       compareReports: 1,
       researchProjects: 1,
       briefCollections: 1,
-      documentCollections: 1
+      documentCollections: 1,
+      paperNotes: 1
     });
     expect(
       payload.dashboard.recentResearchProjects.map((item: { title: string }) => item.title)
@@ -196,6 +209,14 @@ describe("workspace dashboard API route", () => {
         (item: { title: string }) => item.title
       )
     ).toEqual(["Session A document collection"]);
+    expect(
+      payload.dashboard.recentPaperNotes.map(
+        (item: { note: string }) => item.note
+      )
+    ).toEqual(["Session A paper note."]);
+    expect(
+      payload.dashboard.recentPapers.map((item: { id: string }) => item.id)
+    ).toEqual(["paper_1"]);
     expect(payload.dashboard.recentDocuments.map((item: { id: string }) => item.id))
       .toEqual(["doc_session_a"]);
     expect(
@@ -306,6 +327,22 @@ describe("workspace dashboard API route", () => {
       createdByUserId: "user_1",
       visibility: "workspace"
     });
+    await inMemoryPaperNoteRepository.save({
+      paperId: "paper_1",
+      note: "Workspace A paper note.",
+      ownerId: "user_1",
+      workspaceId: "workspace_a",
+      createdByUserId: "user_1",
+      visibility: "workspace"
+    });
+    await inMemoryPaperNoteRepository.save({
+      paperId: "paper_1",
+      note: "Workspace B paper note.",
+      ownerId: "user_1",
+      workspaceId: "workspace_b",
+      createdByUserId: "user_1",
+      visibility: "workspace"
+    });
 
     const { GET } = await import("@/app/api/workspace/dashboard/route");
     const response = await GET(
@@ -327,7 +364,8 @@ describe("workspace dashboard API route", () => {
       compareReports: 1,
       researchProjects: 1,
       briefCollections: 1,
-      documentCollections: 1
+      documentCollections: 1,
+      paperNotes: 1
     });
     expect(
       payload.dashboard.recentResearchProjects.map((item: { title: string }) => item.title)
@@ -344,6 +382,14 @@ describe("workspace dashboard API route", () => {
         (item: { title: string }) => item.title
       )
     ).toEqual(["Workspace A document collection"]);
+    expect(
+      payload.dashboard.recentPaperNotes.map(
+        (item: { note: string }) => item.note
+      )
+    ).toEqual(["Workspace A paper note."]);
+    expect(
+      payload.dashboard.recentPapers.map((item: { id: string }) => item.id)
+    ).toEqual(["paper_1"]);
     expect(payload.dashboard.recentDocuments.map((item: { id: string }) => item.id))
       .toEqual(["doc_workspace_a"]);
     expect(

@@ -141,6 +141,9 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
   dostepu do briefow, repozytoria memory/PostgreSQL, API i UI w dashboardzie.
 - [x] Dokument collections: `DocumentCollection` ma ownership, walidacje
   dostepu do dokumentow, repozytoria memory/PostgreSQL, API i UI w dashboardzie.
+- [x] Notatki/komentarze do zapisanych papierow: `PaperNote` ma ownership,
+  walidacje dostepu do papierow z dostepnych briefow, repozytoria
+  memory/PostgreSQL, API i UI w dashboardzie.
 
 ## Najwieksze braki
 
@@ -181,11 +184,11 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
    Przy wiekszym ruchu trzeba przejsc na zewnetrzna kolejke lub przynajmniej
    wyciagnac stabilny `JobQueue` adapter.
 
-8. **Brakuje produktowej retencji i notatek/udostepniania.**
+8. **Brakuje produktowej retencji i udostepniania.**
    Sa briefy, dokumenty, compare, dashboard workspace i saved research
-   projects, saved brief collections oraz document collections, ale jeszcze nie
-   ma notatek/komentarzy, share links, export history ani retencji per
-   workspace.
+   projects, saved brief collections, document collections oraz
+   notatki/komentarze do papierow, ale jeszcze nie ma share links, export
+   history ani retencji per workspace.
 
 9. **Brakuje billing/quota/admin.**
    Bez planow, limitow, triala, admin panelu i audit logu to nadal bardziej beta
@@ -421,7 +424,14 @@ Status: **czesciowo zrobione**.
   `/workspace`; `npm test -- tests/documentCollectionRepository.test.ts
   tests/documentCollectionsRoute.test.ts tests/workspaceDashboardRoute.test.ts
   tests/identitySchema.test.ts`, `npm run lint`.
-- [ ] Notatki lub komentarze do zapisanych papierow.
+- [x] Notatki lub komentarze do zapisanych papierow.
+  Zweryfikowano 2026-06-02: dodano `PaperNote` z session/user/workspace
+  ownership, migracje Prisma, repozytoria memory/PostgreSQL, `GET/POST
+  /api/workspace/paper-notes`, walidacje dostepu do `paperId` przez dostepne
+  briefy oraz formularz/listing w `/workspace`; `npm test --
+  tests/paperNoteRepository.test.ts tests/paperNotesRoute.test.ts
+  tests/workspaceDashboardRoute.test.ts tests/identitySchema.test.ts`, `npm
+  run lint`.
 - [ ] Share links z kontrola widocznosci.
 - [ ] Export history.
 - [ ] Prosty onboarding dla nowego uzytkownika.

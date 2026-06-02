@@ -61,6 +61,9 @@ The app supports:
 - document collections with session/user/workspace ownership,
   `GET/POST /api/workspace/document-collections`, document access validation,
   and dashboard UI
+- paper notes/comments with session/user/workspace ownership,
+  `GET/POST /api/workspace/paper-notes`, paper access validation through
+  accessible briefs, and dashboard UI
 - deployment smoke coverage for source health, preflight, documents, compare, claim extraction, claim comparison, and AI-backed brief flow when not skipped
 - staging readiness preflight through `npm run staging:check`
 
@@ -392,6 +395,13 @@ First remediation started on 2026-06-02:
   `npm test -- tests/documentCollectionRepository.test.ts
   tests/documentCollectionsRoute.test.ts tests/workspaceDashboardRoute.test.ts
   tests/identitySchema.test.ts` and `npm run lint`.
+- Added paper notes/comments: `PaperNote` schema and migration,
+  memory/PostgreSQL repositories, session/user/workspace ownership,
+  `GET/POST /api/workspace/paper-notes`, access validation for selected
+  `paperId` through accessible briefs, and a save/list panel in `/workspace`.
+  Verified with `npm test -- tests/paperNoteRepository.test.ts
+  tests/paperNotesRoute.test.ts tests/workspaceDashboardRoute.test.ts
+  tests/identitySchema.test.ts` and `npm run lint`.
 
 ## Next Recommended Step
 
@@ -410,4 +420,4 @@ Next highest-value work:
    failures.
 5. Add a durable DB-backed or external queue adapter for Compare jobs if heavier
    Compare workloads become common.
-6. Add notes/comments for saved papers, then share links and export history.
+6. Add share links with visibility controls, then export history.

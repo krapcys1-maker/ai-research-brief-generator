@@ -43,6 +43,8 @@ model User {
   createdBriefCollections BriefCollection[] @relation("BriefCollectionCreator")
   ownedDocumentCollections   DocumentCollection[] @relation("DocumentCollectionOwner")
   createdDocumentCollections DocumentCollection[] @relation("DocumentCollectionCreator")
+  ownedPaperNotes   PaperNote[] @relation("PaperNoteOwner")
+  createdPaperNotes PaperNote[] @relation("PaperNoteCreator")
   sessions         UserSession[]
 }
 
@@ -62,6 +64,7 @@ model Workspace {
   researchProjects ResearchProject[]
   briefCollections BriefCollection[]
   documentCollections DocumentCollection[]
+  paperNotes PaperNote[]
   sessions UserSession[]
 
   @@index([ownerId])
@@ -309,6 +312,32 @@ model DocumentCollection {
   @@index([createdAt])
 }
 
+model PaperNote {
+  id              String   @id
+  ownerSessionId  String?
+  ownerId         String?
+  workspaceId     String?
+  createdByUserId String?
+  visibility      BriefVisibility @default(PRIVATE)
+  paperId         String
+  note            String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  owner     User?      @relation("PaperNoteOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  createdBy User?      @relation("PaperNoteCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+  paper     Paper      @relation(fields: [paperId], references: [id], onDelete: Cascade)
+
+  @@index([ownerSessionId])
+  @@index([ownerId])
+  @@index([workspaceId])
+  @@index([createdByUserId])
+  @@index([paperId])
+  @@index([visibility])
+  @@index([createdAt])
+}
+
 model Paper {
   id                         String    @id
   title                      String
@@ -334,6 +363,7 @@ model Paper {
   briefs BriefPaper[]
   fullText PaperFullText?
   textChunks PaperTextChunk[]
+  notes PaperNote[]
 
   @@index([doi])
   @@index([arxivId])

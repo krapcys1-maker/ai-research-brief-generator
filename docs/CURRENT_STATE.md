@@ -165,6 +165,17 @@ paste/upload text -> extract candidate claims -> user selects claims -> academic
     documents and a recent document collections list.
   - Memory and PostgreSQL repositories share the same contract, with Prisma
     migration `20260602220500_add_document_collections`.
+- Paper notes / comments:
+  - `PaperNote` stores a note for a selected `paperId` plus
+    session/user/workspace ownership metadata.
+  - `GET /api/workspace/paper-notes` lists notes in the current private
+    session or trusted/app-native workspace context.
+  - `POST /api/workspace/paper-notes` validates that the selected paper appears
+    in accessible briefs before saving.
+  - `/workspace` includes a paper note form based on recent accessible papers
+    and a recent paper notes list.
+  - Memory and PostgreSQL repositories share the same contract, with Prisma
+    migration `20260602222000_add_paper_notes`.
 - Markdown export through `GET /api/export/[id]?format=markdown`.
 - Optional PostgreSQL/Prisma persistence behind the `BriefRepository` contract.
 - Optional PostgreSQL/Prisma persistence behind the `DocumentRepository` contract for uploaded documents and chunks.
@@ -302,9 +313,9 @@ ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true
   supplied by trusted infrastructure. Brief history remains session-scoped in
   the current prototype.
 - `/workspace` is a scoped product dashboard over existing resources, saved
-  research projects, saved brief collections, and document collections. It is
-  not yet a full project management layer: export history, share links,
-  notes/comments, and onboarding remain future work.
+  research projects, saved brief collections, document collections, and paper
+  notes/comments. It is not yet a full project management layer: export
+  history, share links, and onboarding remain future work.
 - App-native sessions can resolve durable users/workspaces for brief access, but
   registration/login UI, password or magic-link flow, reset access, account
   settings, audit trail, and full role enforcement are not implemented yet.
@@ -323,6 +334,7 @@ npm test -- tests/workspaceDashboardRoute.test.ts
 npm test -- tests/researchProjectsRoute.test.ts
 npm test -- tests/briefCollectionsRoute.test.ts
 npm test -- tests/documentCollectionsRoute.test.ts
+npm test -- tests/paperNotesRoute.test.ts
 npm run worker:fulltext
 npm run lint
 npm run build

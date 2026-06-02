@@ -82,6 +82,7 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 - [x] Add saved research projects/topics in the workspace dashboard.
 - [x] Add saved brief collections in the workspace dashboard.
 - [x] Add document collections in the workspace dashboard.
+- [x] Add paper notes/comments in the workspace dashboard.
 - [ ] Add paper timeline.
 - [ ] Add topic clustering.
 
