@@ -394,6 +394,10 @@ export function WorkspaceDashboard() {
             <span className="metric-label">Share links</span>
             <strong>{dashboard?.totals.shareLinks ?? 0}</strong>
           </div>
+          <div className="metric">
+            <span className="metric-label">Exports</span>
+            <strong>{dashboard?.totals.exportHistory ?? 0}</strong>
+          </div>
         </div>
       </section>
 
@@ -679,6 +683,31 @@ export function WorkspaceDashboard() {
         ) : (
           <div className="source-health-empty">
             No share links in this scope.
+          </div>
+        )}
+      </section>
+
+      <section className="surface workspace-panel">
+        <div className="workspace-panel-header">
+          <h2>Export history</h2>
+          <span className="badge">{dashboard?.totals.exportHistory ?? 0}</span>
+        </div>
+        {dashboard?.recentExportHistory.length ? (
+          <div className="workspace-list">
+            {dashboard.recentExportHistory.map((item) => (
+              <Link href={`/briefs/${item.resourceId}`} key={item.id}>
+                <span className="badge">{item.format}</span>
+                <strong>{item.title}</strong>
+                <span>{item.filename}</span>
+                <time dateTime={item.exportedAt}>
+                  {formatDate(item.exportedAt)}
+                </time>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="source-health-empty">
+            No exports in this scope.
           </div>
         )}
       </section>

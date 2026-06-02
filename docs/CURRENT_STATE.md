@@ -188,6 +188,18 @@ paste/upload text -> extract candidate claims -> user selects claims -> academic
     recent share links list.
   - Memory and PostgreSQL repositories share the same contract, with Prisma
     migration `20260602223500_add_share_links`.
+- Export history:
+  - `ExportHistory` stores successful Markdown exports with selected resource,
+    title, format, filename, export timestamp, and session/user/workspace
+    ownership metadata.
+  - `GET /api/export/[id]?format=markdown` records an export history entry only
+    after the same private brief access checks pass.
+  - `GET /api/workspace/export-history` lists exports in the current private
+    session or trusted/app-native workspace context.
+  - `/workspace` includes recent export history linked back to the exported
+    brief.
+  - Memory and PostgreSQL repositories share the same contract, with Prisma
+    migration `20260602225000_add_export_history`.
 - Markdown export through `GET /api/export/[id]?format=markdown`.
 - Optional PostgreSQL/Prisma persistence behind the `BriefRepository` contract.
 - Optional PostgreSQL/Prisma persistence behind the `DocumentRepository` contract for uploaded documents and chunks.
@@ -255,6 +267,7 @@ PostgreSQL is available through Prisma when `DATABASE_URL` points to PostgreSQL.
 - private uploaded document metadata
 - private uploaded document chunks
 - workspace share links
+- workspace export history
 
 Production requires a valid PostgreSQL `DATABASE_URL` by default. Temporary non-durable demos can explicitly set:
 
@@ -327,8 +340,8 @@ ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true
   the current prototype.
 - `/workspace` is a scoped product dashboard over existing resources, saved
   research projects, saved brief collections, document collections, and paper
-  notes/comments plus share links. It is not yet a full project management
-  layer: export history and onboarding remain future work.
+  notes/comments plus share links and export history. It is not yet a full
+  project management layer: onboarding remains future work.
 - Share links are stored and scoped, but the public `/share/[token]` landing
   route is not implemented yet; current UI exposes the token path for the next
   public-access slice.
@@ -353,6 +366,8 @@ npm test -- tests/documentCollectionsRoute.test.ts
 npm test -- tests/paperNotesRoute.test.ts
 npm test -- tests/shareLinksRoute.test.ts
 npm test -- tests/shareLinkRepository.test.ts
+npm test -- tests/exportHistoryRoute.test.ts
+npm test -- tests/exportHistoryRepository.test.ts
 npm run worker:fulltext
 npm run lint
 npm run build

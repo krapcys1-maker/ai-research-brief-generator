@@ -8,6 +8,7 @@ import { createBrief, createPaper } from "@/tests/fixtures";
 import { inMemoryResearchProjectRepository } from "@/lib/workspace/inMemoryResearchProjectRepository";
 import { inMemoryBriefCollectionRepository } from "@/lib/workspace/inMemoryBriefCollectionRepository";
 import { inMemoryDocumentCollectionRepository } from "@/lib/workspace/inMemoryDocumentCollectionRepository";
+import { inMemoryExportHistoryRepository } from "@/lib/workspace/inMemoryExportHistoryRepository";
 import { inMemoryPaperNoteRepository } from "@/lib/workspace/inMemoryPaperNoteRepository";
 import { inMemoryShareLinkRepository } from "@/lib/workspace/inMemoryShareLinkRepository";
 
@@ -91,6 +92,7 @@ describe("workspace dashboard API route", () => {
     await inMemoryResearchProjectRepository.clear();
     await inMemoryBriefCollectionRepository.clear();
     await inMemoryDocumentCollectionRepository.clear();
+    await inMemoryExportHistoryRepository.clear();
     await inMemoryPaperNoteRepository.clear();
     await inMemoryShareLinkRepository.clear();
   });
@@ -162,6 +164,22 @@ describe("workspace dashboard API route", () => {
       documentIds: ["doc_session_b"],
       ownerSessionId: "doc_session_b"
     });
+    await inMemoryExportHistoryRepository.save({
+      resourceType: "brief",
+      resourceId: "brief_session_a",
+      title: "Session A brief",
+      format: "markdown",
+      filename: "session-a.md",
+      ownerSessionId: "brief_session_a"
+    });
+    await inMemoryExportHistoryRepository.save({
+      resourceType: "brief",
+      resourceId: "brief_session_b",
+      title: "Session B brief",
+      format: "markdown",
+      filename: "session-b.md",
+      ownerSessionId: "brief_session_b"
+    });
     await inMemoryPaperNoteRepository.save({
       paperId: "paper_1",
       note: "Session A paper note.",
@@ -208,6 +226,7 @@ describe("workspace dashboard API route", () => {
       researchProjects: 1,
       briefCollections: 1,
       documentCollections: 1,
+      exportHistory: 1,
       paperNotes: 1,
       shareLinks: 1
     });
@@ -226,6 +245,11 @@ describe("workspace dashboard API route", () => {
         (item: { title: string }) => item.title
       )
     ).toEqual(["Session A document collection"]);
+    expect(
+      payload.dashboard.recentExportHistory.map(
+        (item: { title: string }) => item.title
+      )
+    ).toEqual(["Session A brief"]);
     expect(
       payload.dashboard.recentPaperNotes.map(
         (item: { note: string }) => item.note
@@ -349,6 +373,28 @@ describe("workspace dashboard API route", () => {
       createdByUserId: "user_1",
       visibility: "workspace"
     });
+    await inMemoryExportHistoryRepository.save({
+      resourceType: "brief",
+      resourceId: "brief_workspace_a",
+      title: "Workspace A brief",
+      format: "markdown",
+      filename: "workspace-a.md",
+      ownerId: "user_1",
+      workspaceId: "workspace_a",
+      createdByUserId: "user_1",
+      visibility: "workspace"
+    });
+    await inMemoryExportHistoryRepository.save({
+      resourceType: "brief",
+      resourceId: "brief_workspace_b",
+      title: "Workspace B brief",
+      format: "markdown",
+      filename: "workspace-b.md",
+      ownerId: "user_1",
+      workspaceId: "workspace_b",
+      createdByUserId: "user_1",
+      visibility: "workspace"
+    });
     await inMemoryPaperNoteRepository.save({
       paperId: "paper_1",
       note: "Workspace A paper note.",
@@ -405,6 +451,7 @@ describe("workspace dashboard API route", () => {
       researchProjects: 1,
       briefCollections: 1,
       documentCollections: 1,
+      exportHistory: 1,
       paperNotes: 1,
       shareLinks: 1
     });
@@ -423,6 +470,11 @@ describe("workspace dashboard API route", () => {
         (item: { title: string }) => item.title
       )
     ).toEqual(["Workspace A document collection"]);
+    expect(
+      payload.dashboard.recentExportHistory.map(
+        (item: { title: string }) => item.title
+      )
+    ).toEqual(["Workspace A brief"]);
     expect(
       payload.dashboard.recentPaperNotes.map(
         (item: { note: string }) => item.note

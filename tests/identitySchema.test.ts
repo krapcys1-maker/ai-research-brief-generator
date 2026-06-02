@@ -206,6 +206,30 @@ describe("share link workspace ownership schema", () => {
   });
 });
 
+describe("export history workspace ownership schema", () => {
+  it("defines export history with user and workspace ownership", () => {
+    const schema = readFileSync("prisma/schema.prisma", "utf8");
+    const migration = readFileSync(
+      "prisma/migrations/20260602225000_add_export_history/migration.sql",
+      "utf8"
+    );
+
+    expect(schema).toContain("model ExportHistory");
+    expect(schema).toContain("ownedExportHistory");
+    expect(schema).toContain("exportHistory ExportHistory[]");
+    expect(schema).toContain("format          String");
+    expect(schema).toContain("filename        String");
+    expect(schema).toContain("exportedAt      DateTime @default(now())");
+    expect(schema).toContain("@relation(\"ExportHistoryOwner\"");
+    expect(schema).toContain("@relation(\"ExportHistoryCreator\"");
+    expect(migration).toContain("CREATE TABLE \"ExportHistory\"");
+    expect(migration).toContain("\"visibility\" \"BriefVisibility\"");
+    expect(migration).toContain("ExportHistory_workspaceId_idx");
+    expect(migration).toContain("ExportHistory_format_idx");
+    expect(migration).toContain("ExportHistory_ownerId_fkey");
+  });
+});
+
 describe("app-native user session schema", () => {
   it("defines durable user sessions with hashed tokens and revocation", () => {
     const schema = readFileSync("prisma/schema.prisma", "utf8");

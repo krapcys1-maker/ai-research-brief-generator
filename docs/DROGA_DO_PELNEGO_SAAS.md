@@ -147,6 +147,8 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
 - [x] Share links z kontrola widocznosci: `ShareLink` ma token, ownership,
   `private/workspace/public`, walidacje dostepu do briefu, repozytoria
   memory/PostgreSQL, API i UI w dashboardzie.
+- [x] Export history: `ExportHistory` zapisuje udane eksporty Markdown z
+  ownership, formatem, plikiem i lista w dashboardzie workspace.
 
 ## Najwieksze braki
 
@@ -187,11 +189,11 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
    Przy wiekszym ruchu trzeba przejsc na zewnetrzna kolejke lub przynajmniej
    wyciagnac stabilny `JobQueue` adapter.
 
-8. **Brakuje produktowej retencji i historii eksportow.**
+8. **Brakuje produktowej retencji.**
    Sa briefy, dokumenty, compare, dashboard workspace i saved research
    projects, saved brief collections, document collections oraz
-   notatki/komentarze do papierow oraz share links, ale jeszcze nie ma export
-   history ani retencji per workspace.
+   notatki/komentarze do papierow, share links oraz export history, ale
+   jeszcze nie ma retencji per workspace.
 
 9. **Brakuje billing/quota/admin.**
    Bez planow, limitow, triala, admin panelu i audit logu to nadal bardziej beta
@@ -444,7 +446,14 @@ Status: **czesciowo zrobione**.
   tests/shareLinkRepository.test.ts tests/shareLinksRoute.test.ts
   tests/workspaceDashboardRoute.test.ts tests/identitySchema.test.ts`, `npx
   prisma validate`, `npm run lint`.
-- [ ] Export history.
+- [x] Export history.
+  Zweryfikowano 2026-06-02: dodano `ExportHistory` z
+  session/user/workspace ownership, migracje Prisma, repozytoria
+  memory/PostgreSQL, zapis udanych `GET /api/export/[id]?format=markdown`,
+  `GET /api/workspace/export-history` oraz listing w `/workspace`; `npm test
+  -- tests/exportHistoryRepository.test.ts tests/exportHistoryRoute.test.ts
+  tests/workspaceDashboardRoute.test.ts tests/identitySchema.test.ts
+  tests/briefAccessRoute.test.ts`, `npx prisma validate`.
 - [ ] Prosty onboarding dla nowego uzytkownika.
 
 Kryterium odbioru P4:

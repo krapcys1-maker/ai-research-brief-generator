@@ -4,7 +4,16 @@ import { getBriefRepository as mockedGetBriefRepository } from "@/lib/storage/re
 import { createBrief, createPaper } from "@/tests/fixtures";
 
 vi.mock("@/lib/storage/repository", () => ({
-  getBriefRepository: vi.fn()
+  getBriefRepository: vi.fn(),
+  getPersistenceStatus: vi.fn(() => ({
+    mode: "memory",
+    hasDatabaseUrl: false,
+    hasValidPostgresUrl: false,
+    isProduction: false,
+    allowsMemoryStorage: true,
+    fatalError: null,
+    warning: null
+  }))
 }));
 
 const getBriefRepositoryMock = vi.mocked(mockedGetBriefRepository);

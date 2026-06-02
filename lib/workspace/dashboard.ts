@@ -11,6 +11,9 @@ import { getDocumentRepository } from "@/lib/documents/repository";
 import { documentCollectionFilterFromAccess } from "@/lib/workspace/documentCollectionAccess";
 import { getDocumentCollectionRepository } from "@/lib/workspace/documentCollectionRepository";
 import type { DocumentCollectionListItem } from "@/lib/workspace/documentCollectionTypes";
+import { exportHistoryFilterFromAccess } from "@/lib/workspace/exportHistoryAccess";
+import { getExportHistoryRepository } from "@/lib/workspace/exportHistoryRepository";
+import type { ExportHistoryListItem } from "@/lib/workspace/exportHistoryTypes";
 import { paperNoteFilterFromAccess } from "@/lib/workspace/paperNoteAccess";
 import { getPaperNoteRepository } from "@/lib/workspace/paperNoteRepository";
 import type { PaperNoteListItem } from "@/lib/workspace/paperNoteTypes";
@@ -45,10 +48,12 @@ export type WorkspaceDashboard = {
     documentCollections: number;
     paperNotes: number;
     shareLinks: number;
+    exportHistory: number;
   };
   recentResearchProjects: ResearchProjectListItem[];
   recentBriefCollections: BriefCollectionListItem[];
   recentDocumentCollections: DocumentCollectionListItem[];
+  recentExportHistory: ExportHistoryListItem[];
   recentPaperNotes: PaperNoteListItem[];
   recentShareLinks: ShareLinkListItem[];
   recentPapers: WorkspacePaperListItem[];
@@ -101,6 +106,7 @@ export async function getWorkspaceDashboard(input: {
     researchProjectRepository,
     briefCollectionRepository,
     documentCollectionRepository,
+    exportHistoryRepository,
     paperNoteRepository,
     shareLinkRepository
   ] =
@@ -111,6 +117,7 @@ export async function getWorkspaceDashboard(input: {
       getResearchProjectRepository(),
       getBriefCollectionRepository(),
       getDocumentCollectionRepository(),
+      getExportHistoryRepository(),
       getPaperNoteRepository(),
       getShareLinkRepository()
     ]);
@@ -123,6 +130,7 @@ export async function getWorkspaceDashboard(input: {
     researchProjects,
     briefCollections,
     documentCollections,
+    exportHistory,
     paperNotes,
     shareLinks
   ] = await Promise.all([
@@ -140,6 +148,9 @@ export async function getWorkspaceDashboard(input: {
     ),
     documentCollectionRepository.list(
       documentCollectionFilterFromAccess(input.documentAccess)
+    ),
+    exportHistoryRepository.list(
+      exportHistoryFilterFromAccess(input.briefAccess)
     ),
     paperNoteRepository.list(
       paperNoteFilterFromAccess(input.briefAccess)
@@ -165,11 +176,13 @@ export async function getWorkspaceDashboard(input: {
       briefCollections: briefCollections.length,
       documentCollections: documentCollections.length,
       paperNotes: paperNotes.length,
-      shareLinks: shareLinks.length
+      shareLinks: shareLinks.length,
+      exportHistory: exportHistory.length
     },
     recentResearchProjects: recent(researchProjects),
     recentBriefCollections: recent(briefCollections),
     recentDocumentCollections: recent(documentCollections),
+    recentExportHistory: recent(exportHistory),
     recentPaperNotes: recent(paperNotes),
     recentShareLinks: recent(shareLinks),
     recentPapers: recentUniquePapers(briefRecords),

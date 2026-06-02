@@ -67,6 +67,8 @@ The app supports:
 - share links with session/user/workspace ownership, opaque tokens,
   `private/workspace/public` visibility, `GET/POST
   /api/workspace/share-links`, brief access validation, and dashboard UI
+- export history with session/user/workspace ownership, successful Markdown
+  export recording, `GET /api/workspace/export-history`, and dashboard UI
 - deployment smoke coverage for source health, preflight, documents, compare, claim extraction, claim comparison, and AI-backed brief flow when not skipped
 - staging readiness preflight through `npm run staging:check`
 
@@ -414,6 +416,14 @@ First remediation started on 2026-06-02:
   tests/workspaceDashboardRoute.test.ts tests/identitySchema.test.ts` and
   `npx prisma validate`, then full `npm test`, `npm run lint`, and
   `npm run build`.
+- Added export history: `ExportHistory` schema and migration,
+  memory/PostgreSQL repositories, session/user/workspace ownership, export
+  recording after successful Markdown exports, `GET
+  /api/workspace/export-history`, and a recent exports panel in `/workspace`.
+  Verified with `npm test -- tests/exportHistoryRepository.test.ts
+  tests/exportHistoryRoute.test.ts tests/workspaceDashboardRoute.test.ts
+  tests/identitySchema.test.ts tests/briefAccessRoute.test.ts` and
+  `npx prisma validate`.
 
 ## Next Recommended Step
 
@@ -432,4 +442,4 @@ Next highest-value work:
    failures.
 5. Add a durable DB-backed or external queue adapter for Compare jobs if heavier
    Compare workloads become common.
-6. Add export history, then the public `/share/[token]` landing route.
+6. Add the public `/share/[token]` landing route, then onboarding for new users.

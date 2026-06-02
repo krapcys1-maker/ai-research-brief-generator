@@ -47,6 +47,8 @@ model User {
   createdPaperNotes PaperNote[] @relation("PaperNoteCreator")
   ownedShareLinks   ShareLink[] @relation("ShareLinkOwner")
   createdShareLinks ShareLink[] @relation("ShareLinkCreator")
+  ownedExportHistory   ExportHistory[] @relation("ExportHistoryOwner")
+  createdExportHistory ExportHistory[] @relation("ExportHistoryCreator")
   sessions         UserSession[]
 }
 
@@ -68,6 +70,7 @@ model Workspace {
   documentCollections DocumentCollection[]
   paperNotes PaperNote[]
   shareLinks ShareLink[]
+  exportHistory ExportHistory[]
   sessions UserSession[]
 
   @@index([ownerId])
@@ -369,6 +372,36 @@ model ShareLink {
   @@index([resourceId])
   @@index([createdAt])
   @@index([revokedAt])
+}
+
+model ExportHistory {
+  id              String   @id
+  ownerSessionId  String?
+  ownerId         String?
+  workspaceId     String?
+  createdByUserId String?
+  visibility      BriefVisibility @default(PRIVATE)
+  resourceType    String
+  resourceId      String
+  title           String
+  format          String
+  filename        String
+  exportedAt      DateTime @default(now())
+  createdAt       DateTime @default(now())
+
+  owner     User?      @relation("ExportHistoryOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  createdBy User?      @relation("ExportHistoryCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+
+  @@index([ownerSessionId])
+  @@index([ownerId])
+  @@index([workspaceId])
+  @@index([createdByUserId])
+  @@index([visibility])
+  @@index([resourceType])
+  @@index([resourceId])
+  @@index([format])
+  @@index([exportedAt])
 }
 
 model Paper {

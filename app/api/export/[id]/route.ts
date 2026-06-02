@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import {
-  canAccessBriefFromRequestAsync,
+  canAccessBrief,
+  getBriefAccessContextForRequest,
   privateBriefError
 } from "@/lib/briefs/access";
 import { researchBriefToMarkdown } from "@/lib/export/markdown";
 import { getBriefRepository } from "@/lib/storage/repository";
+import { exportHistoryOwnershipFromAccess } from "@/lib/workspace/exportHistoryAccess";
+import { getExportHistoryRepository } from "@/lib/workspace/exportHistoryRepository";
 
 function safeFilename(input: string) {
   return input
@@ -46,12 +49,24 @@ export async function GET(
     );
   }
 
-  if (!(await canAccessBriefFromRequestAsync(record, request))) {
+  const access = await getBriefAccessContextForRequest(request);
+
+  if (!canAccessBrief(record, access)) {
     return NextResponse.json(privateBriefError(), { status: 403 });
   }
 
   const markdown = researchBriefToMarkdown(record);
   const filename = `${safeFilename(record.brief.title) || id}.md`;
+  const exportHistoryRepository = await getExportHistoryRepository();
+
+  await exportHistoryRepository.save({
+    resourceType: "brief",
+    resourceId: record.brief.id,
+    title: record.brief.title,
+    format: "markdown",
+    filename,
+    ...exportHistoryOwnershipFromAccess(access)
+  });
 
   return new Response(markdown, {
     headers: {
