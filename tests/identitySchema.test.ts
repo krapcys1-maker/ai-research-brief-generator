@@ -181,6 +181,31 @@ describe("paper note workspace ownership schema", () => {
   });
 });
 
+describe("share link workspace ownership schema", () => {
+  it("defines share links with user, workspace, and visibility ownership", () => {
+    const schema = readFileSync("prisma/schema.prisma", "utf8");
+    const migration = readFileSync(
+      "prisma/migrations/20260602223500_add_share_links/migration.sql",
+      "utf8"
+    );
+
+    expect(schema).toContain("model ShareLink");
+    expect(schema).toContain("ownedShareLinks");
+    expect(schema).toContain("shareLinks ShareLink[]");
+    expect(schema).toContain("token           String   @unique");
+    expect(schema).toContain("resourceType    String");
+    expect(schema).toContain("resourceId      String");
+    expect(schema).toContain("revokedAt       DateTime?");
+    expect(schema).toContain("@relation(\"ShareLinkOwner\"");
+    expect(schema).toContain("@relation(\"ShareLinkCreator\"");
+    expect(migration).toContain("CREATE TABLE \"ShareLink\"");
+    expect(migration).toContain("\"visibility\" \"BriefVisibility\"");
+    expect(migration).toContain("ShareLink_token_key");
+    expect(migration).toContain("ShareLink_workspaceId_idx");
+    expect(migration).toContain("ShareLink_ownerId_fkey");
+  });
+});
+
 describe("app-native user session schema", () => {
   it("defines durable user sessions with hashed tokens and revocation", () => {
     const schema = readFileSync("prisma/schema.prisma", "utf8");

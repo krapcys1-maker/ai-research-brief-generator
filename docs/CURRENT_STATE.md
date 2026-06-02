@@ -176,6 +176,18 @@ paste/upload text -> extract candidate claims -> user selects claims -> academic
     and a recent paper notes list.
   - Memory and PostgreSQL repositories share the same contract, with Prisma
     migration `20260602222000_add_paper_notes`.
+- Share links:
+  - `ShareLink` stores an opaque token, selected resource, title,
+    `private/workspace/public` visibility, and session/user/workspace ownership
+    metadata.
+  - `GET /api/workspace/share-links` lists active links in the current private
+    session or trusted/app-native workspace context.
+  - `POST /api/workspace/share-links` currently supports brief resources and
+    validates that the selected brief is accessible before creating the link.
+  - `/workspace` includes a brief share form with visibility selection and a
+    recent share links list.
+  - Memory and PostgreSQL repositories share the same contract, with Prisma
+    migration `20260602223500_add_share_links`.
 - Markdown export through `GET /api/export/[id]?format=markdown`.
 - Optional PostgreSQL/Prisma persistence behind the `BriefRepository` contract.
 - Optional PostgreSQL/Prisma persistence behind the `DocumentRepository` contract for uploaded documents and chunks.
@@ -242,6 +254,7 @@ PostgreSQL is available through Prisma when `DATABASE_URL` points to PostgreSQL.
 - full-text ingestion job status records
 - private uploaded document metadata
 - private uploaded document chunks
+- workspace share links
 
 Production requires a valid PostgreSQL `DATABASE_URL` by default. Temporary non-durable demos can explicitly set:
 
@@ -314,8 +327,11 @@ ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true
   the current prototype.
 - `/workspace` is a scoped product dashboard over existing resources, saved
   research projects, saved brief collections, document collections, and paper
-  notes/comments. It is not yet a full project management layer: export
-  history, share links, and onboarding remain future work.
+  notes/comments plus share links. It is not yet a full project management
+  layer: export history and onboarding remain future work.
+- Share links are stored and scoped, but the public `/share/[token]` landing
+  route is not implemented yet; current UI exposes the token path for the next
+  public-access slice.
 - App-native sessions can resolve durable users/workspaces for brief access, but
   registration/login UI, password or magic-link flow, reset access, account
   settings, audit trail, and full role enforcement are not implemented yet.
@@ -335,6 +351,8 @@ npm test -- tests/researchProjectsRoute.test.ts
 npm test -- tests/briefCollectionsRoute.test.ts
 npm test -- tests/documentCollectionsRoute.test.ts
 npm test -- tests/paperNotesRoute.test.ts
+npm test -- tests/shareLinksRoute.test.ts
+npm test -- tests/shareLinkRepository.test.ts
 npm run worker:fulltext
 npm run lint
 npm run build

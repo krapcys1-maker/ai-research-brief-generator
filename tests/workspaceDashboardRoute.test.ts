@@ -9,6 +9,7 @@ import { inMemoryResearchProjectRepository } from "@/lib/workspace/inMemoryResea
 import { inMemoryBriefCollectionRepository } from "@/lib/workspace/inMemoryBriefCollectionRepository";
 import { inMemoryDocumentCollectionRepository } from "@/lib/workspace/inMemoryDocumentCollectionRepository";
 import { inMemoryPaperNoteRepository } from "@/lib/workspace/inMemoryPaperNoteRepository";
+import { inMemoryShareLinkRepository } from "@/lib/workspace/inMemoryShareLinkRepository";
 
 const compareRequest: ClaimCheckRequest = {
   claims: ["Retrieval augmented generation improves factuality."],
@@ -91,6 +92,7 @@ describe("workspace dashboard API route", () => {
     await inMemoryBriefCollectionRepository.clear();
     await inMemoryDocumentCollectionRepository.clear();
     await inMemoryPaperNoteRepository.clear();
+    await inMemoryShareLinkRepository.clear();
   });
 
   it("summarizes only resources from the same private sessions", async () => {
@@ -170,6 +172,20 @@ describe("workspace dashboard API route", () => {
       note: "Session B paper note.",
       ownerSessionId: "brief_session_b"
     });
+    await inMemoryShareLinkRepository.save({
+      resourceType: "brief",
+      resourceId: "brief_session_a",
+      title: "Session A brief",
+      ownerSessionId: "brief_session_a",
+      visibility: "public"
+    });
+    await inMemoryShareLinkRepository.save({
+      resourceType: "brief",
+      resourceId: "brief_session_b",
+      title: "Session B brief",
+      ownerSessionId: "brief_session_b",
+      visibility: "public"
+    });
 
     const { GET } = await import("@/app/api/workspace/dashboard/route");
     const response = await GET(
@@ -192,7 +208,8 @@ describe("workspace dashboard API route", () => {
       researchProjects: 1,
       briefCollections: 1,
       documentCollections: 1,
-      paperNotes: 1
+      paperNotes: 1,
+      shareLinks: 1
     });
     expect(
       payload.dashboard.recentResearchProjects.map((item: { title: string }) => item.title)
@@ -214,6 +231,11 @@ describe("workspace dashboard API route", () => {
         (item: { note: string }) => item.note
       )
     ).toEqual(["Session A paper note."]);
+    expect(
+      payload.dashboard.recentShareLinks.map(
+        (item: { title: string }) => item.title
+      )
+    ).toEqual(["Session A brief"]);
     expect(
       payload.dashboard.recentPapers.map((item: { id: string }) => item.id)
     ).toEqual(["paper_1"]);
@@ -343,6 +365,24 @@ describe("workspace dashboard API route", () => {
       createdByUserId: "user_1",
       visibility: "workspace"
     });
+    await inMemoryShareLinkRepository.save({
+      resourceType: "brief",
+      resourceId: "brief_workspace_a",
+      title: "Workspace A brief",
+      ownerId: "user_1",
+      workspaceId: "workspace_a",
+      createdByUserId: "user_1",
+      visibility: "workspace"
+    });
+    await inMemoryShareLinkRepository.save({
+      resourceType: "brief",
+      resourceId: "brief_workspace_b",
+      title: "Workspace B brief",
+      ownerId: "user_1",
+      workspaceId: "workspace_b",
+      createdByUserId: "user_1",
+      visibility: "workspace"
+    });
 
     const { GET } = await import("@/app/api/workspace/dashboard/route");
     const response = await GET(
@@ -365,7 +405,8 @@ describe("workspace dashboard API route", () => {
       researchProjects: 1,
       briefCollections: 1,
       documentCollections: 1,
-      paperNotes: 1
+      paperNotes: 1,
+      shareLinks: 1
     });
     expect(
       payload.dashboard.recentResearchProjects.map((item: { title: string }) => item.title)
@@ -387,6 +428,11 @@ describe("workspace dashboard API route", () => {
         (item: { note: string }) => item.note
       )
     ).toEqual(["Workspace A paper note."]);
+    expect(
+      payload.dashboard.recentShareLinks.map(
+        (item: { title: string }) => item.title
+      )
+    ).toEqual(["Workspace A brief"]);
     expect(
       payload.dashboard.recentPapers.map((item: { id: string }) => item.id)
     ).toEqual(["paper_1"]);

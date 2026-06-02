@@ -64,6 +64,9 @@ The app supports:
 - paper notes/comments with session/user/workspace ownership,
   `GET/POST /api/workspace/paper-notes`, paper access validation through
   accessible briefs, and dashboard UI
+- share links with session/user/workspace ownership, opaque tokens,
+  `private/workspace/public` visibility, `GET/POST
+  /api/workspace/share-links`, brief access validation, and dashboard UI
 - deployment smoke coverage for source health, preflight, documents, compare, claim extraction, claim comparison, and AI-backed brief flow when not skipped
 - staging readiness preflight through `npm run staging:check`
 
@@ -402,6 +405,15 @@ First remediation started on 2026-06-02:
   Verified with `npm test -- tests/paperNoteRepository.test.ts
   tests/paperNotesRoute.test.ts tests/workspaceDashboardRoute.test.ts
   tests/identitySchema.test.ts` and `npm run lint`.
+- Added share links with visibility controls: `ShareLink` schema and
+  migration, memory/PostgreSQL repositories, opaque tokens,
+  session/user/workspace ownership, `private/workspace/public` visibility,
+  `GET/POST /api/workspace/share-links`, access validation for selected
+  briefs, and a create/list panel in `/workspace`. Verified with `npm test --
+  tests/shareLinkRepository.test.ts tests/shareLinksRoute.test.ts
+  tests/workspaceDashboardRoute.test.ts tests/identitySchema.test.ts` and
+  `npx prisma validate`, then full `npm test`, `npm run lint`, and
+  `npm run build`.
 
 ## Next Recommended Step
 
@@ -420,4 +432,4 @@ Next highest-value work:
    failures.
 5. Add a durable DB-backed or external queue adapter for Compare jobs if heavier
    Compare workloads become common.
-6. Add share links with visibility controls, then export history.
+6. Add export history, then the public `/share/[token]` landing route.

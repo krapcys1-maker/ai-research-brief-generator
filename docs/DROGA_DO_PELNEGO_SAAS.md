@@ -144,6 +144,9 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
 - [x] Notatki/komentarze do zapisanych papierow: `PaperNote` ma ownership,
   walidacje dostepu do papierow z dostepnych briefow, repozytoria
   memory/PostgreSQL, API i UI w dashboardzie.
+- [x] Share links z kontrola widocznosci: `ShareLink` ma token, ownership,
+  `private/workspace/public`, walidacje dostepu do briefu, repozytoria
+  memory/PostgreSQL, API i UI w dashboardzie.
 
 ## Najwieksze braki
 
@@ -184,10 +187,10 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
    Przy wiekszym ruchu trzeba przejsc na zewnetrzna kolejke lub przynajmniej
    wyciagnac stabilny `JobQueue` adapter.
 
-8. **Brakuje produktowej retencji i udostepniania.**
+8. **Brakuje produktowej retencji i historii eksportow.**
    Sa briefy, dokumenty, compare, dashboard workspace i saved research
    projects, saved brief collections, document collections oraz
-   notatki/komentarze do papierow, ale jeszcze nie ma share links, export
+   notatki/komentarze do papierow oraz share links, ale jeszcze nie ma export
    history ani retencji per workspace.
 
 9. **Brakuje billing/quota/admin.**
@@ -432,7 +435,15 @@ Status: **czesciowo zrobione**.
   tests/paperNoteRepository.test.ts tests/paperNotesRoute.test.ts
   tests/workspaceDashboardRoute.test.ts tests/identitySchema.test.ts`, `npm
   run lint`.
-- [ ] Share links z kontrola widocznosci.
+- [x] Share links z kontrola widocznosci.
+  Zweryfikowano 2026-06-02: dodano `ShareLink` z tokenem,
+  session/user/workspace ownership, `private/workspace/public`, migracje
+  Prisma, repozytoria memory/PostgreSQL, `GET/POST
+  /api/workspace/share-links`, walidacje dostepu do wybranego briefu oraz
+  formularz/listing w `/workspace`; `npm test --
+  tests/shareLinkRepository.test.ts tests/shareLinksRoute.test.ts
+  tests/workspaceDashboardRoute.test.ts tests/identitySchema.test.ts`, `npx
+  prisma validate`, `npm run lint`.
 - [ ] Export history.
 - [ ] Prosty onboarding dla nowego uzytkownika.
 

@@ -35,6 +35,12 @@ type PaperNoteResponse = {
   error?: string;
 };
 
+type ShareLinkResponse = {
+  link?: WorkspaceDashboardPayload["recentShareLinks"][number];
+  status?: string;
+  error?: string;
+};
+
 function formatDate(value: string) {
   return new Date(value).toLocaleString();
 }
@@ -62,11 +68,13 @@ export function WorkspaceDashboard() {
     string | null
   >(null);
   const [paperNoteError, setPaperNoteError] = useState<string | null>(null);
+  const [shareLinkError, setShareLinkError] = useState<string | null>(null);
   const [isSavingProject, setIsSavingProject] = useState(false);
   const [isSavingCollection, setIsSavingCollection] = useState(false);
   const [isSavingDocumentCollection, setIsSavingDocumentCollection] =
     useState(false);
   const [isSavingPaperNote, setIsSavingPaperNote] = useState(false);
+  const [isSavingShareLink, setIsSavingShareLink] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   async function fetchDashboard() {
@@ -249,6 +257,42 @@ export function WorkspaceDashboard() {
     }
   }
 
+  async function saveShareLink(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsSavingShareLink(true);
+    setShareLinkError(null);
+
+    try {
+      const form = event.currentTarget;
+      const formData = new FormData(form);
+      const response = await fetch("/api/workspace/share-links", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          resourceType: "brief",
+          resourceId: formData.get("resourceId"),
+          visibility: formData.get("visibility")
+        })
+      });
+      const payload = (await response.json()) as ShareLinkResponse;
+
+      if (!response.ok || !payload.link) {
+        throw new Error(payload.error ?? "Could not create share link.");
+      }
+
+      form.reset();
+      setDashboard(await fetchDashboard());
+    } catch (caught) {
+      setShareLinkError(
+        caught instanceof Error ? caught.message : "Could not create share link."
+      );
+    } finally {
+      setIsSavingShareLink(false);
+    }
+  }
+
   useEffect(() => {
     let cancelled = false;
 
@@ -345,6 +389,10 @@ export function WorkspaceDashboard() {
           <div className="metric">
             <span className="metric-label">Paper notes</span>
             <strong>{dashboard?.totals.paperNotes ?? 0}</strong>
+          </div>
+          <div className="metric">
+            <span className="metric-label">Share links</span>
+            <strong>{dashboard?.totals.shareLinks ?? 0}</strong>
           </div>
         </div>
       </section>
@@ -570,6 +618,69 @@ export function WorkspaceDashboard() {
         {paperNoteError ? (
           <div className="form-alert error">{paperNoteError}</div>
         ) : null}
+      </section>
+
+      <section className="surface workspace-panel">
+        <div className="workspace-panel-header">
+          <h2>Share brief</h2>
+          <span className="badge">{dashboard?.totals.shareLinks ?? 0}</span>
+        </div>
+        <form className="workspace-project-form" onSubmit={saveShareLink}>
+          {dashboard?.recentBriefs.length ? (
+            <select className="form-control" name="resourceId" required>
+              <option value="">Select brief</option>
+              {dashboard.recentBriefs.map((brief) => (
+                <option value={brief.id} key={brief.id}>
+                  {brief.title}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <div className="source-health-empty">
+              Generate a brief before creating a share link.
+            </div>
+          )}
+          <select className="form-control" name="visibility" required>
+            <option value="private">Private link</option>
+            <option value="workspace">Workspace link</option>
+            <option value="public">Public link</option>
+          </select>
+          <button
+            className="primary-action"
+            type="submit"
+            disabled={isSavingShareLink || !dashboard?.recentBriefs.length}
+          >
+            {isSavingShareLink ? "Creating..." : "Create share link"}
+          </button>
+        </form>
+        {shareLinkError ? (
+          <div className="form-alert error">{shareLinkError}</div>
+        ) : null}
+      </section>
+
+      <section className="surface workspace-panel">
+        <div className="workspace-panel-header">
+          <h2>Share links</h2>
+          <span className="badge">{dashboard?.totals.shareLinks ?? 0}</span>
+        </div>
+        {dashboard?.recentShareLinks.length ? (
+          <div className="workspace-list">
+            {dashboard.recentShareLinks.map((link) => (
+              <Link href="/workspace" key={link.id}>
+                <span className="badge">{link.visibility}</span>
+                <strong>{link.title}</strong>
+                <span>{`/share/${link.token}`}</span>
+                <time dateTime={link.createdAt}>
+                  {formatDate(link.createdAt)}
+                </time>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="source-health-empty">
+            No share links in this scope.
+          </div>
+        )}
       </section>
 
       <section className="surface workspace-panel">
