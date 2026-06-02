@@ -51,6 +51,8 @@ The app supports:
 - background full-text ingestion jobs with PostgreSQL persistence, ownership
   metadata, lease recovery, retry limits, and `npm run worker:fulltext`
 - `CompareReport` schema and repository foundation with user/workspace ownership
+- workspace dashboard at `/workspace` with session/user/workspace-scoped
+  summaries for briefs, documents, and saved Compare reports
 - deployment smoke coverage for source health, preflight, documents, compare, claim extraction, claim comparison, and AI-backed brief flow when not skipped
 - staging readiness preflight through `npm run staging:check`
 
@@ -356,6 +358,12 @@ First remediation started on 2026-06-02:
   tests/claimCheckJobsRoute.test.ts tests/claimCheckReportsRoute.test.ts
   tests/compareReportRepository.test.ts tests/claimCheck.test.ts` and
   `npm run lint`.
+- Added the first workspace dashboard slice: `/workspace` and
+  `GET /api/workspace/dashboard` aggregate recent brief summaries, uploaded
+  document summaries, and saved Compare reports without crossing the existing
+  session/user/workspace ownership boundaries. Verified with `npm test --
+  tests/workspaceDashboardRoute.test.ts tests/briefsRoute.test.ts
+  tests/documentsRoute.test.ts tests/claimCheckReportsRoute.test.ts`.
 
 ## Next Recommended Step
 
@@ -374,3 +382,5 @@ Next highest-value work:
    failures.
 5. Add a durable DB-backed or external queue adapter for Compare jobs if heavier
    Compare workloads become common.
+6. Add saved topics/research projects and collections on top of the new
+   workspace dashboard.

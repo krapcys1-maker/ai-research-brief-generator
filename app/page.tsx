@@ -32,6 +32,9 @@ export default function HomePage() {
             the result is shown.
           </p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 18 }}>
+            <a className="citation" href="/workspace">
+              Workspace
+            </a>
             <a className="citation" href="/documents">
               Ask My Documents
             </a>

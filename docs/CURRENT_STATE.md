@@ -126,6 +126,15 @@ paste/upload text -> extract candidate claims -> user selects claims -> academic
   - list and reopen saved reports from the `/compare` history panel.
   - queue longer comparisons through `POST /api/claim-check/jobs` and poll
     status/results through `GET /api/claim-check/jobs/[id]`.
+- Workspace dashboard at `/workspace`:
+  - `GET /api/workspace/dashboard` aggregates recent brief, document, and
+    saved Compare report summaries.
+  - The dashboard keeps the existing ownership boundaries: brief history is
+    scoped through app-session/trusted identity/session history, while
+    documents and Compare reports are scoped through trusted document identity
+    or the private document session fallback.
+  - The UI shows workspace/session counters and recent links back into briefs,
+    documents, and Compare workflows.
 - Markdown export through `GET /api/export/[id]?format=markdown`.
 - Optional PostgreSQL/Prisma persistence behind the `BriefRepository` contract.
 - Optional PostgreSQL/Prisma persistence behind the `DocumentRepository` contract for uploaded documents and chunks.
@@ -262,6 +271,9 @@ ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true
 - Uploaded documents can be scoped to durable authenticated user/workspace IDs
   supplied by trusted infrastructure. Brief history remains session-scoped in
   the current prototype.
+- `/workspace` is a scoped product dashboard over existing resources. It is not
+  yet a full project management layer: saved topics, collections, export
+  history, share links, and onboarding remain future work.
 - App-native sessions can resolve durable users/workspaces for brief access, but
   registration/login UI, password or magic-link flow, reset access, account
   settings, audit trail, and full role enforcement are not implemented yet.
@@ -276,6 +288,7 @@ npm run benchmark:retrieval
 npm run benchmark:source-quality
 npm run benchmark:claim-check
 npm run benchmark:quality-gate
+npm test -- tests/workspaceDashboardRoute.test.ts
 npm run worker:fulltext
 npm run lint
 npm run build

@@ -133,6 +133,8 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
   i `npm run worker:fulltext`.
 - [x] Deployment smoke obejmuje source health, preflight, documents, compare,
   claim extraction, claim comparison i opcjonalnie AI flow.
+- [x] Dashboard workspace laczy najnowsze briefy, dokumenty i zapisane Compare
+  reports w jednym session/user/workspace-scoped widoku `/workspace`.
 
 ## Najwieksze braki
 
@@ -173,9 +175,10 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
    Przy wiekszym ruchu trzeba przejsc na zewnetrzna kolejke lub przynajmniej
    wyciagnac stabilny `JobQueue` adapter.
 
-8. **Brakuje produktowej retencji.**
+8. **Brakuje produktowej retencji i zapisanych projektow badawczych.**
    Sa briefy, dokumenty i compare, ale jeszcze nie ma saved topics, collections,
-   dashboardu workspace ani zapisanych raportow.
+   dokument collections, export history ani retencji per workspace. Dashboard
+   workspace i zapisane Compare reports sa juz dostepne.
 
 9. **Brakuje billing/quota/admin.**
    Bez planow, limitow, triala, admin panelu i audit logu to nadal bardziej beta
@@ -365,9 +368,14 @@ Kryterium odbioru P3:
 
 ## Faza P4: Produktowy SaaS workspace
 
-Status: **do zrobienia**.
+Status: **czesciowo zrobione**.
 
-- [ ] Dashboard workspace.
+- [x] Dashboard workspace.
+  Zweryfikowano 2026-06-02: dodano `/workspace` i
+  `GET /api/workspace/dashboard`, agregujace briefy, dokumenty i zapisane
+  Compare reports z session/user/workspace isolation; `npm test --
+  tests/workspaceDashboardRoute.test.ts tests/briefsRoute.test.ts
+  tests/documentsRoute.test.ts tests/claimCheckReportsRoute.test.ts`.
 - [ ] Saved topics / research projects.
 - [ ] Saved brief collections.
 - [x] Saved Compare With Science reports.
