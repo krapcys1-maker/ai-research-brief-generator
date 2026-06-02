@@ -71,6 +71,9 @@ The app supports:
   export recording, `GET /api/workspace/export-history`, and dashboard UI
 - simple workspace onboarding checklist with progress derived from scoped
   briefs, documents, projects, collections, notes, share links, and exports
+- structured production logging for brief API events, source-cache
+  configuration failures, and brief/full-text worker processing with
+  secret/session redaction
 - deployment smoke coverage for source health, preflight, documents, compare, claim extraction, claim comparison, and AI-backed brief flow when not skipped
 - staging readiness preflight through `npm run staging:check`
 
@@ -432,6 +435,12 @@ First remediation started on 2026-06-02:
   paper note, share link, and export. Verified with `npm test --
   tests/workspaceOnboarding.test.ts tests/workspaceDashboardRoute.test.ts` and
   `npm run lint`.
+- Added structured production logs: `structuredLogger` emits JSON in production
+  or with `STRUCTURED_LOGS=true`, redacts sensitive keys, normalizes errors,
+  and is now used by brief API, source-cache configuration errors, and
+  brief/full-text workers. Verified with `npm test --
+  tests/structuredLogger.test.ts tests/briefJobs.test.ts
+  tests/fulltextIngestionJobs.test.ts tests/briefsRoute.test.ts`.
 
 ## Next Recommended Step
 
@@ -446,8 +455,8 @@ Next highest-value work:
 3. Run `npm run staging:check`, `npx prisma migrate deploy`,
    `npm run embedding:check`, and full `npm run smoke:deploy` against the real
    staging deployment after secrets are configured.
-4. Add structured production logs and alerting for AI/provider/source/worker
-   failures.
+4. Add alerting for AI/provider/source/worker failures on top of the structured
+   production logs.
 5. Add a durable DB-backed or external queue adapter for Compare jobs if heavier
    Compare workloads become common.
 6. Add the public `/share/[token]` landing route, then paper timeline or topic clustering.

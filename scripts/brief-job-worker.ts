@@ -1,4 +1,5 @@
 import { resetStaleBriefJobs, runNextBriefJob } from "@/lib/jobs/briefJobs";
+import { structuredLogger } from "@/lib/observability/structuredLogger";
 
 function numberEnv(name: string, fallback: number) {
   const raw = process.env[name];
@@ -26,7 +27,10 @@ async function tick() {
   const resetCount = await resetStaleBriefJobs(staleMs);
 
   if (resetCount > 0) {
-    console.log(`Reset ${resetCount} stale brief job lease(s).`);
+    structuredLogger.warn("brief_worker.stale_jobs_reset", {
+      resetCount,
+      staleMs
+    });
   }
 
   const job = await runNextBriefJob();
@@ -35,11 +39,14 @@ async function tick() {
     return false;
   }
 
-  console.log(
-    `Processed brief job ${job.id}: ${job.status}${
-      job.briefId ? ` -> ${job.briefId}` : ""
-    }${job.error ? ` (${job.error})` : ""}`
-  );
+  structuredLogger.info("brief_worker.job_processed", {
+    jobId: job.id,
+    status: job.status,
+    stage: job.stage,
+    attemptCount: job.attemptCount,
+    briefId: job.briefId,
+    error: job.error
+  });
   return true;
 }
 
@@ -61,8 +68,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(
-    `Brief job worker failed: ${error instanceof Error ? error.message : String(error)}`
-  );
+  structuredLogger.error("brief_worker.failed", { error });
   process.exitCode = 1;
 });

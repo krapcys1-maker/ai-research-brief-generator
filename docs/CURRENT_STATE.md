@@ -251,6 +251,12 @@ paste/upload text -> extract candidate claims -> user selects claims -> academic
 - App-native session runtime foundation through `UserSession`, hashed opaque
   tokens, `ai_brief_app_session`, `GET /api/auth/session`, workspace membership
   validation, and brief access/rate-limit integration.
+- Structured production logging through `structuredLogger`:
+  - JSON events in production or when `STRUCTURED_LOGS=true`.
+  - Service/environment metadata, event names, levels, and timestamps.
+  - Redaction for sensitive token/secret/session/API key/cookie fields.
+  - Coverage for brief API job creation/rate-limit/configuration failures,
+    source-cache configuration errors, and brief/full-text worker processing.
 
 ## Storage Modes
 
@@ -351,6 +357,9 @@ ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true
 - App-native sessions can resolve durable users/workspaces for brief access, but
   registration/login UI, password or magic-link flow, reset access, account
   settings, audit trail, and full role enforcement are not implemented yet.
+- Structured production logs exist, but alert routing and incident thresholds
+  for AI timeouts, fallback rate, source failures, and worker stalls are not
+  implemented yet.
 - shadcn/ui is not implemented; current UI uses custom CSS.
 
 ## Verification Commands
@@ -372,6 +381,7 @@ npm test -- tests/shareLinkRepository.test.ts
 npm test -- tests/exportHistoryRoute.test.ts
 npm test -- tests/exportHistoryRepository.test.ts
 npm test -- tests/workspaceOnboarding.test.ts
+npm test -- tests/structuredLogger.test.ts
 npm run worker:fulltext
 npm run lint
 npm run build

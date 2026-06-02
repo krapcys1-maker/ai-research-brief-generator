@@ -151,6 +151,10 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
   ownership, formatem, plikiem i lista w dashboardzie workspace.
 - [x] Prosty onboarding workspace: dashboard pokazuje checklistę startowa i
   postep liczony z realnych zasobow w aktualnym session/user/workspace scope.
+- [x] Structured production logs: centralny logger emituje produkcyjne JSON
+  events z poziomem, nazwa zdarzenia, timestampem, service/environment metadata
+  i redakcja sekretow; brief API oraz brief/full-text workery loguja kluczowe
+  zdarzenia jobow, rate limitow i bledow konfiguracji.
 
 ## Najwieksze braki
 
@@ -476,7 +480,12 @@ Status: **do zrobienia**.
 
 - [x] AI synthesis diagnostics w aplikacji.
 - [x] Source diagnostics i cache health.
-- [ ] Structured production logs.
+- [x] Structured production logs.
+  Zweryfikowano 2026-06-02: dodano `structuredLogger` z JSON output w produkcji
+  lub `STRUCTURED_LOGS=true`, sanitizacja `token/secret/session/apiKey/cookie`,
+  logi dla brief API, source-cache configuration error oraz brief/full-text
+  workerow; `npm test -- tests/structuredLogger.test.ts tests/briefJobs.test.ts
+  tests/fulltextIngestionJobs.test.ts tests/briefsRoute.test.ts`.
 - [ ] Alerty dla AI timeoutow, fallback rate, source failures, worker stalls.
 - [ ] Audit log dla upload/delete/export/share.
 - [ ] Admin panel lub przynajmniej admin API dla private beta.

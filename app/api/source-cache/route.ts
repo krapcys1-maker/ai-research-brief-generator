@@ -12,12 +12,18 @@ import {
   getRecentAiSynthesisDiagnostics
 } from "@/lib/storage/aiSynthesisDiagnosticsStore";
 import { getEmbeddingConfigSummary } from "@/lib/embeddings/diagnostics";
+import { structuredLogger } from "@/lib/observability/structuredLogger";
 import { getPersistenceStatus } from "@/lib/storage/repository";
 
 export async function GET() {
   const persistence = getPersistenceStatus();
 
   if (persistence.fatalError) {
+    structuredLogger.error("source_cache.configuration_error", {
+      persistenceMode: persistence.mode,
+      error: new Error(persistence.fatalError)
+    });
+
     return NextResponse.json(
       {
         status: "configuration_error",

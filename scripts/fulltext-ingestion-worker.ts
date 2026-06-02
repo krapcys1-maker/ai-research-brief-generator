@@ -2,6 +2,7 @@ import {
   resetStaleFullTextIngestionJobs,
   runNextFullTextIngestionJob
 } from "@/lib/fulltext/ingestionJobs";
+import { structuredLogger } from "@/lib/observability/structuredLogger";
 
 function numberEnv(name: string, fallback: number) {
   const raw = process.env[name];
@@ -32,7 +33,10 @@ async function tick() {
   const resetCount = await resetStaleFullTextIngestionJobs(staleMs);
 
   if (resetCount > 0) {
-    console.log(`Reset ${resetCount} stale full-text ingestion job lease(s).`);
+    structuredLogger.warn("fulltext_worker.stale_jobs_reset", {
+      resetCount,
+      staleMs
+    });
   }
 
   const job = await runNextFullTextIngestionJob();
@@ -41,11 +45,17 @@ async function tick() {
     return false;
   }
 
-  console.log(
-    `Processed full-text ingestion job ${job.id}: ${job.status}${
-      job.result ? ` (${job.result.parsedCount} parsed, ${job.result.chunkCount} chunks)` : ""
-    }${job.error ? ` (${job.error})` : ""}`
-  );
+  structuredLogger.info("fulltext_worker.job_processed", {
+    jobId: job.id,
+    status: job.status,
+    stage: job.stage,
+    attemptCount: job.attemptCount,
+    parsedCount: job.result?.parsedCount,
+    failedCount: job.result?.failedCount,
+    unavailableCount: job.result?.unavailableCount,
+    chunkCount: job.result?.chunkCount,
+    error: job.error
+  });
   return true;
 }
 
@@ -67,10 +77,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error(
-    `Full-text ingestion worker failed: ${
-      error instanceof Error ? error.message : String(error)
-    }`
-  );
+  structuredLogger.error("fulltext_worker.failed", { error });
   process.exitCode = 1;
 });

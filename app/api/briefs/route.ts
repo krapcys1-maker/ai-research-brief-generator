@@ -9,6 +9,7 @@ import {
   appendBriefHistorySessionCookie
 } from "@/lib/briefs/session";
 import { createBriefJob } from "@/lib/jobs/briefJobs";
+import { structuredLogger } from "@/lib/observability/structuredLogger";
 import {
   checkRateLimit,
   getClientIp,
@@ -30,11 +31,23 @@ function errorResponse(message: string, status = 400) {
 export async function POST(request: Request) {
   try {
     const clientIp = getClientIp(request);
+    const rateLimitKey = await getBriefRateLimitKeyForRequest(
+      "brief",
+      request,
+      clientIp
+    );
     const rateLimit = await checkRateLimit({
-      key: await getBriefRateLimitKeyForRequest("brief", request, clientIp)
+      key: rateLimitKey
     });
 
     if (!rateLimit.allowed) {
+      structuredLogger.warn("brief_api.rate_limited", {
+        rateLimitKey,
+        retryAfterSeconds: rateLimit.retryAfterSeconds,
+        limit: rateLimit.limit,
+        resetAt: rateLimit.resetAt
+      });
+
       return NextResponse.json(
         {
           status: "error",
@@ -67,6 +80,18 @@ export async function POST(request: Request) {
             ownerSessionId: access.sessionId
           }
     );
+    structuredLogger.info("brief_api.job_created", {
+      jobId: job.id,
+      jobStatus: job.status,
+      scope: access.scope,
+      workspaceId: access.scope === "user" ? access.workspaceId : undefined,
+      visibility:
+        access.scope === "user"
+          ? access.workspaceId
+            ? "workspace"
+            : "private"
+          : "session"
+    });
     const headers = new Headers({
       "X-RateLimit-Limit": rateLimit.limit.toString(),
       "X-RateLimit-Remaining": rateLimit.remaining.toString(),
@@ -94,6 +119,10 @@ export async function POST(request: Request) {
     }
 
     if (error instanceof RateLimitConfigurationError) {
+      structuredLogger.error("brief_api.rate_limit_configuration_error", {
+        error
+      });
+
       return NextResponse.json(
         {
           status: "configuration_error",
@@ -112,6 +141,11 @@ export async function POST(request: Request) {
       message.includes("DEEPSEEK_API_KEY") || message.includes("AI_PROVIDER")
         ? 503
         : 500;
+
+    structuredLogger.error("brief_api.job_create_failed", {
+      status,
+      error
+    });
 
     return errorResponse(message, status);
   }
