@@ -98,6 +98,9 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
 - [x] Oficjalna decyzja tozsamosci: pelny public SaaS docelowo uzywa
   app-native auth + workspace'y, a trusted auth gateway zostaje trybem
   prywatnym/B2B lub przejsciowym. Szczegoly: `docs/IDENTITY_MODEL.md`.
+- [x] Prisma identity foundation: `User`, `Workspace`, `WorkspaceMember` i
+  role `owner/admin/member/viewer` z migracja
+  `20260602193000_add_app_identity`.
 - [x] AI synthesis diagnostics i embedding health w `/api/source-cache`.
 - [x] Benchmarki: retrieval, source-quality, claim-check.
 - [x] Deployment smoke obejmuje source health, preflight, documents, compare,
@@ -105,9 +108,9 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
 
 ## Najwieksze braki
 
-1. **Brak implementacji pelnego app-native auth i workspace modelu.**
-   Decyzja architektoniczna jest juz podjeta, ale w bazie nie ma jeszcze
-   `User`, `Workspace`, `WorkspaceMember`, rol ani UI kont.
+1. **Brak runtime app-native auth i UI kont.**
+   Decyzja architektoniczna i schemat Prisma sa juz gotowe, ale nie ma jeszcze
+   logowania, sesji uzytkownika, UI kont ani enforcementu rol.
 
 2. **Briefy i joby nie sa jeszcze workspace-scoped.**
    Brief history jest sesyjna. To dobre dla prywatnego demo, ale nie dla
@@ -160,8 +163,11 @@ Status: **najwyzszy priorytet**.
   Zweryfikowano dokumentacyjnie: `docs/IDENTITY_MODEL.md`, `npm run lint`,
   `npm test -- tests/deploymentPrivacyConfig.test.ts tests/briefJobs.test.ts
   tests/briefAccessRoute.test.ts`.
-- [ ] Jesli app-native auth: dodac `User`, `Workspace`, `WorkspaceMember`,
+- [x] Jesli app-native auth: dodac `User`, `Workspace`, `WorkspaceMember`,
   role i migracje.
+  Zweryfikowano 2026-06-02: `npx prisma validate` z tymczasowym
+  `DATABASE_URL=postgresql://...`, `npm test -- tests/identitySchema.test.ts`,
+  `npm test`, `npm run lint`, `npm run build`.
 - [ ] Dodac `ownerId`, `workspaceId`, `createdByUserId`, `visibility` do
   briefow i brief generation jobs.
 - [ ] Przeniesc rate limit z per-IP na per-user/per-workspace tam, gdzie jest
@@ -334,7 +340,7 @@ Kryterium odbioru P6:
 2. [x] Zdecydowac tryb tozsamosci:
    - rekomendowane dla pelnego public SaaS: app-native auth + workspace'y;
    - akceptowalne dla B2B/private deployment: trusted auth gateway.
-3. [ ] Dodac schemat `User`, `Workspace`, `WorkspaceMember` albo oficjalny dokument
+3. [x] Dodac schemat `User`, `Workspace`, `WorkspaceMember` albo oficjalny dokument
    kontraktu trusted auth gateway.
 4. [ ] Rozszerzyc `Brief` i `BriefGenerationJob` o workspace/user ownership.
 5. [ ] Dodac cross-user tests dla briefow, jobow, eksportu i Q&A.

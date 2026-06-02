@@ -37,7 +37,10 @@ deployment-specific headers.
 
 ## Target Schema
 
-The next implementation step should introduce these durable records:
+Status: implemented in Prisma on 2026-06-02 through
+`prisma/migrations/20260602193000_add_app_identity/migration.sql`.
+
+The identity foundation now includes these durable records:
 
 ```text
 User
@@ -129,12 +132,12 @@ Not allowed for public SaaS:
 
 ## Immediate Implementation Consequences
 
-1. Add `User`, `Workspace`, and `WorkspaceMember` to Prisma.
-2. Add workspace/user ownership to `Brief` and `BriefGenerationJob`.
-3. Keep existing session ownership as demo fallback or migration bridge.
-4. Extend route access checks from session-only to user/workspace-aware.
-5. Move rate limiting from per-IP to per-user/per-workspace when identity exists.
-6. Add cross-user and cross-workspace tests for brief list, brief detail,
+1. [x] Add `User`, `Workspace`, and `WorkspaceMember` to Prisma.
+2. [ ] Add workspace/user ownership to `Brief` and `BriefGenerationJob`.
+3. [ ] Keep existing session ownership as demo fallback or migration bridge.
+4. [ ] Extend route access checks from session-only to user/workspace-aware.
+5. [ ] Move rate limiting from per-IP to per-user/per-workspace when identity exists.
+6. [ ] Add cross-user and cross-workspace tests for brief list, brief detail,
    export, brief Q&A, job polling, documents, and saved compare reports.
 
 ## Acceptance Rule

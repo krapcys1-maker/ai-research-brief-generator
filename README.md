@@ -46,6 +46,9 @@ The app now has three product modes:
 - Optional PostgreSQL/Prisma persistence.
 - Source API cache and source diagnostics.
 - Production safeguards for public history, persistence, and rate limiting.
+- Prisma identity foundation for app-native SaaS accounts: users, workspaces,
+  workspace members, and owner/admin/member/viewer roles. Runtime login/session
+  UI is still future work.
 
 ## Environment
 

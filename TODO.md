@@ -26,7 +26,8 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 - [x] Add authentication or session-scoped/private brief history.
 - [x] Add trusted-header user/workspace ownership for uploaded documents before public multi-user deployment.
 - [x] Decide and document the official identity model for full public SaaS.
-- [ ] Add app-native user accounts, workspace membership, roles, and audit trail.
+- [x] Add app-native `User`, `Workspace`, `WorkspaceMember`, role enum, and Prisma migration.
+- [ ] Add app-native login/session runtime, account UI, role enforcement, and audit trail.
 - [ ] Add user/workspace ownership to briefs, brief generation jobs, exports, brief Q&A, and saved compare reports.
 - [x] Protect brief generation job polling by owner/session access.
 - [x] Add retention/deletion policy copy for uploaded documents.

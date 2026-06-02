@@ -207,14 +207,18 @@ First remediation started on 2026-06-02:
   trusted auth gateway remains a private/B2B or interim mode. Updated
   `docs/DROGA_DO_PELNEGO_SAAS.md`, `TODO.md`, `README.md`, and
   `docs/DEPLOYMENT.md` to point at that decision.
+- Added the Prisma identity foundation for app-native SaaS accounts:
+  `WorkspaceRole`, `User`, `Workspace`, and `WorkspaceMember`, plus migration
+  `20260602193000_add_app_identity`. The runtime login/session layer and
+  user/workspace ownership for briefs/jobs remain the next implementation work.
 
 ## Next Recommended Step
 
 Next highest-value work:
 
-1. Add app-native `User`, `Workspace`, and `WorkspaceMember` models plus a
-   migration.
-2. Add user/workspace ownership to `Brief` and `BriefGenerationJob`.
+1. Add user/workspace ownership to `Brief` and `BriefGenerationJob`.
+2. Add app-native login/session runtime, account UI, role enforcement, and
+   audit trail.
 3. Add real OpenAI-compatible embedding provider credentials in deployment,
    rerun `npm run embedding:check`, then rerun retrieval/source-quality/claim-check
    benchmarks and compare against the local fallback baseline.
