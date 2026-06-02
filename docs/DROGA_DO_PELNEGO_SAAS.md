@@ -299,7 +299,11 @@ Status: **czesciowo zrobione**.
   clinical RAG/citation faithfulness/diagnosis support z wysokocytowanymi
   hard negatives; `npm test -- tests/sourceQualityBenchmark.test.ts`,
   `npm run benchmark:source-quality`.
-- [ ] Rozszerzyc Compare With Science benchmarki o live/full-text cases.
+- [x] Rozszerzyc Compare With Science benchmarki o live/full-text cases.
+  Zweryfikowano 2026-06-02: dodano recorded arXiv/Semantic Scholar cases oraz
+  full-text-supported transformer case z wymaganym `full_text_supported`;
+  `npm test -- tests/claimCheckBenchmark.test.ts tests/claimCheck.test.ts`,
+  `npm run benchmark:claim-check`.
 - [ ] Ustalic progi jakosci do CI dla retrieval/source-quality/claim-check.
 - [x] Dodac raport porownawczy embedding providerow w `benchmark-results`.
   Zweryfikowano 2026-06-02: `npm run embedding:check`,

@@ -58,7 +58,7 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 - [ ] Tune hybrid retrieval with model-grade embeddings and larger benchmarks.
 - [x] Expand paper full-text ingestion tests with recorded PDF fixtures and parser-quality cases.
 - [x] Expand uploaded-document retrieval tests with longer documents and multi-document questions.
-- [ ] Expand Compare With Science benchmarks with recorded live-source and full-text evidence cases.
+- [x] Expand Compare With Science benchmarks with recorded live-source and full-text evidence cases.
 - [x] Add UI and Markdown export warnings for weak full-text parser quality.
 - [x] Add page-range support for full-text parser/chunking fixtures.
 - [x] Improve PDF/full-text ingestion with background jobs for heavier PDFs.

@@ -27,7 +27,9 @@ Last updated: 2026-06-02
 - Add more claim/evidence benchmark fixtures for methodological claims, such as sample size, study design, and evaluation setting.
 - Expand paper full-text ingestion tests with recorded arXiv/OA PDF fixtures and parser-quality edge cases.
 - Expand uploaded-document retrieval tests with longer PDFs, noisy extraction, and multi-document questions.
-- Expand Compare With Science benchmarks with more live/recorded cases beyond the current deterministic supported, partially supported, contradicted, overclaimed, already-known, insufficient-evidence, non-scientific, and possible-dead-end fixtures.
+- Continue expanding Compare With Science benchmarks beyond the current
+  deterministic, recorded live-source, and full-text-supported cases with more
+  provider/adapter drift and long-document evidence cases.
 
 ## P2: Product UX
 

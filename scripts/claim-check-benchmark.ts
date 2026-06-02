@@ -44,6 +44,7 @@ function renderMarkdownReport(input: {
     `Evidence requirement failures: ${input.result.evidenceRequirementFailures}`,
     `Similar-work requirement failures: ${input.result.similarWorkRequirementFailures}`,
     `Caveat requirement failures: ${input.result.caveatRequirementFailures}`,
+    `Evidence-boundary requirement failures: ${input.result.evidenceBoundaryRequirementFailures}`,
     `Thresholds: accuracy >= ${pct(input.minAccuracy)}, requirement failures = 0`,
     "",
     "## Cases",
@@ -85,6 +86,9 @@ async function main() {
     `Similar-work requirement failures: ${result.similarWorkRequirementFailures}`
   );
   console.log(`Caveat requirement failures: ${result.caveatRequirementFailures}`);
+  console.log(
+    `Evidence-boundary requirement failures: ${result.evidenceBoundaryRequirementFailures}`
+  );
   console.log("");
 
   for (const item of result.results) {
@@ -129,7 +133,8 @@ async function main() {
     result.classificationAccuracy < minAccuracy ||
     result.evidenceRequirementFailures > 0 ||
     result.similarWorkRequirementFailures > 0 ||
-    result.caveatRequirementFailures > 0;
+    result.caveatRequirementFailures > 0 ||
+    result.evidenceBoundaryRequirementFailures > 0;
 
   if (failed) {
     console.error("");
@@ -146,4 +151,3 @@ main().catch((error) => {
   console.error(error instanceof Error ? error.message : error);
   process.exit(1);
 });
-

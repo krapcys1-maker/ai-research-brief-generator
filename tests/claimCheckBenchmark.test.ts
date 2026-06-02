@@ -17,6 +17,7 @@ describe("claim-check benchmark suite", () => {
       expect(result.evidenceRequirementMet).toBe(true);
       expect(result.similarWorkRequirementMet).toBe(true);
       expect(result.caveatRequirementMet).toBe(true);
+      expect(result.evidenceBoundaryRequirementMet).toBe(true);
     }
   );
 
@@ -27,6 +28,6 @@ describe("claim-check benchmark suite", () => {
     expect(result.evidenceRequirementFailures).toBe(0);
     expect(result.similarWorkRequirementFailures).toBe(0);
     expect(result.caveatRequirementFailures).toBe(0);
+    expect(result.evidenceBoundaryRequirementFailures).toBe(0);
   });
 });
-

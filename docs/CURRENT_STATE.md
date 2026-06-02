@@ -152,7 +152,11 @@ paste/upload text -> extract candidate claims -> user selects claims -> academic
   `N-M`) and records selected `pageStart`/`pageEnd` on chunks.
 - Retrieval benchmark fixtures, gold-query tests, and `npm run benchmark:retrieval` for acronyms, Polish/English variants, typo recovery, interdisciplinary topics, comparison queries, domain-specific query expansion, and recorded live-source examples from arXiv, Semantic Scholar, and OpenAlex. The benchmark also writes ignored JSON/Markdown reports under `benchmark-results/` for provider comparisons.
 - Source-quality benchmark fixtures and `npm run benchmark:source-quality` for recorded live-source failure modes, including broad transformer queries that should prefer foundational papers over derivative title matches, stem-cell burn treatment queries that should avoid generic stem-cell/cosmetology records, and clinical RAG/citation-faithfulness queries that should beat high-citation but off-topic clinical or bibliometric records.
-- Compare With Science benchmark fixtures and `npm run benchmark:claim-check` for supported, partially supported, contradicted, insufficient-evidence, too-broad, non-scientific, already-known, and possible-dead-end classifications.
+- Compare With Science benchmark fixtures and `npm run benchmark:claim-check`
+  for supported, partially supported, contradicted, insufficient-evidence,
+  too-broad, non-scientific, already-known, possible-dead-end, recorded
+  live-source abstract evidence, and full-text-supported evidence-boundary
+  cases.
 - Ranking includes an exact-title boost so canonical title searches can surface foundational papers instead of derivative titles with extra keyword overlap.
 - Metadata-quality warnings flag suspicious live-source records, including known canonical papers with unexpected publication years or non-canonical identifiers, and surface those warnings in preflight, brief source details, and Markdown export.
 - Claim/evidence benchmark fixtures for direct, indirect, weak, unsupported-claim, overclaim, numeric, statistical-significance, and comparative cases.

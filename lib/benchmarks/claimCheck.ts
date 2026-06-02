@@ -1,10 +1,16 @@
 import { compareClaimsWithScience } from "@/lib/claimCheck/compare";
 import type {
   ClaimCheckReport,
+  ClaimEvidenceBoundary,
   ClaimClassification
 } from "@/lib/claimCheck/schemas";
+import type {
+  FullTextRepository,
+  PaperFullText,
+  PaperTextChunk
+} from "@/lib/fulltext/types";
 import type { SearchAllSourcesResult } from "@/lib/sources";
-import type { NormalizedPaper } from "@/lib/sources/types";
+import type { NormalizedPaper, ResearchSource } from "@/lib/sources/types";
 
 export type ClaimCheckBenchmarkCase = {
   name: string;
@@ -14,6 +20,8 @@ export type ClaimCheckBenchmarkCase = {
   requiresEvidence?: boolean;
   requiresSimilarWork?: boolean;
   requiresCaveats?: boolean;
+  expectedEvidenceBoundary?: ClaimEvidenceBoundary;
+  fullTextChunks?: PaperTextChunk[];
 };
 
 export type ClaimCheckCaseResult = {
@@ -29,6 +37,7 @@ export type ClaimCheckCaseResult = {
   evidenceRequirementMet: boolean;
   similarWorkRequirementMet: boolean;
   caveatRequirementMet: boolean;
+  evidenceBoundaryRequirementMet: boolean;
 };
 
 export type ClaimCheckBenchmarkResult = {
@@ -37,6 +46,7 @@ export type ClaimCheckBenchmarkResult = {
   evidenceRequirementFailures: number;
   similarWorkRequirementFailures: number;
   caveatRequirementFailures: number;
+  evidenceBoundaryRequirementFailures: number;
   results: ClaimCheckCaseResult[];
 };
 
@@ -63,6 +73,40 @@ function createBenchmarkPaper(
     influentialCitationCount: 1,
     source: "mock",
     ...rest
+  };
+}
+
+function liveSourcePaper(
+  overrides: Partial<NormalizedPaper> & Pick<NormalizedPaper, "id" | "title" | "abstract">
+): NormalizedPaper {
+  return createBenchmarkPaper({
+    authors: ["Recorded Fixture Author"],
+    citationCount: 24,
+    influentialCitationCount: 3,
+    sourceUrls: [`https://example.org/${overrides.id}`],
+    venue: "Recorded Fixture Venue",
+    ...overrides
+  });
+}
+
+function fullTextChunk(input: {
+  id: string;
+  paperId: string;
+  text: string;
+  sectionTitle?: string;
+  chunkIndex?: number;
+}): PaperTextChunk {
+  return {
+    id: input.id,
+    paperId: input.paperId,
+    fullTextId: `fulltext_${input.paperId}`,
+    sectionTitle: input.sectionTitle ?? "Methods",
+    chunkIndex: input.chunkIndex ?? 0,
+    text: input.text,
+    tokenEstimate: input.text.split(/\s+/).filter(Boolean).length,
+    pageStart: 1,
+    pageEnd: 1,
+    evidenceLevel: "full_text_supported"
   };
 }
 
@@ -167,25 +211,159 @@ export const claimCheckBenchmarkCases: ClaimCheckBenchmarkCase[] = [
           "This AI approach has weak evidence and uncertain clinical diagnosis utility in available studies."
       })
     ]
+  },
+  {
+    name: "recorded arXiv clinical RAG claim is abstract-supported",
+    claim: "Clinical RAG systems use citations to support diagnosis.",
+    expectedClassification: "supported",
+    expectedEvidenceBoundary: "abstract_supported",
+    requiresEvidence: true,
+    papers: [
+      liveSourcePaper({
+        id: "arxiv_live_clinical_rag_claim",
+        title: "Retrieval-Augmented Generation & Clinical QA",
+        abstract:
+          "A clinical RAG system uses citations and retrieval augmented generation to support diagnosis in clinical question answering.",
+        arxivId: "2401.12345",
+        doi: "10.48550/arXiv.2401.12345",
+        pdfUrl: "https://arxiv.org/pdf/2401.12345v2",
+        source: "arxiv",
+        venue: "arXiv cs.CL"
+      })
+    ]
+  },
+  {
+    name: "recorded Semantic Scholar citation faithfulness claim is abstract-supported",
+    claim:
+      "Medical RAG citation faithfulness can be benchmarked with citation support evidence.",
+    expectedClassification: "supported",
+    expectedEvidenceBoundary: "abstract_supported",
+    requiresEvidence: true,
+    papers: [
+      liveSourcePaper({
+        id: "semantic_live_citation_faithfulness_claim",
+        title: "Evaluating Citation Faithfulness in Medical RAG",
+        abstract:
+          "A benchmark for citation support evaluates citation faithfulness in medical retrieval augmented generation.",
+        doi: "10.1000/semantic",
+        semanticScholarId: "abc123",
+        source: "semantic_scholar",
+        venue: "ACL"
+      })
+    ]
+  },
+  {
+    name: "recorded full-text transformer claim uses full-text boundary",
+    claim: "Self-attention heads weight token relationships in transformer models.",
+    expectedClassification: "supported",
+    expectedEvidenceBoundary: "full_text_supported",
+    requiresEvidence: true,
+    papers: [
+      liveSourcePaper({
+        id: "arxiv_fulltext_attention_claim",
+        title: "Attention Is All You Need",
+        abstract:
+          "The Transformer is a sequence transduction architecture based on attention mechanisms.",
+        arxivId: "1706.03762",
+        doi: "10.48550/arXiv.1706.03762",
+        fullTextChunkCount: 1,
+        fullTextQualityScore: 0.94,
+        fullTextSourceType: "arxiv",
+        fullTextStatus: "parsed",
+        pdfUrl: "https://arxiv.org/pdf/1706.03762",
+        source: "arxiv",
+        year: 2017
+      })
+    ],
+    fullTextChunks: [
+      fullTextChunk({
+        id: "chunk_attention_self_heads",
+        paperId: "arxiv_fulltext_attention_claim",
+        text:
+          "Self-attention heads weight token relationships in transformer models and connect sequence positions through attention distributions."
+      })
+    ]
   }
 ];
+
+function sourcesForCase(benchmarkCase: ClaimCheckBenchmarkCase): ResearchSource[] {
+  const sources = [
+    ...new Set(
+      benchmarkCase.papers
+        .map((paper) => paper.source)
+        .filter((source): source is ResearchSource => source !== "merged")
+    )
+  ];
+
+  return sources.length ? sources : ["mock"];
+}
 
 function searchForCase(
   benchmarkCase: ClaimCheckBenchmarkCase
 ): SearchAllSourcesResult {
+  const sources = sourcesForCase(benchmarkCase);
+
   return {
     papers: benchmarkCase.papers,
-    sourcesUsed: benchmarkCase.papers.length ? ["mock"] : [],
+    sourcesUsed: benchmarkCase.papers.length ? sources : [],
     warnings: [],
     sourceDiagnostics: [
       {
-        source: "mock",
+        source: sources[0] ?? "mock",
         query: benchmarkCase.claim,
         status: benchmarkCase.papers.length ? "success" : "empty",
         resultCount: benchmarkCase.papers.length,
         cached: false
       }
     ]
+  };
+}
+
+function fullTextRepositoryForCase(
+  benchmarkCase: ClaimCheckBenchmarkCase
+): FullTextRepository | undefined {
+  if (!benchmarkCase.fullTextChunks?.length) {
+    return undefined;
+  }
+
+  return {
+    async save(input) {
+      return input.fullText;
+    },
+    async getByPaperId(paperId) {
+      const hasChunks = benchmarkCase.fullTextChunks?.some(
+        (chunk) => chunk.paperId === paperId
+      );
+
+      if (!hasChunks) {
+        return null;
+      }
+
+      const timestamp = new Date(0).toISOString();
+      return {
+        id: `fulltext_${paperId}`,
+        paperId,
+        status: "parsed",
+        sourceType: "arxiv",
+        sourceUrl: `https://example.org/${paperId}.pdf`,
+        parserName: "benchmark-fixture",
+        textHash: `hash_${paperId}`,
+        extractedAt: timestamp,
+        errorMessage: null,
+        qualityScore: 0.94,
+        createdAt: timestamp,
+        updatedAt: timestamp
+      } satisfies PaperFullText;
+    },
+    async getChunksByPaperIds(paperIds) {
+      const ids = new Set(paperIds);
+      return (benchmarkCase.fullTextChunks ?? []).filter((chunk) =>
+        ids.has(chunk.paperId)
+      );
+    },
+    async clear() {
+      return undefined;
+    }
   };
 }
 
@@ -205,10 +383,11 @@ export async function evaluateClaimCheckCase(
   const report = await compareClaimsWithScience({
     request: {
       claims: [benchmarkCase.claim],
-      sources: ["mock"],
+      sources: sourcesForCase(benchmarkCase),
       maxPapers: 5
     },
     dependencies: {
+      fullTextRepository: fullTextRepositoryForCase(benchmarkCase),
       search: async () => searchForCase(benchmarkCase)
     }
   });
@@ -222,6 +401,9 @@ export async function evaluateClaimCheckCase(
     !benchmarkCase.requiresSimilarWork ||
     (relatedPaperCount > 0 && report.similarWork.length > 0);
   const caveatRequirementMet = !benchmarkCase.requiresCaveats || caveatCount > 0;
+  const evidenceBoundaryRequirementMet =
+    !benchmarkCase.expectedEvidenceBoundary ||
+    item.evidenceBoundary === benchmarkCase.expectedEvidenceBoundary;
 
   return {
     name: benchmarkCase.name,
@@ -235,7 +417,8 @@ export async function evaluateClaimCheckCase(
     evidenceBoundary: item.evidenceBoundary,
     evidenceRequirementMet,
     similarWorkRequirementMet,
-    caveatRequirementMet
+    caveatRequirementMet,
+    evidenceBoundaryRequirementMet
   };
 }
 
@@ -255,6 +438,9 @@ export async function evaluateClaimCheckCases(
   const caveatRequirementFailures = results.filter(
     (result) => !result.caveatRequirementMet
   ).length;
+  const evidenceBoundaryRequirementFailures = results.filter(
+    (result) => !result.evidenceBoundaryRequirementMet
+  ).length;
 
   return {
     caseCount: results.length,
@@ -262,6 +448,7 @@ export async function evaluateClaimCheckCases(
     evidenceRequirementFailures,
     similarWorkRequirementFailures,
     caveatRequirementFailures,
+    evidenceBoundaryRequirementFailures,
     results
   };
 }

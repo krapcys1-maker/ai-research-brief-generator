@@ -14,6 +14,7 @@ import type { UserDocumentChunk } from "@/lib/documents/schemas";
 import type { DocumentRepository } from "@/lib/documents/types";
 import { getFullTextRepository } from "@/lib/fulltext/repository";
 import { retrievePaperTextChunks } from "@/lib/fulltext/retrieval";
+import type { FullTextRepository } from "@/lib/fulltext/types";
 import { dedupePapers } from "@/lib/pipeline/dedupe";
 import { scorePapersForQueriesHybrid, selectTopPapers } from "@/lib/pipeline/score";
 import { searchAllSources, type SearchAllSourcesResult } from "@/lib/sources";
@@ -22,6 +23,7 @@ import type { NormalizedPaper } from "@/lib/sources/types";
 type CompareDependencies = {
   search?: typeof searchAllSources;
   documentRepository?: DocumentRepository;
+  fullTextRepository?: FullTextRepository;
 };
 
 type DocumentSource = {
@@ -190,9 +192,11 @@ function documentEvidenceForClaim(
 
 async function paperEvidenceForClaim(
   claim: string,
-  papers: NormalizedPaper[]
+  papers: NormalizedPaper[],
+  repository?: FullTextRepository
 ): Promise<ClaimEvidenceSnippet[]> {
-  const fullTextRepository = await getFullTextRepository().catch(() => null);
+  const fullTextRepository =
+    repository ?? (await getFullTextRepository().catch(() => null));
   const fullTextChunks = fullTextRepository
     ? await fullTextRepository
         .getChunksByPaperIds(papers.map((paper) => paper.id))
@@ -440,7 +444,13 @@ export async function compareClaimsWithScience(input: {
     const papers = isScientificClaim(claim)
       ? await selectedPapersForClaim(claim, input.request, search)
       : [];
-    const paperEvidence = papers.length ? await paperEvidenceForClaim(claim, papers) : [];
+    const paperEvidence = papers.length
+      ? await paperEvidenceForClaim(
+          claim,
+          papers,
+          input.dependencies?.fullTextRepository
+        )
+      : [];
     const userEvidence = documentEvidenceForClaim(claim, documentChunks);
     const evidence = [...paperEvidence, ...userEvidence].slice(0, 6);
     const relatedPapers = papers.slice(0, 5).map(relatedPaper);

@@ -328,6 +328,11 @@ First remediation started on 2026-06-02:
   generic clinical QA, bibliometric citation-counting, and rule-based triage
   records. `npm run benchmark:source-quality` passes with 100% top-1,
   100% recall@5, and 0 excluded top failures.
+- Expanded Compare With Science benchmark fixtures from 8 to 11 cases with
+  recorded arXiv and Semantic Scholar abstract-level evidence plus a
+  full-text-supported transformer claim. The benchmark now checks evidence
+  boundary requirements and `npm run benchmark:claim-check` passes with 100%
+  classification accuracy and 0 evidence/similar-work/caveat/boundary failures.
 
 ## Next Recommended Step
 
@@ -342,7 +347,8 @@ Next highest-value work:
 3. Run `npm run staging:check`, `npx prisma migrate deploy`,
    `npm run embedding:check`, and full `npm run smoke:deploy` against the real
    staging deployment after secrets are configured.
-4. Expand Compare With Science benchmarks with recorded live/full-text cases.
-5. Set quality thresholds to CI for retrieval/source-quality/claim-check.
-6. Add saved Compare With Science report history API/UI and background compare
+4. Set quality thresholds to CI for retrieval/source-quality/claim-check.
+5. Add saved Compare With Science report history API/UI and background compare
    polling on top of the new `CompareReport` storage foundation.
+6. Add structured production logs and alerting for AI/provider/source/worker
+   failures.
