@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import type {
   ClaimCheckReport,
@@ -34,6 +34,32 @@ type ComparePayload = {
   status?: string;
   error?: string;
   report?: ClaimCheckReport;
+  savedReport?: SavedCompareReport;
+};
+
+type SavedCompareReport = {
+  id: string;
+  title: string;
+  summary: string;
+  sourceDocumentId: string | null;
+  claimCount: number;
+  visibility: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type CompareReportHistoryPayload = {
+  status?: string;
+  error?: string;
+  reports?: SavedCompareReport[];
+  historyScope?: "user" | "session";
+};
+
+type StoredCompareReportPayload = {
+  status?: string;
+  error?: string;
+  report?: ClaimCheckReport;
+  savedReport?: SavedCompareReport;
 };
 
 export function CompareWorkspace() {
@@ -49,6 +75,10 @@ export function CompareWorkspace() {
   const [error, setError] = useState<string | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [isComparing, setIsComparing] = useState(false);
+  const [history, setHistory] = useState<SavedCompareReport[]>([]);
+  const [historyScope, setHistoryScope] = useState<"user" | "session">("session");
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [loadingReportId, setLoadingReportId] = useState<string | null>(null);
 
   const selectedClaims = useMemo(
     () => claims.filter((claim) => selectedClaimIds.has(claim.id)),
@@ -63,6 +93,64 @@ export function CompareWorkspace() {
       ? report.items
       : report.items.filter((item) => item.classification === filter);
   }, [filter, report]);
+
+  async function refreshHistory() {
+    setIsLoadingHistory(true);
+
+    try {
+      const response = await fetch("/api/claim-check/reports");
+      const payload = (await response.json()) as CompareReportHistoryPayload;
+
+      if (!response.ok || !payload.reports) {
+        throw new Error(payload.error ?? "Could not load saved reports.");
+      }
+
+      setHistory(payload.reports);
+      setHistoryScope(payload.historyScope ?? "session");
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Could not load saved reports."
+      );
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadInitialHistory() {
+      try {
+        const response = await fetch("/api/claim-check/reports");
+        const payload = (await response.json()) as CompareReportHistoryPayload;
+
+        if (!response.ok || !payload.reports) {
+          throw new Error(payload.error ?? "Could not load saved reports.");
+        }
+
+        if (!cancelled) {
+          setHistory(payload.reports);
+          setHistoryScope(payload.historyScope ?? "session");
+        }
+      } catch (caughtError) {
+        if (!cancelled) {
+          setError(
+            caughtError instanceof Error
+              ? caughtError.message
+              : "Could not load saved reports."
+          );
+        }
+      }
+    }
+
+    void loadInitialHistory();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function toggleClaim(id: string) {
     setSelectedClaimIds((current) => {
@@ -142,12 +230,43 @@ export function CompareWorkspace() {
 
       setReport(payload.report);
       setFilter("all");
+      if (payload.savedReport) {
+        setHistory((current) => [
+          payload.savedReport as SavedCompareReport,
+          ...current.filter((item) => item.id !== payload.savedReport?.id)
+        ]);
+      } else {
+        await refreshHistory();
+      }
     } catch (caughtError) {
       setError(
         caughtError instanceof Error ? caughtError.message : "Could not compare claims."
       );
     } finally {
       setIsComparing(false);
+    }
+  }
+
+  async function handleLoadSavedReport(id: string) {
+    setError(null);
+    setLoadingReportId(id);
+
+    try {
+      const response = await fetch(`/api/claim-check/reports/${id}`);
+      const payload = (await response.json()) as StoredCompareReportPayload;
+
+      if (!response.ok || !payload.report) {
+        throw new Error(payload.error ?? "Could not load saved report.");
+      }
+
+      setReport(payload.report);
+      setFilter("all");
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error ? caughtError.message : "Could not load saved report."
+      );
+    } finally {
+      setLoadingReportId(null);
     }
   }
 
@@ -222,6 +341,54 @@ export function CompareWorkspace() {
         >
           {isComparing ? "Comparing..." : "Compare selected claims"}
         </button>
+      </section>
+
+      <section className="surface compare-panel">
+        <div className="compare-report-header">
+          <div>
+            <h2>Saved reports</h2>
+            <p>
+              {historyScope === "user"
+                ? "Workspace-owned Compare history."
+                : "Private session Compare history."}
+            </p>
+          </div>
+          <button
+            className="citation"
+            type="button"
+            onClick={() => void refreshHistory()}
+            disabled={isLoadingHistory}
+          >
+            {isLoadingHistory ? "Refreshing..." : "Refresh"}
+          </button>
+        </div>
+        {history.length ? (
+          <div className="similar-work-list">
+            {history.map((item) => (
+              <article key={item.id}>
+                <div className="token-list">
+                  <span className="badge">{item.claimCount} claim(s)</span>
+                  <span className="badge">{item.visibility}</span>
+                </div>
+                <h3>{item.title}</h3>
+                <p>{item.summary}</p>
+                <p style={{ color: "var(--muted)" }}>
+                  {new Date(item.createdAt).toLocaleString()}
+                </p>
+                <button
+                  type="button"
+                  className="citation"
+                  onClick={() => void handleLoadSavedReport(item.id)}
+                  disabled={loadingReportId === item.id}
+                >
+                  {loadingReportId === item.id ? "Loading..." : "Open report"}
+                </button>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="source-health-empty">No saved Compare reports yet.</div>
+        )}
       </section>
 
       {report ? (

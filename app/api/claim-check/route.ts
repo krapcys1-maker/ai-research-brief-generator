@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { ClaimCheckRequestSchema } from "@/lib/claimCheck/schemas";
 import { compareClaimsWithScience } from "@/lib/claimCheck/compare";
+import { getCompareReportRepository } from "@/lib/claimCheck/reportRepository";
+import { compareReportOwnershipFromAccess } from "@/lib/claimCheck/reportAccess";
 import { getDocumentRepository } from "@/lib/documents/repository";
 import {
   appendDocumentAccessCookieIfNeeded,
@@ -51,6 +53,12 @@ export async function POST(request: Request) {
       documentSource: access.source,
       dependencies: { documentRepository }
     });
+    const compareReportRepository = await getCompareReportRepository();
+    const savedReport = await compareReportRepository.save({
+      request: body,
+      report,
+      ...compareReportOwnershipFromAccess(access)
+    });
     const headers = new Headers({
       "X-RateLimit-Limit": rateLimit.limit.toString(),
       "X-RateLimit-Remaining": rateLimit.remaining.toString(),
@@ -62,7 +70,17 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         status: "completed",
-        report
+        report,
+        savedReport: {
+          id: savedReport.id,
+          title: savedReport.title,
+          summary: savedReport.summary,
+          sourceDocumentId: savedReport.sourceDocumentId,
+          claimCount: savedReport.claimCount,
+          visibility: savedReport.visibility,
+          createdAt: savedReport.createdAt,
+          updatedAt: savedReport.updatedAt
+        }
       },
       { headers }
     );

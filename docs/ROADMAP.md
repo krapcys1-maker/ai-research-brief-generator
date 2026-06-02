@@ -37,7 +37,8 @@ Last updated: 2026-06-02
 
 - Add user accounts and private saved topics.
 - Improve `Ask My Documents` with document collections, retention controls, and clearer deletion/audit UI.
-- Improve Compare With Science with saved reports, better claim review ergonomics, and clearer source filters.
+- Improve Compare With Science with better saved-report ergonomics, claim review
+  controls, and clearer source filters.
 - Add saved brief collections.
 - Add comparison mode for prompts such as "RAG vs fine-tuning in medicine".
 - Add paper timeline and topic clustering.
@@ -47,7 +48,8 @@ Last updated: 2026-06-02
 - Improve PDF/full-text ingestion beyond the current parser diagnostics,
   optional page ranges, controlled background jobs, and difficult-PDF fixtures
   by adding real OCR/table handling.
-- Improve Compare With Science with background jobs, report persistence, and deeper claim-level evidence ranking.
+- Improve Compare With Science with background jobs and deeper claim-level
+  evidence ranking.
 - Add citation graph / related work graph.
 - Add weekly research digest after accounts and saved topics exist.
 - Add knowledge graph only after source quality and full-text strategy are stable.

@@ -277,7 +277,7 @@ First remediation started on 2026-06-02:
   reports: Prisma model and migration, memory/PostgreSQL repositories,
   `ownerSessionId`, `ownerId`, `workspaceId`, `createdByUserId`, `visibility`,
   request JSON, report JSON, claim count, and workspace-scoped summary listing.
-  The history API/UI and background compare polling remain future product work.
+  Background compare polling remains future product work.
 - Added `npm run staging:check` with a tested staging readiness preflight for
   PostgreSQL, Upstash, DeepSeek secrets/model/timeouts, model-grade embeddings,
   web/worker split, trusted document ownership, disabled demo escape hatches,
@@ -340,6 +340,14 @@ First remediation started on 2026-06-02:
   Verified with `npm test -- tests/benchmarkQualityGate.test.ts
   tests/retrievalGoldBenchmark.test.ts tests/sourceQualityBenchmark.test.ts
   tests/claimCheckBenchmark.test.ts` and `npm run benchmark:quality-gate`.
+- Added saved Compare With Science report history on top of the existing
+  `CompareReport` ownership foundation. `POST /api/claim-check` now saves the
+  completed report, `GET /api/claim-check/reports` lists session/user/workspace
+  scoped summaries, `GET /api/claim-check/reports/[id]` loads only accessible
+  reports, and `/compare` shows/open saved reports. Verified with `npm test --
+  tests/claimCheckReportsRoute.test.ts tests/compareReportRepository.test.ts
+  tests/claimCheck.test.ts tests/claimCheckExtractRoute.test.ts` and
+  `npm run lint`.
 
 ## Next Recommended Step
 
@@ -354,7 +362,6 @@ Next highest-value work:
 3. Run `npm run staging:check`, `npx prisma migrate deploy`,
    `npm run embedding:check`, and full `npm run smoke:deploy` against the real
    staging deployment after secrets are configured.
-4. Add saved Compare With Science report history API/UI and background compare
-   polling on top of the new `CompareReport` storage foundation.
+4. Add background compare job polling for longer Compare With Science runs.
 5. Add structured production logs and alerting for AI/provider/source/worker
    failures.

@@ -152,10 +152,10 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
    warstwa musi jeszcze obslugiwac rejestracje/logowanie, reset dostepu, role,
    membership UI i audit trail.
 
-4. **Compare With Science ma fundament zapisanych raportow, ale nie UI historii.**
-   `CompareReport` ma juz model, migracje i repozytoria z workspace ownership.
-   Nadal brakuje endpointow historii, UI zapisanych raportow i background
-   polling dla dluzszych porownan.
+4. **Compare With Science ma zapisane raporty, ale bez background polling.**
+   `CompareReport` ma model, migracje, repozytoria z workspace ownership,
+   endpointy historii oraz UI zapisanych raportow. Nadal brakuje background
+   polling dla dluzszych porownan i glebszego zarzadzania historia.
 
 5. **Produkcja nie jest jeszcze realnie skonfigurowana.**
    Obecne lokalne srodowisko uzywa local embedding fallback; trzeba dodac
@@ -369,7 +369,14 @@ Status: **do zrobienia**.
 - [ ] Dashboard workspace.
 - [ ] Saved topics / research projects.
 - [ ] Saved brief collections.
-- [ ] Saved Compare With Science reports.
+- [x] Saved Compare With Science reports.
+  Zweryfikowano 2026-06-02: `POST /api/claim-check` zapisuje raport,
+  `GET /api/claim-check/reports` listuje historie, `GET
+  /api/claim-check/reports/[id]` laduje raport z kontrola session/workspace,
+  a `/compare` pokazuje i otwiera zapisane raporty; `npm test --
+  tests/claimCheckReportsRoute.test.ts tests/compareReportRepository.test.ts
+  tests/claimCheck.test.ts tests/claimCheckExtractRoute.test.ts`, `npm run
+  lint`.
 - [ ] Background job polling dla compare.
 - [ ] Dokument collections.
 - [ ] Notatki lub komentarze do zapisanych papierow.

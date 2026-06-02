@@ -121,13 +121,15 @@ paste/upload text -> extract candidate claims -> user selects claims -> academic
     - `already_known_or_done`
     - `possible_dead_end`
   - show evidence snippets, similar prior work, suggested safer wording, caveats, and evidence boundaries.
-  - saved-report storage foundation through `CompareReport` with
-    user/workspace/session ownership; report history API/UI is still future work.
+  - save completed reports through `CompareReport` with
+    user/workspace/session ownership.
+  - list and reopen saved reports from the `/compare` history panel.
 - Markdown export through `GET /api/export/[id]?format=markdown`.
 - Optional PostgreSQL/Prisma persistence behind the `BriefRepository` contract.
 - Optional PostgreSQL/Prisma persistence behind the `DocumentRepository` contract for uploaded documents and chunks.
-- Optional PostgreSQL/Prisma persistence foundation for saved Compare With
-  Science reports behind the `CompareReportRepository` contract.
+- Optional PostgreSQL/Prisma persistence for saved Compare With Science reports
+  behind the `CompareReportRepository` contract, plus session/user/workspace
+  scoped history APIs.
 - Source API cache and source diagnostics persistence when PostgreSQL is enabled.
 - Public brief history disabled by default in production.
 - Brief history can be session-scoped through `ai_brief_history_session`; public history remains an explicit opt-in.
@@ -238,6 +240,9 @@ ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true
 - `Ask My Documents` grounds only on user-uploaded PDF/TXT/MD content. It does not search the web, public paper indexes, or global document data.
 - `Compare With Science` is a retrieved-source comparison, not a definitive scientific, legal, medical, or financial review. It must not be treated as a true/false validator or novelty guarantee.
 - Similar-work detection indicates that related retrieved work exists; it does not prove an idea is definitely new or definitely already exhausted.
+- Saved Compare reports are persisted after synchronous comparison. Longer
+  Compare jobs still need background job polling before this is comfortable for
+  heavier claim sets.
 - Uploaded document privacy supports authenticated user/workspace ownership
   through trusted headers. Session-scoped uploads remain a local/private demo
   fallback and are disabled by default in production unless explicitly enabled
