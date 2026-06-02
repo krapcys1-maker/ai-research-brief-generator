@@ -58,6 +58,27 @@ function qualityScore(text: string) {
   return Math.max(0, Math.min(1, Math.min(words / 1200, 1) * 0.65 + ratio * 0.35));
 }
 
+function getLayoutHeavyRatio(text: string) {
+  const lines = text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length < 8) {
+    return 0;
+  }
+
+  const layoutHeavyLines = lines.filter((line) => {
+    const hasTableSeparator = line.includes("|") || line.includes("\t");
+    const hasColumnSpacing = /\S\s{2,}\S/.test(line);
+    const numericCells = line.match(/\b\d+(?:\.\d+)?\b/g)?.length ?? 0;
+
+    return hasTableSeparator || hasColumnSpacing || numericCells >= 3;
+  }).length;
+
+  return layoutHeavyLines / lines.length;
+}
+
 export function hashFullText(value: string) {
   return createHash("sha256").update(value).digest("hex");
 }
@@ -77,6 +98,7 @@ function getWarnings(input: {
   pageCount: number | null;
   emptyPageCount: number | null;
   qualityScore: number;
+  layoutHeavyRatio: number;
 }) {
   const warnings: string[] = [];
 
@@ -108,6 +130,12 @@ function getWarnings(input: {
     warnings.push("parser warning: extracted PDF quality score is low.");
   }
 
+  if (input.layoutHeavyRatio >= 0.5) {
+    warnings.push(
+      "parser warning: extracted PDF text appears layout-heavy or table-like."
+    );
+  }
+
   return warnings;
 }
 
@@ -120,6 +148,7 @@ export function createPdfParseDiagnostics(
   const characterCount = text.length;
   const alphanumericRatio = getAlphanumericRatio(text);
   const score = qualityScore(text);
+  const layoutHeavyRatio = getLayoutHeavyRatio(text);
   const pageCount =
     typeof options.pageCount === "number"
       ? options.pageCount
@@ -143,7 +172,8 @@ export function createPdfParseDiagnostics(
       alphanumericRatio,
       pageCount,
       emptyPageCount,
-      qualityScore: score
+      qualityScore: score,
+      layoutHeavyRatio
     })
   };
 }

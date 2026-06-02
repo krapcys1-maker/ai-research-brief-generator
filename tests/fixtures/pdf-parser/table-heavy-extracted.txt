@@ -1,0 +1,21 @@
+Metric | Cohort A | Cohort B | Delta | p value | Notes
+Accuracy | 0.81 | 0.77 | 0.04 | 0.030 | short cell
+Recall | 0.69 | 0.71 | -0.02 | 0.410 | short cell
+Precision | 0.74 | 0.70 | 0.04 | 0.080 | short cell
+Latency ms | 120 | 135 | -15 | 0.120 | short cell
+Dropout rate | 0.12 | 0.15 | -0.03 | 0.220 | short cell
+Sample count | 420 | 398 | 22 | 0.510 | short cell
+Error rate | 0.09 | 0.11 | -0.02 | 0.180 | short cell
+Calibration | 0.93 | 0.91 | 0.02 | 0.330 | short cell
+Coverage | 0.88 | 0.86 | 0.02 | 0.280 | short cell
+Specificity | 0.76 | 0.72 | 0.04 | 0.090 | short cell
+Sensitivity | 0.70 | 0.73 | -0.03 | 0.360 | short cell
+F1 score | 0.72 | 0.71 | 0.01 | 0.440 | short cell
+Ablation one | 0.64 | 0.62 | 0.02 | 0.270 | short cell
+Ablation two | 0.58 | 0.59 | -0.01 | 0.650 | short cell
+Reviewer score | 4.10 | 3.90 | 0.20 | 0.070 | short cell
+User score | 3.80 | 3.70 | 0.10 | 0.210 | short cell
+Failure count | 18 | 21 | -3 | 0.310 | short cell
+Timeout count | 4 | 7 | -3 | 0.250 | short cell
+Manual review | 31 | 27 | 4 | 0.290 | short cell
+The table reports compact cells from a methods evaluation. The parser should keep the text usable but warn that the extraction is layout-heavy.

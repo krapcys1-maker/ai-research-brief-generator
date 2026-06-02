@@ -55,7 +55,7 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
 - [ ] Web process i worker sa rozdzielone.
 - [ ] Embeddingi produkcyjne sa skonfigurowane i porownane z lokalnym
   fallbackiem.
-- [ ] PDF/full-text ma recorded fixtures i diagnostyke jakosci parsowania.
+- [x] PDF/full-text ma recorded fixtures i diagnostyke jakosci parsowania.
 - [ ] Monitoring, logi i alerty obejmuja AI provider, zrodla, worker, kolejke,
   storage i bledy routingu.
 - [ ] Jest polityka retencji/usuwania danych oraz publicznie widoczna informacja
@@ -164,8 +164,9 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
 6. **PDF/full-text nadal wymaga glebszej obslugi trudnych PDF.**
    Sa recorded PDF fixtures, quality metrics i ostrzezenia w UI/eksporcie dla
    slabej ekstrakcji oraz page-range support w warstwie parser/chunking dla
-   extracted page fixtures. Sa tez background jobs dla ciezszych PDF/full-text.
-   Nadal brakuje testow scanned/noisy/table-heavy/failed extraction.
+   extracted page fixtures. Sa tez background jobs dla ciezszych PDF/full-text
+   oraz testy scanned/noisy/table-heavy/failed extraction. Nadal brakuje
+   prawdziwego OCR i semantycznej obslugi tabel.
 
 7. **DB-backed worker jest dobry na start, ale nie jest docelowa kolejka.**
    Przy wiekszym ruchu trzeba przejsc na zewnetrzna kolejke lub przynajmniej
@@ -334,7 +335,10 @@ Status: **czesciowo zrobione**.
 - [x] Background jobs dla ciezszego PDF/full-text ingestion.
   Zweryfikowano 2026-06-02: `npx prisma validate`, `npm test --
   tests/fulltextIngestionJobs.test.ts tests/createBriefFullText.test.ts`.
-- [ ] Testy scanned PDF / noisy PDF / table-heavy PDF / failed extraction.
+- [x] Testy scanned PDF / noisy PDF / table-heavy PDF / failed extraction.
+  Zweryfikowano 2026-06-02: `npm test --
+  tests/fulltextPdfRobustness.test.ts tests/fulltextFetchParseChunk.test.ts
+  tests/fulltextDiagnostics.test.ts`.
 
 Kryterium odbioru P3:
 

@@ -39,8 +39,8 @@ Last updated: 2026-06-02
 ## P3: Deeper Research Features
 
 - Improve PDF/full-text ingestion beyond the current parser diagnostics,
-  optional page ranges, and controlled background jobs by adding scanned/noisy
-  PDF fixtures and better OCR/table handling.
+  optional page ranges, controlled background jobs, and difficult-PDF fixtures
+  by adding real OCR/table handling.
 - Improve Compare With Science with background jobs, report persistence, and deeper claim-level evidence ranking.
 - Add citation graph / related work graph.
 - Add weekly research digest after accounts and saved topics exist.

@@ -62,6 +62,7 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 - [x] Add UI and Markdown export warnings for weak full-text parser quality.
 - [x] Add page-range support for full-text parser/chunking fixtures.
 - [x] Improve PDF/full-text ingestion with background jobs for heavier PDFs.
+- [x] Add scanned/noisy/table-heavy/failed-extraction PDF robustness fixtures.
 
 ## Product UX
 

@@ -142,6 +142,9 @@ paste/upload text -> extract candidate claims -> user selects claims -> academic
   `tests/fixtures/live-sources`.
 - Recorded PDF parser fixture and extraction diagnostics tests in
   `tests/fixtures/pdf-parser` and `tests/fulltextFetchParseChunk.test.ts`.
+- Scanned/no-OCR, noisy/corrupted, table-heavy, and failed-extraction PDF
+  robustness fixtures in `tests/fixtures/pdf-parser`, covered by
+  `tests/fulltextPdfRobustness.test.ts`.
 - Full-text parser warnings are visible in brief source cards and Markdown
   export when extraction diagnostics show weak text, no chunks, or failed
   parsing.
@@ -215,6 +218,9 @@ ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true
 - If a selected paper has no legal PDF, fails fetch, or fails parsing, the app explicitly falls back to abstract/metadata evidence boundaries.
 - Parser-quality warnings are advisory and should prompt manual PDF review
   before relying on method/result/table/statistical claims.
+- Table-heavy extraction now receives an explicit parser warning, but the app
+  still does not understand tables semantically; it only preserves chunkable
+  plain text.
 - Background full-text ingestion is DB-backed and good enough for controlled
   staging/private beta work. A stronger external queue is still recommended for
   high-throughput multi-instance production.

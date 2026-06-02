@@ -43,6 +43,7 @@ The app supports:
   OpenAI-compatible model-grade embeddings
 - recorded live-source adapter fixtures for arXiv, Semantic Scholar, and OpenAlex
 - recorded PDF parser fixture and parser-quality diagnostics for full-text extraction
+- scanned/noisy/table-heavy/failed-extraction PDF robustness fixtures and tests
 - visible full-text parser warnings in source cards and Markdown export when
   PDF extraction is low-quality, chunkless, or failed
 - full-text page-range parsing/chunk metadata support for extracted page
@@ -309,6 +310,12 @@ First remediation started on 2026-06-02:
   `BRIEF_FULL_TEXT_INGESTION_MODE=background`, and `npm run worker:fulltext`.
   Verified with `npx prisma validate` and `npm test --
   tests/fulltextIngestionJobs.test.ts tests/createBriefFullText.test.ts`.
+- Added scanned/no-OCR, noisy/corrupted, table-heavy, and failed-extraction PDF
+  robustness fixtures. Parser diagnostics now warn when extracted text appears
+  layout-heavy or table-like, while scanned/failed extraction artifacts remain
+  rejected as unusable. Verified with `npm test --
+  tests/fulltextPdfRobustness.test.ts tests/fulltextFetchParseChunk.test.ts
+  tests/fulltextDiagnostics.test.ts`.
 
 ## Next Recommended Step
 
@@ -325,6 +332,7 @@ Next highest-value work:
    staging deployment after secrets are configured.
 4. Expand recorded live-source benchmarks for OpenAlex/arXiv/Semantic Scholar
    and Compare With Science.
-5. Add scanned/noisy/table-heavy/failed-extraction PDF fixtures and tests.
-6. Add saved Compare With Science report history API/UI and background compare
+5. Add saved Compare With Science report history API/UI and background compare
    polling on top of the new `CompareReport` storage foundation.
+6. Add app-native registration/login UI, account settings, reset access, role
+   enforcement, and audit trail on top of the session runtime.
