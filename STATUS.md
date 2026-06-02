@@ -316,6 +316,12 @@ First remediation started on 2026-06-02:
   rejected as unusable. Verified with `npm test --
   tests/fulltextPdfRobustness.test.ts tests/fulltextFetchParseChunk.test.ts
   tests/fulltextDiagnostics.test.ts`.
+- Added three recorded live-source retrieval gold cases based on the arXiv,
+  Semantic Scholar, and OpenAlex adapter fixtures. `npm run
+  benchmark:retrieval` now covers 10 cases and passes with 100% top-1,
+  100% recall@5, and 0 excluded top failures on the local embedding fallback.
+  Verified with `npm test -- tests/retrievalGoldBenchmark.test.ts` and
+  `npm run benchmark:retrieval`.
 
 ## Next Recommended Step
 
@@ -330,9 +336,8 @@ Next highest-value work:
 3. Run `npm run staging:check`, `npx prisma migrate deploy`,
    `npm run embedding:check`, and full `npm run smoke:deploy` against the real
    staging deployment after secrets are configured.
-4. Expand recorded live-source benchmarks for OpenAlex/arXiv/Semantic Scholar
-   and Compare With Science.
+4. Expand Compare With Science benchmarks with recorded live/full-text cases.
 5. Add saved Compare With Science report history API/UI and background compare
    polling on top of the new `CompareReport` storage foundation.
-6. Add app-native registration/login UI, account settings, reset access, role
-   enforcement, and audit trail on top of the session runtime.
+6. Add structured production logs and alerting for AI/provider/source/worker
+   failures.

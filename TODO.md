@@ -18,7 +18,7 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 - [x] Add Compare With Science benchmark fixtures for supported/contradicted/overclaimed/prior-work cases.
 - [ ] Configure a real production embedding provider in deployment and compare benchmark reports.
 - [x] Add embedding provider comparison runner and local baseline report.
-- [ ] Add more gold retrieval queries from live OpenAlex/arXiv examples.
+- [x] Add more gold retrieval queries from live OpenAlex/arXiv/Semantic Scholar examples.
 - [ ] Expand source-quality fixtures with more recorded live-source failures.
 - [x] Add recorded live-source adapter fixtures for arXiv, Semantic Scholar, and OpenAlex.
 - [x] Add metadata-quality checks for suspicious live-source records.

@@ -75,6 +75,58 @@ const sharedDistractors = [
   })
 ];
 
+const recordedLiveSourcePapers = [
+  createPaper({
+    id: "arxiv_live_clinical_rag",
+    title: "Retrieval-Augmented Generation & Clinical QA",
+    abstract: "A clinical RAG system with citations.",
+    authors: ["Ada Lovelace", "Alan Turing"],
+    year: 2024,
+    publishedAt: "2024-01-01",
+    doi: "10.48550/arXiv.2401.12345",
+    arxivId: "2401.12345",
+    sourceUrls: ["https://arxiv.org/abs/2401.12345v2"],
+    pdfUrl: "https://arxiv.org/pdf/2401.12345v2",
+    venue: "arXiv cs.CL",
+    source: "arxiv",
+    citationCount: 24,
+    influentialCitationCount: 3
+  }),
+  createPaper({
+    id: "semantic_live_citation_faithfulness",
+    title: "Evaluating Citation Faithfulness in Medical RAG",
+    abstract: "A benchmark for citation support.",
+    authors: ["Grace Hopper", "Katherine Johnson"],
+    year: 2024,
+    publishedAt: "2024-05-01",
+    doi: "10.1000/semantic",
+    arxivId: "2405.00001",
+    semanticScholarId: "abc123",
+    sourceUrls: ["https://example.org/semantic"],
+    pdfUrl: "https://example.org/semantic.pdf",
+    venue: "ACL",
+    source: "semantic_scholar",
+    citationCount: 12,
+    influentialCitationCount: 2
+  }),
+  createPaper({
+    id: "openalex_live_clinical_rag",
+    title: "Clinical RAG Systems",
+    abstract: "Retrieval augmented generation supports diagnosis",
+    authors: ["Marie Curie", "Rosalind Franklin"],
+    year: 2025,
+    publishedAt: "2025-02-14",
+    doi: "10.5555/openalex",
+    openAlexId: "https://openalex.org/W123",
+    sourceUrls: ["https://example.org/openalex"],
+    pdfUrl: "https://example.org/openalex.pdf",
+    venue: "Nature Medicine",
+    source: "openalex",
+    citationCount: 34,
+    influentialCitationCount: 4
+  })
+];
+
 export const goldQueries: GoldQuery[] = [
   {
     name: "Polish RAG hallucination query",
@@ -298,6 +350,64 @@ export const goldQueries: GoldQuery[] = [
       }),
       ...sharedDistractors
     ]
+  },
+  {
+    name: "Recorded live-source clinical RAG query",
+    query: "clinical RAG citations diagnosis",
+    expectedTopIds: [
+      "arxiv_live_clinical_rag",
+      "openalex_live_clinical_rag",
+      "semantic_live_citation_faithfulness"
+    ],
+    excludedFromTopIds: ["generic_clinical_llm"],
+    papers: [
+      ...recordedLiveSourcePapers,
+      createPaper({
+        id: "generic_clinical_llm",
+        title: "Clinical Question Answering with Large Language Models",
+        abstract:
+          "Large language models answer clinical questions in medical education and patient triage settings.",
+        source: "openalex",
+        citationCount: 300
+      }),
+      ...sharedDistractors
+    ]
+  },
+  {
+    name: "Recorded Semantic Scholar citation faithfulness query",
+    query: "citation faithfulness medical RAG benchmark",
+    expectedTopIds: ["semantic_live_citation_faithfulness"],
+    excludedFromTopIds: ["citation_counting_survey"],
+    papers: [
+      ...recordedLiveSourcePapers,
+      createPaper({
+        id: "citation_counting_survey",
+        title: "Citation Counting and Bibliometric Impact Metrics",
+        abstract:
+          "A survey of citation counting, h-index metrics, and bibliometric impact evaluation without RAG faithfulness.",
+        source: "semantic_scholar",
+        citationCount: 700
+      }),
+      ...sharedDistractors
+    ]
+  },
+  {
+    name: "Recorded OpenAlex diagnosis support query",
+    query: "retrieval augmented generation supports diagnosis",
+    expectedTopIds: ["openalex_live_clinical_rag", "arxiv_live_clinical_rag"],
+    excludedFromTopIds: ["diagnosis_without_retrieval"],
+    papers: [
+      ...recordedLiveSourcePapers,
+      createPaper({
+        id: "diagnosis_without_retrieval",
+        title: "Rule-Based Medical Triage Systems",
+        abstract:
+          "Clinical expert systems use hand-written rules for medical triage and guideline reminders.",
+        source: "openalex",
+        citationCount: 900
+      }),
+      ...sharedDistractors
+    ]
   }
 ];
 
@@ -361,4 +471,3 @@ export async function evaluateGoldQueries(
     results
   };
 }
-

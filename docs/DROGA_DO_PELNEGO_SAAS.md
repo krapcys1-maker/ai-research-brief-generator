@@ -290,7 +290,10 @@ Status: **czesciowo zrobione**.
 - [x] Claim-check benchmark.
 - [x] Metadata-quality warnings.
 - [ ] Porownac local fallback vs production embeddings.
-- [ ] Dodac wiecej gold queries z live OpenAlex/arXiv/Semantic Scholar.
+- [x] Dodac wiecej gold queries z live OpenAlex/arXiv/Semantic Scholar.
+  Zweryfikowano 2026-06-02: dodano 3 recorded live-source gold cases dla
+  arXiv, Semantic Scholar i OpenAlex; `npm test --
+  tests/retrievalGoldBenchmark.test.ts`, `npm run benchmark:retrieval`.
 - [ ] Rozszerzyc source-quality fixtures o wiecej recorded live failures.
 - [ ] Rozszerzyc Compare With Science benchmarki o live/full-text cases.
 - [ ] Ustalic progi jakosci do CI dla retrieval/source-quality/claim-check.

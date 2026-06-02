@@ -150,7 +150,7 @@ paste/upload text -> extract candidate claims -> user selects claims -> academic
   parsing.
 - Full-text parser/chunking supports explicit extracted-page ranges (`N` or
   `N-M`) and records selected `pageStart`/`pageEnd` on chunks.
-- Retrieval benchmark fixtures, gold-query tests, and `npm run benchmark:retrieval` for acronyms, Polish/English variants, typo recovery, interdisciplinary topics, comparison queries, and domain-specific query expansion. The benchmark also writes ignored JSON/Markdown reports under `benchmark-results/` for provider comparisons.
+- Retrieval benchmark fixtures, gold-query tests, and `npm run benchmark:retrieval` for acronyms, Polish/English variants, typo recovery, interdisciplinary topics, comparison queries, domain-specific query expansion, and recorded live-source examples from arXiv, Semantic Scholar, and OpenAlex. The benchmark also writes ignored JSON/Markdown reports under `benchmark-results/` for provider comparisons.
 - Source-quality benchmark fixtures and `npm run benchmark:source-quality` for recorded live-source failure modes, including broad transformer queries that should prefer foundational papers over derivative title matches.
 - Compare With Science benchmark fixtures and `npm run benchmark:claim-check` for supported, partially supported, contradicted, insufficient-evidence, too-broad, non-scientific, already-known, and possible-dead-end classifications.
 - Ranking includes an exact-title boost so canonical title searches can surface foundational papers instead of derivative titles with extra keyword overlap.
