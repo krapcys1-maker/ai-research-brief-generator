@@ -154,6 +154,82 @@ const stemCellBurnRecordedPapers = [
   })
 ];
 
+const clinicalRagRecordedPapers = [
+  createRecordedPaper({
+    id: "arxiv_clinical_rag_fixture",
+    title: "Retrieval-Augmented Generation & Clinical QA",
+    abstract: "A clinical RAG system with citations.",
+    authors: ["Ada Lovelace", "Alan Turing"],
+    arxivId: "2401.12345",
+    citationCount: 24,
+    doi: "10.48550/arXiv.2401.12345",
+    influentialCitationCount: 3,
+    pdfUrl: "https://arxiv.org/pdf/2401.12345v2",
+    source: "arxiv",
+    sourceUrls: ["https://arxiv.org/abs/2401.12345v2"],
+    venue: "arXiv cs.CL",
+    year: 2024
+  }),
+  createRecordedPaper({
+    id: "semantic_citation_faithfulness_fixture",
+    title: "Evaluating Citation Faithfulness in Medical RAG",
+    abstract: "A benchmark for citation support.",
+    authors: ["Grace Hopper", "Katherine Johnson"],
+    citationCount: 12,
+    doi: "10.1000/semantic",
+    influentialCitationCount: 2,
+    semanticScholarId: "abc123",
+    source: "semantic_scholar",
+    sourceUrls: ["https://example.org/semantic"],
+    venue: "ACL",
+    year: 2024
+  }),
+  createRecordedPaper({
+    id: "openalex_clinical_rag_fixture",
+    title: "Clinical RAG Systems",
+    abstract: "Retrieval augmented generation supports diagnosis",
+    authors: ["Marie Curie", "Rosalind Franklin"],
+    citationCount: 34,
+    doi: "10.5555/openalex",
+    influentialCitationCount: 4,
+    openAlexId: "https://openalex.org/W123",
+    source: "openalex",
+    sourceUrls: ["https://example.org/openalex"],
+    venue: "Nature Medicine",
+    year: 2025
+  }),
+  createRecordedPaper({
+    id: "generic_clinical_qa_high_citation",
+    title: "Clinical Question Answering with Large Language Models",
+    abstract:
+      "Large language models answer clinical questions in medical education and patient triage settings.",
+    citationCount: 8400,
+    influentialCitationCount: 1200,
+    source: "openalex",
+    year: 2023
+  }),
+  createRecordedPaper({
+    id: "citation_bibliometrics_high_citation",
+    title: "Citation Counting and Bibliometric Impact Metrics",
+    abstract:
+      "A survey of citation counting, h-index metrics, and bibliometric impact evaluation without RAG faithfulness.",
+    citationCount: 7300,
+    influentialCitationCount: 900,
+    source: "semantic_scholar",
+    year: 2022
+  }),
+  createRecordedPaper({
+    id: "rule_based_triage_high_citation",
+    title: "Rule-Based Medical Triage Systems",
+    abstract:
+      "Clinical expert systems use hand-written rules for medical triage and guideline reminders.",
+    citationCount: 6300,
+    influentialCitationCount: 700,
+    source: "openalex",
+    year: 2021
+  })
+];
+
 export const sourceQualityCases: SourceQualityCase[] = [
   {
     name: "Broad transformer query prefers the foundational paper",
@@ -174,6 +250,37 @@ export const sourceQualityCases: SourceQualityCase[] = [
     ],
     excludedFromTopIds: ["plant_stem_cosmetics", "stem_ethics"],
     papers: stemCellBurnRecordedPapers
+  },
+  {
+    name: "Recorded clinical RAG query beats high-citation generic clinical QA",
+    query: "clinical RAG citations diagnosis",
+    expectedTopIds: [
+      "arxiv_clinical_rag_fixture",
+      "openalex_clinical_rag_fixture",
+      "semantic_citation_faithfulness_fixture"
+    ],
+    excludedFromTopIds: [
+      "generic_clinical_qa_high_citation",
+      "rule_based_triage_high_citation"
+    ],
+    papers: clinicalRagRecordedPapers
+  },
+  {
+    name: "Citation faithfulness query avoids bibliometric citation records",
+    query: "citation faithfulness medical RAG benchmark",
+    expectedTopIds: ["semantic_citation_faithfulness_fixture"],
+    excludedFromTopIds: ["citation_bibliometrics_high_citation"],
+    papers: clinicalRagRecordedPapers
+  },
+  {
+    name: "Diagnosis-support query prefers RAG over rule-based triage",
+    query: "retrieval augmented generation supports diagnosis",
+    expectedTopIds: [
+      "openalex_clinical_rag_fixture",
+      "arxiv_clinical_rag_fixture"
+    ],
+    excludedFromTopIds: ["rule_based_triage_high_citation"],
+    papers: clinicalRagRecordedPapers
   }
 ];
 

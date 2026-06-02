@@ -322,6 +322,12 @@ First remediation started on 2026-06-02:
   100% recall@5, and 0 excluded top failures on the local embedding fallback.
   Verified with `npm test -- tests/retrievalGoldBenchmark.test.ts` and
   `npm run benchmark:retrieval`.
+- Expanded source-quality benchmark fixtures from 2 to 5 cases with recorded
+  live-source failure modes for clinical RAG, citation faithfulness, and
+  diagnosis-support queries. The new hard negatives include high-citation
+  generic clinical QA, bibliometric citation-counting, and rule-based triage
+  records. `npm run benchmark:source-quality` passes with 100% top-1,
+  100% recall@5, and 0 excluded top failures.
 
 ## Next Recommended Step
 
@@ -337,7 +343,6 @@ Next highest-value work:
    `npm run embedding:check`, and full `npm run smoke:deploy` against the real
    staging deployment after secrets are configured.
 4. Expand Compare With Science benchmarks with recorded live/full-text cases.
-5. Add saved Compare With Science report history API/UI and background compare
+5. Set quality thresholds to CI for retrieval/source-quality/claim-check.
+6. Add saved Compare With Science report history API/UI and background compare
    polling on top of the new `CompareReport` storage foundation.
-6. Add structured production logs and alerting for AI/provider/source/worker
-   failures.

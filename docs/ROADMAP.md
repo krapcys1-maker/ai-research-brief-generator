@@ -20,8 +20,9 @@ Last updated: 2026-06-02
   - model-grade embedding similarity
   - source diversity
   - citation/recency balance tuning
-- Continue expanding retrieval benchmarks beyond the current real live-source
-  gold queries, especially for harder negative examples and non-English topics.
+- Continue expanding retrieval and source-quality benchmarks beyond the current
+  real live-source gold queries and hard negatives, especially for non-English
+  topics and more source adapter failure modes.
 - Expand metadata-quality rules with more recorded live-source anomalies and canonical paper fixtures.
 - Add more claim/evidence benchmark fixtures for methodological claims, such as sample size, study design, and evaluation setting.
 - Expand paper full-text ingestion tests with recorded arXiv/OA PDF fixtures and parser-quality edge cases.
