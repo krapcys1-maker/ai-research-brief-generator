@@ -12,6 +12,7 @@
     "benchmark:retrieval": "tsx scripts/retrieval-gold-benchmark.ts",
     "benchmark:source-quality": "tsx scripts/source-quality-benchmark.ts",
     "benchmark:claim-check": "tsx scripts/claim-check-benchmark.ts",
+    "benchmark:embedding-comparison": "tsx scripts/embedding-provider-comparison.ts",
     "worker:briefs": "tsx scripts/brief-job-worker.ts",
     "smoke:deploy": "node scripts/deployment-smoke.mjs",
     "prisma:generate": "prisma generate",

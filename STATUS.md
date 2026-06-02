@@ -35,6 +35,9 @@ The app supports:
 - production fail-fast persistence and shared Upstash rate limiting
 - rate limiting for brief generation, brief Q&A, document Q&A, document uploads, claim extraction, and claim comparison
 - deployment privacy notice enabled by default in production
+- deployment privacy notice distinguishes trusted-user mode from session-demo mode
+- embedding provider comparison runner for local fallback vs configured
+  OpenAI-compatible model-grade embeddings
 - deployment smoke coverage for source health, preflight, documents, compare, claim extraction, claim comparison, and AI-backed brief flow when not skipped
 
 ## Current Docs
@@ -231,6 +234,19 @@ First remediation started on 2026-06-02:
 - Expanded cross-user/cross-workspace tests for brief list, detail, export,
   Q&A, job polling, uploaded documents, document repository isolation, and
   Compare With Science uploaded-document retrieval.
+- Split the production privacy notice into trusted-user mode and session-demo
+  mode so deployments with `DOCUMENT_AUTH_REQUIRED=true` describe trusted
+  user/workspace ownership, while private demos clearly describe browser-session
+  isolation.
+- Added `npm run benchmark:embedding-comparison`, which writes combined
+  JSON/Markdown reports under `benchmark-results/`, always records a local
+  embedding baseline, and compares the configured OpenAI-compatible provider
+  when production embedding env vars are present.
+- Ran `npm run embedding:check` and `npm run benchmark:embedding-comparison`.
+  Current local result: `local-hash-ngrams`, 192 dimensions, 100% retrieval
+  top-1/source-quality top-1/claim-check accuracy on current fixtures. The
+  model-grade comparison was skipped with `model_grade_not_configured` because
+  no production embedding provider secrets are present locally.
 
 ## Next Recommended Step
 
@@ -239,8 +255,9 @@ Next highest-value work:
 1. Add app-native login/session runtime, account UI, role enforcement, and
    audit trail.
 2. Add real OpenAI-compatible embedding provider credentials in deployment,
-   rerun `npm run embedding:check`, then rerun retrieval/source-quality/claim-check
-   benchmarks and compare against the local fallback baseline.
+   rerun `npm run embedding:check`, then rerun
+   `npm run benchmark:embedding-comparison` to compare against the local
+   fallback baseline.
 3. Expand recorded live-source benchmarks for OpenAlex/arXiv/Semantic Scholar
    and Compare With Science.
 4. Add recorded PDF fixtures and parser-quality diagnostics for full-text

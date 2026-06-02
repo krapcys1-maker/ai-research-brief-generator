@@ -35,8 +35,23 @@ describe("deployment privacy notice config", () => {
     });
 
     expect(notice.enabled).toBe(true);
+    expect(notice.mode).toBe("session_demo");
     expect(notice.storage).toContain("database");
-    expect(notice.uploads).toContain("trusted user/workspace ownership");
+    expect(notice.ownership).toContain("browser session cookies");
+    expect(notice.uploads).toContain("Session-scoped uploads");
     expect(notice.ai).toContain("AI provider");
+  });
+
+  it("separates trusted-user mode from session-demo mode", () => {
+    const notice = getDeploymentPrivacyNotice({
+      NODE_ENV: "production",
+      DOCUMENT_AUTH_REQUIRED: "true"
+    });
+
+    expect(notice.mode).toBe("trusted_user");
+    expect(notice.title).toContain("Trusted user");
+    expect(notice.ownership).toContain("X-AI-Brief-User-Id");
+    expect(notice.ownership).toContain("X-AI-Brief-Workspace-Id");
+    expect(notice.uploads).toContain("DOCUMENT_AUTH_REQUIRED=true");
   });
 });

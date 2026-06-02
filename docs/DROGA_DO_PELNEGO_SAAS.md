@@ -112,6 +112,9 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
   trusted identity jest dostepna; anonimowy fallback nadal jest per-IP.
 - [x] AI synthesis diagnostics i embedding health w `/api/source-cache`.
 - [x] Benchmarki: retrieval, source-quality, claim-check.
+- [x] Embedding provider comparison runner:
+  `npm run benchmark:embedding-comparison` zapisuje lokalny baseline i porownuje
+  model-grade provider, gdy jest skonfigurowany.
 - [x] Deployment smoke obejmuje source health, preflight, documents, compare,
   claim extraction, claim comparison i opcjonalnie AI flow.
 
@@ -193,8 +196,10 @@ Status: **najwyzszy priorytet**.
   tests/briefQuestionsRoute.test.ts tests/briefJobs.test.ts
   tests/documentsRoute.test.ts tests/documentRepository.test.ts
   tests/claimCheck.test.ts`.
-- [ ] Ujednolicic privacy notice tak, aby rozroznial trusted-user mode i
+- [x] Ujednolicic privacy notice tak, aby rozroznial trusted-user mode i
   session-demo mode.
+  Zweryfikowano 2026-06-02: `npm test --
+  tests/deploymentPrivacyConfig.test.ts`.
 
 Kryterium odbioru P0:
 
@@ -259,7 +264,12 @@ Status: **czesciowo zrobione**.
 - [ ] Rozszerzyc source-quality fixtures o wiecej recorded live failures.
 - [ ] Rozszerzyc Compare With Science benchmarki o live/full-text cases.
 - [ ] Ustalic progi jakosci do CI dla retrieval/source-quality/claim-check.
-- [ ] Dodac raport porownawczy embedding providerow w `benchmark-results`.
+- [x] Dodac raport porownawczy embedding providerow w `benchmark-results`.
+  Zweryfikowano 2026-06-02: `npm run embedding:check`,
+  `npm run benchmark:embedding-comparison`. Lokalny baseline przeszedl na
+  `local-hash-ngrams`; model-grade provider zostal oznaczony jako
+  `model_grade_not_configured`, bo w lokalnym env brakuje produkcyjnych
+  sekretow.
 
 Kryterium odbioru P2:
 
@@ -363,7 +373,11 @@ Kryterium odbioru P6:
    kontraktu trusted auth gateway.
 4. [x] Rozszerzyc `Brief` i `BriefGenerationJob` o workspace/user ownership.
 5. [x] Dodac cross-user tests dla briefow, jobow, eksportu i Q&A.
-6. [ ] Skonfigurowac produkcyjny embedding provider i uruchomic benchmarki.
+6. [x] Dodac embedding comparison runner i uruchomic benchmark baseline.
+   Zweryfikowano 2026-06-02: `npm run embedding:check`,
+   `npm run benchmark:embedding-comparison`. Produkcyjny
+   `EMBEDDING_PROVIDER=openai_compatible` nadal wymaga sekretow deployu przed
+   pelnym porownaniem model-grade.
 7. [ ] Dodac recorded live-source fixtures dla OpenAlex/arXiv/Semantic Scholar.
 8. [ ] Dodac PDF parser diagnostics i recorded PDF fixtures.
 9. [ ] Zaprojektowac `CompareReport` z workspace ownership.

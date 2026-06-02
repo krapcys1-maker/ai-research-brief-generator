@@ -114,6 +114,9 @@ DEPLOYMENT_PRIVACY_NOTICE=true
 ```
 
 This notice is shown by default in production and can be set to `false` only for private/internal deployments that provide equivalent privacy copy elsewhere.
+The notice distinguishes `DOCUMENT_AUTH_REQUIRED=true` trusted-user mode from
+session-demo mode, so public deployments do not describe session-cookie privacy
+as equivalent to app/user/workspace ownership.
 
 Optional source API setting:
 
@@ -178,6 +181,7 @@ npm run embedding:check
 npm run benchmark:retrieval
 npm run benchmark:source-quality
 npm run benchmark:claim-check
+npm run benchmark:embedding-comparison
 npm run lint
 npm run build
 ```
@@ -204,7 +208,16 @@ benchmark-results/source-quality-latest.json
 benchmark-results/source-quality-latest.md
 benchmark-results/claim-check-latest.json
 benchmark-results/claim-check-latest.md
+benchmark-results/embedding-provider-comparison-latest.json
+benchmark-results/embedding-provider-comparison-latest.md
 ```
+
+`npm run benchmark:embedding-comparison` runs the local fallback baseline first.
+If `EMBEDDING_PROVIDER=openai_compatible` is fully configured, it then runs the
+same retrieval/source-quality/claim-check suite against the model-grade provider
+and fails when the configured provider regresses against the local fallback.
+When production embedding secrets are absent, the model-grade section is skipped
+and the report records the missing configuration without printing secrets.
 
 `npm run benchmark:claim-check` uses deterministic local fixtures. It does not call live academic APIs or AI providers.
 

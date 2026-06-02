@@ -172,6 +172,7 @@ npm run embedding:check
 npm run benchmark:retrieval
 npm run benchmark:source-quality
 npm run benchmark:claim-check
+npm run benchmark:embedding-comparison
 ```
 
 Production PostgreSQL deployments can process queued brief jobs with:
@@ -187,7 +188,7 @@ separately. The worker resets stale `running` jobs and respects
 Brief history is session-scoped when `PUBLIC_BRIEF_HISTORY_ENABLED=false`.
 Public history is an explicit opt-in.
 
-`npm run embedding:check` verifies the configured embedding provider without printing secrets. The benchmark commands use the configured embedding provider. With no embedding env vars, they use local hash-ngram embeddings. After configuring `EMBEDDING_PROVIDER=openai_compatible`, run the same commands to compare retrieval quality.
+`npm run embedding:check` verifies the configured embedding provider without printing secrets. The benchmark commands use the configured embedding provider. With no embedding env vars, they use local hash-ngram embeddings. `npm run benchmark:embedding-comparison` always records a local fallback baseline and, when `EMBEDDING_PROVIDER=openai_compatible` is fully configured, compares the model-grade provider against that baseline.
 
 The commands write ignored local reports to:
 
@@ -198,6 +199,8 @@ benchmark-results/source-quality-latest.json
 benchmark-results/source-quality-latest.md
 benchmark-results/claim-check-latest.json
 benchmark-results/claim-check-latest.md
+benchmark-results/embedding-provider-comparison-latest.json
+benchmark-results/embedding-provider-comparison-latest.md
 ```
 
 Optional PostgreSQL integration check:
