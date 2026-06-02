@@ -6,6 +6,7 @@ import type { UserDocument } from "@/lib/documents/schemas";
 import { inMemoryBriefRepository } from "@/lib/storage/inMemoryBriefStore";
 import { createBrief, createPaper } from "@/tests/fixtures";
 import { inMemoryResearchProjectRepository } from "@/lib/workspace/inMemoryResearchProjectRepository";
+import { inMemoryBriefCollectionRepository } from "@/lib/workspace/inMemoryBriefCollectionRepository";
 
 const compareRequest: ClaimCheckRequest = {
   claims: ["Retrieval augmented generation improves factuality."],
@@ -85,6 +86,7 @@ describe("workspace dashboard API route", () => {
     await inMemoryDocumentRepository.clear();
     await inMemoryCompareReportRepository.clear();
     await inMemoryResearchProjectRepository.clear();
+    await inMemoryBriefCollectionRepository.clear();
   });
 
   it("summarizes only resources from the same private sessions", async () => {
@@ -134,6 +136,16 @@ describe("workspace dashboard API route", () => {
       query: "graph neural networks",
       ownerSessionId: "brief_session_b"
     });
+    await inMemoryBriefCollectionRepository.save({
+      title: "Session A collection",
+      briefIds: ["brief_session_a"],
+      ownerSessionId: "brief_session_a"
+    });
+    await inMemoryBriefCollectionRepository.save({
+      title: "Session B collection",
+      briefIds: ["brief_session_b"],
+      ownerSessionId: "brief_session_b"
+    });
 
     const { GET } = await import("@/app/api/workspace/dashboard/route");
     const response = await GET(
@@ -153,13 +165,19 @@ describe("workspace dashboard API route", () => {
       documents: 1,
       parsedDocuments: 1,
       compareReports: 1,
-      researchProjects: 1
+      researchProjects: 1,
+      briefCollections: 1
     });
     expect(
       payload.dashboard.recentResearchProjects.map((item: { title: string }) => item.title)
     ).toEqual(["Session A project"]);
     expect(payload.dashboard.recentBriefs.map((item: { id: string }) => item.id))
       .toEqual(["brief_session_a"]);
+    expect(
+      payload.dashboard.recentBriefCollections.map(
+        (item: { title: string }) => item.title
+      )
+    ).toEqual(["Session A collection"]);
     expect(payload.dashboard.recentDocuments.map((item: { id: string }) => item.id))
       .toEqual(["doc_session_a"]);
     expect(
@@ -238,6 +256,22 @@ describe("workspace dashboard API route", () => {
       createdByUserId: "user_1",
       visibility: "workspace"
     });
+    await inMemoryBriefCollectionRepository.save({
+      title: "Workspace A collection",
+      briefIds: ["brief_workspace_a"],
+      ownerId: "user_1",
+      workspaceId: "workspace_a",
+      createdByUserId: "user_1",
+      visibility: "workspace"
+    });
+    await inMemoryBriefCollectionRepository.save({
+      title: "Workspace B collection",
+      briefIds: ["brief_workspace_b"],
+      ownerId: "user_1",
+      workspaceId: "workspace_b",
+      createdByUserId: "user_1",
+      visibility: "workspace"
+    });
 
     const { GET } = await import("@/app/api/workspace/dashboard/route");
     const response = await GET(
@@ -257,13 +291,19 @@ describe("workspace dashboard API route", () => {
       documents: 1,
       parsedDocuments: 1,
       compareReports: 1,
-      researchProjects: 1
+      researchProjects: 1,
+      briefCollections: 1
     });
     expect(
       payload.dashboard.recentResearchProjects.map((item: { title: string }) => item.title)
     ).toEqual(["Workspace A project"]);
     expect(payload.dashboard.recentBriefs.map((item: { id: string }) => item.id))
       .toEqual(["brief_workspace_a"]);
+    expect(
+      payload.dashboard.recentBriefCollections.map(
+        (item: { title: string }) => item.title
+      )
+    ).toEqual(["Workspace A collection"]);
     expect(payload.dashboard.recentDocuments.map((item: { id: string }) => item.id))
       .toEqual(["doc_workspace_a"]);
     expect(

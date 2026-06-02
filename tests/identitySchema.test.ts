@@ -116,6 +116,28 @@ describe("research project workspace ownership schema", () => {
   });
 });
 
+describe("brief collection workspace ownership schema", () => {
+  it("defines saved brief collections with user and workspace ownership", () => {
+    const schema = readFileSync("prisma/schema.prisma", "utf8");
+    const migration = readFileSync(
+      "prisma/migrations/20260602215000_add_brief_collections/migration.sql",
+      "utf8"
+    );
+
+    expect(schema).toContain("model BriefCollection");
+    expect(schema).toContain("ownedBriefCollections");
+    expect(schema).toContain("briefCollections BriefCollection[]");
+    expect(schema).toContain("briefIdsJson    Json");
+    expect(schema).toContain("@relation(\"BriefCollectionOwner\"");
+    expect(schema).toContain("@relation(\"BriefCollectionCreator\"");
+    expect(migration).toContain("CREATE TABLE \"BriefCollection\"");
+    expect(migration).toContain("\"visibility\" \"BriefVisibility\"");
+    expect(migration).toContain("BriefCollection_workspaceId_idx");
+    expect(migration).toContain("BriefCollection_ownerId_fkey");
+    expect(migration).toContain("BriefCollection_workspaceId_fkey");
+  });
+});
+
 describe("app-native user session schema", () => {
   it("defines durable user sessions with hashed tokens and revocation", () => {
     const schema = readFileSync("prisma/schema.prisma", "utf8");

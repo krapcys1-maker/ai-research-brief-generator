@@ -1662,7 +1662,7 @@ textarea {
 }
 
 .workspace-overview .metric-grid {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
 }
 
 .workspace-project-form {
@@ -1681,6 +1681,31 @@ textarea {
 .workspace-source-grid label {
   min-width: 0;
   line-height: 1.4;
+}
+
+.workspace-checkbox-list {
+  display: grid;
+  gap: 8px;
+  max-height: 220px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  background: #fbfcfe;
+}
+
+.workspace-checkbox-list label {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.workspace-checkbox-list span {
+  min-width: 0;
 }
 
 .workspace-list {

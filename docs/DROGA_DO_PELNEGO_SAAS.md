@@ -137,6 +137,8 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
   reports w jednym session/user/workspace-scoped widoku `/workspace`.
 - [x] Saved topics / research projects: `ResearchProject` ma ownership,
   repozytoria memory/PostgreSQL, API i UI w dashboardzie workspace.
+- [x] Saved brief collections: `BriefCollection` ma ownership, walidacje
+  dostepu do briefow, repozytoria memory/PostgreSQL, API i UI w dashboardzie.
 
 ## Najwieksze braki
 
@@ -177,10 +179,10 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
    Przy wiekszym ruchu trzeba przejsc na zewnetrzna kolejke lub przynajmniej
    wyciagnac stabilny `JobQueue` adapter.
 
-8. **Brakuje produktowej retencji i kolekcji.**
+8. **Brakuje produktowej retencji i kolekcji dokumentow.**
    Sa briefy, dokumenty, compare, dashboard workspace i saved research
-   projects, ale jeszcze nie ma saved brief collections, document collections,
-   export history ani retencji per workspace.
+   projects oraz saved brief collections, ale jeszcze nie ma document
+   collections, export history ani retencji per workspace.
 
 9. **Brakuje billing/quota/admin.**
    Bez planow, limitow, triala, admin panelu i audit logu to nadal bardziej beta
@@ -385,7 +387,14 @@ Status: **czesciowo zrobione**.
   w `/workspace`; `npm test -- tests/researchProjectRepository.test.ts
   tests/researchProjectsRoute.test.ts tests/workspaceDashboardRoute.test.ts
   tests/identitySchema.test.ts`, `npm run lint`.
-- [ ] Saved brief collections.
+- [x] Saved brief collections.
+  Zweryfikowano 2026-06-02: dodano `BriefCollection` z
+  session/user/workspace ownership, migracje Prisma, repozytoria
+  memory/PostgreSQL, `GET/POST /api/workspace/brief-collections`, walidacje
+  dostepu do wybranych briefow oraz formularz/listing w `/workspace`; `npm
+  test -- tests/briefCollectionRepository.test.ts
+  tests/briefCollectionsRoute.test.ts tests/workspaceDashboardRoute.test.ts
+  tests/identitySchema.test.ts`, `npm run lint`.
 - [x] Saved Compare With Science reports.
   Zweryfikowano 2026-06-02: `POST /api/claim-check` zapisuje raport,
   `GET /api/claim-check/reports` listuje historie, `GET

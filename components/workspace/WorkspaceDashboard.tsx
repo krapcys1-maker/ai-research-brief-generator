@@ -17,6 +17,12 @@ type ProjectResponse = {
   error?: string;
 };
 
+type BriefCollectionResponse = {
+  collection?: WorkspaceDashboardPayload["recentBriefCollections"][number];
+  status?: string;
+  error?: string;
+};
+
 function formatDate(value: string) {
   return new Date(value).toLocaleString();
 }
@@ -39,7 +45,9 @@ export function WorkspaceDashboard() {
   );
   const [error, setError] = useState<string | null>(null);
   const [projectError, setProjectError] = useState<string | null>(null);
+  const [collectionError, setCollectionError] = useState<string | null>(null);
   const [isSavingProject, setIsSavingProject] = useState(false);
+  const [isSavingCollection, setIsSavingCollection] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   async function fetchDashboard() {
@@ -108,6 +116,44 @@ export function WorkspaceDashboard() {
       );
     } finally {
       setIsSavingProject(false);
+    }
+  }
+
+  async function saveBriefCollection(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsSavingCollection(true);
+    setCollectionError(null);
+
+    try {
+      const form = event.currentTarget;
+      const formData = new FormData(form);
+      const response = await fetch("/api/workspace/brief-collections", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          title: formData.get("title"),
+          description: formData.get("description") || null,
+          briefIds: formData.getAll("briefIds")
+        })
+      });
+      const payload = (await response.json()) as BriefCollectionResponse;
+
+      if (!response.ok || !payload.collection) {
+        throw new Error(payload.error ?? "Could not save brief collection.");
+      }
+
+      form.reset();
+      setDashboard(await fetchDashboard());
+    } catch (caught) {
+      setCollectionError(
+        caught instanceof Error
+          ? caught.message
+          : "Could not save brief collection."
+      );
+    } finally {
+      setIsSavingCollection(false);
     }
   }
 
@@ -195,6 +241,10 @@ export function WorkspaceDashboard() {
           <div className="metric">
             <span className="metric-label">Projects</span>
             <strong>{dashboard?.totals.researchProjects ?? 0}</strong>
+          </div>
+          <div className="metric">
+            <span className="metric-label">Brief collections</span>
+            <strong>{dashboard?.totals.briefCollections ?? 0}</strong>
           </div>
         </div>
       </section>
@@ -300,6 +350,83 @@ export function WorkspaceDashboard() {
           </div>
         ) : (
           <div className="source-health-empty">No briefs in this scope.</div>
+        )}
+      </section>
+
+      <section className="surface workspace-panel">
+        <div className="workspace-panel-header">
+          <h2>Save brief collection</h2>
+          <span className="badge">{dashboard?.totals.briefCollections ?? 0}</span>
+        </div>
+        <form
+          className="workspace-project-form"
+          onSubmit={saveBriefCollection}
+        >
+          <input
+            className="form-control"
+            name="title"
+            placeholder="Collection title"
+            minLength={3}
+            maxLength={140}
+            required
+          />
+          <input
+            className="form-control"
+            name="description"
+            placeholder="Optional note"
+            maxLength={1000}
+          />
+          {dashboard?.recentBriefs.length ? (
+            <div className="workspace-checkbox-list" aria-label="Collection briefs">
+              {dashboard.recentBriefs.map((brief) => (
+                <label key={brief.id}>
+                  <input type="checkbox" name="briefIds" value={brief.id} />{" "}
+                  <span>{brief.title}</span>
+                </label>
+              ))}
+            </div>
+          ) : (
+            <div className="source-health-empty">
+              Generate a brief before creating a collection.
+            </div>
+          )}
+          <button
+            className="primary-action"
+            type="submit"
+            disabled={isSavingCollection || !dashboard?.recentBriefs.length}
+          >
+            {isSavingCollection ? "Saving..." : "Save collection"}
+          </button>
+        </form>
+        {collectionError ? (
+          <div className="form-alert error">{collectionError}</div>
+        ) : null}
+      </section>
+
+      <section className="surface workspace-panel">
+        <div className="workspace-panel-header">
+          <h2>Brief collections</h2>
+          <span className="badge">
+            {dashboard?.totals.briefCollections ?? 0}
+          </span>
+        </div>
+        {dashboard?.recentBriefCollections.length ? (
+          <div className="workspace-list">
+            {dashboard.recentBriefCollections.map((collection) => (
+              <Link href="/workspace" key={collection.id}>
+                <span className="badge">{collection.briefCount} brief(s)</span>
+                <strong>{collection.title}</strong>
+                {collection.description ? <span>{collection.description}</span> : null}
+                <time dateTime={collection.createdAt}>
+                  {formatDate(collection.createdAt)}
+                </time>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="source-health-empty">
+            No brief collections in this scope.
+          </div>
         )}
       </section>
 

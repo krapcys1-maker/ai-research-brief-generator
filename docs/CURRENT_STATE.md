@@ -143,6 +143,17 @@ paste/upload text -> extract candidate claims -> user selects claims -> academic
   - `POST /api/workspace/projects` saves projects from `/workspace`.
   - Memory and PostgreSQL repositories share the same contract, with Prisma
     migration `20260602213500_add_research_projects`.
+- Saved brief collections:
+  - `BriefCollection` stores a title, optional description, selected brief IDs,
+    brief count, and session/user/workspace ownership metadata.
+  - `GET /api/workspace/brief-collections` lists only collections in the current
+    private session or trusted/app-native workspace context.
+  - `POST /api/workspace/brief-collections` validates that every selected brief
+    is accessible in the current scope before saving the collection.
+  - `/workspace` includes a collection form based on recent accessible briefs
+    and a recent collections list.
+  - Memory and PostgreSQL repositories share the same contract, with Prisma
+    migration `20260602215000_add_brief_collections`.
 - Markdown export through `GET /api/export/[id]?format=markdown`.
 - Optional PostgreSQL/Prisma persistence behind the `BriefRepository` contract.
 - Optional PostgreSQL/Prisma persistence behind the `DocumentRepository` contract for uploaded documents and chunks.
@@ -279,9 +290,10 @@ ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true
 - Uploaded documents can be scoped to durable authenticated user/workspace IDs
   supplied by trusted infrastructure. Brief history remains session-scoped in
   the current prototype.
-- `/workspace` is a scoped product dashboard over existing resources and saved
-  research projects. It is not yet a full project management layer:
-  collections, export history, share links, and onboarding remain future work.
+- `/workspace` is a scoped product dashboard over existing resources, saved
+  research projects, and saved brief collections. It is not yet a full project
+  management layer: document collections, export history, share links, and
+  onboarding remain future work.
 - App-native sessions can resolve durable users/workspaces for brief access, but
   registration/login UI, password or magic-link flow, reset access, account
   settings, audit trail, and full role enforcement are not implemented yet.
@@ -298,6 +310,7 @@ npm run benchmark:claim-check
 npm run benchmark:quality-gate
 npm test -- tests/workspaceDashboardRoute.test.ts
 npm test -- tests/researchProjectsRoute.test.ts
+npm test -- tests/briefCollectionsRoute.test.ts
 npm run worker:fulltext
 npm run lint
 npm run build

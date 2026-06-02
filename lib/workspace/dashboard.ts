@@ -1,4 +1,7 @@
 import type { BriefAccessContext } from "@/lib/briefs/access";
+import { briefCollectionFilterFromAccess } from "@/lib/workspace/briefCollectionAccess";
+import { getBriefCollectionRepository } from "@/lib/workspace/briefCollectionRepository";
+import type { BriefCollectionListItem } from "@/lib/workspace/briefCollectionTypes";
 import { compareReportFilterFromAccess } from "@/lib/claimCheck/reportAccess";
 import { getCompareReportRepository } from "@/lib/claimCheck/reportRepository";
 import type { CompareReportListItem } from "@/lib/claimCheck/reportTypes";
@@ -23,8 +26,10 @@ export type WorkspaceDashboard = {
     parsedDocuments: number;
     compareReports: number;
     researchProjects: number;
+    briefCollections: number;
   };
   recentResearchProjects: ResearchProjectListItem[];
+  recentBriefCollections: BriefCollectionListItem[];
   recentBriefs: BriefListItem[];
   recentDocuments: UserDocument[];
   recentCompareReports: CompareReportListItem[];
@@ -51,25 +56,36 @@ export async function getWorkspaceDashboard(input: {
     briefRepository,
     documentRepository,
     compareReportRepository,
-    researchProjectRepository
+    researchProjectRepository,
+    briefCollectionRepository
   ] =
     await Promise.all([
       getBriefRepository(),
       getDocumentRepository(),
       getCompareReportRepository(),
-      getResearchProjectRepository()
+      getResearchProjectRepository(),
+      getBriefCollectionRepository()
     ]);
 
-  const [briefs, documents, compareReports, researchProjects] = await Promise.all([
-    briefRepository.listSummaries(input.briefAccess.source),
-    documentRepository.listDocuments(input.documentAccess.source),
-    compareReportRepository.listSummaries(
-      compareReportFilterFromAccess(input.documentAccess)
-    ),
-    researchProjectRepository.list(
-      researchProjectFilterFromAccess(input.briefAccess)
-    )
-  ]);
+  const [
+    briefs,
+    documents,
+    compareReports,
+    researchProjects,
+    briefCollections
+  ] = await Promise.all([
+      briefRepository.listSummaries(input.briefAccess.source),
+      documentRepository.listDocuments(input.documentAccess.source),
+      compareReportRepository.listSummaries(
+        compareReportFilterFromAccess(input.documentAccess)
+      ),
+      researchProjectRepository.list(
+        researchProjectFilterFromAccess(input.briefAccess)
+      ),
+      briefCollectionRepository.list(
+        briefCollectionFilterFromAccess(input.briefAccess)
+      )
+    ]);
 
   return {
     scope: combinedScope(input.briefAccess, input.documentAccess),
@@ -83,9 +99,11 @@ export async function getWorkspaceDashboard(input: {
       parsedDocuments: documents.filter((document) => document.status === "parsed")
         .length,
       compareReports: compareReports.length,
-      researchProjects: researchProjects.length
+      researchProjects: researchProjects.length,
+      briefCollections: briefCollections.length
     },
     recentResearchProjects: recent(researchProjects),
+    recentBriefCollections: recent(briefCollections),
     recentBriefs: recent(briefs),
     recentDocuments: recent(documents),
     recentCompareReports: recent(compareReports)

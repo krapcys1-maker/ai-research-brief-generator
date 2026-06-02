@@ -80,6 +80,7 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 - [x] Add background job polling for longer Compare With Science runs.
 - [x] Add workspace dashboard for recent briefs, documents, and Compare reports.
 - [x] Add saved research projects/topics in the workspace dashboard.
+- [x] Add saved brief collections in the workspace dashboard.
 - [ ] Add paper timeline.
 - [ ] Add topic clustering.
 
