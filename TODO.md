@@ -20,6 +20,7 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 - [x] Add embedding provider comparison runner and local baseline report.
 - [ ] Add more gold retrieval queries from live OpenAlex/arXiv examples.
 - [ ] Expand source-quality fixtures with more recorded live-source failures.
+- [x] Add recorded live-source adapter fixtures for arXiv, Semantic Scholar, and OpenAlex.
 - [x] Add metadata-quality checks for suspicious live-source records.
 
 ## Production Readiness
@@ -48,6 +49,7 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 - [x] Add transformer-specific query expansion for Polish typo recovery.
 - [x] Normalize escaped whitespace in paper title dedupe.
 - [x] Add live-source source-quality benchmarks for broad/foundational queries.
+- [x] Add recorded adapter contract fixtures for arXiv, Semantic Scholar, and OpenAlex response shapes.
 - [x] Add exact-title ranking boost for foundational source selection.
 - [x] Surface suspicious metadata warnings in preflight, brief source cards, and Markdown export.
 - [ ] Tune hybrid retrieval with model-grade embeddings and larger benchmarks.

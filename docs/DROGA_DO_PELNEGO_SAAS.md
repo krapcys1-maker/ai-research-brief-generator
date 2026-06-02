@@ -115,6 +115,8 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
 - [x] Embedding provider comparison runner:
   `npm run benchmark:embedding-comparison` zapisuje lokalny baseline i porownuje
   model-grade provider, gdy jest skonfigurowany.
+- [x] Recorded live-source adapter fixtures dla arXiv, Semantic Scholar i
+  OpenAlex w `tests/fixtures/live-sources`.
 - [x] Deployment smoke obejmuje source health, preflight, documents, compare,
   claim extraction, claim comparison i opcjonalnie AI flow.
 
@@ -378,7 +380,9 @@ Kryterium odbioru P6:
    `npm run benchmark:embedding-comparison`. Produkcyjny
    `EMBEDDING_PROVIDER=openai_compatible` nadal wymaga sekretow deployu przed
    pelnym porownaniem model-grade.
-7. [ ] Dodac recorded live-source fixtures dla OpenAlex/arXiv/Semantic Scholar.
+7. [x] Dodac recorded live-source fixtures dla OpenAlex/arXiv/Semantic Scholar.
+   Zweryfikowano 2026-06-02: `npm test --
+   tests/sourceAdapters.contract.test.ts`.
 8. [ ] Dodac PDF parser diagnostics i recorded PDF fixtures.
 9. [ ] Zaprojektowac `CompareReport` z workspace ownership.
 10. [ ] Przygotowac staging env: PostgreSQL, Upstash, AI secrets, worker i smoke

@@ -120,7 +120,9 @@ paste/upload text -> extract candidate claims -> user selects claims -> academic
 - Production fail-fast behavior for missing persistence and missing shared rate limiting unless explicit demo escape hatches are set.
 - Upstash Redis REST rate limiting for production deployments.
 - Vitest coverage for core pipeline, schemas, routes, storage, source diagnostics, grounding, Q&A, rate limiting, and export.
-- Adapter contract tests for arXiv, Semantic Scholar, and OpenAlex response-shape drift.
+- Adapter contract tests for arXiv, Semantic Scholar, and OpenAlex
+  response-shape drift, backed by recorded fixtures in
+  `tests/fixtures/live-sources`.
 - Retrieval benchmark fixtures, gold-query tests, and `npm run benchmark:retrieval` for acronyms, Polish/English variants, typo recovery, interdisciplinary topics, comparison queries, and domain-specific query expansion. The benchmark also writes ignored JSON/Markdown reports under `benchmark-results/` for provider comparisons.
 - Source-quality benchmark fixtures and `npm run benchmark:source-quality` for recorded live-source failure modes, including broad transformer queries that should prefer foundational papers over derivative title matches.
 - Compare With Science benchmark fixtures and `npm run benchmark:claim-check` for supported, partially supported, contradicted, insufficient-evidence, too-broad, non-scientific, already-known, and possible-dead-end classifications.

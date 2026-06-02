@@ -1,0 +1,32 @@
+{
+  "data": [
+    {
+      "paperId": "abc123",
+      "title": "Evaluating Citation Faithfulness in Medical RAG",
+      "abstract": "A benchmark for citation support.",
+      "year": 2024,
+      "publicationDate": "2024-05-01",
+      "venue": "ACL",
+      "citationCount": 12,
+      "influentialCitationCount": 2,
+      "url": "https://semanticscholar.org/paper/abc123",
+      "externalIds": {
+        "DOI": "10.1000/semantic",
+        "ArXiv": "2405.00001"
+      },
+      "authors": [
+        { "name": "Grace Hopper" },
+        { "name": "Katherine Johnson" }
+      ],
+      "openAccessPdf": {
+        "url": "https://example.org/semantic.pdf"
+      }
+    },
+    {
+      "paperId": "missing-title"
+    },
+    {
+      "title": "Missing ID"
+    }
+  ]
+}

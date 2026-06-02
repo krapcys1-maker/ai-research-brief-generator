@@ -1,0 +1,38 @@
+{
+  "results": [
+    {
+      "id": "https://openalex.org/W123",
+      "doi": "https://doi.org/10.5555/openalex",
+      "title": "Clinical\u0000 RAG Systems",
+      "publication_year": 2025,
+      "publication_date": "2025-02-14",
+      "cited_by_count": 34,
+      "abstract_inverted_index": {
+        "Retrieval": [0],
+        "augmented": [1],
+        "generation": [2],
+        "supports": [3],
+        "diagnosis": [4]
+      },
+      "ids": {
+        "openalex": "https://openalex.org/W123",
+        "doi": "https://doi.org/10.5555/openalex"
+      },
+      "authorships": [
+        { "author": { "display_name": "Marie Curie" } },
+        { "author": { "display_name": "Rosalind Franklin" } }
+      ],
+      "primary_location": {
+        "landing_page_url": "https://example.org/openalex",
+        "pdf_url": "https://example.org/openalex.pdf",
+        "source": {
+          "display_name": "Nature Medicine"
+        }
+      }
+    },
+    {
+      "id": "https://openalex.org/W999",
+      "title": null
+    }
+  ]
+}

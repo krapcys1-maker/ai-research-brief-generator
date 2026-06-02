@@ -38,6 +38,7 @@ The app supports:
 - deployment privacy notice distinguishes trusted-user mode from session-demo mode
 - embedding provider comparison runner for local fallback vs configured
   OpenAI-compatible model-grade embeddings
+- recorded live-source adapter fixtures for arXiv, Semantic Scholar, and OpenAlex
 - deployment smoke coverage for source health, preflight, documents, compare, claim extraction, claim comparison, and AI-backed brief flow when not skipped
 
 ## Current Docs
@@ -247,6 +248,12 @@ First remediation started on 2026-06-02:
   top-1/source-quality top-1/claim-check accuracy on current fixtures. The
   model-grade comparison was skipped with `model_grade_not_configured` because
   no production embedding provider secrets are present locally.
+- Added recorded live-source adapter fixtures under
+  `tests/fixtures/live-sources` for arXiv Atom, Semantic Scholar search JSON,
+  and OpenAlex works JSON. `tests/sourceAdapters.contract.test.ts` now uses
+  those files to verify response-shape normalization, malformed-record skipping,
+  DOI/arXiv/OpenAlex IDs, reconstructed abstracts, PDF URLs, venues, authors,
+  and citation metadata without live API calls.
 
 ## Next Recommended Step
 

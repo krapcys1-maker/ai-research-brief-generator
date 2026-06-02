@@ -1,7 +1,16 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { arxivSourceAdapter } from "@/lib/sources/arxiv";
 import { openAlexSourceAdapter } from "@/lib/sources/openAlex";
 import { semanticScholarSourceAdapter } from "@/lib/sources/semanticScholar";
+
+function fixtureText(filename: string) {
+  return readFileSync(
+    join(process.cwd(), "tests", "fixtures", "live-sources", filename),
+    "utf8"
+  );
+}
 
 function mockFetchWithResponse(body: string, init?: ResponseInit) {
   const fetchMock = vi.fn(async () => new Response(body, init));
@@ -17,27 +26,7 @@ describe("source adapter contracts", () => {
 
   it("normalizes arXiv Atom entries into source-grounded papers", async () => {
     const fetchMock = mockFetchWithResponse(
-      `<?xml version="1.0" encoding="UTF-8"?>
-      <feed xmlns="http://www.w3.org/2005/Atom">
-        <entry>
-          <id>https://arxiv.org/abs/2401.12345v2</id>
-          <updated>2024-01-03T00:00:00Z</updated>
-          <published>2024-01-01T00:00:00Z</published>
-          <title> Retrieval-Augmented Generation &amp; Clinical QA </title>
-          <summary><![CDATA[ A clinical RAG system with citations. ]]></summary>
-          <author><name>Ada Lovelace</name></author>
-          <author><name>Alan Turing</name></author>
-          <arxiv:doi xmlns:arxiv="http://arxiv.org/schemas/atom">10.48550/arXiv.2401.12345</arxiv:doi>
-          <category term="cs.CL" />
-          <link href="https://arxiv.org/abs/2401.12345v2" rel="alternate" type="text/html" />
-          <link title="pdf" href="https://arxiv.org/pdf/2401.12345v2" rel="related" type="application/pdf" />
-        </entry>
-        <entry>
-          <id>https://arxiv.org/abs/1999.00001</id>
-          <published>1999-01-01T00:00:00Z</published>
-          <title>Too Old</title>
-        </entry>
-      </feed>`,
+      fixtureText("arxiv-clinical-rag.atom.xml"),
       { status: 200 }
     );
 
@@ -67,35 +56,7 @@ describe("source adapter contracts", () => {
   it("normalizes Semantic Scholar search payloads and skips malformed papers", async () => {
     vi.stubEnv("SEMANTIC_SCHOLAR_API_KEY", "test-key");
     const fetchMock = mockFetchWithResponse(
-      JSON.stringify({
-        data: [
-          {
-            paperId: "abc123",
-            title: "Evaluating Citation Faithfulness in Medical RAG",
-            abstract: "A benchmark for citation support.",
-            year: 2024,
-            publicationDate: "2024-05-01",
-            venue: "ACL",
-            citationCount: 12,
-            influentialCitationCount: 2,
-            url: "https://semanticscholar.org/paper/abc123",
-            externalIds: {
-              DOI: "10.1000/semantic",
-              ArXiv: "2405.00001"
-            },
-            authors: [{ name: "Grace Hopper" }, { name: "Katherine Johnson" }],
-            openAccessPdf: {
-              url: "https://example.org/semantic.pdf"
-            }
-          },
-          {
-            paperId: "missing-title"
-          },
-          {
-            title: "Missing ID"
-          }
-        ]
-      }),
+      fixtureText("semantic-scholar-citation-faithfulness.json"),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
 
@@ -131,44 +92,7 @@ describe("source adapter contracts", () => {
 
   it("normalizes OpenAlex works, reconstructed abstracts, and DOI URLs", async () => {
     const fetchMock = mockFetchWithResponse(
-      JSON.stringify({
-        results: [
-          {
-            id: "https://openalex.org/W123",
-            doi: "https://doi.org/10.5555/openalex",
-            title: "Clinical\u0000 RAG Systems",
-            publication_year: 2025,
-            publication_date: "2025-02-14",
-            cited_by_count: 34,
-            abstract_inverted_index: {
-              Retrieval: [0],
-              augmented: [1],
-              generation: [2],
-              supports: [3],
-              diagnosis: [4]
-            },
-            ids: {
-              openalex: "https://openalex.org/W123",
-              doi: "https://doi.org/10.5555/openalex"
-            },
-            authorships: [
-              { author: { display_name: "Marie Curie" } },
-              { author: { display_name: "Rosalind Franklin" } }
-            ],
-            primary_location: {
-              landing_page_url: "https://example.org/openalex",
-              pdf_url: "https://example.org/openalex.pdf",
-              source: {
-                display_name: "Nature Medicine"
-              }
-            }
-          },
-          {
-            id: "https://openalex.org/W999",
-            title: null
-          }
-        ]
-      }),
+      fixtureText("openalex-clinical-rag.json"),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
 
