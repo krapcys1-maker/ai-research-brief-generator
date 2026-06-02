@@ -123,6 +123,8 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
 - [x] App-native session runtime foundation: `UserSession`, hashowane tokeny,
   cookie `ai_brief_app_session`, `GET /api/auth/session` i app-session access
   dla brief list/detail/export/Q&A/job polling.
+- [x] UI warnings dla slabej jakosci parsowania PDF/full-text w source cards i
+  Markdown export.
 - [x] Deployment smoke obejmuje source health, preflight, documents, compare,
   claim extraction, claim comparison i opcjonalnie AI flow.
 
@@ -153,9 +155,10 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
    Obecne lokalne srodowisko uzywa local embedding fallback; trzeba dodac
    produkcyjny PostgreSQL URL, Upstash, AI secrets i model-grade embeddings.
 
-6. **PDF/full-text wymaga mocniejszych fixtures i parser diagnostics.**
-   Parser dziala jako plain text, ale przed publicznym zaufaniem potrzebne sa
-   recorded PDF fixtures, quality metrics i ostrzezenia w UI.
+6. **PDF/full-text nadal wymaga glebszej obslugi trudnych PDF.**
+   Sa recorded PDF fixtures, quality metrics i ostrzezenia w UI/eksporcie dla
+   slabej ekstrakcji. Nadal brakuje page-range support, background jobs dla
+   ciezszych PDF oraz testow scanned/noisy/table-heavy/failed extraction.
 
 7. **DB-backed worker jest dobry na start, ale nie jest docelowa kolejka.**
    Przy wiekszym ruchu trzeba przejsc na zewnetrzna kolejke lub przynajmniej
@@ -312,7 +315,10 @@ Status: **czesciowo zrobione**.
   parser version, quality score.
   Zweryfikowano 2026-06-02: `npm test --
   tests/fulltextFetchParseChunk.test.ts`.
-- [ ] UI warnings dla slabej jakosci parsowania.
+- [x] UI warnings dla slabej jakosci parsowania.
+  Zweryfikowano 2026-06-02: `npm test --
+  tests/fulltextDiagnostics.test.ts tests/markdownExport.test.ts
+  tests/fulltextFetchParseChunk.test.ts`; `npm run lint`.
 - [ ] Page-range support.
 - [ ] Background jobs dla ciezszego PDF/full-text ingestion.
 - [ ] Testy scanned PDF / noisy PDF / table-heavy PDF / failed extraction.

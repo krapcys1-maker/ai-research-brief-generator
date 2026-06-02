@@ -131,6 +131,9 @@ paste/upload text -> extract candidate claims -> user selects claims -> academic
   `tests/fixtures/live-sources`.
 - Recorded PDF parser fixture and extraction diagnostics tests in
   `tests/fixtures/pdf-parser` and `tests/fulltextFetchParseChunk.test.ts`.
+- Full-text parser warnings are visible in brief source cards and Markdown
+  export when extraction diagnostics show weak text, no chunks, or failed
+  parsing.
 - Retrieval benchmark fixtures, gold-query tests, and `npm run benchmark:retrieval` for acronyms, Polish/English variants, typo recovery, interdisciplinary topics, comparison queries, and domain-specific query expansion. The benchmark also writes ignored JSON/Markdown reports under `benchmark-results/` for provider comparisons.
 - Source-quality benchmark fixtures and `npm run benchmark:source-quality` for recorded live-source failure modes, including broad transformer queries that should prefer foundational papers over derivative title matches.
 - Compare With Science benchmark fixtures and `npm run benchmark:claim-check` for supported, partially supported, contradicted, insufficient-evidence, too-broad, non-scientific, already-known, and possible-dead-end classifications.
@@ -192,6 +195,8 @@ ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true
 - Paper full-text ingestion only uses legal open-access PDF candidates from arXiv IDs or source-provided `pdfUrl` values. It does not bypass paywalls, automate browsers, or crawl uncontrolled sources.
 - PDF parsing is plain-text only. The current full-text slice does not support OCR, figures, tables, images, DOCX, XLSX, or scanned documents.
 - If a selected paper has no legal PDF, fails fetch, or fails parsing, the app explicitly falls back to abstract/metadata evidence boundaries.
+- Parser-quality warnings are advisory and should prompt manual PDF review
+  before relying on method/result/table/statistical claims.
 - `Ask My Documents` grounds only on user-uploaded PDF/TXT/MD content. It does not search the web, public paper indexes, or global document data.
 - `Compare With Science` is a retrieved-source comparison, not a definitive scientific, legal, medical, or financial review. It must not be treated as a true/false validator or novelty guarantee.
 - Similar-work detection indicates that related retrieved work exists; it does not prove an idea is definitely new or definitely already exhausted.

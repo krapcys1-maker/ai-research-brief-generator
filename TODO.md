@@ -59,7 +59,8 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 - [x] Expand paper full-text ingestion tests with recorded PDF fixtures and parser-quality cases.
 - [x] Expand uploaded-document retrieval tests with longer documents and multi-document questions.
 - [ ] Expand Compare With Science benchmarks with recorded live-source and full-text evidence cases.
-- [ ] Improve PDF/full-text ingestion with background jobs, page-range support, and UI warnings for parser quality.
+- [x] Add UI and Markdown export warnings for weak full-text parser quality.
+- [ ] Improve PDF/full-text ingestion with background jobs and page-range support.
 
 ## Product UX
 

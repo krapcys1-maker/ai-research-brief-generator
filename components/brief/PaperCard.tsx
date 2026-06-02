@@ -1,5 +1,6 @@
 import type { NormalizedPaper } from "@/lib/sources/types";
 import { formatDoi, getDoiUrl } from "@/lib/sources/doi";
+import { getFullTextParserWarnings } from "@/lib/fulltext/diagnostics";
 import { getPaperMetadataWarnings } from "@/lib/pipeline/metadataQuality";
 import { getPaperInsight } from "@/lib/pipeline/paperInsights";
 
@@ -59,6 +60,7 @@ export function PaperCard({
   const doiUrl = getDoiUrl(paper.doi);
   const insight = getPaperInsight(paper, undefined, query);
   const metadataWarnings = getPaperMetadataWarnings(paper);
+  const fullTextWarnings = getFullTextParserWarnings(paper);
   const scoreRows = [
     ["Relevance", paper.relevanceScore],
     ["Citations", paper.citationScore],
@@ -123,6 +125,18 @@ export function PaperCard({
             <ul className="compact-list warning-list">
               {metadataWarnings.map((item) => (
                 <li key={item}>{item.replace("metadata warning:", "").trim()}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        {fullTextWarnings.length ? (
+          <div>
+            <span className="metric-label">Full-text parser warnings</span>
+            <ul className="compact-list warning-list">
+              {fullTextWarnings.map((item) => (
+                <li key={`${item.label}:${item.detail}`}>
+                  <strong>{item.label}:</strong> {item.detail}
+                </li>
               ))}
             </ul>
           </div>

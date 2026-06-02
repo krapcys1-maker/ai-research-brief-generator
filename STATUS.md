@@ -43,6 +43,8 @@ The app supports:
   OpenAI-compatible model-grade embeddings
 - recorded live-source adapter fixtures for arXiv, Semantic Scholar, and OpenAlex
 - recorded PDF parser fixture and parser-quality diagnostics for full-text extraction
+- visible full-text parser warnings in source cards and Markdown export when
+  PDF extraction is low-quality, chunkless, or failed
 - `CompareReport` schema and repository foundation with user/workspace ownership
 - deployment smoke coverage for source health, preflight, documents, compare, claim extraction, claim comparison, and AI-backed brief flow when not skipped
 - staging readiness preflight through `npm run staging:check`
@@ -285,6 +287,12 @@ First remediation started on 2026-06-02:
   ownership/rate-limit support for brief list/detail/export/Q&A/job polling.
   Login UI, account settings, reset access, audit trail, and full role
   enforcement remain future work.
+- Added full-text parser warning visibility for weak PDF extraction. Serialized
+  parser diagnostics, low `fullTextQualityScore`, zero parsed chunks, and failed
+  extraction now surface in source cards and Markdown bibliography entries, so
+  parsed full text does not look stronger than it is. Verified with
+  `npm test -- tests/fulltextDiagnostics.test.ts tests/markdownExport.test.ts
+  tests/fulltextFetchParseChunk.test.ts` and `npm run lint`.
 
 ## Next Recommended Step
 
@@ -301,5 +309,7 @@ Next highest-value work:
    staging deployment after secrets are configured.
 4. Expand recorded live-source benchmarks for OpenAlex/arXiv/Semantic Scholar
    and Compare With Science.
-5. Add saved Compare With Science report history API/UI and background compare
+5. Add page-range support and background jobs for heavier PDF/full-text
+   ingestion.
+6. Add saved Compare With Science report history API/UI and background compare
    polling on top of the new `CompareReport` storage foundation.

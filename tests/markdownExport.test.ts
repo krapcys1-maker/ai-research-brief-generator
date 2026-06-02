@@ -131,6 +131,49 @@ describe("researchBriefToMarkdown", () => {
     expect(markdown).toContain("normally cited as a 2017 paper");
   });
 
+  it("includes full-text parser warnings in bibliography entries", () => {
+    const markdown = researchBriefToMarkdown({
+      brief: createBrief({
+        query: "pdf parser robustness",
+        searchSummary: {
+          requestedSources: ["arxiv"],
+          sourcesUsed: ["arxiv"],
+          totalFound: 1,
+          totalAfterDeduplication: 1,
+          totalUsedInBrief: 1,
+          queryVariants: ["pdf parser robustness"],
+          sourceDiagnostics: [],
+          warnings: []
+        }
+      }),
+      papers: [
+        createPaper({
+          source: "arxiv",
+          fullTextStatus: "parsed",
+          fullTextChunkCount: 1,
+          fullTextQualityScore: 0.2,
+          fullTextErrorMessage: JSON.stringify({
+            type: "pdf_parse_diagnostics",
+            parserName: "pdf-parse",
+            qualityScore: 0.2,
+            warnings: [
+              "parser warning: extracted PDF text has a low word count.",
+              "parser warning: extracted PDF quality score is low."
+            ]
+          })
+        })
+      ]
+    });
+
+    expect(markdown).toContain("- Full-text parser warnings:");
+    expect(markdown).toContain(
+      "Parser warning: extracted PDF text has a low word count."
+    );
+    expect(markdown).toContain(
+      "Parser warning: extracted PDF quality score is low."
+    );
+  });
+
   it("explains fallback-mode exports near the top of the document", () => {
     const markdown = researchBriefToMarkdown({
       brief: createBrief({

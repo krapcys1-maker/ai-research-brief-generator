@@ -2,6 +2,7 @@ import type { ResearchBrief } from "@/lib/ai/schemas";
 import type { EvidenceLink } from "@/lib/ai/schemas";
 import type { NormalizedPaper } from "@/lib/sources/types";
 import { getEvidenceBoundary } from "@/lib/brief/evidenceBoundary";
+import { getFullTextParserWarnings } from "@/lib/fulltext/diagnostics";
 import { formatDoi, getDoiUrl } from "@/lib/sources/doi";
 import { getPaperMetadataWarnings } from "@/lib/pipeline/metadataQuality";
 import {
@@ -235,6 +236,7 @@ export function researchBriefToMarkdown(input: {
   for (const paper of papers) {
     const insight = getPaperInsight(paper, undefined, alignmentQuery);
     const metadataWarnings = getPaperMetadataWarnings(paper);
+    const fullTextWarnings = getFullTextParserWarnings(paper);
 
     lines.push(`### [${paper.id}] ${paper.title}`);
     lines.push("");
@@ -261,6 +263,13 @@ export function researchBriefToMarkdown(input: {
       lines.push(
         `- Metadata warnings: ${metadataWarnings
           .map((warning) => warning.replace("metadata warning:", "").trim())
+          .join("; ")}`
+      );
+    }
+    if (fullTextWarnings.length) {
+      lines.push(
+        `- Full-text parser warnings: ${fullTextWarnings
+          .map((warning) => `${warning.label}: ${warning.detail}`)
           .join("; ")}`
       );
     }
