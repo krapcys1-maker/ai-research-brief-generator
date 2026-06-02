@@ -53,10 +53,10 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 - [x] Add exact-title ranking boost for foundational source selection.
 - [x] Surface suspicious metadata warnings in preflight, brief source cards, and Markdown export.
 - [ ] Tune hybrid retrieval with model-grade embeddings and larger benchmarks.
-- [ ] Expand paper full-text ingestion tests with recorded PDF fixtures and parser-quality cases.
+- [x] Expand paper full-text ingestion tests with recorded PDF fixtures and parser-quality cases.
 - [x] Expand uploaded-document retrieval tests with longer documents and multi-document questions.
 - [ ] Expand Compare With Science benchmarks with recorded live-source and full-text evidence cases.
-- [ ] Improve PDF/full-text ingestion with background jobs, page-range support, and better parser diagnostics.
+- [ ] Improve PDF/full-text ingestion with background jobs, page-range support, and UI warnings for parser quality.
 
 ## Product UX
 

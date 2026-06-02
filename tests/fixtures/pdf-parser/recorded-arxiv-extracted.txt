@@ -1,0 +1,10 @@
+Retrieval augmented generation for clinical question answering evaluates how retrieved evidence can reduce unsupported answers in medical workflows.
+The recorded parser fixture represents text extracted from an open-access PDF and keeps enough prose to exercise parser diagnostics without calling a live PDF source.
+The study describes retrieval pipelines, citation grounding, abstract evidence, full text evidence, evaluation protocols, and limitations of clinical deployment.
+Researchers compare answer faithfulness, citation coverage, retrieval ranking, and safety caveats across several biomedical question answering tasks.
+The paper reports that evidence quality depends on source selection, parser quality, and whether the model receives relevant passages instead of noisy document fragments.
+Clinical users need transparent warnings when extracted text is short, empty, scanned, corrupted, or dominated by non-text artifacts.
+For this fixture, the parser should count words and characters, retain normalized whitespace, produce a stable hash, and attach diagnostics that downstream storage can inspect.
+The fixture also includes enough ordinary alphanumeric prose to avoid a low-quality classification while still allowing tests to simulate an empty second page.
+Production ingestion should use these diagnostics to avoid silently treating weak PDF extraction as reliable full text evidence.
+Recorded parser fixtures make the behavior repeatable in continuous integration, independent of arXiv rate limits, network timeouts, or PDF parser dependency changes.

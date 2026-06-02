@@ -288,9 +288,13 @@ Status: **czesciowo zrobione**.
 - [x] Separate `PaperFullText` i `PaperTextChunk` storage.
 - [x] Per-paper failure isolation.
 - [x] Full-text evidence boundary.
-- [ ] Recorded PDF fixtures.
-- [ ] Parser diagnostics: page count, empty pages, char count, warnings,
+- [x] Recorded PDF fixtures.
+  Zweryfikowano 2026-06-02: `npm test --
+  tests/fulltextFetchParseChunk.test.ts`.
+- [x] Parser diagnostics: page count, empty pages, char count, warnings,
   parser version, quality score.
+  Zweryfikowano 2026-06-02: `npm test --
+  tests/fulltextFetchParseChunk.test.ts`.
 - [ ] UI warnings dla slabej jakosci parsowania.
 - [ ] Page-range support.
 - [ ] Background jobs dla ciezszego PDF/full-text ingestion.
@@ -383,7 +387,9 @@ Kryterium odbioru P6:
 7. [x] Dodac recorded live-source fixtures dla OpenAlex/arXiv/Semantic Scholar.
    Zweryfikowano 2026-06-02: `npm test --
    tests/sourceAdapters.contract.test.ts`.
-8. [ ] Dodac PDF parser diagnostics i recorded PDF fixtures.
+8. [x] Dodac PDF parser diagnostics i recorded PDF fixtures.
+   Zweryfikowano 2026-06-02: `npm test --
+   tests/fulltextFetchParseChunk.test.ts`.
 9. [ ] Zaprojektowac `CompareReport` z workspace ownership.
 10. [ ] Przygotowac staging env: PostgreSQL, Upstash, AI secrets, worker i smoke
     bez `SMOKE_SKIP_AI=true`.

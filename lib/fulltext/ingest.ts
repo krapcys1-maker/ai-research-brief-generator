@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { chunkPaperText } from "@/lib/fulltext/chunkText";
 import { discoverFullText } from "@/lib/fulltext/discoverFullText";
 import { fetchPdf, type FetchPdfInput } from "@/lib/fulltext/fetchPdf";
-import { parsePdf } from "@/lib/fulltext/parsePdf";
+import { parsePdf, type PdfParseDiagnostics } from "@/lib/fulltext/parsePdf";
 import { getFullTextRepository } from "@/lib/fulltext/repository";
 import type {
   FullTextIngestionResult,
@@ -58,6 +58,25 @@ function makeFullTextRecord(input: {
     createdAt: timestamp,
     updatedAt: timestamp
   };
+}
+
+function serializePdfDiagnostics(diagnostics: PdfParseDiagnostics) {
+  if (!diagnostics.warnings.length) {
+    return null;
+  }
+
+  return JSON.stringify({
+    type: "pdf_parse_diagnostics",
+    parserName: diagnostics.parserName,
+    parserVersion: diagnostics.parserVersion,
+    pageCount: diagnostics.pageCount,
+    emptyPageCount: diagnostics.emptyPageCount,
+    characterCount: diagnostics.characterCount,
+    wordCount: diagnostics.wordCount,
+    alphanumericRatio: Number(diagnostics.alphanumericRatio.toFixed(4)),
+    qualityScore: Number(diagnostics.qualityScore.toFixed(4)),
+    warnings: diagnostics.warnings
+  });
 }
 
 function withFullTextStatus(
@@ -126,6 +145,7 @@ async function ingestOnePaper(
       parserName: parsed.parserName,
       textHash: parsed.textHash,
       extractedAt: nowIso(),
+      errorMessage: serializePdfDiagnostics(parsed.diagnostics),
       qualityScore: parsed.qualityScore
     });
     const chunks = chunkPaperText({

@@ -39,6 +39,7 @@ The app supports:
 - embedding provider comparison runner for local fallback vs configured
   OpenAI-compatible model-grade embeddings
 - recorded live-source adapter fixtures for arXiv, Semantic Scholar, and OpenAlex
+- recorded PDF parser fixture and parser-quality diagnostics for full-text extraction
 - deployment smoke coverage for source health, preflight, documents, compare, claim extraction, claim comparison, and AI-backed brief flow when not skipped
 
 ## Current Docs
@@ -254,6 +255,12 @@ First remediation started on 2026-06-02:
   those files to verify response-shape normalization, malformed-record skipping,
   DOI/arXiv/OpenAlex IDs, reconstructed abstracts, PDF URLs, venues, authors,
   and citation metadata without live API calls.
+- Added a recorded PDF parser fixture under `tests/fixtures/pdf-parser` and
+  parser diagnostics for extracted full text: parser name/version, page count,
+  empty page count, character count, word count, alphanumeric ratio, quality
+  score, and warnings for weak extraction. Parsed full-text records now preserve
+  diagnostic warnings in `fullTextErrorMessage` as a JSON payload without
+  requiring a schema migration.
 
 ## Next Recommended Step
 
@@ -267,5 +274,5 @@ Next highest-value work:
    fallback baseline.
 3. Expand recorded live-source benchmarks for OpenAlex/arXiv/Semantic Scholar
    and Compare With Science.
-4. Add recorded PDF fixtures and parser-quality diagnostics for full-text
-   ingestion.
+4. Add UI warnings for weak PDF/full-text parser quality and consider page-range
+   support for heavier PDFs.

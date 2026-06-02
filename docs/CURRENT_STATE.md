@@ -69,6 +69,8 @@ paste/upload text -> extract candidate claims -> user selects claims -> academic
   - existing `pdfUrl` discovery when source metadata provides one.
   - safe PDF fetch with timeout, content-type check, and max-size enforcement.
   - plain-text PDF parsing through a swappable parser boundary.
+  - parser diagnostics for page count, empty pages, character count, word count,
+    alphanumeric ratio, parser version, quality score, and extraction warnings.
   - full-text chunking with `paperId`, `fullTextId`, chunk indexes, section hints, token estimates, and `full_text_supported` evidence level.
   - separate `PaperFullText` and `PaperTextChunk` storage, not `Brief.briefJson`.
   - per-paper failure isolation so one failed PDF never blocks brief generation.
@@ -123,6 +125,8 @@ paste/upload text -> extract candidate claims -> user selects claims -> academic
 - Adapter contract tests for arXiv, Semantic Scholar, and OpenAlex
   response-shape drift, backed by recorded fixtures in
   `tests/fixtures/live-sources`.
+- Recorded PDF parser fixture and extraction diagnostics tests in
+  `tests/fixtures/pdf-parser` and `tests/fulltextFetchParseChunk.test.ts`.
 - Retrieval benchmark fixtures, gold-query tests, and `npm run benchmark:retrieval` for acronyms, Polish/English variants, typo recovery, interdisciplinary topics, comparison queries, and domain-specific query expansion. The benchmark also writes ignored JSON/Markdown reports under `benchmark-results/` for provider comparisons.
 - Source-quality benchmark fixtures and `npm run benchmark:source-quality` for recorded live-source failure modes, including broad transformer queries that should prefer foundational papers over derivative title matches.
 - Compare With Science benchmark fixtures and `npm run benchmark:claim-check` for supported, partially supported, contradicted, insufficient-evidence, too-broad, non-scientific, already-known, and possible-dead-end classifications.
