@@ -2,8 +2,11 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { BriefRequestSchema } from "@/lib/ai/schemas";
 import {
-  appendBriefHistorySessionCookie,
-  getOrCreateBriefHistorySession
+  getBriefAccessContext,
+  getBriefRateLimitKey
+} from "@/lib/briefs/access";
+import {
+  appendBriefHistorySessionCookie
 } from "@/lib/briefs/session";
 import { createBriefJob } from "@/lib/jobs/briefJobs";
 import {
@@ -28,7 +31,7 @@ export async function POST(request: Request) {
   try {
     const clientIp = getClientIp(request);
     const rateLimit = await checkRateLimit({
-      key: `brief:${clientIp}`
+      key: getBriefRateLimitKey("brief", request, clientIp)
     });
 
     if (!rateLimit.allowed) {
@@ -50,19 +53,29 @@ export async function POST(request: Request) {
     }
 
     const body = BriefRequestSchema.parse(await request.json());
-    const session = getOrCreateBriefHistorySession(request);
-    const job = await createBriefJob(body, {
-      ownerSessionId: session.sessionId
-    });
+    const access = getBriefAccessContext(request);
+    const job = await createBriefJob(
+      body,
+      access.scope === "user"
+        ? {
+            ownerId: access.ownerId,
+            workspaceId: access.workspaceId,
+            createdByUserId: access.ownerId,
+            visibility: access.workspaceId ? "workspace" : "private"
+          }
+        : {
+            ownerSessionId: access.sessionId
+          }
+    );
     const headers = new Headers({
       "X-RateLimit-Limit": rateLimit.limit.toString(),
       "X-RateLimit-Remaining": rateLimit.remaining.toString(),
       "X-RateLimit-Reset": Math.ceil(rateLimit.resetAt / 1000).toString(),
-      "X-Brief-History-Scope": "session"
+      "X-Brief-History-Scope": access.scope
     });
 
-    if (session.isNew) {
-      appendBriefHistorySessionCookie(headers, session.sessionId);
+    if (access.scope === "session" && access.sessionId && access.isNewSession) {
+      appendBriefHistorySessionCookie(headers, access.sessionId);
     }
 
     return NextResponse.json(
@@ -114,22 +127,20 @@ export async function GET(request: Request) {
     });
   }
 
-  const session = getOrCreateBriefHistorySession(request);
+  const access = getBriefAccessContext(request);
   const headers = new Headers({
     "Cache-Control": "no-store, private",
-    "X-Brief-History-Scope": "session"
+    "X-Brief-History-Scope": access.scope
   });
 
-  if (session.isNew) {
-    appendBriefHistorySessionCookie(headers, session.sessionId);
+  if (access.scope === "session" && access.sessionId && access.isNewSession) {
+    appendBriefHistorySessionCookie(headers, access.sessionId);
   }
 
   return NextResponse.json(
     {
-      briefs: await briefRepository.listSummaries({
-        ownerSessionId: session.sessionId
-      }),
-      historyScope: "session"
+      briefs: await briefRepository.listSummaries(access.source),
+      historyScope: access.scope
     },
     { headers }
   );

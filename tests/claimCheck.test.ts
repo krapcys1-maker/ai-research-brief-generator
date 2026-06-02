@@ -210,4 +210,68 @@ describe("claim extraction and Compare With Science", () => {
     expect(report.items[0].classification).toBe("insufficient_evidence");
     expect(report.items[0].evidenceSnippets).toEqual([]);
   });
+
+  it("does not retrieve private document chunks across workspaces", async () => {
+    await inMemoryDocumentRepository.saveParsedDocument({
+      document: {
+        id: "doc_workspace_private",
+        ownerId: "user_a",
+        workspaceId: "workspace_a",
+        sessionId: null,
+        filename: "workspace-private.md",
+        mimeType: "text/markdown",
+        sizeBytes: 100,
+        status: "parsed",
+        textHash: "hash",
+        createdAt: new Date().toISOString(),
+        deletedAt: null,
+        privacyScope: "user",
+        errorMessage: null
+      },
+      chunks: [
+        {
+          id: "doc_workspace_private:chunk_0",
+          documentId: "doc_workspace_private",
+          ownerId: "user_a",
+          workspaceId: "workspace_a",
+          sessionId: null,
+          sectionTitle: null,
+          chunkIndex: 0,
+          text: "Workspace-private RAG evidence should not cross tenants.",
+          tokenEstimate: 7,
+          pageStart: null,
+          pageEnd: null,
+          embedding: null,
+          embeddingModel: null,
+          evidenceLevel: "uploaded_document_supported"
+        }
+      ]
+    });
+
+    const report = await compareClaimsWithScience({
+      request: {
+        claims: ["Workspace-private RAG evidence should not cross tenants."],
+        sourceDocumentId: "doc_workspace_private",
+        sources: ["arxiv"],
+        maxPapers: 5
+      },
+      documentSource: {
+        ownerId: "user_a",
+        workspaceId: "workspace_b",
+        sessionId: null
+      },
+      dependencies: {
+        documentRepository: inMemoryDocumentRepository,
+        search: async () => ({
+          papers: [],
+          sourcesUsed: [],
+          warnings: [],
+          sourceDiagnostics: []
+        })
+      }
+    });
+
+    expect(report.items[0].classification).toBe("insufficient_evidence");
+    expect(report.items[0].evidenceSnippets).toEqual([]);
+  });
 });

@@ -27,6 +27,10 @@ The app supports:
 - separate paper full-text, paper chunk, uploaded document, and uploaded document chunk storage
 - session-scoped private brief history through `ai_brief_history_session`
 - session ownership checks for brief detail, Markdown export, and brief Q&A
+- trusted-header user/workspace ownership checks for brief list/detail,
+  `/briefs/[id]`, Markdown export, brief Q&A, and brief job polling
+- user/workspace-aware rate limiting for brief generation and brief Q&A when
+  trusted identity headers are present
 - source API cache and source diagnostics
 - production fail-fast persistence and shared Upstash rate limiting
 - rate limiting for brief generation, brief Q&A, document Q&A, document uploads, claim extraction, and claim comparison
@@ -56,7 +60,11 @@ The app supports:
   local/private demos.
 - Session-scoped document uploads are disabled by default in production unless explicitly enabled for a private/internal deployment.
 - Public recent history is disabled by default in production.
-- Brief history is session-scoped by default. Brief detail/export/Q&A require the matching session cookie for session-owned records unless public history is explicitly enabled.
+- Brief history is session-scoped by default for anonymous/private demo use.
+  When trusted `X-AI-Brief-User-Id` and optional
+  `X-AI-Brief-Workspace-Id` headers are present, brief list/detail/export/Q&A
+  and job polling are scoped to that user/workspace unless public history is
+  explicitly enabled.
 - The DB-backed worker is suitable for first production deployments, but a stronger external queue is still recommended when throughput or multi-instance retry orchestration grows.
 - The official full public SaaS identity target is app-native authentication
   with workspaces and role-based membership. Trusted auth headers remain an
@@ -216,19 +224,24 @@ First remediation started on 2026-06-02:
   migration `20260602195000_add_brief_workspace_ownership`. In-memory and
   Prisma repositories now store/filter these fields while preserving session
   ownership as the demo fallback.
+- Added trusted-header user/workspace runtime access for brief list/detail,
+  `/briefs/[id]`, Markdown export, brief Q&A, and brief job polling. Brief
+  generation and brief Q&A rate limits now use user/workspace keys when
+  trusted identity is available, with per-IP fallback for anonymous demo mode.
+- Expanded cross-user/cross-workspace tests for brief list, detail, export,
+  Q&A, job polling, uploaded documents, document repository isolation, and
+  Compare With Science uploaded-document retrieval.
 
 ## Next Recommended Step
 
 Next highest-value work:
 
-1. Extend route access checks from session-only to user/workspace-aware for
-   brief list/detail, export, Q&A, and job polling.
-2. Add app-native login/session runtime, account UI, role enforcement, and
+1. Add app-native login/session runtime, account UI, role enforcement, and
    audit trail.
-3. Add real OpenAI-compatible embedding provider credentials in deployment,
+2. Add real OpenAI-compatible embedding provider credentials in deployment,
    rerun `npm run embedding:check`, then rerun retrieval/source-quality/claim-check
    benchmarks and compare against the local fallback baseline.
-4. Expand recorded live-source benchmarks for OpenAlex/arXiv/Semantic Scholar
+3. Expand recorded live-source benchmarks for OpenAlex/arXiv/Semantic Scholar
    and Compare With Science.
-5. Add recorded PDF fixtures and parser-quality diagnostics for full-text
+4. Add recorded PDF fixtures and parser-quality diagnostics for full-text
    ingestion.

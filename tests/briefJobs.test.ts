@@ -371,6 +371,83 @@ describe("brief jobs", () => {
     expect(payload.error).toContain("brief generation job");
   });
 
+  it("exposes workspace-owned job status only to the owning trusted user", async () => {
+    process.env.BRIEF_JOB_AUTORUN = "false";
+
+    const job = await createBriefJob(request, {
+      ownerId: "user_alpha",
+      workspaceId: "workspace_alpha",
+      createdByUserId: "user_alpha",
+      visibility: "workspace"
+    });
+
+    const { GET } = await import("@/app/api/briefs/jobs/[id]/route");
+    const response = await GET(
+      new Request(`http://localhost/api/briefs/jobs/${job.id}`, {
+        headers: {
+          "x-ai-brief-user-id": "user_alpha",
+          "x-ai-brief-workspace-id": "workspace_alpha"
+        }
+      }),
+      { params: Promise.resolve({ id: job.id }) }
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.jobId).toBe(job.id);
+    expect(payload.status).toBe("queued");
+  });
+
+  it("blocks workspace-owned job status for another trusted user", async () => {
+    process.env.BRIEF_JOB_AUTORUN = "false";
+
+    const job = await createBriefJob(request, {
+      ownerId: "user_alpha",
+      workspaceId: "workspace_alpha",
+      createdByUserId: "user_alpha",
+      visibility: "workspace"
+    });
+
+    const { GET } = await import("@/app/api/briefs/jobs/[id]/route");
+    const response = await GET(
+      new Request(`http://localhost/api/briefs/jobs/${job.id}`, {
+        headers: {
+          "x-ai-brief-user-id": "user_beta",
+          "x-ai-brief-workspace-id": "workspace_alpha"
+        }
+      }),
+      { params: Promise.resolve({ id: job.id }) }
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(payload.status).toBe("forbidden");
+  });
+
+  it("blocks workspace-owned job status for another workspace", async () => {
+    process.env.BRIEF_JOB_AUTORUN = "false";
+
+    const job = await createBriefJob(request, {
+      ownerId: "user_alpha",
+      workspaceId: "workspace_alpha",
+      createdByUserId: "user_alpha",
+      visibility: "workspace"
+    });
+
+    const { GET } = await import("@/app/api/briefs/jobs/[id]/route");
+    const response = await GET(
+      new Request(`http://localhost/api/briefs/jobs/${job.id}`, {
+        headers: {
+          "x-ai-brief-user-id": "user_alpha",
+          "x-ai-brief-workspace-id": "workspace_beta"
+        }
+      }),
+      { params: Promise.resolve({ id: job.id }) }
+    );
+
+    expect(response.status).toBe(403);
+  });
+
   it("returns 404 for missing jobs", async () => {
     const { GET } = await import("@/app/api/briefs/jobs/[id]/route");
     const response = await GET(

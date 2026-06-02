@@ -1,10 +1,12 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { BriefRenderer } from "@/components/brief/BriefRenderer";
 import {
   canAccessBrief,
-  getBriefHistorySessionFromCookieStore
+  getBriefHistorySessionFromCookieStore,
+  getBriefTrustedIdentityFromHeaders,
+  getBriefUserAccessContext
 } from "@/lib/briefs/access";
 import { getBriefRepository } from "@/lib/storage/repository";
 
@@ -24,7 +26,13 @@ export default async function BriefPage({
   }
 
   const cookieStore = await cookies();
-  if (!canAccessBrief(record, getBriefHistorySessionFromCookieStore(cookieStore))) {
+  const headerStore = await headers();
+  const { ownerId, workspaceId } = getBriefTrustedIdentityFromHeaders(headerStore);
+  const access = ownerId
+    ? getBriefUserAccessContext(ownerId, workspaceId)
+    : getBriefHistorySessionFromCookieStore(cookieStore);
+
+  if (!canAccessBrief(record, access)) {
     notFound();
   }
 

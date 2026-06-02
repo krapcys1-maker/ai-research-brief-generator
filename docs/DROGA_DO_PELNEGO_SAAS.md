@@ -105,6 +105,11 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
   `createdByUserId`, `visibility` w `Brief` i `BriefGenerationJob`, migracja
   `20260602195000_add_brief_workspace_ownership`, plus memory/Prisma repo
   storage dla tych pol.
+- [x] Trusted-header user/workspace runtime access dla brief list, detail,
+  `/briefs/[id]`, Markdown export, brief Q&A i job polling, z zachowanym
+  session fallbackiem dla demo/private mode.
+- [x] Brief generation i brief Q&A rate limit uzywa user/workspace key, gdy
+  trusted identity jest dostepna; anonimowy fallback nadal jest per-IP.
 - [x] AI synthesis diagnostics i embedding health w `/api/source-cache`.
 - [x] Benchmarki: retrieval, source-quality, claim-check.
 - [x] Deployment smoke obejmuje source health, preflight, documents, compare,
@@ -116,14 +121,15 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
    Decyzja architektoniczna i schemat Prisma sa juz gotowe, ale nie ma jeszcze
    logowania, sesji uzytkownika, UI kont ani enforcementu rol.
 
-2. **Briefy i joby nie sa jeszcze workspace-scoped.**
-   Pola ownership sa juz w schemacie i repozytoriach. Brakuje jeszcze runtime
-   access layer, ktory wymusi user/workspace/role przy list/detail/export/Q&A.
+2. **Briefy i joby maja trusted-header workspace enforcement, ale nie role.**
+   Pola ownership sa w schemacie i repozytoriach, a runtime access layer chroni
+   list/detail/export/Q&A/job polling po user/workspace. Brakuje jeszcze
+   app-native sesji, membershipow i egzekwowania rol.
 
-3. **Brakuje user/workspace-aware access layer.**
-   Endpointy briefow i jobow maja juz session ownership, a dokumenty maja
-   trusted user/workspace ownership, ale docelowa warstwa uprawnien musi
-   obslugiwac app-native user/workspace/role.
+3. **Brakuje app-native auth runtime.**
+   Trusted user/workspace headers sa teraz mostem dla prywatnego/B2B wdrozenia,
+   ale docelowa warstwa uprawnien musi obslugiwac natywne logowanie,
+   session runtime, role i membershipy workspace.
 
 4. **Compare With Science nie ma jeszcze zapisanych raportow.**
    Obecny flow dziala jako runtime comparison, ale nie ma `CompareReport`,
@@ -178,10 +184,15 @@ Status: **najwyzszy priorytet**.
   tests/inMemoryBriefRepository.test.ts tests/briefJobs.test.ts
   tests/createBrief.test.ts tests/identitySchema.test.ts`, `npm test`,
   `npm run lint`, `npm run build`.
-- [ ] Przeniesc rate limit z per-IP na per-user/per-workspace tam, gdzie jest
+- [x] Przeniesc rate limit z per-IP na per-user/per-workspace tam, gdzie jest
   dostepna tozsamosc.
-- [ ] Dodac testy cross-user/cross-workspace dla brief list, detail, export,
+- [x] Dodac testy cross-user/cross-workspace dla brief list, detail, export,
   Q&A, job polling, documents i compare.
+  Zweryfikowano 2026-06-02: `npm test --
+  tests/briefsRoute.test.ts tests/briefAccessRoute.test.ts
+  tests/briefQuestionsRoute.test.ts tests/briefJobs.test.ts
+  tests/documentsRoute.test.ts tests/documentRepository.test.ts
+  tests/claimCheck.test.ts`.
 - [ ] Ujednolicic privacy notice tak, aby rozroznial trusted-user mode i
   session-demo mode.
 
@@ -351,7 +362,7 @@ Kryterium odbioru P6:
 3. [x] Dodac schemat `User`, `Workspace`, `WorkspaceMember` albo oficjalny dokument
    kontraktu trusted auth gateway.
 4. [x] Rozszerzyc `Brief` i `BriefGenerationJob` o workspace/user ownership.
-5. [ ] Dodac cross-user tests dla briefow, jobow, eksportu i Q&A.
+5. [x] Dodac cross-user tests dla briefow, jobow, eksportu i Q&A.
 6. [ ] Skonfigurowac produkcyjny embedding provider i uruchomic benchmarki.
 7. [ ] Dodac recorded live-source fixtures dla OpenAlex/arXiv/Semantic Scholar.
 8. [ ] Dodac PDF parser diagnostics i recorded PDF fixtures.

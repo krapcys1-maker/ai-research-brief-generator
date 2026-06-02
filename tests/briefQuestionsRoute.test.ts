@@ -147,6 +147,88 @@ describe("POST /api/briefs/[id]/questions", () => {
     expect(synthesizeAnswerMock).not.toHaveBeenCalled();
   });
 
+  it("blocks questions for a brief owned by another trusted user", async () => {
+    const brief = createBrief();
+    const paper = createPaper();
+
+    getBriefRepositoryMock.mockResolvedValueOnce({
+      saveWithPapers: vi.fn(),
+      getById: vi.fn().mockResolvedValue({
+        brief,
+        papers: [paper],
+        createdAt: "2026-01-01T00:00:00.000Z",
+        ownerSessionId: null,
+        ownerId: "user_alpha",
+        workspaceId: "workspace_alpha",
+        createdByUserId: "user_alpha",
+        visibility: "workspace"
+      }),
+      list: vi.fn(),
+      listSummaries: vi.fn(),
+      clear: vi.fn()
+    });
+
+    const { POST } = await import("@/app/api/briefs/[id]/questions/route");
+    const response = await POST(
+      new Request("http://localhost/api/briefs/brief_1/questions", {
+        method: "POST",
+        headers: {
+          "x-ai-brief-user-id": "user_beta",
+          "x-ai-brief-workspace-id": "workspace_alpha"
+        },
+        body: JSON.stringify({
+          question: "Why?"
+        })
+      }),
+      { params: Promise.resolve({ id: "brief_1" }) }
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(payload.status).toBe("forbidden");
+    expect(synthesizeAnswerMock).not.toHaveBeenCalled();
+  });
+
+  it("blocks questions for a brief owned by another workspace", async () => {
+    const brief = createBrief();
+    const paper = createPaper();
+
+    getBriefRepositoryMock.mockResolvedValueOnce({
+      saveWithPapers: vi.fn(),
+      getById: vi.fn().mockResolvedValue({
+        brief,
+        papers: [paper],
+        createdAt: "2026-01-01T00:00:00.000Z",
+        ownerSessionId: null,
+        ownerId: "user_alpha",
+        workspaceId: "workspace_alpha",
+        createdByUserId: "user_alpha",
+        visibility: "workspace"
+      }),
+      list: vi.fn(),
+      listSummaries: vi.fn(),
+      clear: vi.fn()
+    });
+
+    const { POST } = await import("@/app/api/briefs/[id]/questions/route");
+    const response = await POST(
+      new Request("http://localhost/api/briefs/brief_1/questions", {
+        method: "POST",
+        headers: {
+          "x-ai-brief-user-id": "user_alpha",
+          "x-ai-brief-workspace-id": "workspace_beta"
+        },
+        body: JSON.stringify({
+          question: "Why?"
+        })
+      }),
+      { params: Promise.resolve({ id: "brief_1" }) }
+    );
+
+    expect(response.status).toBe(403);
+    expect(synthesizeAnswerMock).not.toHaveBeenCalled();
+  });
+
   it("returns a controlled validation error when Q&A cannot be grounded", async () => {
     const brief = createBrief();
     const paper = createPaper();

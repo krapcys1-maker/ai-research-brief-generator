@@ -76,6 +76,43 @@ describe("POST /api/briefs", () => {
     );
   });
 
+  it("queues authenticated jobs with user and workspace ownership", async () => {
+    createBriefJobMock.mockResolvedValueOnce(queuedJob());
+
+    const { POST } = await import("@/app/api/briefs/route");
+    const response = await POST(
+      new Request("http://localhost/api/briefs", {
+        method: "POST",
+        headers: {
+          "x-ai-brief-user-id": "user_alpha",
+          "x-ai-brief-workspace-id": "workspace_alpha"
+        },
+        body: JSON.stringify({
+          query: "retrieval augmented generation",
+          maxPapers: 5,
+          sources: ["mock"]
+        })
+      })
+    );
+
+    expect(response.status).toBe(202);
+    expect(response.headers.get("X-Brief-History-Scope")).toBe("user");
+    expect(response.headers.get("set-cookie")).toBeNull();
+    expect(createBriefJobMock).toHaveBeenCalledWith(
+      {
+        query: "retrieval augmented generation",
+        maxPapers: 5,
+        sources: ["mock"]
+      },
+      {
+        ownerId: "user_alpha",
+        workspaceId: "workspace_alpha",
+        createdByUserId: "user_alpha",
+        visibility: "workspace"
+      }
+    );
+  });
+
   it("rejects invalid generation requests before creating a job", async () => {
     const { POST } = await import("@/app/api/briefs/route");
     const response = await POST(
@@ -134,6 +171,59 @@ describe("POST /api/briefs", () => {
     expect(payload.status).toBe("error");
     expect(payload.error).toContain("Too many brief generation requests");
     expect(createBriefJobMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("rate limits authenticated generation per user and workspace", async () => {
+    vi.stubEnv("BRIEF_RATE_LIMIT_MAX", "1");
+    vi.stubEnv("BRIEF_RATE_LIMIT_WINDOW_MS", "60000");
+    createBriefJobMock.mockResolvedValue(queuedJob());
+
+    const { POST } = await import("@/app/api/briefs/route");
+    const requestBody = JSON.stringify({
+      query: "retrieval augmented generation",
+      maxPapers: 5,
+      sources: ["mock"]
+    });
+    const baseHeaders = {
+      "x-forwarded-for": "203.0.113.10",
+      "x-ai-brief-workspace-id": "workspace_alpha"
+    };
+
+    const firstUserResponse = await POST(
+      new Request("http://localhost/api/briefs", {
+        method: "POST",
+        headers: {
+          ...baseHeaders,
+          "x-ai-brief-user-id": "user_alpha"
+        },
+        body: requestBody
+      })
+    );
+    const secondUserResponse = await POST(
+      new Request("http://localhost/api/briefs", {
+        method: "POST",
+        headers: {
+          ...baseHeaders,
+          "x-ai-brief-user-id": "user_beta"
+        },
+        body: requestBody
+      })
+    );
+    const repeatedUserResponse = await POST(
+      new Request("http://localhost/api/briefs", {
+        method: "POST",
+        headers: {
+          ...baseHeaders,
+          "x-ai-brief-user-id": "user_alpha"
+        },
+        body: requestBody
+      })
+    );
+
+    expect(firstUserResponse.status).toBe(202);
+    expect(secondUserResponse.status).toBe(202);
+    expect(repeatedUserResponse.status).toBe(429);
+    expect(createBriefJobMock).toHaveBeenCalledTimes(2);
   });
 
   it("returns a controlled configuration error when production rate limiting is missing", async () => {
@@ -234,6 +324,52 @@ describe("GET /api/briefs", () => {
     expect(getBriefRepositoryMock).toHaveBeenCalled();
     expect(repository.listSummaries).toHaveBeenCalledWith({
       ownerSessionId: "brief_session_existing"
+    });
+  });
+
+  it("returns authenticated user and workspace scoped brief summaries", async () => {
+    vi.stubEnv("PUBLIC_BRIEF_HISTORY_ENABLED", "false");
+    const repository = {
+      saveWithPapers: vi.fn(),
+      getById: vi.fn(),
+      list: vi.fn(),
+      clear: vi.fn(),
+      listSummaries: vi.fn().mockResolvedValue([
+        {
+          id: "brief_workspace",
+          title: "Workspace history item",
+          query: "AI agents",
+          generatedAt: "2026-01-01T00:00:00.000Z",
+          outputLanguage: "en",
+          createdAt: "2026-01-01T00:00:00.000Z",
+          ownerId: "user_alpha",
+          workspaceId: "workspace_alpha",
+          createdByUserId: "user_alpha",
+          visibility: "workspace"
+        }
+      ])
+    };
+    getBriefRepositoryMock.mockResolvedValueOnce(repository);
+
+    const { GET } = await import("@/app/api/briefs/route");
+    const response = await GET(
+      new Request("http://localhost/api/briefs", {
+        headers: {
+          "x-ai-brief-user-id": "user_alpha",
+          "x-ai-brief-workspace-id": "workspace_alpha"
+        }
+      })
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("X-Brief-History-Scope")).toBe("user");
+    expect(response.headers.get("set-cookie")).toBeNull();
+    expect(payload.historyScope).toBe("user");
+    expect(payload.briefs[0].id).toBe("brief_workspace");
+    expect(repository.listSummaries).toHaveBeenCalledWith({
+      ownerId: "user_alpha",
+      workspaceId: "workspace_alpha"
     });
   });
 });

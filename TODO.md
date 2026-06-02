@@ -29,7 +29,8 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 - [x] Add app-native `User`, `Workspace`, `WorkspaceMember`, role enum, and Prisma migration.
 - [ ] Add app-native login/session runtime, account UI, role enforcement, and audit trail.
 - [x] Add user/workspace ownership fields to briefs and brief generation jobs.
-- [ ] Enforce user/workspace ownership for brief list/detail, exports, brief Q&A, job polling, and saved compare reports.
+- [x] Enforce trusted-header user/workspace ownership for brief list/detail, exports, brief Q&A, job polling, uploaded documents, and Compare With Science uploaded-document retrieval.
+- [ ] Add saved Compare With Science reports with workspace ownership.
 - [x] Protect brief generation job polling by owner/session access.
 - [x] Add retention/deletion policy copy for uploaded documents.
 - [x] Add a clear production privacy note before public deployment.

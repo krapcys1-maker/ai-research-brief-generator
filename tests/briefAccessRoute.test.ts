@@ -18,6 +18,19 @@ function privateRecord() {
   };
 }
 
+function workspaceRecord() {
+  return {
+    brief: createBrief({ id: "brief_workspace" }),
+    papers: [createPaper()],
+    createdAt: "2026-01-01T00:00:00.000Z",
+    ownerSessionId: null,
+    ownerId: "user_alpha",
+    workspaceId: "workspace_alpha",
+    createdByUserId: "user_alpha",
+    visibility: "workspace" as const
+  };
+}
+
 function repository(record = privateRecord()) {
   return {
     saveWithPapers: vi.fn(),
@@ -83,6 +96,61 @@ describe("private brief access", () => {
     expect(response.status).toBe(200);
   });
 
+  it("returns a workspace-owned brief for the owning trusted user", async () => {
+    getBriefRepositoryMock.mockResolvedValueOnce(repository(workspaceRecord()));
+
+    const { GET } = await import("@/app/api/briefs/[id]/route");
+    const response = await GET(
+      new Request("http://localhost/api/briefs/brief_workspace", {
+        headers: {
+          "x-ai-brief-user-id": "user_alpha",
+          "x-ai-brief-workspace-id": "workspace_alpha"
+        }
+      }),
+      { params: Promise.resolve({ id: "brief_workspace" }) }
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload.brief.id).toBe("brief_workspace");
+  });
+
+  it("blocks a workspace-owned brief for another trusted user", async () => {
+    getBriefRepositoryMock.mockResolvedValueOnce(repository(workspaceRecord()));
+
+    const { GET } = await import("@/app/api/briefs/[id]/route");
+    const response = await GET(
+      new Request("http://localhost/api/briefs/brief_workspace", {
+        headers: {
+          "x-ai-brief-user-id": "user_beta",
+          "x-ai-brief-workspace-id": "workspace_alpha"
+        }
+      }),
+      { params: Promise.resolve({ id: "brief_workspace" }) }
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(payload.status).toBe("forbidden");
+  });
+
+  it("blocks a workspace-owned brief for another workspace", async () => {
+    getBriefRepositoryMock.mockResolvedValueOnce(repository(workspaceRecord()));
+
+    const { GET } = await import("@/app/api/briefs/[id]/route");
+    const response = await GET(
+      new Request("http://localhost/api/briefs/brief_workspace", {
+        headers: {
+          "x-ai-brief-user-id": "user_alpha",
+          "x-ai-brief-workspace-id": "workspace_beta"
+        }
+      }),
+      { params: Promise.resolve({ id: "brief_workspace" }) }
+    );
+
+    expect(response.status).toBe(403);
+  });
+
   it("blocks markdown export for another session", async () => {
     getBriefRepositoryMock.mockResolvedValueOnce(repository());
 
@@ -94,6 +162,45 @@ describe("private brief access", () => {
         }
       }),
       { params: Promise.resolve({ id: "brief_private" }) }
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(payload.status).toBe("forbidden");
+  });
+
+  it("exports a workspace-owned brief for the owning trusted user", async () => {
+    getBriefRepositoryMock.mockResolvedValueOnce(repository(workspaceRecord()));
+
+    const { GET } = await import("@/app/api/export/[id]/route");
+    const response = await GET(
+      new Request("http://localhost/api/export/brief_workspace?format=markdown", {
+        headers: {
+          "x-ai-brief-user-id": "user_alpha",
+          "x-ai-brief-workspace-id": "workspace_alpha"
+        }
+      }),
+      { params: Promise.resolve({ id: "brief_workspace" }) }
+    );
+    const markdown = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toContain("text/markdown");
+    expect(markdown).toContain(workspaceRecord().brief.title);
+  });
+
+  it("blocks markdown export for another trusted user", async () => {
+    getBriefRepositoryMock.mockResolvedValueOnce(repository(workspaceRecord()));
+
+    const { GET } = await import("@/app/api/export/[id]/route");
+    const response = await GET(
+      new Request("http://localhost/api/export/brief_workspace?format=markdown", {
+        headers: {
+          "x-ai-brief-user-id": "user_beta",
+          "x-ai-brief-workspace-id": "workspace_alpha"
+        }
+      }),
+      { params: Promise.resolve({ id: "brief_workspace" }) }
     );
     const payload = await response.json();
 

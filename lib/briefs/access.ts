@@ -1,11 +1,32 @@
 import type { StoredBrief } from "@/lib/storage/types";
 import {
   BRIEF_HISTORY_SESSION_COOKIE,
-  getBriefHistorySessionId
+  getBriefHistorySessionId,
+  getOrCreateBriefHistorySession
 } from "@/lib/briefs/session";
+import {
+  DOCUMENT_AUTH_USER_HEADER,
+  DOCUMENT_AUTH_WORKSPACE_HEADER
+} from "@/lib/documents/access";
 
 type OwnerSessionScopedRecord = {
   ownerSessionId?: string | null;
+  ownerId?: string | null;
+  workspaceId?: string | null;
+  visibility?: "private" | "workspace" | "public" | null;
+};
+
+export type BriefAccessContext = {
+  source: {
+    ownerSessionId?: string | null;
+    ownerId?: string | null;
+    workspaceId?: string | null;
+  };
+  scope: "user" | "session";
+  ownerId: string | null;
+  workspaceId: string | null;
+  sessionId: string | null;
+  isNewSession: boolean;
 };
 
 function isPublicBriefAccessExplicitlyEnabled() {
@@ -14,22 +35,132 @@ function isPublicBriefAccessExplicitlyEnabled() {
   );
 }
 
+function normalizeHeader(value: string | null) {
+  const normalized = value?.trim();
+  return normalized ? normalized.slice(0, 160) : null;
+}
+
+type HeaderGetter = {
+  get(name: string): string | null | undefined;
+};
+
+export function getBriefTrustedIdentityFromHeaders(headers: HeaderGetter) {
+  return {
+    ownerId: normalizeHeader(headers.get(DOCUMENT_AUTH_USER_HEADER) ?? null),
+    workspaceId: normalizeHeader(
+      headers.get(DOCUMENT_AUTH_WORKSPACE_HEADER) ?? null
+    )
+  };
+}
+
+export function getBriefTrustedIdentity(request: Request) {
+  return getBriefTrustedIdentityFromHeaders(request.headers);
+}
+
+export function getBriefUserAccessContext(
+  ownerId: string,
+  workspaceId: string | null
+): BriefAccessContext {
+  return {
+    source: {
+      ownerId,
+      workspaceId
+    },
+    scope: "user",
+    ownerId,
+    workspaceId,
+    sessionId: null,
+    isNewSession: false
+  };
+}
+
+export function getBriefAccessContext(request: Request): BriefAccessContext {
+  const { ownerId, workspaceId } = getBriefTrustedIdentity(request);
+
+  if (ownerId) {
+    return getBriefUserAccessContext(ownerId, workspaceId);
+  }
+
+  const session = getOrCreateBriefHistorySession(request);
+
+  return {
+    source: {
+      ownerSessionId: session.sessionId
+    },
+    scope: "session",
+    ownerId: null,
+    workspaceId: null,
+    sessionId: session.sessionId,
+    isNewSession: session.isNew
+  };
+}
+
+export function getBriefRateLimitKey(
+  scope: string,
+  request: Request,
+  clientIp: string
+) {
+  const { ownerId, workspaceId } = getBriefTrustedIdentity(request);
+
+  if (ownerId) {
+    return `${scope}:workspace:${workspaceId ?? "personal"}:user:${ownerId}`;
+  }
+
+  return `${scope}:ip:${clientIp}`;
+}
+
+function toAccessSource(
+  access: string | null | BriefAccessContext
+): BriefAccessContext["source"] {
+  if (typeof access === "string" || access === null) {
+    return {
+      ownerSessionId: access
+    };
+  }
+
+  return access.source;
+}
+
 export function canAccessBrief(
   record: OwnerSessionScopedRecord,
-  sessionId: string | null
+  access: string | null | BriefAccessContext
 ) {
   if (isPublicBriefAccessExplicitlyEnabled()) {
     return true;
   }
 
-  if (!record.ownerSessionId) {
+  if (record.visibility === "public") {
     return true;
   }
 
-  return record.ownerSessionId === sessionId;
+  const source = toAccessSource(access);
+
+  if (record.ownerId) {
+    if (record.workspaceId && record.workspaceId !== source.workspaceId) {
+      return false;
+    }
+
+    return record.ownerId === source.ownerId;
+  }
+
+  if (record.workspaceId) {
+    return record.workspaceId === source.workspaceId;
+  }
+
+  if (record.ownerSessionId) {
+    return record.ownerSessionId === source.ownerSessionId;
+  }
+
+  return true;
 }
 
 export function canAccessBriefFromRequest(record: StoredBrief, request: Request) {
+  const { ownerId } = getBriefTrustedIdentity(request);
+
+  if (ownerId) {
+    return canAccessBrief(record, getBriefAccessContext(request));
+  }
+
   return canAccessBrief(record, getBriefHistorySessionId(request));
 }
 
@@ -42,13 +173,15 @@ export function getBriefHistorySessionFromCookieStore(
 export function privateBriefError() {
   return {
     status: "forbidden",
-    error: "This brief belongs to a different private browser session."
+    error:
+      "This brief belongs to a different private browser session, user, or workspace."
   };
 }
 
 export function privateBriefJobError() {
   return {
     status: "forbidden",
-    error: "This brief generation job belongs to a different private browser session."
+    error:
+      "This brief generation job belongs to a different private browser session, user, or workspace."
   };
 }

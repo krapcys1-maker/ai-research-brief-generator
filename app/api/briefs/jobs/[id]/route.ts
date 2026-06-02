@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import {
   canAccessBrief,
+  getBriefAccessContext,
+  getBriefTrustedIdentity,
   privateBriefJobError
 } from "@/lib/briefs/access";
 import { getBriefHistorySessionId } from "@/lib/briefs/session";
@@ -23,7 +25,12 @@ export async function GET(
     );
   }
 
-  if (!canAccessBrief(job, getBriefHistorySessionId(request))) {
+  const { ownerId } = getBriefTrustedIdentity(request);
+  const access = ownerId
+    ? getBriefAccessContext(request)
+    : getBriefHistorySessionId(request);
+
+  if (!canAccessBrief(job, access)) {
     return NextResponse.json(privateBriefJobError(), { status: 403 });
   }
 

@@ -3,7 +3,11 @@ import { ZodError } from "zod";
 import { AIConfigurationError, AIProviderError } from "@/lib/ai/client";
 import { BriefQuestionRequestSchema } from "@/lib/ai/schemas";
 import { synthesizeAnswer } from "@/lib/ai/synthesizeAnswer";
-import { canAccessBriefFromRequest, privateBriefError } from "@/lib/briefs/access";
+import {
+  canAccessBriefFromRequest,
+  getBriefRateLimitKey,
+  privateBriefError
+} from "@/lib/briefs/access";
 import { getFullTextRepository } from "@/lib/fulltext/repository";
 import { retrievePaperTextChunks } from "@/lib/fulltext/retrieval";
 import {
@@ -32,7 +36,7 @@ export async function POST(
     const { id } = await params;
     const clientIp = getClientIp(request);
     const rateLimit = await checkRateLimit({
-      key: `brief-question:${clientIp}`
+      key: getBriefRateLimitKey("brief-question", request, clientIp)
     });
 
     if (!rateLimit.allowed) {
