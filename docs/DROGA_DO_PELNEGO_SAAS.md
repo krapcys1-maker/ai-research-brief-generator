@@ -135,6 +135,8 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
   claim extraction, claim comparison i opcjonalnie AI flow.
 - [x] Dashboard workspace laczy najnowsze briefy, dokumenty i zapisane Compare
   reports w jednym session/user/workspace-scoped widoku `/workspace`.
+- [x] Saved topics / research projects: `ResearchProject` ma ownership,
+  repozytoria memory/PostgreSQL, API i UI w dashboardzie workspace.
 
 ## Najwieksze braki
 
@@ -175,10 +177,10 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
    Przy wiekszym ruchu trzeba przejsc na zewnetrzna kolejke lub przynajmniej
    wyciagnac stabilny `JobQueue` adapter.
 
-8. **Brakuje produktowej retencji i zapisanych projektow badawczych.**
-   Sa briefy, dokumenty i compare, ale jeszcze nie ma saved topics, collections,
-   dokument collections, export history ani retencji per workspace. Dashboard
-   workspace i zapisane Compare reports sa juz dostepne.
+8. **Brakuje produktowej retencji i kolekcji.**
+   Sa briefy, dokumenty, compare, dashboard workspace i saved research
+   projects, ale jeszcze nie ma saved brief collections, document collections,
+   export history ani retencji per workspace.
 
 9. **Brakuje billing/quota/admin.**
    Bez planow, limitow, triala, admin panelu i audit logu to nadal bardziej beta
@@ -376,7 +378,13 @@ Status: **czesciowo zrobione**.
   Compare reports z session/user/workspace isolation; `npm test --
   tests/workspaceDashboardRoute.test.ts tests/briefsRoute.test.ts
   tests/documentsRoute.test.ts tests/claimCheckReportsRoute.test.ts`.
-- [ ] Saved topics / research projects.
+- [x] Saved topics / research projects.
+  Zweryfikowano 2026-06-02: dodano `ResearchProject` z
+  session/user/workspace ownership, migracje Prisma, repozytoria
+  memory/PostgreSQL, `GET/POST /api/workspace/projects` oraz formularz/listing
+  w `/workspace`; `npm test -- tests/researchProjectRepository.test.ts
+  tests/researchProjectsRoute.test.ts tests/workspaceDashboardRoute.test.ts
+  tests/identitySchema.test.ts`, `npm run lint`.
 - [ ] Saved brief collections.
 - [x] Saved Compare With Science reports.
   Zweryfikowano 2026-06-02: `POST /api/claim-check` zapisuje raport,

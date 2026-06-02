@@ -1662,7 +1662,25 @@ textarea {
 }
 
 .workspace-overview .metric-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.workspace-project-form {
+  display: grid;
+  gap: 10px;
+}
+
+.workspace-source-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.workspace-source-grid label {
+  min-width: 0;
+  line-height: 1.4;
 }
 
 .workspace-list {
@@ -1826,6 +1844,7 @@ textarea {
   .workspace-dashboard,
   .workspace-overview .metric-grid,
   .workspace-report-list,
+  .workspace-source-grid,
   .claim-columns {
     grid-template-columns: 1fr;
   }

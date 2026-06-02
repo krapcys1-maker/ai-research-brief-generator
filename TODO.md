@@ -74,11 +74,12 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 - [x] Add PostgreSQL-backed full-text ingestion jobs and a separate full-text worker entrypoint.
 - [ ] Replace the simple DB-backed worker with a stronger external queue/worker when production throughput requires it.
 - [ ] Add user accounts.
-- [ ] Add private saved topics.
+- [x] Add private saved topics.
 - [x] Add comparison mode.
 - [x] Add saved Compare With Science report history UI/API.
 - [x] Add background job polling for longer Compare With Science runs.
 - [x] Add workspace dashboard for recent briefs, documents, and Compare reports.
+- [x] Add saved research projects/topics in the workspace dashboard.
 - [ ] Add paper timeline.
 - [ ] Add topic clustering.
 

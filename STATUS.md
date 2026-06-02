@@ -53,6 +53,8 @@ The app supports:
 - `CompareReport` schema and repository foundation with user/workspace ownership
 - workspace dashboard at `/workspace` with session/user/workspace-scoped
   summaries for briefs, documents, and saved Compare reports
+- saved research projects/topics with session/user/workspace ownership,
+  `GET/POST /api/workspace/projects`, and dashboard UI
 - deployment smoke coverage for source health, preflight, documents, compare, claim extraction, claim comparison, and AI-backed brief flow when not skipped
 - staging readiness preflight through `npm run staging:check`
 
@@ -364,6 +366,12 @@ First remediation started on 2026-06-02:
   session/user/workspace ownership boundaries. Verified with `npm test --
   tests/workspaceDashboardRoute.test.ts tests/briefsRoute.test.ts
   tests/documentsRoute.test.ts tests/claimCheckReportsRoute.test.ts`.
+- Added saved topics / research projects: `ResearchProject` schema and
+  migration, memory/PostgreSQL repositories, session/user/workspace ownership,
+  `GET/POST /api/workspace/projects`, and a save/list panel in `/workspace`.
+  Verified with `npm test -- tests/researchProjectRepository.test.ts
+  tests/researchProjectsRoute.test.ts tests/workspaceDashboardRoute.test.ts
+  tests/identitySchema.test.ts` and `npm run lint`.
 
 ## Next Recommended Step
 
@@ -382,5 +390,5 @@ Next highest-value work:
    failures.
 5. Add a durable DB-backed or external queue adapter for Compare jobs if heavier
    Compare workloads become common.
-6. Add saved topics/research projects and collections on top of the new
+6. Add saved brief collections and document collections on top of the new
    workspace dashboard.

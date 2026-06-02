@@ -5,6 +5,7 @@ import { inMemoryDocumentRepository } from "@/lib/documents/inMemoryDocumentRepo
 import type { UserDocument } from "@/lib/documents/schemas";
 import { inMemoryBriefRepository } from "@/lib/storage/inMemoryBriefStore";
 import { createBrief, createPaper } from "@/tests/fixtures";
+import { inMemoryResearchProjectRepository } from "@/lib/workspace/inMemoryResearchProjectRepository";
 
 const compareRequest: ClaimCheckRequest = {
   claims: ["Retrieval augmented generation improves factuality."],
@@ -83,6 +84,7 @@ describe("workspace dashboard API route", () => {
     await inMemoryBriefRepository.clear();
     await inMemoryDocumentRepository.clear();
     await inMemoryCompareReportRepository.clear();
+    await inMemoryResearchProjectRepository.clear();
   });
 
   it("summarizes only resources from the same private sessions", async () => {
@@ -122,6 +124,16 @@ describe("workspace dashboard API route", () => {
       report: compareReport("compare_session_b", "Session B report"),
       ownerSessionId: "doc_session_b"
     });
+    await inMemoryResearchProjectRepository.save({
+      title: "Session A project",
+      query: "retrieval augmented generation",
+      ownerSessionId: "brief_session_a"
+    });
+    await inMemoryResearchProjectRepository.save({
+      title: "Session B project",
+      query: "graph neural networks",
+      ownerSessionId: "brief_session_b"
+    });
 
     const { GET } = await import("@/app/api/workspace/dashboard/route");
     const response = await GET(
@@ -140,8 +152,12 @@ describe("workspace dashboard API route", () => {
       briefs: 1,
       documents: 1,
       parsedDocuments: 1,
-      compareReports: 1
+      compareReports: 1,
+      researchProjects: 1
     });
+    expect(
+      payload.dashboard.recentResearchProjects.map((item: { title: string }) => item.title)
+    ).toEqual(["Session A project"]);
     expect(payload.dashboard.recentBriefs.map((item: { id: string }) => item.id))
       .toEqual(["brief_session_a"]);
     expect(payload.dashboard.recentDocuments.map((item: { id: string }) => item.id))
@@ -206,6 +222,22 @@ describe("workspace dashboard API route", () => {
       createdByUserId: "user_1",
       visibility: "workspace"
     });
+    await inMemoryResearchProjectRepository.save({
+      title: "Workspace A project",
+      query: "citation faithfulness",
+      ownerId: "user_1",
+      workspaceId: "workspace_a",
+      createdByUserId: "user_1",
+      visibility: "workspace"
+    });
+    await inMemoryResearchProjectRepository.save({
+      title: "Workspace B project",
+      query: "clinical triage",
+      ownerId: "user_1",
+      workspaceId: "workspace_b",
+      createdByUserId: "user_1",
+      visibility: "workspace"
+    });
 
     const { GET } = await import("@/app/api/workspace/dashboard/route");
     const response = await GET(
@@ -224,8 +256,12 @@ describe("workspace dashboard API route", () => {
       briefs: 1,
       documents: 1,
       parsedDocuments: 1,
-      compareReports: 1
+      compareReports: 1,
+      researchProjects: 1
     });
+    expect(
+      payload.dashboard.recentResearchProjects.map((item: { title: string }) => item.title)
+    ).toEqual(["Workspace A project"]);
     expect(payload.dashboard.recentBriefs.map((item: { id: string }) => item.id))
       .toEqual(["brief_workspace_a"]);
     expect(payload.dashboard.recentDocuments.map((item: { id: string }) => item.id))

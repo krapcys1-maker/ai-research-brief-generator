@@ -2,10 +2,17 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import type { FormEvent } from "react";
 import type { WorkspaceDashboard as WorkspaceDashboardPayload } from "@/lib/workspace/dashboard";
 
 type DashboardResponse = {
   dashboard?: WorkspaceDashboardPayload;
+  status?: string;
+  error?: string;
+};
+
+type ProjectResponse = {
+  project?: WorkspaceDashboardPayload["recentResearchProjects"][number];
   status?: string;
   error?: string;
 };
@@ -31,6 +38,8 @@ export function WorkspaceDashboard() {
     null
   );
   const [error, setError] = useState<string | null>(null);
+  const [projectError, setProjectError] = useState<string | null>(null);
+  const [isSavingProject, setIsSavingProject] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   async function fetchDashboard() {
@@ -62,6 +71,43 @@ export function WorkspaceDashboard() {
       );
     } finally {
       setIsLoading(false);
+    }
+  }
+
+  async function saveProject(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsSavingProject(true);
+    setProjectError(null);
+
+    try {
+      const form = event.currentTarget;
+      const formData = new FormData(form);
+      const response = await fetch("/api/workspace/projects", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          title: formData.get("title"),
+          query: formData.get("query"),
+          description: formData.get("description") || null,
+          sources: formData.getAll("sources")
+        })
+      });
+      const payload = (await response.json()) as ProjectResponse;
+
+      if (!response.ok || !payload.project) {
+        throw new Error(payload.error ?? "Could not save research project.");
+      }
+
+      form.reset();
+      setDashboard(await fetchDashboard());
+    } catch (caught) {
+      setProjectError(
+        caught instanceof Error ? caught.message : "Could not save research project."
+      );
+    } finally {
+      setIsSavingProject(false);
     }
   }
 
@@ -146,7 +192,90 @@ export function WorkspaceDashboard() {
             <span className="metric-label">Compare reports</span>
             <strong>{dashboard?.totals.compareReports ?? 0}</strong>
           </div>
+          <div className="metric">
+            <span className="metric-label">Projects</span>
+            <strong>{dashboard?.totals.researchProjects ?? 0}</strong>
+          </div>
         </div>
+      </section>
+
+      <section className="surface workspace-panel">
+        <div className="workspace-panel-header">
+          <h2>Saved projects</h2>
+          <span className="badge">
+            {dashboard?.totals.researchProjects ?? 0}
+          </span>
+        </div>
+        <form className="workspace-project-form" onSubmit={saveProject}>
+          <input
+            className="form-control"
+            name="title"
+            placeholder="Project title"
+            minLength={3}
+            maxLength={140}
+            required
+          />
+          <textarea
+            className="form-control form-textarea"
+            name="query"
+            placeholder="Research topic or standing query"
+            rows={3}
+            minLength={3}
+            maxLength={500}
+            required
+          />
+          <input
+            className="form-control"
+            name="description"
+            placeholder="Optional context"
+            maxLength={1000}
+          />
+          <div className="workspace-source-grid" aria-label="Project sources">
+            {["arxiv", "semantic_scholar", "openalex", "mock"].map((source) => (
+              <label key={source}>
+                <input type="checkbox" name="sources" value={source} /> {source}
+              </label>
+            ))}
+          </div>
+          <button
+            className="primary-action"
+            type="submit"
+            disabled={isSavingProject}
+          >
+            {isSavingProject ? "Saving..." : "Save project"}
+          </button>
+        </form>
+        {projectError ? (
+          <div className="form-alert error">{projectError}</div>
+        ) : null}
+      </section>
+
+      <section className="surface workspace-panel">
+        <div className="workspace-panel-header">
+          <h2>Recent projects</h2>
+          <Link className="citation" href="/">
+            Start brief
+          </Link>
+        </div>
+        {dashboard?.recentResearchProjects.length ? (
+          <div className="workspace-list">
+            {dashboard.recentResearchProjects.map((project) => (
+              <Link href="/" key={project.id}>
+                <span className="badge">{project.visibility}</span>
+                <strong>{project.title}</strong>
+                <span>{project.query}</span>
+                {project.sources.length ? (
+                  <span>{project.sources.join(", ")}</span>
+                ) : null}
+                <time dateTime={project.createdAt}>
+                  {formatDate(project.createdAt)}
+                </time>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="source-health-empty">No saved projects in this scope.</div>
+        )}
       </section>
 
       <section className="surface workspace-panel">

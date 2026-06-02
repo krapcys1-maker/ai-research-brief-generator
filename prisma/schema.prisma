@@ -37,6 +37,8 @@ model User {
   createdFullTextIngestionJobs FullTextIngestionJob[] @relation("FullTextIngestionJobCreator")
   ownedCompareReports   CompareReport[] @relation("CompareReportOwner")
   createdCompareReports CompareReport[] @relation("CompareReportCreator")
+  ownedResearchProjects   ResearchProject[] @relation("ResearchProjectOwner")
+  createdResearchProjects ResearchProject[] @relation("ResearchProjectCreator")
   sessions         UserSession[]
 }
 
@@ -53,6 +55,7 @@ model Workspace {
   briefJobs BriefGenerationJob[]
   fullTextIngestionJobs FullTextIngestionJob[]
   compareReports CompareReport[]
+  researchProjects ResearchProject[]
   sessions UserSession[]
 
   @@index([ownerId])
@@ -212,6 +215,32 @@ model CompareReport {
 
   owner     User?      @relation("CompareReportOwner", fields: [ownerId], references: [id], onDelete: SetNull)
   createdBy User?      @relation("CompareReportCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+
+  @@index([ownerSessionId])
+  @@index([ownerId])
+  @@index([workspaceId])
+  @@index([createdByUserId])
+  @@index([visibility])
+  @@index([createdAt])
+}
+
+model ResearchProject {
+  id              String   @id
+  ownerSessionId  String?
+  ownerId         String?
+  workspaceId     String?
+  createdByUserId String?
+  visibility      BriefVisibility @default(PRIVATE)
+  title           String
+  query           String
+  description     String?
+  sourcesJson     Json
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  owner     User?      @relation("ResearchProjectOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  createdBy User?      @relation("ResearchProjectCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
   workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
 
   @@index([ownerSessionId])

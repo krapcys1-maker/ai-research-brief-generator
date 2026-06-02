@@ -94,6 +94,28 @@ describe("compare report workspace ownership schema", () => {
   });
 });
 
+describe("research project workspace ownership schema", () => {
+  it("defines saved research projects with user and workspace ownership", () => {
+    const schema = readFileSync("prisma/schema.prisma", "utf8");
+    const migration = readFileSync(
+      "prisma/migrations/20260602213500_add_research_projects/migration.sql",
+      "utf8"
+    );
+
+    expect(schema).toContain("model ResearchProject");
+    expect(schema).toContain("ownedResearchProjects");
+    expect(schema).toContain("researchProjects ResearchProject[]");
+    expect(schema).toContain("sourcesJson     Json");
+    expect(schema).toContain("@relation(\"ResearchProjectOwner\"");
+    expect(schema).toContain("@relation(\"ResearchProjectCreator\"");
+    expect(migration).toContain("CREATE TABLE \"ResearchProject\"");
+    expect(migration).toContain("\"visibility\" \"BriefVisibility\"");
+    expect(migration).toContain("ResearchProject_workspaceId_idx");
+    expect(migration).toContain("ResearchProject_ownerId_fkey");
+    expect(migration).toContain("ResearchProject_workspaceId_fkey");
+  });
+});
+
 describe("app-native user session schema", () => {
   it("defines durable user sessions with hashed tokens and revocation", () => {
     const schema = readFileSync("prisma/schema.prisma", "utf8");
