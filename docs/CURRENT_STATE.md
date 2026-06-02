@@ -124,6 +124,8 @@ paste/upload text -> extract candidate claims -> user selects claims -> academic
   - save completed reports through `CompareReport` with
     user/workspace/session ownership.
   - list and reopen saved reports from the `/compare` history panel.
+  - queue longer comparisons through `POST /api/claim-check/jobs` and poll
+    status/results through `GET /api/claim-check/jobs/[id]`.
 - Markdown export through `GET /api/export/[id]?format=markdown`.
 - Optional PostgreSQL/Prisma persistence behind the `BriefRepository` contract.
 - Optional PostgreSQL/Prisma persistence behind the `DocumentRepository` contract for uploaded documents and chunks.
@@ -240,9 +242,10 @@ ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true
 - `Ask My Documents` grounds only on user-uploaded PDF/TXT/MD content. It does not search the web, public paper indexes, or global document data.
 - `Compare With Science` is a retrieved-source comparison, not a definitive scientific, legal, medical, or financial review. It must not be treated as a true/false validator or novelty guarantee.
 - Similar-work detection indicates that related retrieved work exists; it does not prove an idea is definitely new or definitely already exhausted.
-- Saved Compare reports are persisted after synchronous comparison. Longer
-  Compare jobs still need background job polling before this is comfortable for
-  heavier claim sets.
+- Saved Compare reports are persisted after synchronous or background-polled
+  comparison. Compare job status is currently an in-process queue; use it for
+  local/private beta ergonomics, then move it to durable DB-backed or external
+  queue storage before high-throughput multi-instance production.
 - Uploaded document privacy supports authenticated user/workspace ownership
   through trusted headers. Session-scoped uploads remain a local/private demo
   fallback and are disabled by default in production unless explicitly enabled

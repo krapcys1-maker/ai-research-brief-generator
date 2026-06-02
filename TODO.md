@@ -77,7 +77,7 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 - [ ] Add private saved topics.
 - [x] Add comparison mode.
 - [x] Add saved Compare With Science report history UI/API.
-- [ ] Add background job polling for longer Compare With Science runs.
+- [x] Add background job polling for longer Compare With Science runs.
 - [ ] Add paper timeline.
 - [ ] Add topic clustering.
 

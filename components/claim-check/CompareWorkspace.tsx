@@ -30,11 +30,13 @@ type ExtractPayload = {
   document?: { id: string; filename: string; status: string };
 };
 
-type ComparePayload = {
+type CompareJobPayload = {
   status?: string;
   error?: string;
+  jobId?: string;
+  stage?: string;
+  reportId?: string | null;
   report?: ClaimCheckReport;
-  savedReport?: SavedCompareReport;
 };
 
 type SavedCompareReport = {
@@ -79,6 +81,7 @@ export function CompareWorkspace() {
   const [historyScope, setHistoryScope] = useState<"user" | "session">("session");
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [loadingReportId, setLoadingReportId] = useState<string | null>(null);
+  const [compareJobStatus, setCompareJobStatus] = useState<string | null>(null);
 
   const selectedClaims = useMemo(
     () => claims.filter((claim) => selectedClaimIds.has(claim.id)),
@@ -210,10 +213,11 @@ export function CompareWorkspace() {
 
   async function handleCompare() {
     setError(null);
+    setCompareJobStatus(null);
     setIsComparing(true);
 
     try {
-      const response = await fetch("/api/claim-check", {
+      const response = await fetch("/api/claim-check/jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -222,22 +226,21 @@ export function CompareWorkspace() {
           queryContext: text.slice(0, 280)
         })
       });
-      const payload = (await response.json()) as ComparePayload;
+      const payload = (await response.json()) as CompareJobPayload;
 
-      if (!response.ok || !payload.report) {
-        throw new Error(payload.error ?? "Could not compare claims.");
+      if (!response.ok || !payload.jobId) {
+        throw new Error(payload.error ?? "Could not queue claim comparison.");
       }
 
-      setReport(payload.report);
+      const completed = await pollCompareJob(payload.jobId);
+
+      if (!completed.report) {
+        throw new Error(completed.error ?? "Could not compare claims.");
+      }
+
+      setReport(completed.report);
       setFilter("all");
-      if (payload.savedReport) {
-        setHistory((current) => [
-          payload.savedReport as SavedCompareReport,
-          ...current.filter((item) => item.id !== payload.savedReport?.id)
-        ]);
-      } else {
-        await refreshHistory();
-      }
+      await refreshHistory();
     } catch (caughtError) {
       setError(
         caughtError instanceof Error ? caughtError.message : "Could not compare claims."
@@ -245,6 +248,36 @@ export function CompareWorkspace() {
     } finally {
       setIsComparing(false);
     }
+  }
+
+  async function pollCompareJob(jobId: string) {
+    for (let attempt = 0; attempt < 80; attempt += 1) {
+      const response = await fetch(`/api/claim-check/jobs/${jobId}`);
+      const payload = (await response.json()) as CompareJobPayload;
+
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Could not load compare job.");
+      }
+
+      setCompareJobStatus(
+        payload.stage ? `${payload.status ?? "running"} / ${payload.stage}` : null
+      );
+
+      if (payload.status === "completed") {
+        return payload;
+      }
+
+      if (
+        payload.status === "failed" ||
+        payload.status === "configuration_error"
+      ) {
+        throw new Error(payload.error ?? "Compare job failed.");
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+
+    throw new Error("Compare job did not finish before the polling timeout.");
   }
 
   async function handleLoadSavedReport(id: string) {
@@ -341,6 +374,9 @@ export function CompareWorkspace() {
         >
           {isComparing ? "Comparing..." : "Compare selected claims"}
         </button>
+        {compareJobStatus ? (
+          <div className="source-health-empty">Job: {compareJobStatus}</div>
+        ) : null}
       </section>
 
       <section className="surface compare-panel">

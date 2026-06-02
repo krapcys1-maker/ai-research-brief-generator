@@ -48,8 +48,8 @@ Last updated: 2026-06-02
 - Improve PDF/full-text ingestion beyond the current parser diagnostics,
   optional page ranges, controlled background jobs, and difficult-PDF fixtures
   by adding real OCR/table handling.
-- Improve Compare With Science with background jobs and deeper claim-level
-  evidence ranking.
+- Improve Compare With Science with durable DB-backed/external compare jobs and
+  deeper claim-level evidence ranking.
 - Add citation graph / related work graph.
 - Add weekly research digest after accounts and saved topics exist.
 - Add knowledge graph only after source quality and full-text strategy are stable.

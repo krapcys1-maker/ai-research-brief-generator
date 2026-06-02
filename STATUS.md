@@ -348,6 +348,14 @@ First remediation started on 2026-06-02:
   tests/claimCheckReportsRoute.test.ts tests/compareReportRepository.test.ts
   tests/claimCheck.test.ts tests/claimCheckExtractRoute.test.ts` and
   `npm run lint`.
+- Added background job polling for longer Compare With Science runs:
+  `POST /api/claim-check/jobs` queues an in-process compare job, `GET
+  /api/claim-check/jobs/[id]` exposes scoped status/results, completed jobs save
+  to `CompareReport`, and `/compare` now queues plus polls instead of holding a
+  long synchronous request. Verified with `npm test --
+  tests/claimCheckJobsRoute.test.ts tests/claimCheckReportsRoute.test.ts
+  tests/compareReportRepository.test.ts tests/claimCheck.test.ts` and
+  `npm run lint`.
 
 ## Next Recommended Step
 
@@ -362,6 +370,7 @@ Next highest-value work:
 3. Run `npm run staging:check`, `npx prisma migrate deploy`,
    `npm run embedding:check`, and full `npm run smoke:deploy` against the real
    staging deployment after secrets are configured.
-4. Add background compare job polling for longer Compare With Science runs.
-5. Add structured production logs and alerting for AI/provider/source/worker
+4. Add structured production logs and alerting for AI/provider/source/worker
    failures.
+5. Add a durable DB-backed or external queue adapter for Compare jobs if heavier
+   Compare workloads become common.
