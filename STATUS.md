@@ -40,6 +40,7 @@ The app supports:
   OpenAI-compatible model-grade embeddings
 - recorded live-source adapter fixtures for arXiv, Semantic Scholar, and OpenAlex
 - recorded PDF parser fixture and parser-quality diagnostics for full-text extraction
+- `CompareReport` schema and repository foundation with user/workspace ownership
 - deployment smoke coverage for source health, preflight, documents, compare, claim extraction, claim comparison, and AI-backed brief flow when not skipped
 
 ## Current Docs
@@ -261,6 +262,11 @@ First remediation started on 2026-06-02:
   score, and warnings for weak extraction. Parsed full-text records now preserve
   diagnostic warnings in `fullTextErrorMessage` as a JSON payload without
   requiring a schema migration.
+- Added the `CompareReport` ownership foundation for saved Compare With Science
+  reports: Prisma model and migration, memory/PostgreSQL repositories,
+  `ownerSessionId`, `ownerId`, `workspaceId`, `createdByUserId`, `visibility`,
+  request JSON, report JSON, claim count, and workspace-scoped summary listing.
+  The history API/UI and background compare polling remain future product work.
 
 ## Next Recommended Step
 
@@ -274,5 +280,5 @@ Next highest-value work:
    fallback baseline.
 3. Expand recorded live-source benchmarks for OpenAlex/arXiv/Semantic Scholar
    and Compare With Science.
-4. Add UI warnings for weak PDF/full-text parser quality and consider page-range
-   support for heavier PDFs.
+4. Add saved Compare With Science report history API/UI and background compare
+   polling on top of the new `CompareReport` storage foundation.

@@ -71,7 +71,9 @@ After that, private product records should gain ownership fields:
 Status: implemented for `Brief` and `BriefGenerationJob` on 2026-06-02 through
 `prisma/migrations/20260602195000_add_brief_workspace_ownership/migration.sql`.
 `UserDocument` already stores `ownerId` and `workspaceId`; `uploadedByUserId`
-and saved `CompareReport` are still future work.
+is still future work. Saved `CompareReport` ownership foundation was added on
+2026-06-02 through
+`prisma/migrations/20260602203000_add_compare_report_ownership/migration.sql`.
 
 ```text
 Brief

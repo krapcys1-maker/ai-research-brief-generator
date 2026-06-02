@@ -33,6 +33,8 @@ model User {
   createdBriefs    Brief[]            @relation("BriefCreator")
   ownedBriefJobs   BriefGenerationJob[] @relation("BriefJobOwner")
   createdBriefJobs BriefGenerationJob[] @relation("BriefJobCreator")
+  ownedCompareReports   CompareReport[] @relation("CompareReportOwner")
+  createdCompareReports CompareReport[] @relation("CompareReportCreator")
 }
 
 model Workspace {
@@ -46,6 +48,7 @@ model Workspace {
   members WorkspaceMember[]
   briefs  Brief[]
   briefJobs BriefGenerationJob[]
+  compareReports CompareReport[]
 
   @@index([ownerId])
 }
@@ -130,6 +133,34 @@ model BriefGenerationJob {
   @@index([createdByUserId])
   @@index([visibility])
   @@index([lockedAt])
+  @@index([createdAt])
+}
+
+model CompareReport {
+  id              String   @id
+  ownerSessionId  String?
+  ownerId         String?
+  workspaceId     String?
+  createdByUserId String?
+  visibility      BriefVisibility @default(PRIVATE)
+  title           String
+  summary         String
+  sourceDocumentId String?
+  claimCount      Int
+  requestJson     Json
+  reportJson      Json
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  owner     User?      @relation("CompareReportOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  createdBy User?      @relation("CompareReportCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+
+  @@index([ownerSessionId])
+  @@index([ownerId])
+  @@index([workspaceId])
+  @@index([createdByUserId])
+  @@index([visibility])
   @@index([createdAt])
 }
 

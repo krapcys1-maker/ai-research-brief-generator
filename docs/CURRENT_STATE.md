@@ -110,9 +110,13 @@ paste/upload text -> extract candidate claims -> user selects claims -> academic
     - `already_known_or_done`
     - `possible_dead_end`
   - show evidence snippets, similar prior work, suggested safer wording, caveats, and evidence boundaries.
+  - saved-report storage foundation through `CompareReport` with
+    user/workspace/session ownership; report history API/UI is still future work.
 - Markdown export through `GET /api/export/[id]?format=markdown`.
 - Optional PostgreSQL/Prisma persistence behind the `BriefRepository` contract.
 - Optional PostgreSQL/Prisma persistence behind the `DocumentRepository` contract for uploaded documents and chunks.
+- Optional PostgreSQL/Prisma persistence foundation for saved Compare With
+  Science reports behind the `CompareReportRepository` contract.
 - Source API cache and source diagnostics persistence when PostgreSQL is enabled.
 - Public brief history disabled by default in production.
 - Brief history can be session-scoped through `ai_brief_history_session`; public history remains an explicit opt-in.

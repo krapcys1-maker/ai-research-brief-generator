@@ -69,3 +69,27 @@ describe("brief workspace ownership schema", () => {
     expect(ownershipMigration).toContain("BriefGenerationJob_createdByUserId_fkey");
   });
 });
+
+describe("compare report workspace ownership schema", () => {
+  it("defines saved compare reports with user and workspace ownership", () => {
+    const schema = readFileSync("prisma/schema.prisma", "utf8");
+    const migration = readFileSync(
+      "prisma/migrations/20260602203000_add_compare_report_ownership/migration.sql",
+      "utf8"
+    );
+
+    expect(schema).toContain("model CompareReport");
+    expect(schema).toContain("ownerSessionId  String?");
+    expect(schema).toContain("ownerId         String?");
+    expect(schema).toContain("workspaceId     String?");
+    expect(schema).toContain("createdByUserId String?");
+    expect(schema).toContain("reportJson      Json");
+    expect(schema).toContain("@relation(\"CompareReportOwner\"");
+    expect(schema).toContain("@relation(\"CompareReportCreator\"");
+    expect(migration).toContain("CREATE TABLE \"CompareReport\"");
+    expect(migration).toContain("\"visibility\" \"BriefVisibility\"");
+    expect(migration).toContain("CompareReport_workspaceId_idx");
+    expect(migration).toContain("CompareReport_ownerId_fkey");
+    expect(migration).toContain("CompareReport_workspaceId_fkey");
+  });
+});

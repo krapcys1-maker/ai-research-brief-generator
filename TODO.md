@@ -32,6 +32,7 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 - [ ] Add app-native login/session runtime, account UI, role enforcement, and audit trail.
 - [x] Add user/workspace ownership fields to briefs and brief generation jobs.
 - [x] Enforce trusted-header user/workspace ownership for brief list/detail, exports, brief Q&A, job polling, uploaded documents, and Compare With Science uploaded-document retrieval.
+- [x] Add `CompareReport` schema/repository foundation with user/workspace ownership.
 - [ ] Add saved Compare With Science reports with workspace ownership.
 - [x] Protect brief generation job polling by owner/session access.
 - [x] Add retention/deletion policy copy for uploaded documents.
@@ -68,7 +69,7 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 - [ ] Add user accounts.
 - [ ] Add private saved topics.
 - [x] Add comparison mode.
-- [ ] Add saved Compare With Science reports and background job polling.
+- [ ] Add saved Compare With Science report history UI/API and background job polling.
 - [ ] Add paper timeline.
 - [ ] Add topic clustering.
 

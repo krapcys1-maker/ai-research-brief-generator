@@ -117,6 +117,9 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
   model-grade provider, gdy jest skonfigurowany.
 - [x] Recorded live-source adapter fixtures dla arXiv, Semantic Scholar i
   OpenAlex w `tests/fixtures/live-sources`.
+- [x] CompareReport ownership foundation: Prisma model, migracja i
+  repozytoria memory/PostgreSQL z `ownerSessionId`, `ownerId`, `workspaceId`,
+  `createdByUserId` i `visibility`.
 - [x] Deployment smoke obejmuje source health, preflight, documents, compare,
   claim extraction, claim comparison i opcjonalnie AI flow.
 
@@ -136,9 +139,10 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
    ale docelowa warstwa uprawnien musi obslugiwac natywne logowanie,
    session runtime, role i membershipy workspace.
 
-4. **Compare With Science nie ma jeszcze zapisanych raportow.**
-   Obecny flow dziala jako runtime comparison, ale nie ma `CompareReport`,
-   historii, workspace ownership ani background polling.
+4. **Compare With Science ma fundament zapisanych raportow, ale nie UI historii.**
+   `CompareReport` ma juz model, migracje i repozytoria z workspace ownership.
+   Nadal brakuje endpointow historii, UI zapisanych raportow i background
+   polling dla dluzszych porownan.
 
 5. **Produkcja nie jest jeszcze realnie skonfigurowana.**
    Obecne lokalne srodowisko uzywa local embedding fallback; trzeba dodac
@@ -390,7 +394,9 @@ Kryterium odbioru P6:
 8. [x] Dodac PDF parser diagnostics i recorded PDF fixtures.
    Zweryfikowano 2026-06-02: `npm test --
    tests/fulltextFetchParseChunk.test.ts`.
-9. [ ] Zaprojektowac `CompareReport` z workspace ownership.
+9. [x] Zaprojektowac `CompareReport` z workspace ownership.
+   Zweryfikowano 2026-06-02: `npx prisma validate`, `npm test --
+   tests/compareReportRepository.test.ts tests/identitySchema.test.ts`.
 10. [ ] Przygotowac staging env: PostgreSQL, Upstash, AI secrets, worker i smoke
     bez `SMOKE_SKIP_AI=true`.
 
