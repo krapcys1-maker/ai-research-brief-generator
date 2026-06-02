@@ -7,6 +7,11 @@ import {
   getRecentSourceDiagnostics,
   getSourceHealthSummary
 } from "@/lib/storage/sourceDiagnosticsStore";
+import {
+  getAiSynthesisHealthSummary,
+  getRecentAiSynthesisDiagnostics
+} from "@/lib/storage/aiSynthesisDiagnosticsStore";
+import { getEmbeddingConfigSummary } from "@/lib/embeddings/diagnostics";
 import { getPersistenceStatus } from "@/lib/storage/repository";
 
 export async function GET() {
@@ -28,6 +33,9 @@ export async function GET() {
   return NextResponse.json({
     persistence,
     cache: await getSourceCacheStats(),
+    embeddingHealth: getEmbeddingConfigSummary(),
+    aiSynthesisHealth: await getAiSynthesisHealthSummary(),
+    recentAiSynthesisDiagnostics: await getRecentAiSynthesisDiagnostics(8),
     sourceHealth: await getSourceHealthSummary(),
     recentDiagnostics: await getRecentSourceDiagnostics(12)
   });

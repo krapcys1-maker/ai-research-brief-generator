@@ -6,7 +6,8 @@ const defaultEvidence = [
     paperId: "paper_1",
     evidenceText:
       "retrieval grounded generation supports clinical evaluation and reliability",
-    supportLevel: "direct" as const
+    supportLevel: "direct" as const,
+    evidenceLevel: "abstract_supported" as const
   }
 ];
 

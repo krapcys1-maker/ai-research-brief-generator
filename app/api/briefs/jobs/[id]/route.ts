@@ -1,12 +1,17 @@
 import { NextResponse } from "next/server";
+import {
+  canAccessBrief,
+  privateBriefJobError
+} from "@/lib/briefs/access";
+import { getBriefHistorySessionId } from "@/lib/briefs/session";
 import { getBriefJob } from "@/lib/jobs/briefJobs";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const job = getBriefJob(id);
+  const job = await getBriefJob(id);
 
   if (!job) {
     return NextResponse.json(
@@ -18,9 +23,15 @@ export async function GET(
     );
   }
 
+  if (!canAccessBrief(job, getBriefHistorySessionId(request))) {
+    return NextResponse.json(privateBriefJobError(), { status: 403 });
+  }
+
   return NextResponse.json({
     jobId: job.id,
     status: job.status,
+    stage: job.stage,
+    stageStartedAt: job.stageStartedAt,
     createdAt: job.createdAt,
     updatedAt: job.updatedAt,
     briefId: job.briefId,
@@ -28,4 +39,3 @@ export async function GET(
     qualityGate: job.qualityGate
   });
 }
-

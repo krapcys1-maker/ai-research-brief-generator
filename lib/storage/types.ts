@@ -5,6 +5,7 @@ export type StoredBrief = {
   brief: ResearchBrief;
   papers: NormalizedPaper[];
   createdAt: string;
+  ownerSessionId?: string | null;
 };
 
 export type BriefListItem = {
@@ -19,12 +20,17 @@ export type BriefListItem = {
 export type SaveBriefInput = {
   brief: ResearchBrief;
   papers: NormalizedPaper[];
+  ownerSessionId?: string | null;
+};
+
+export type BriefListFilter = {
+  ownerSessionId?: string | null;
 };
 
 export type BriefRepository = {
   saveWithPapers(input: SaveBriefInput): Promise<StoredBrief>;
   getById(id: string): Promise<StoredBrief | null>;
-  list(): Promise<StoredBrief[]>;
-  listSummaries(): Promise<BriefListItem[]>;
+  list(filter?: BriefListFilter): Promise<StoredBrief[]>;
+  listSummaries(filter?: BriefListFilter): Promise<BriefListItem[]>;
   clear(): Promise<void>;
 };

@@ -1,4 +1,5 @@
 import type { NormalizedPaper, SourceAdapter } from "@/lib/sources/types";
+import { normalizeDoi } from "@/lib/sources/doi";
 import { assertOk, fetchWithRetry } from "@/lib/utils/http";
 
 function decodeXml(value: string) {
@@ -92,7 +93,7 @@ export const arxivSourceAdapter: SourceAdapter = {
           authors: getAllTags(entry, "name"),
           year: yearFromDate(publishedAt),
           publishedAt,
-          doi: getTag(entry, "arxiv:doi"),
+          doi: normalizeDoi(getTag(entry, "arxiv:doi")),
           arxivId: arxivIdFromUrl(idUrl),
           semanticScholarId: null,
           openAlexId: null,

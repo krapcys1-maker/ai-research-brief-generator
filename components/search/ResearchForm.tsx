@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatDoi, getDoiUrl } from "@/lib/sources/doi";
 
@@ -74,6 +74,15 @@ type BriefJobPayload = {
     | "quality_gate_failed"
     | "configuration_error"
     | "failed";
+  stage?:
+    | "queued"
+    | "preflight"
+    | "full_text_ingestion"
+    | "synthesis"
+    | "persistence"
+    | "completed"
+    | "failed";
+  stageStartedAt?: string;
   briefId?: string;
   error?: string;
   qualityGate?: QualityGatePayload;
@@ -121,15 +130,52 @@ const sourceOptions: { value: SourceOption; label: string }[] = [
 ];
 
 const progressSteps = [
-  "Expanding query",
-  "Searching academic sources",
-  "Normalizing and deduplicating papers",
-  "Ranking selected sources",
-  "Checking research quality",
+  "Queued",
+  "Checking sources",
+  "Preparing full-text evidence",
   "Generating structured brief",
-  "Validating citations",
   "Saving result"
 ];
+
+function getJobStageStep(stage: BriefJobPayload["stage"]) {
+  switch (stage) {
+    case "queued":
+      return 0;
+    case "preflight":
+      return 1;
+    case "full_text_ingestion":
+      return 2;
+    case "synthesis":
+      return 3;
+    case "persistence":
+    case "completed":
+    case "failed":
+      return 4;
+    default:
+      return 0;
+  }
+}
+
+function formatJobStage(stage: BriefJobPayload["stage"]) {
+  switch (stage) {
+    case "queued":
+      return "queued";
+    case "preflight":
+      return "checking sources";
+    case "full_text_ingestion":
+      return "preparing full-text evidence";
+    case "synthesis":
+      return "generating structured brief";
+    case "persistence":
+      return "saving result";
+    case "completed":
+      return "completed";
+    case "failed":
+      return "failed";
+    default:
+      return "starting";
+  }
+}
 
 function formatScore(value: number | null) {
   return typeof value === "number" ? value.toFixed(2) : "N/A";
@@ -430,25 +476,12 @@ export function ResearchForm({ examples }: ResearchFormProps) {
   const [jobStatus, setJobStatus] = useState<BriefJobPayload["status"] | null>(
     null
   );
+  const [jobStage, setJobStage] = useState<BriefJobPayload["stage"]>(undefined);
   const busy = loading || checkingSources;
   const generationBlockedByPreflight =
     preflight?.qualityGate.canSynthesize === false ||
     preflight?.qualityGate.coverage === "poor";
   const generateDisabled = busy || generationBlockedByPreflight;
-
-  useEffect(() => {
-    if (!loading) {
-      return;
-    }
-
-    const interval = window.setInterval(() => {
-      setProgressStep((current) =>
-        Math.min(current + 1, progressSteps.length - 1)
-      );
-    }, 3500);
-
-    return () => window.clearInterval(interval);
-  }, [loading]);
 
   function resetRequestReview() {
     setPreflight(null);
@@ -495,8 +528,11 @@ export function ResearchForm({ examples }: ResearchFormProps) {
       }
 
       setJobStatus(payload.status);
+      setJobStage(payload.stage);
 
-      if (payload.status === "running") {
+      if (payload.stage) {
+        setProgressStep(getJobStageStep(payload.stage));
+      } else if (payload.status === "running") {
         setProgressStep((current) => Math.max(current, 1));
       }
 
@@ -570,6 +606,7 @@ export function ResearchForm({ examples }: ResearchFormProps) {
     setErrorKind("error");
     setProgressStep(0);
     setJobStatus("queued");
+    setJobStage("queued");
     setLoading(true);
 
     try {
@@ -647,6 +684,7 @@ export function ResearchForm({ examples }: ResearchFormProps) {
     } finally {
       setLoading(false);
       setJobStatus(null);
+      setJobStage(undefined);
     }
   }
 
@@ -800,7 +838,7 @@ export function ResearchForm({ examples }: ResearchFormProps) {
             <div className="progress-header">
               <span>
                 Pipeline progress
-                {jobStatus ? ` - ${jobStatus.replaceAll("_", " ")}` : ""}
+                {jobStatus ? ` - ${formatJobStage(jobStage)}` : ""}
               </span>
               <strong>
                 Step {progressStep + 1} of {progressSteps.length}

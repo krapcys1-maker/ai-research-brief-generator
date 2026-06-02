@@ -52,6 +52,7 @@ describe("synthesizeAnswer", () => {
     expect(answer.question).toBe("Jak RAG wspiera odpowiedzi kliniczne?");
     expect(answer.outputLanguage).toBe("pl");
     expect(answer.claims[0].sourcePaperIds).toEqual(["paper_1"]);
+    expect(answer.claims[0].evidence[0].evidenceLevel).toBe("abstract_supported");
   });
 
   it("allows source-bounded refusal when selected papers do not answer the question", async () => {
@@ -136,6 +137,90 @@ describe("synthesizeAnswer", () => {
     expect(answer.claims[0].evidence[0].evidenceText).toContain(
       "retrieval grounded generation"
     );
+  });
+
+  it("labels full-text evidence when full-text chunks support the answer", async () => {
+    const paper = createPaper({
+      id: "paper_full_text",
+      title: "Transformer Attention Methods",
+      abstract: "This abstract mentions transformers but not implementation details."
+    });
+    const chunk = {
+      chunk: {
+        id: "fulltext_1:chunk_0",
+        paperId: "paper_full_text",
+        fullTextId: "fulltext_1",
+        sectionTitle: "Methods",
+        chunkIndex: 0,
+        text:
+          "The methods section explains that transformer layers use self-attention heads to weight token relationships across the input sequence.",
+        tokenEstimate: 18,
+        pageStart: null,
+        pageEnd: null,
+        evidenceLevel: "full_text_supported" as const
+      },
+      score: 0.9
+    };
+
+    vi.mocked(createAIProvider).mockReturnValue({
+      name: "deepseek",
+      generateStructured: async () => ({
+        question: "What method do the transformer layers use?",
+        outputLanguage: "en",
+        answer:
+          "The provided full text says transformer layers use self-attention heads to weight token relationships.",
+        confidence: "high",
+        notAnswerableFromSources: false,
+        claims: [
+          {
+            claim: "Transformer layers use self-attention heads.",
+            explanation:
+              "The cited full-text methods chunk describes self-attention heads weighting token relationships.",
+            sourcePaperIds: ["paper_full_text"],
+            evidence: [
+              {
+                paperId: "paper_full_text",
+                evidenceText:
+                  "transformer layers use self-attention heads to weight token relationships",
+                supportLevel: "direct",
+                evidenceLevel: "full_text_supported",
+                chunkId: "fulltext_1:chunk_0",
+                sectionTitle: "Methods"
+              }
+            ]
+          }
+        ],
+        suggestedFollowUpQuestions: []
+      })
+    });
+
+    const answer = await synthesizeAnswer({
+      question: "What method do the transformer layers use?",
+      outputLanguage: "en",
+      brief: createBrief(),
+      papers: [paper],
+      fullTextChunks: [chunk]
+    });
+
+    expect(answer.claims[0].evidence[0].evidenceLevel).toBe(
+      "full_text_supported"
+    );
+    expect(answer.claims[0].evidence[0].chunkId).toBe("fulltext_1:chunk_0");
+  });
+
+  it("refuses strong methodology questions when only abstract evidence is available", async () => {
+    vi.mocked(createAIProvider).mockClear();
+
+    const answer = await synthesizeAnswer({
+      question: "What methods and tables prove the result?",
+      outputLanguage: "en",
+      brief: createBrief(),
+      papers: [createPaper()]
+    });
+
+    expect(createAIProvider).not.toHaveBeenCalled();
+    expect(answer.notAnswerableFromSources).toBe(true);
+    expect(answer.answer).toContain("full-text support");
   });
 
   it("rejects answers that cite unknown paper IDs", async () => {

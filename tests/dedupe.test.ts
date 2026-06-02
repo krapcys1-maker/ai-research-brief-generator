@@ -23,6 +23,24 @@ describe("dedupePapers", () => {
     expect(dedupePapers(papers).map((paper) => paper.id)).toEqual(["paper_1"]);
   });
 
+  it("deduplicates by normalized DOI variants", () => {
+    const papers = [
+      createPaper({ id: "paper_1", doi: "10.1000/Example", title: "One" }),
+      createPaper({
+        id: "paper_2",
+        doi: " https://doi.org/10.1000/example ",
+        title: "Two"
+      }),
+      createPaper({
+        id: "paper_3",
+        doi: "doi:10.1000/example",
+        title: "Three"
+      })
+    ];
+
+    expect(dedupePapers(papers).map((paper) => paper.id)).toEqual(["paper_1"]);
+  });
+
   it("deduplicates by normalized title when IDs are absent", () => {
     const papers = [
       createPaper({

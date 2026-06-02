@@ -2,6 +2,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { createBrief, createPaper } from "@/tests/fixtures";
 import { prisma } from "@/lib/storage/prismaClient";
 import { prismaBriefRepository } from "@/lib/storage/prismaBriefRepository";
+import { prismaBriefJobRepository } from "@/lib/jobs/prismaBriefJobRepository";
 import {
   clearSourceApiMemoryCacheForTests,
   getCachedSourcePapers,
@@ -26,10 +27,38 @@ const describeWithPostgres = hasPostgresDatabaseUrl ? describe : describe.skip;
 describeWithPostgres("prismaBriefRepository", () => {
   beforeEach(async () => {
     await prismaBriefRepository.clear();
+    await prismaBriefJobRepository.clear();
     await prisma.apiCache.deleteMany();
     await clearSourceDiagnostics();
     clearSourceApiMemoryCacheForTests();
     clearSourceDiagnosticsMemoryForTests();
+  });
+
+  it("persists brief generation job status in PostgreSQL", async () => {
+    const queued = await prismaBriefJobRepository.create({
+      id: "job_prisma_integration",
+      status: "queued",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+      attemptCount: 0,
+      maxAttempts: 2,
+      request: {
+        query: "retrieval augmented generation",
+        maxPapers: 5,
+        sources: ["mock"]
+      }
+    });
+
+    await prismaBriefJobRepository.update(queued.id, {
+      status: "completed",
+      briefId: "brief_prisma_job_done"
+    });
+
+    const reloaded = await prismaBriefJobRepository.getById(queued.id);
+
+    expect(reloaded?.status).toBe("completed");
+    expect(reloaded?.briefId).toBe("brief_prisma_job_done");
+    expect(reloaded?.request.query).toBe("retrieval augmented generation");
   });
 
   afterAll(async () => {
@@ -49,13 +78,21 @@ describeWithPostgres("prismaBriefRepository", () => {
 
     const saved = await prismaBriefRepository.saveWithPapers({
       brief,
-      papers: [paper]
+      papers: [paper],
+      ownerSessionId: "brief_session_prisma"
     });
 
     const reloaded = await prismaBriefRepository.getById(brief.id);
     const summaries = await prismaBriefRepository.listSummaries();
+    const sessionSummaries = await prismaBriefRepository.listSummaries({
+      ownerSessionId: "brief_session_prisma"
+    });
+    const otherSessionSummaries = await prismaBriefRepository.listSummaries({
+      ownerSessionId: "brief_session_other"
+    });
 
     expect(saved.brief.id).toBe(brief.id);
+    expect(saved.ownerSessionId).toBe("brief_session_prisma");
     expect(reloaded?.brief.title).toBe("PostgreSQL Persistence Brief");
     expect(reloaded?.papers[0]?.id).toBe("paper_prisma_integration");
     expect(reloaded?.papers[0]?.finalScore).toBe(0.91);
@@ -69,6 +106,8 @@ describeWithPostgres("prismaBriefRepository", () => {
         createdAt: saved.createdAt
       }
     ]);
+    expect(sessionSummaries.map((item) => item.id)).toEqual([brief.id]);
+    expect(otherSessionSummaries).toEqual([]);
   });
 
   it("persists source API cache records across memory cache resets", async () => {

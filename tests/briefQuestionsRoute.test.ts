@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { BRIEF_HISTORY_SESSION_COOKIE } from "@/lib/briefs/session";
 import { getBriefRepository as mockedGetBriefRepository } from "@/lib/storage/repository";
 import { synthesizeAnswer as mockedSynthesizeAnswer } from "@/lib/ai/synthesizeAnswer";
 import { resetRateLimitForTests } from "@/lib/security/rateLimit";
@@ -106,6 +107,43 @@ describe("POST /api/briefs/[id]/questions", () => {
 
     expect(response.status).toBe(404);
     expect(payload.status).toBe("error");
+    expect(synthesizeAnswerMock).not.toHaveBeenCalled();
+  });
+
+  it("blocks questions for a brief owned by another private session", async () => {
+    const brief = createBrief();
+    const paper = createPaper();
+
+    getBriefRepositoryMock.mockResolvedValueOnce({
+      saveWithPapers: vi.fn(),
+      getById: vi.fn().mockResolvedValue({
+        brief,
+        papers: [paper],
+        createdAt: "2026-01-01T00:00:00.000Z",
+        ownerSessionId: "brief_session_owner"
+      }),
+      list: vi.fn(),
+      listSummaries: vi.fn(),
+      clear: vi.fn()
+    });
+
+    const { POST } = await import("@/app/api/briefs/[id]/questions/route");
+    const response = await POST(
+      new Request("http://localhost/api/briefs/brief_1/questions", {
+        method: "POST",
+        headers: {
+          cookie: `${BRIEF_HISTORY_SESSION_COOKIE}=brief_session_other`
+        },
+        body: JSON.stringify({
+          question: "Why?"
+        })
+      }),
+      { params: Promise.resolve({ id: "brief_1" }) }
+    );
+    const payload = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(payload.status).toBe("forbidden");
     expect(synthesizeAnswerMock).not.toHaveBeenCalled();
   });
 

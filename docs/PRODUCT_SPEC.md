@@ -40,7 +40,10 @@ The app should answer:
 
 ## Evidence Boundary
 
-Current evidence is based on paper metadata and abstracts. The app does not yet parse full-text PDFs.
+Research brief synthesis is primarily based on selected paper metadata and abstracts.
+For selected papers, the app may legally fetch and parse open-access PDF chunks for
+`Ask This Brief`, and those claims must be labeled with the appropriate evidence
+level. Treat any claim without parsed full-text evidence as metadata/abstract-bound.
 
 The UI and Markdown export should keep this boundary visible so users do not confuse abstract-level grounding with full-text verification.
 

@@ -3,35 +3,16 @@ import { AIConfigurationError, AIProviderError } from "@/lib/ai/client";
 import { createBrief } from "@/lib/pipeline/createBrief";
 import { ResearchQualityGateError } from "@/lib/pipeline/qualityGate";
 import type { BriefRequest } from "@/lib/ai/schemas";
-import type { ResearchQualityGateResult } from "@/lib/pipeline/qualityGate";
+import {
+  getBriefJobRepository,
+  resetBriefJobRepositoryForTests
+} from "@/lib/jobs/repository";
+import type { BriefJob, BriefJobStage } from "@/lib/jobs/types";
+import { getPersistenceStatus } from "@/lib/storage/repository";
 
-export type BriefJobStatus =
-  | "queued"
-  | "running"
-  | "completed"
-  | "quality_gate_failed"
-  | "configuration_error"
-  | "failed";
-
-export type BriefJob = {
-  id: string;
-  status: BriefJobStatus;
-  createdAt: string;
-  updatedAt: string;
-  request: BriefRequest;
-  briefId?: string;
-  error?: string;
-  qualityGate?: ResearchQualityGateResult;
+export type CreateBriefJobOptions = {
+  ownerSessionId?: string | null;
 };
-
-const globalForBriefJobs = globalThis as typeof globalThis & {
-  __researchBriefJobs?: Map<string, BriefJob>;
-};
-
-const jobs =
-  globalForBriefJobs.__researchBriefJobs ?? new Map<string, BriefJob>();
-
-globalForBriefJobs.__researchBriefJobs = jobs;
 
 function numberEnv(name: string, fallback: number) {
   const raw = process.env[name];
@@ -45,7 +26,7 @@ function numberEnv(name: string, fallback: number) {
 }
 
 function withJobTimeout<T>(promise: Promise<T>) {
-  const timeoutMs = numberEnv("BRIEF_JOB_TIMEOUT_MS", 180000);
+  const timeoutMs = numberEnv("BRIEF_JOB_TIMEOUT_MS", 240000);
   let timeout: ReturnType<typeof setTimeout> | undefined;
 
   const timeoutPromise = new Promise<T>((_resolve, reject) => {
@@ -71,21 +52,49 @@ function now() {
   return new Date().toISOString();
 }
 
-function updateJob(id: string, patch: Partial<BriefJob>) {
-  const existing = jobs.get(id);
+async function updateJob(id: string, patch: Partial<BriefJob>) {
+  const repository = await getBriefJobRepository();
+  return repository.update(id, patch);
+}
 
-  if (!existing) {
+async function updateJobStage(id: string, stage: BriefJobStage) {
+  await updateJob(id, {
+    stage,
+    stageStartedAt: now()
+  });
+}
+
+function getMaxAttempts() {
+  return numberEnv("BRIEF_JOB_MAX_ATTEMPTS", 2);
+}
+
+function parseBoolean(value: string | undefined) {
+  const normalized = value?.trim().toLowerCase();
+
+  if (!normalized) {
     return null;
   }
 
-  const updated: BriefJob = {
-    ...existing,
-    ...patch,
-    updatedAt: now()
-  };
+  if (["1", "true", "yes", "on"].includes(normalized)) {
+    return true;
+  }
 
-  jobs.set(id, updated);
-  return updated;
+  if (["0", "false", "no", "off"].includes(normalized)) {
+    return false;
+  }
+
+  return null;
+}
+
+function shouldAutoRunBriefJobs() {
+  const explicit = parseBoolean(process.env.BRIEF_JOB_AUTORUN);
+
+  if (explicit !== null) {
+    return explicit;
+  }
+
+  const persistence = getPersistenceStatus();
+  return persistence.mode === "memory" || !persistence.isProduction;
 }
 
 function getJobFailure(error: unknown): Pick<
@@ -100,9 +109,16 @@ function getJobFailure(error: unknown): Pick<
     };
   }
 
-  if (error instanceof AIConfigurationError || error instanceof AIProviderError) {
+  if (error instanceof AIConfigurationError) {
     return {
       status: "configuration_error",
+      error: error.message
+    };
+  }
+
+  if (error instanceof AIProviderError) {
+    return {
+      status: "failed",
       error: error.message
     };
   }
@@ -130,48 +146,110 @@ function getJobFailure(error: unknown): Pick<
   };
 }
 
+async function runClaimedBriefJob(job: BriefJob) {
+  try {
+    const record = await withJobTimeout(
+      createBrief(job.request, {}, {
+        ownerSessionId: job.ownerSessionId ?? null,
+        onStage: (stage) => updateJobStage(job.id, stage)
+      })
+    );
+    await updateJob(job.id, {
+      status: "completed",
+      stage: "completed",
+      stageStartedAt: now(),
+      lockedAt: undefined,
+      briefId: record.brief.id
+    });
+  } catch (error) {
+    await updateJob(job.id, {
+      ...getJobFailure(error),
+      stage: "failed",
+      stageStartedAt: now(),
+      lockedAt: undefined
+    });
+  }
+}
+
 export async function runBriefJob(id: string) {
-  const job = jobs.get(id);
+  const repository = await getBriefJobRepository();
+  const job = await repository.getById(id);
 
   if (!job) {
     return;
   }
 
-  updateJob(id, { status: "running", error: undefined, qualityGate: undefined });
+  const runningJob =
+    job.status === "running"
+      ? job
+      : await updateJob(id, {
+          status: "running",
+          stage: "preflight",
+          stageStartedAt: now(),
+          attemptCount: job.attemptCount + 1,
+          lockedAt: now(),
+          error: undefined,
+          qualityGate: undefined
+        });
 
-  try {
-    const record = await withJobTimeout(createBrief(job.request));
-    updateJob(id, {
-      status: "completed",
-      briefId: record.brief.id
-    });
-  } catch (error) {
-    updateJob(id, getJobFailure(error));
+  if (runningJob) {
+    await runClaimedBriefJob(runningJob);
   }
 }
 
-export function createBriefJob(request: BriefRequest) {
+export async function runNextBriefJob() {
+  const repository = await getBriefJobRepository();
+  const job = await repository.claimNextQueued();
+
+  if (!job) {
+    return null;
+  }
+
+  await runClaimedBriefJob(job);
+  return repository.getById(job.id);
+}
+
+export async function createBriefJob(
+  request: BriefRequest,
+  options: CreateBriefJobOptions = {}
+) {
   const id = createJobId();
   const timestamp = now();
   const job: BriefJob = {
     id,
     status: "queued",
+    stage: "queued",
+    stageStartedAt: timestamp,
     createdAt: timestamp,
     updatedAt: timestamp,
+    attemptCount: 0,
+    maxAttempts: getMaxAttempts(),
+    ownerSessionId: options.ownerSessionId ?? null,
     request
   };
 
-  jobs.set(id, job);
+  const repository = await getBriefJobRepository();
+  const saved = await repository.create(job);
 
-  void runBriefJob(id);
+  if (shouldAutoRunBriefJobs()) {
+    void runBriefJob(id);
+  }
 
-  return job;
+  return saved;
 }
 
-export function getBriefJob(id: string) {
-  return jobs.get(id) ?? null;
+export async function getBriefJob(id: string) {
+  const repository = await getBriefJobRepository();
+  return repository.getById(id);
 }
 
-export function resetBriefJobsForTests() {
-  jobs.clear();
+export async function resetStaleBriefJobs(staleMs: number) {
+  const repository = await getBriefJobRepository();
+  return repository.resetStaleRunning(staleMs);
+}
+
+export async function resetBriefJobsForTests() {
+  resetBriefJobRepositoryForTests();
+  const repository = await getBriefJobRepository();
+  await repository.clear();
 }

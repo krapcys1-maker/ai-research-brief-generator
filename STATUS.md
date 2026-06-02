@@ -1,10 +1,10 @@
 # Project Status
 
-Last updated: 2026-05-29
+Last updated: 2026-06-02
 
 ## Current Snapshot
 
-AI Research Brief Generator is a working source-grounded research brief prototype.
+AI Research Brief Generator is a working source-grounded research workspace prototype.
 
 The app supports:
 
@@ -16,14 +16,29 @@ The app supports:
 - claim-level `sourcePaperIds` and evidence snippets
 - Markdown export
 - controlled `Ask This Brief` Q&A over selected papers
+- async brief generation jobs with polling
+- PostgreSQL-backed brief job status with a separate worker entrypoint
+- stale job lease recovery and attempt limits for the DB-backed worker
+- legal selected-paper full-text ingestion for arXiv/source-provided PDF URLs
+- explicit evidence boundaries for metadata, abstract, full-text, uploaded-document, mixed, and insufficient evidence
+- private session-scoped `Ask My Documents` upload/Q&A for PDF/TXT/MD files
+- `Compare With Science` claim extraction and claim-evidence matrix with non-binary classifications
 - optional PostgreSQL/Prisma persistence
+- separate paper full-text, paper chunk, uploaded document, and uploaded document chunk storage
+- session-scoped private brief history through `ai_brief_history_session`
+- session ownership checks for brief detail, Markdown export, and brief Q&A
 - source API cache and source diagnostics
 - production fail-fast persistence and shared Upstash rate limiting
+- rate limiting for brief generation, brief Q&A, document Q&A, document uploads, claim extraction, and claim comparison
+- deployment privacy notice enabled by default in production
+- deployment smoke coverage for source health, preflight, documents, compare, claim extraction, claim comparison, and AI-backed brief flow when not skipped
 
 ## Current Docs
 
 - Current implemented behavior: `docs/CURRENT_STATE.md`
 - Future work: `docs/ROADMAP.md`
+- Full public SaaS path: `docs/DROGA_DO_PELNEGO_SAAS.md`
+- Identity model decision: `docs/IDENTITY_MODEL.md`
 - Major milestone history: `docs/CHANGELOG.md`
 - Risk-driven repair plan: `docs/REMEDIATION_PLAN.md`
 - Deployment notes: `docs/DEPLOYMENT.md`
@@ -35,14 +50,175 @@ The app supports:
 - DeepSeek is the default implemented AI provider, but the architecture remains provider-agnostic.
 - AI output must be structured and validated with Zod.
 - Important claims must include valid selected-paper IDs and evidence snippets.
-- The current evidence boundary is metadata/abstract grounding, not full-text PDF verification.
+- Full-text evidence may be used only when a legal PDF was fetched, parsed, chunked, and retrieved. Otherwise the UI/API must label the answer as abstract or metadata grounded.
+- Uploaded document evidence is private by authenticated user/workspace ownership
+  when trusted auth headers are present, with session-scoped fallback for
+  local/private demos.
+- Session-scoped document uploads are disabled by default in production unless explicitly enabled for a private/internal deployment.
 - Public recent history is disabled by default in production.
+- Brief history is session-scoped by default. Brief detail/export/Q&A require the matching session cookie for session-owned records unless public history is explicitly enabled.
+- The DB-backed worker is suitable for first production deployments, but a stronger external queue is still recommended when throughput or multi-instance retry orchestration grows.
+- The official full public SaaS identity target is app-native authentication
+  with workspaces and role-based membership. Trusted auth headers remain an
+  interim private/B2B deployment bridge, not the final public SaaS identity
+  model.
 - shadcn/ui is optional and not currently implemented.
 
 ## Latest Completed Step
 
-Added an embedding provider check command. `npm run embedding:check` verifies whether the app is using local fallback or a configured OpenAI-compatible embedding provider, validates returned vector shape, and reports missing configuration without printing secrets.
+Completed a production-readiness hardening pass:
+
+- Added PostgreSQL-backed brief generation job status, `npm run worker:briefs`, worker lease recovery, and retry/attempt limits.
+- Added session-scoped private brief history and protected brief detail/export/Q&A by session ownership.
+- Added a production privacy notice shown by default in production.
+- Added rate limiting to document uploads and claim extraction.
+- Expanded deployment smoke coverage to include `/documents`, `/api/documents`, `/compare`, claim extraction, and mock-source claim comparison.
+- Added stronger tests for long/multi-document retrieval in `Ask My Documents`.
+
+Latest verification:
+
+- `npm test` passes.
+- `npm run lint` passes.
+- `npm run build` passes.
+- `npm run embedding:check` passes with the local embedding provider.
+- `npm run benchmark:retrieval`, `npm run benchmark:source-quality`, and `npm run benchmark:claim-check` pass on current fixtures.
+- `SMOKE_SKIP_AI=true npm run smoke:deploy` passes against a local production build.
+
+Manual browser QA added on 2026-06-02 against a local production build on
+`http://localhost:3110` with Chromium/Playwright:
+
+- `/`, `/documents`, and `/compare` render on desktop and mobile without console
+  errors or horizontal overflow.
+- `Compare With Science` claim extraction works from pasted text and produces
+  selectable `checkable` claims.
+- `Ask My Documents` renders correctly; document upload is disabled in production
+  by default, as intended for public deployments.
+- Mock-only brief generation is correctly blocked by the Research Quality Gate
+  because it has 0 live-source papers.
+- The default brief generation flow with mock, arXiv, and OpenAlex selected does
+  not complete in this environment. The job remains `running` until the
+  180-second job timeout and then fails with `Brief generation job timed out
+  after 180000 ms.` Source adapters report success before the timeout, so the
+  next investigation should isolate full-text ingestion versus DeepSeek
+  structured synthesis and add stage-level job telemetry.
+
+First remediation started on 2026-06-02:
+
+- Added brief job stage telemetry (`queued`, `preflight`,
+  `full_text_ingestion`, `synthesis`, `persistence`, `completed`, `failed`) to
+  in-memory jobs, PostgreSQL-backed jobs, the job status API, and the generator
+  progress UI.
+- Added a Prisma migration for `BriefGenerationJob.stage` and
+  `BriefGenerationJob.stageStartedAt`.
+- Bounded full-text ingestion during brief generation with separate defaults:
+  `BRIEF_FULL_TEXT_MAX_PAPERS=3` and
+  `BRIEF_FULL_TEXT_FETCH_TIMEOUT_MS=8000`, while preserving the lower-level
+  full-text ingestion module for dedicated workflows.
+- Runtime polling after this change showed default generation moving quickly
+  from `full_text_ingestion` to `synthesis`, confirming the remaining stall was
+  in AI structured synthesis rather than PDF/full-text ingestion.
+- Hardened the DeepSeek client timeout so `AI_REQUEST_TIMEOUT_MS` covers the
+  full provider response cycle, including JSON body reads, not just the initial
+  fetch response.
+- Manual browser QA after the timeout hardening showed a clean synthesis-stage
+  provider timeout instead of the previous whole-job timeout.
+- Added bounded DeepSeek synthesis settings: `AI_MAX_OUTPUT_TOKENS=7000` and
+  `AI_THINKING_ENABLED=false` by default.
+- Added compact-output prompt constraints and a second-attempt repair prompt
+  that feeds server-side grounding validation errors back to the model. This
+  targets failures such as comparative or quantitative claims not present in
+  the cited evidence snippets.
+- AI provider runtime failures are now stored as `failed` jobs; only actual
+  missing/invalid AI configuration is classified as `configuration_error`.
+- Added `BRIEF_SYNTHESIS_MAX_PAPERS=5` so live source search can remain broad
+  while AI synthesis receives a smaller top-paper context.
+- Added one retry for transient AI provider failures such as timeouts,
+  terminated connections, and 5xx/429 provider responses.
+- Added a conservative extractive fallback brief after repeated provider or
+  grounding validation failures. The fallback is explicitly warning-labeled,
+  uses only selected paper titles/abstracts, and still passes server-side
+  grounding validation before persistence.
+- Manual browser QA after the fallback confirmed default generation completes:
+  the job reached `completed`, opened `/briefs/brief_mpwq47pw_o3jhsa`, rendered
+  the brief page, showed the fallback warning, exposed export controls, and had
+  no console errors or horizontal overflow.
+- Improved fallback brief UX so section headings use selected paper titles and
+  descriptions use shorter title/abstract excerpts instead of repeating the full
+  evidence text as both heading and body.
+- Manual forced-fallback QA with `AI_REQUEST_TIMEOUT_MS=1` confirmed the
+  fallback still completes, renders, shows the warning, avoids the previous
+  repeated-heading pattern, and has no console errors or horizontal overflow.
+- Added an inline fallback-mode explanation near source warnings so users can
+  see that the brief is an extractive evidence summary, why fallback was used,
+  and what to try next.
+- Manual forced-fallback QA confirmed the fallback explanation renders in the
+  header, includes retry/narrow-topic guidance, and does not introduce layout
+  overflow or console errors.
+- Added a Markdown export fallback-mode section near the top of exported briefs,
+  before `Evidence Boundary`, so downloaded fallback briefs also explain that
+  they are extractive summaries and include the fallback reason.
+- Runtime forced-fallback export QA confirmed
+  `/api/export/{briefId}?format=markdown` returns `200` in the same session and
+  includes `## Fallback Mode`, extractive-summary wording, and fallback reason
+  before the evidence-boundary section.
+- Added AI synthesis diagnostics for success, retry, fallback, provider error,
+  validation error, and configuration error events, with in-memory tracking and
+  PostgreSQL persistence through `AiSynthesisDiagnostic`.
+- Extended `/api/source-cache` and the home-page health panel with AI synthesis
+  health counters, fallback rate, provider breakdowns, and recent AI synthesis
+  events.
+- Manual Chromium QA confirmed the AI synthesis health panel renders on
+  `http://localhost:3110`, `/api/source-cache` returns the new health payload,
+  and the page has no console errors or horizontal overflow.
+- Added authenticated uploaded-document ownership through trusted
+  `X-AI-Brief-User-Id` and optional `X-AI-Brief-Workspace-Id` headers, including
+  `DOCUMENT_AUTH_REQUIRED=true` enforcement for public deployments.
+- Added `workspaceId` storage for uploaded documents and chunks, plus
+  user/workspace isolation in document upload, list, delete, document Q&A, and
+  Compare With Science uploaded-document retrieval.
+- Runtime API QA with `DOCUMENT_AUTH_REQUIRED=true` confirmed anonymous uploads
+  return `401`, authenticated uploads store user/workspace ownership without a
+  session cookie, same-workspace listing returns the document, and another
+  workspace cannot see it.
+- Ran `npm run embedding:check` on the current environment. The app is still
+  using the local `local-hash-ngrams` embedding fallback with valid 192-dimension
+  vectors; no production OpenAI-compatible embedding provider is configured yet.
+- Ran current benchmark baselines on the local embedding fallback:
+  `benchmark:retrieval` passed with 7/7 cases and 100% top-1/recall@5,
+  `benchmark:source-quality` passed with 2/2 cases and 100% top-1/recall@5, and
+  `benchmark:claim-check` passed with 8/8 classifications and no evidence,
+  similar-work, or caveat requirement failures.
+- Added embedding configuration visibility to `/api/source-cache` and the
+  home-page health panel so deployments show whether they are using local
+  fallback, a ready model-grade provider, or missing embedding configuration.
+- Manual Chromium QA confirmed the embedding health panel renders on
+  `http://localhost:3110`, `/api/source-cache` returns `embeddingHealth`, and
+  the page has no console errors or horizontal overflow.
+- Created `docs/DROGA_DO_PELNEGO_SAAS.md` as the living checklist for moving
+  from private beta/internal production candidate to full public SaaS, and
+  updated `TODO.md` to distinguish trusted-header document ownership from full
+  app-native accounts/workspaces.
+- Protected `GET /api/briefs/jobs/[id]` with the same private session ownership
+  boundary used by brief detail/export/Q&A. Private job status now returns
+  `403` for another browser session, and the SaaS roadmap/TODO checklist marks
+  this point complete after targeted verification.
+- Documented the official identity model in `docs/IDENTITY_MODEL.md`: full
+  public SaaS targets app-native auth + workspaces + role-based membership;
+  trusted auth gateway remains a private/B2B or interim mode. Updated
+  `docs/DROGA_DO_PELNEGO_SAAS.md`, `TODO.md`, `README.md`, and
+  `docs/DEPLOYMENT.md` to point at that decision.
 
 ## Next Recommended Step
 
-Configure a real production embedding provider in deployment, run `npm run embedding:check`, then run both benchmark suites and tune hybrid ranking weights from the observed failures.
+Next highest-value work:
+
+1. Add app-native `User`, `Workspace`, and `WorkspaceMember` models plus a
+   migration.
+2. Add user/workspace ownership to `Brief` and `BriefGenerationJob`.
+3. Add real OpenAI-compatible embedding provider credentials in deployment,
+   rerun `npm run embedding:check`, then rerun retrieval/source-quality/claim-check
+   benchmarks and compare against the local fallback baseline.
+4. Expand recorded live-source benchmarks for OpenAlex/arXiv/Semantic Scholar
+   and Compare With Science.
+5. Add recorded PDF fixtures and parser-quality diagnostics for full-text
+   ingestion.

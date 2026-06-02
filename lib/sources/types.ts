@@ -24,6 +24,22 @@ export type NormalizedPaper = {
   citationCount: number | null;
   influentialCitationCount: number | null;
   source: ResearchSource | "merged";
+  fullTextStatus?:
+    | "not_checked"
+    | "unavailable"
+    | "available"
+    | "fetched"
+    | "parsed"
+    | "failed";
+  fullTextSourceType?:
+    | "arxiv"
+    | "source_pdf_url"
+    | "open_access"
+    | "user_upload"
+    | "none";
+  fullTextChunkCount?: number;
+  fullTextQualityScore?: number | null;
+  fullTextErrorMessage?: string | null;
   relevanceScore?: number;
   semanticScore?: number;
   citationScore?: number;

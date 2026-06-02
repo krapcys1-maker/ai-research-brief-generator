@@ -41,6 +41,12 @@ function evidenceLines(evidence: EvidenceLink[]) {
   ];
 }
 
+function getFallbackWarning(warnings: string[]) {
+  return warnings.find((warning) =>
+    warning.startsWith("AI synthesis fallback used")
+  );
+}
+
 export function researchBriefToMarkdown(input: {
   brief: ResearchBrief;
   papers: NormalizedPaper[];
@@ -50,7 +56,12 @@ export function researchBriefToMarkdown(input: {
     outputLanguage: brief.outputLanguage,
     papers
   });
-  const sourceQuality = getSourceQualitySummary(papers, brief.query);
+  const alignmentQuery =
+    brief.searchSummary.queryVariants.length > 0
+      ? brief.searchSummary.queryVariants.join(" ")
+      : brief.query;
+  const sourceQuality = getSourceQualitySummary(papers, alignmentQuery);
+  const fallbackWarning = getFallbackWarning(brief.searchSummary.warnings);
   const lines: string[] = [];
 
   lines.push(`# ${brief.title}`);
@@ -59,6 +70,22 @@ export function researchBriefToMarkdown(input: {
   lines.push(`**Output language:** ${brief.outputLanguage}`);
   lines.push(`**Generated:** ${brief.generatedAt}`);
   lines.push("");
+  if (fallbackWarning) {
+    lines.push("## Fallback Mode");
+    lines.push("");
+    lines.push("**Extractive evidence summary.**");
+    lines.push("");
+    lines.push(
+      "The AI synthesis provider did not return a fully validated narrative. This export uses a safer fallback built from selected paper titles, abstracts, and source metadata only."
+    );
+    lines.push("");
+    lines.push(
+      "For a richer synthesized brief, retry generation, narrow the topic, or use stronger provider settings. Treat this output as abstract-level evidence, not full-text verification."
+    );
+    lines.push("");
+    lines.push(`**Fallback reason:** ${fallbackWarning}`);
+    lines.push("");
+  }
   lines.push(`## ${evidenceBoundary.title}`);
   lines.push("");
   lines.push(evidenceBoundary.summary);
@@ -206,7 +233,7 @@ export function researchBriefToMarkdown(input: {
   lines.push("## Bibliography");
   lines.push("");
   for (const paper of papers) {
-    const insight = getPaperInsight(paper, undefined, brief.query);
+    const insight = getPaperInsight(paper, undefined, alignmentQuery);
     const metadataWarnings = getPaperMetadataWarnings(paper);
 
     lines.push(`### [${paper.id}] ${paper.title}`);

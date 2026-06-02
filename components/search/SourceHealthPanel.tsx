@@ -27,6 +27,13 @@ type SourceHealthResponse = {
       total: number;
     };
   };
+  embeddingHealth: {
+    provider: "local" | "openai_compatible" | "unsupported";
+    configuredProvider: string;
+    usesLocalFallback: boolean;
+    ready: boolean;
+    missing: string[];
+  };
   sourceHealth: {
     totalDiagnostics: number;
     bySource: {
@@ -39,6 +46,57 @@ type SourceHealthResponse = {
       lastMessage: string | null;
     }[];
   };
+  aiSynthesisHealth: {
+    totalDiagnostics: number;
+    success: number;
+    retry: number;
+    fallback: number;
+    providerError: number;
+    validationError: number;
+    configurationError: number;
+    fallbackRate: number;
+    lastStatus:
+      | "success"
+      | "retry"
+      | "fallback"
+      | "provider_error"
+      | "validation_error"
+      | "configuration_error"
+      | null;
+    lastMessage: string | null;
+    byProvider: {
+      provider: string;
+      success: number;
+      retry: number;
+      fallback: number;
+      providerError: number;
+      validationError: number;
+      configurationError: number;
+      lastStatus:
+        | "success"
+        | "retry"
+        | "fallback"
+        | "provider_error"
+        | "validation_error"
+        | "configuration_error";
+      lastMessage: string | null;
+    }[];
+  };
+  recentAiSynthesisDiagnostics: {
+    query: string;
+    provider: string;
+    status:
+      | "success"
+      | "retry"
+      | "fallback"
+      | "provider_error"
+      | "validation_error"
+      | "configuration_error";
+    attemptCount: number;
+    paperCount: number;
+    message?: string;
+    createdAt: string;
+  }[];
   recentDiagnostics: {
     source: string;
     query: string;
@@ -170,11 +228,130 @@ export function SourceHealthPanel() {
           <span>Diagnostics</span>
           <strong>{data?.sourceHealth.totalDiagnostics ?? 0}</strong>
         </div>
+        <div>
+          <span>Embeddings</span>
+          <strong>
+            {data?.embeddingHealth.usesLocalFallback
+              ? "local"
+              : data?.embeddingHealth.ready
+                ? "model"
+                : "missing"}
+          </strong>
+        </div>
+        <div>
+          <span>AI fallback</span>
+          <strong>{data?.aiSynthesisHealth.fallback ?? 0}</strong>
+        </div>
+        <div>
+          <span>AI failures</span>
+          <strong>
+            {data
+              ? data.aiSynthesisHealth.providerError +
+                data.aiSynthesisHealth.validationError +
+                data.aiSynthesisHealth.configurationError
+              : 0}
+          </strong>
+        </div>
       </div>
 
       {data?.persistence.warning ? (
         <div className="source-health-error">{data.persistence.warning}</div>
       ) : null}
+
+      {data?.embeddingHealth ? (
+        <div
+          className={
+            data.embeddingHealth.usesLocalFallback || !data.embeddingHealth.ready
+              ? "source-health-warning"
+              : "source-health-good"
+          }
+        >
+          <strong>Embedding provider: {data.embeddingHealth.configuredProvider}</strong>
+          <p>
+            {data.embeddingHealth.usesLocalFallback
+              ? "Using local hash-ngram embeddings. Configure an OpenAI-compatible provider for production retrieval quality."
+              : data.embeddingHealth.ready
+                ? "Model-grade embedding configuration is present. Run npm run embedding:check after deploy to verify vector shape."
+                : `Missing embedding configuration: ${data.embeddingHealth.missing.join(", ")}`}
+          </p>
+        </div>
+      ) : null}
+
+      <div className="ai-health-panel">
+        <div className="ai-health-header">
+          <div>
+            <h3>AI synthesis health</h3>
+            <p>Recent structured synthesis outcomes and fallback frequency.</p>
+          </div>
+          <span className="badge">
+            {data
+              ? `${Math.round(data.aiSynthesisHealth.fallbackRate * 100)}% fallback`
+              : "loading"}
+          </span>
+        </div>
+        <div className="ai-health-grid">
+          <div>
+            <span>success</span>
+            <strong>{data?.aiSynthesisHealth.success ?? 0}</strong>
+          </div>
+          <div>
+            <span>retry</span>
+            <strong>{data?.aiSynthesisHealth.retry ?? 0}</strong>
+          </div>
+          <div>
+            <span>fallback</span>
+            <strong>{data?.aiSynthesisHealth.fallback ?? 0}</strong>
+          </div>
+          <div>
+            <span>provider</span>
+            <strong>{data?.aiSynthesisHealth.providerError ?? 0}</strong>
+          </div>
+          <div>
+            <span>validation</span>
+            <strong>{data?.aiSynthesisHealth.validationError ?? 0}</strong>
+          </div>
+          <div>
+            <span>config</span>
+            <strong>{data?.aiSynthesisHealth.configurationError ?? 0}</strong>
+          </div>
+        </div>
+        {data?.aiSynthesisHealth.byProvider.length ? (
+          <div className="ai-health-providers">
+            {data.aiSynthesisHealth.byProvider.map((provider) => (
+              <article key={provider.provider}>
+                <div className="source-health-source">
+                  <strong>{provider.provider}</strong>
+                  <span className="badge">{provider.lastStatus}</span>
+                </div>
+                <dl>
+                  <div>
+                    <dt>success</dt>
+                    <dd>{provider.success}</dd>
+                  </div>
+                  <div>
+                    <dt>fallback</dt>
+                    <dd>{provider.fallback}</dd>
+                  </div>
+                  <div>
+                    <dt>errors</dt>
+                    <dd>
+                      {provider.providerError +
+                        provider.validationError +
+                        provider.configurationError}
+                    </dd>
+                  </div>
+                </dl>
+                {provider.lastMessage ? <p>{provider.lastMessage}</p> : null}
+              </article>
+            ))}
+          </div>
+        ) : null}
+        {data && !data.aiSynthesisHealth.totalDiagnostics ? (
+          <p className="source-health-empty">
+            No AI synthesis diagnostics yet. Generate a brief to populate this panel.
+          </p>
+        ) : null}
+      </div>
 
       <div className="source-health-grid">
         {(data?.sourceHealth.bySource ?? []).map((source) => (
@@ -221,6 +398,21 @@ export function SourceHealthPanel() {
                 <span className="badge">{item.source}</span>
                 <span>{item.status}</span>
                 <strong>{item.resultCount}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {data?.recentAiSynthesisDiagnostics.length ? (
+        <div>
+          <h3>Recent AI synthesis</h3>
+          <div className="source-health-recent">
+            {data.recentAiSynthesisDiagnostics.slice(0, 5).map((item, index) => (
+              <div key={`${item.provider}:${item.createdAt}:${index}`}>
+                <span className="badge">{item.provider}</span>
+                <span>{item.status}</span>
+                <strong>{item.attemptCount}</strong>
               </div>
             ))}
           </div>

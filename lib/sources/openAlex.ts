@@ -1,4 +1,5 @@
 import type { NormalizedPaper, SourceAdapter } from "@/lib/sources/types";
+import { normalizeDoi } from "@/lib/sources/doi";
 import { assertOk, fetchWithRetry } from "@/lib/utils/http";
 
 type OpenAlexWork = {
@@ -45,14 +46,6 @@ function reconstructAbstract(index: Record<string, number[]> | null | undefined)
   }
 
   return words.filter(Boolean).join(" ") || null;
-}
-
-function normalizeDoi(value: string | null | undefined) {
-  if (!value) {
-    return null;
-  }
-
-  return value.replace(/^https?:\/\/doi\.org\//i, "");
 }
 
 function cleanText(value: string | null | undefined) {

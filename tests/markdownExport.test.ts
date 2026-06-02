@@ -130,4 +130,63 @@ describe("researchBriefToMarkdown", () => {
     expect(markdown).toContain("- Metadata warnings:");
     expect(markdown).toContain("normally cited as a 2017 paper");
   });
+
+  it("explains fallback-mode exports near the top of the document", () => {
+    const markdown = researchBriefToMarkdown({
+      brief: createBrief({
+        searchSummary: {
+          requestedSources: ["mock", "openalex"],
+          sourcesUsed: ["openalex"],
+          totalFound: 5,
+          totalAfterDeduplication: 5,
+          totalUsedInBrief: 1,
+          queryVariants: ["retrieval augmented generation"],
+          sourceDiagnostics: [],
+          warnings: [
+            "AI synthesis fallback used after provider/validation failure: DeepSeek request timed out after 1 seconds."
+          ]
+        }
+      }),
+      papers: [createPaper({ source: "openalex" })]
+    });
+
+    expect(markdown).toContain("## Fallback Mode");
+    expect(markdown).toContain("**Extractive evidence summary.**");
+    expect(markdown).toContain(
+      "This export uses a safer fallback built from selected paper titles, abstracts, and source metadata only."
+    );
+    expect(markdown).toContain("**Fallback reason:** AI synthesis fallback used");
+    expect(markdown.indexOf("## Fallback Mode")).toBeLessThan(
+      markdown.indexOf("## Evidence Boundary")
+    );
+  });
+
+  it("uses query variants for source-quality alignment", () => {
+    const markdown = researchBriefToMarkdown({
+      brief: createBrief({
+        query: "komorki macierzyste w leczeniu oparzen",
+        searchSummary: {
+          requestedSources: ["openalex"],
+          sourcesUsed: ["openalex"],
+          totalFound: 1,
+          totalAfterDeduplication: 1,
+          totalUsedInBrief: 1,
+          queryVariants: ["stem cells burn treatment"],
+          sourceDiagnostics: [],
+          warnings: []
+        }
+      }),
+      papers: [
+        createPaper({
+          title: "Mesenchymal Stem Cells for Burn Wound Treatment",
+          abstract:
+            "Stem cell therapy is evaluated for burn wound treatment and healing.",
+          source: "openalex"
+        })
+      ]
+    });
+
+    expect(markdown).toContain("- Direct query-title/abstract matches: 1");
+    expect(markdown).toContain("- Query alignment: Direct topic match");
+  });
 });

@@ -52,6 +52,15 @@ export const NormalizedPaperSchema = z.object({
   citationCount: z.number().int().nullable(),
   influentialCitationCount: z.number().int().nullable(),
   source: z.union([ResearchSourceSchema, z.literal("merged")]),
+  fullTextStatus: z
+    .enum(["not_checked", "unavailable", "available", "fetched", "parsed", "failed"])
+    .optional(),
+  fullTextSourceType: z
+    .enum(["arxiv", "source_pdf_url", "open_access", "user_upload", "none"])
+    .optional(),
+  fullTextChunkCount: z.number().int().nonnegative().optional(),
+  fullTextQualityScore: z.number().nullable().optional(),
+  fullTextErrorMessage: z.string().nullable().optional(),
   relevanceScore: z.number().optional(),
   semanticScore: z.number().optional(),
   citationScore: z.number().optional(),
@@ -68,7 +77,12 @@ export type NormalizedPaper = z.infer<typeof NormalizedPaperSchema>;
 export const EvidenceLinkSchema = z.object({
   paperId: z.string().min(1),
   evidenceText: z.string().min(1),
-  supportLevel: z.enum(["direct", "indirect", "weak"])
+  supportLevel: z.enum(["direct", "indirect", "weak"]),
+  evidenceLevel: z
+    .enum(["metadata_only", "abstract_supported", "full_text_supported"])
+    .default("abstract_supported"),
+  chunkId: z.string().min(1).optional(),
+  sectionTitle: z.string().nullable().optional()
 });
 
 export type EvidenceLink = z.infer<typeof EvidenceLinkSchema>;

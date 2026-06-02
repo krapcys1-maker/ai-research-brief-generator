@@ -7,6 +7,26 @@ function formatScore(score: number | undefined) {
   return typeof score === "number" ? score.toFixed(2) : "N/A";
 }
 
+function getFullTextLabel(paper: NormalizedPaper) {
+  if (paper.fullTextStatus === "parsed") {
+    return "Full text parsed";
+  }
+
+  if (paper.fullTextStatus === "unavailable") {
+    return "Full text unavailable";
+  }
+
+  if (paper.fullTextStatus === "failed") {
+    return "Parse failed";
+  }
+
+  if (paper.abstract) {
+    return "Abstract only";
+  }
+
+  return "Metadata only";
+}
+
 function ScoreBar({
   label,
   value
@@ -54,6 +74,10 @@ export function PaperCard({
         <span className="badge">{paper.id}</span>
         <span className="badge">Source: {paper.source}</span>
         <span className="badge">Final score: {formatScore(paper.finalScore)}</span>
+        <span className="badge">{getFullTextLabel(paper)}</span>
+        {paper.fullTextChunkCount ? (
+          <span className="badge">{paper.fullTextChunkCount} full-text chunks</span>
+        ) : null}
         {paper.year ? <span className="badge">{paper.year}</span> : null}
         {paper.venue ? <span className="badge">{paper.venue}</span> : null}
       </div>

@@ -1,6 +1,11 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { BriefRenderer } from "@/components/brief/BriefRenderer";
+import {
+  canAccessBrief,
+  getBriefHistorySessionFromCookieStore
+} from "@/lib/briefs/access";
 import { getBriefRepository } from "@/lib/storage/repository";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +20,11 @@ export default async function BriefPage({
   const record = await briefRepository.getById(id);
 
   if (!record) {
+    notFound();
+  }
+
+  const cookieStore = await cookies();
+  if (!canAccessBrief(record, getBriefHistorySessionFromCookieStore(cookieStore))) {
     notFound();
   }
 

@@ -163,6 +163,34 @@ describe("createBrief", () => {
     ).toBe(true);
   });
 
+  it("stores generated briefs with an owner session when provided", async () => {
+    const record = await createBrief(
+      {
+        query: "retrieval augmented generation",
+        maxPapers: 5,
+        sources: ["mock"]
+      },
+      {
+        synthesize: async (input) => createSyntheticBrief(input)
+      },
+      {
+        ownerSessionId: "brief_session_pipeline"
+      }
+    );
+
+    expect(record.ownerSessionId).toBe("brief_session_pipeline");
+    expect(
+      await inMemoryBriefRepository.listSummaries({
+        ownerSessionId: "brief_session_pipeline"
+      })
+    ).toHaveLength(1);
+    expect(
+      await inMemoryBriefRepository.listSummaries({
+        ownerSessionId: "brief_session_other"
+      })
+    ).toEqual([]);
+  });
+
   it("stores per-source query diagnostics from source search", async () => {
     const record = await createBrief(
       {
@@ -338,6 +366,65 @@ describe("createBrief", () => {
     expect(record.papers[0]?.relevanceScore).toBeGreaterThan(0);
     expect(record.brief.searchSummary.warnings).not.toContain(
       "brief quality warning: selected papers are mock/demo records only, even though live sources were requested."
+    );
+  });
+
+  it("limits AI synthesis to top papers while keeping preflight source search broad", async () => {
+    let synthesisPaperCount = 0;
+    const papers = Array.from({ length: 8 }, (_, index) => ({
+      id: `openalex_${index + 1}`,
+      title: `Retrieval-Augmented Generation for Medical Diagnosis ${index + 1}`,
+      abstract:
+        "Retrieval augmented generation supports medical diagnosis research with grounded evidence and clinical evaluation.",
+      authors: [`Researcher ${index + 1}`],
+      year: 2024,
+      publishedAt: "2024-01-01",
+      doi: `10.1000/rag-${index + 1}`,
+      arxivId: null,
+      semanticScholarId: null,
+      openAlexId: `W${index + 1}`,
+      sourceUrls: [`https://example.org/rag-${index + 1}`],
+      pdfUrl: null,
+      venue: "Example Journal",
+      citationCount: 20 - index,
+      influentialCitationCount: 2,
+      source: "openalex" as const
+    }));
+
+    const record = await createBrief(
+      {
+        query: "retrieval augmented generation in medical diagnosis",
+        maxPapers: 8,
+        sources: ["openalex"]
+      },
+      {
+        search: async ({ query }) => ({
+          papers,
+          sourcesUsed: ["openalex"],
+          warnings: [],
+          sourceDiagnostics: [
+            {
+              source: "openalex",
+              query,
+              status: "success",
+              resultCount: papers.length,
+              cached: false
+            }
+          ]
+        }),
+        synthesize: async (input) => {
+          synthesisPaperCount = input.papers.length;
+          return createSyntheticBrief(input);
+        }
+      }
+    );
+
+    expect(synthesisPaperCount).toBe(5);
+    expect(record.papers).toHaveLength(5);
+    expect(record.brief.searchSummary.totalFound).toBe(8);
+    expect(record.brief.searchSummary.totalUsedInBrief).toBe(5);
+    expect(record.brief.searchSummary.warnings).toContain(
+      "brief synthesis limited to the top 5 selected papers for reliable structured generation."
     );
   });
 });

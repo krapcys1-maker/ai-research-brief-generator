@@ -1,4 +1,5 @@
 import type {
+  BriefListFilter,
   BriefRepository,
   SaveBriefInput,
   StoredBrief
@@ -29,6 +30,7 @@ export const inMemoryBriefRepository: BriefRepository = {
   async saveWithPapers(input: SaveBriefInput) {
     const record: StoredBrief = {
       ...input,
+      ownerSessionId: input.ownerSessionId ?? null,
       createdAt: new Date().toISOString()
     };
 
@@ -40,14 +42,18 @@ export const inMemoryBriefRepository: BriefRepository = {
     return store.get(id) ?? null;
   },
 
-  async list() {
-    return [...store.values()].sort((a, b) =>
-      b.createdAt.localeCompare(a.createdAt)
-    );
+  async list(filter?: BriefListFilter) {
+    return [...store.values()]
+      .filter((record) =>
+        "ownerSessionId" in (filter ?? {})
+          ? (record.ownerSessionId ?? null) === filter?.ownerSessionId
+          : true
+      )
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   },
 
-  async listSummaries() {
-    const records = await this.list();
+  async listSummaries(filter?: BriefListFilter) {
+    const records = await this.list(filter);
     return records.map(toSummary);
   },
 

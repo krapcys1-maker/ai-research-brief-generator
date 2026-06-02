@@ -83,6 +83,8 @@ function EvidenceList({
               {formatCitationLabel(papersById.get(item.paperId), item.paperId)}
             </button>
             <span className="badge">{item.supportLevel}</span>
+            <span className="badge">{item.evidenceLevel}</span>
+            {item.sectionTitle ? <span className="badge">{item.sectionTitle}</span> : null}
           </footer>
         </blockquote>
       ))}
@@ -185,6 +187,12 @@ function getWarningGroups(warnings: string[]) {
   }, {});
 
   return Object.values(groups).sort((a, b) => b.count - a.count);
+}
+
+function getFallbackWarning(warnings: string[]) {
+  return warnings.find((warning) =>
+    warning.startsWith("AI synthesis fallback used")
+  );
 }
 
 function formatWarningDetail(detail: string) {
@@ -361,10 +369,15 @@ function BriefAtAGlance({
         </div>
         <div>
           <span className="metric-label">Evidence boundary</span>
-          <strong>Abstract-level only</strong>
+          <strong>
+            {papers.some((paper) => paper.fullTextStatus === "parsed")
+              ? "Full text available for some papers"
+              : "Abstract-level only"}
+          </strong>
           <p>
-            Not full-text PDF verification. Treat this as a metadata/abstract
-            briefing.
+            {papers.some((paper) => paper.fullTextStatus === "parsed")
+              ? "Ask This Brief can use parsed full-text chunks where available; the brief itself still shows claim-level source snippets."
+              : "Not full-text PDF verification. Treat this as a metadata/abstract briefing."}
           </p>
         </div>
         <div>
@@ -409,6 +422,12 @@ function EvidenceBoundaryContent({
         <div>
           <span className="metric-label">PDF links</span>
           <strong>{boundary.metrics.papersWithPdfLinks}</strong>
+        </div>
+        <div>
+          <span className="metric-label">Full text parsed</span>
+          <strong>
+            {papers.filter((paper) => paper.fullTextStatus === "parsed").length}
+          </strong>
         </div>
         <div>
           <span className="metric-label">With DOI</span>
@@ -678,6 +697,16 @@ function AskBriefPanel({
           <div className="token-list">
             <span className="badge">Language: {answer.outputLanguage}</span>
             <span className="badge">Confidence: {answer.confidence}</span>
+            <span className="badge">
+              Evidence:{" "}
+              {answer.claims.some((claim) =>
+                claim.evidence.some(
+                  (evidence) => evidence.evidenceLevel === "full_text_supported"
+                )
+              )
+                ? "full text"
+                : "abstract/metadata"}
+            </span>
             {answer.notAnswerableFromSources ? (
               <span className="badge">not answerable from selected sources</span>
             ) : null}
@@ -735,9 +764,28 @@ function WarningSummary({ warnings }: { warnings: string[] }) {
   }
 
   const groups = getWarningGroups(warnings);
+  const fallbackWarning = getFallbackWarning(warnings);
 
   return (
     <div className="warning-panel" role="status">
+      {fallbackWarning ? (
+        <div className="fallback-explainer">
+          <div>
+            <span className="metric-label">Fallback mode</span>
+            <strong>Extractive evidence summary</strong>
+          </div>
+          <p>
+            The AI synthesis provider did not return a fully validated narrative.
+            This page uses a safer fallback built from selected paper titles,
+            abstracts, and source metadata only.
+          </p>
+          <p>
+            For a richer synthesized brief, retry generation, narrow the topic, or
+            use stronger provider settings. Keep treating this output as
+            abstract-level evidence, not full-text verification.
+          </p>
+        </div>
+      ) : null}
       <div className="warning-panel-header">
         <strong>Source warnings</strong>
         <span>
@@ -920,6 +968,17 @@ function SourceDrawer({
         >
           <span className="badge">{paper.id}</span>
           <span className="badge">{insight.role}</span>
+          <span className="badge">
+            {paper.fullTextStatus === "parsed"
+              ? "Full text parsed"
+              : paper.fullTextStatus === "failed"
+                ? "Parse failed"
+                : paper.fullTextStatus === "unavailable"
+                  ? "Full text unavailable"
+                  : paper.abstract
+                    ? "Abstract only"
+                    : "Metadata only"}
+          </span>
           <button
             type="button"
             onClick={onClose}

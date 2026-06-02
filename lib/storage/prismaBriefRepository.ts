@@ -3,6 +3,7 @@ import { ResearchBriefSchema } from "@/lib/ai/schemas";
 import { normalizeTitle } from "@/lib/pipeline/dedupe";
 import { prisma } from "@/lib/storage/prismaClient";
 import type {
+  BriefListFilter,
   BriefListItem,
   BriefRepository,
   SaveBriefInput,
@@ -61,6 +62,13 @@ function paperFromPrisma(record: {
   citationCount: number | null;
   influentialCitationCount: number | null;
   source: string;
+  fullText?: {
+    status: string;
+    sourceType: string;
+    qualityScore: number | null;
+    errorMessage: string | null;
+    chunks?: { id: string }[];
+  } | null;
   briefs?: {
     relevanceScore: number | null;
     citationScore: number | null;
@@ -102,6 +110,24 @@ function paperFromPrisma(record: {
       record.source === "openalex"
         ? record.source
         : "merged",
+    fullTextStatus:
+      record.fullText?.status === "unavailable" ||
+      record.fullText?.status === "available" ||
+      record.fullText?.status === "fetched" ||
+      record.fullText?.status === "parsed" ||
+      record.fullText?.status === "failed"
+        ? record.fullText.status
+        : undefined,
+    fullTextSourceType:
+      record.fullText?.sourceType === "arxiv" ||
+      record.fullText?.sourceType === "source_pdf_url" ||
+      record.fullText?.sourceType === "open_access" ||
+      record.fullText?.sourceType === "user_upload"
+        ? record.fullText.sourceType
+        : undefined,
+    fullTextChunkCount: record.fullText?.chunks?.length,
+    fullTextQualityScore: record.fullText?.qualityScore,
+    fullTextErrorMessage: record.fullText?.errorMessage,
     relevanceScore: scores?.relevanceScore ?? undefined,
     citationScore: scores?.citationScore ?? undefined,
     recencyScore: scores?.recencyScore ?? undefined,
@@ -115,6 +141,7 @@ function paperFromPrisma(record: {
 
 function storedBriefFromPrisma(record: {
   briefJson: Prisma.JsonValue;
+  ownerSessionId: string | null;
   createdAt: Date;
   papers: {
     paper: Parameters<typeof paperFromPrisma>[0];
@@ -123,7 +150,8 @@ function storedBriefFromPrisma(record: {
   return {
     brief: ResearchBriefSchema.parse(record.briefJson),
     papers: record.papers.map((item) => paperFromPrisma(item.paper)),
-    createdAt: record.createdAt.toISOString()
+    createdAt: record.createdAt.toISOString(),
+    ownerSessionId: record.ownerSessionId
   };
 }
 
@@ -154,6 +182,7 @@ export const prismaBriefRepository: BriefRepository = {
         where: { id: input.brief.id },
         create: {
           id: input.brief.id,
+          ownerSessionId: input.ownerSessionId ?? null,
           query: input.brief.query,
           outputLanguage: input.brief.outputLanguage,
           generatedAt: new Date(input.brief.generatedAt),
@@ -166,6 +195,7 @@ export const prismaBriefRepository: BriefRepository = {
         },
         update: {
           query: input.brief.query,
+          ownerSessionId: input.ownerSessionId ?? null,
           outputLanguage: input.brief.outputLanguage,
           generatedAt: new Date(input.brief.generatedAt),
           title: input.brief.title,
@@ -236,6 +266,15 @@ export const prismaBriefRepository: BriefRepository = {
               include: {
                 briefs: {
                   where: { briefId: id }
+                },
+                fullText: {
+                  include: {
+                    chunks: {
+                      select: {
+                        id: true
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -247,15 +286,28 @@ export const prismaBriefRepository: BriefRepository = {
     return record ? storedBriefFromPrisma(record) : null;
   },
 
-  async list() {
+  async list(filter?: BriefListFilter) {
     const records = await prisma.brief.findMany({
+      where:
+        "ownerSessionId" in (filter ?? {})
+          ? { ownerSessionId: filter?.ownerSessionId ?? null }
+          : undefined,
       orderBy: { createdAt: "desc" },
       include: {
         papers: {
           include: {
             paper: {
               include: {
-                briefs: true
+                briefs: true,
+                fullText: {
+                  include: {
+                    chunks: {
+                      select: {
+                        id: true
+                      }
+                    }
+                  }
+                }
               }
             }
           }
@@ -266,8 +318,12 @@ export const prismaBriefRepository: BriefRepository = {
     return records.map(storedBriefFromPrisma);
   },
 
-  async listSummaries() {
+  async listSummaries(filter?: BriefListFilter) {
     const records = await prisma.brief.findMany({
+      where:
+        "ownerSessionId" in (filter ?? {})
+          ? { ownerSessionId: filter?.ownerSessionId ?? null }
+          : undefined,
       orderBy: { createdAt: "desc" },
       select: {
         id: true,

@@ -12,6 +12,7 @@ type BriefHistoryItem = {
 
 export function BriefHistoryPanel() {
   const [briefs, setBriefs] = useState<BriefHistoryItem[]>([]);
+  const [historyScope, setHistoryScope] = useState<"public" | "session">("session");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -19,23 +20,19 @@ export function BriefHistoryPanel() {
 
     async function loadHistory() {
       try {
-        const response = await fetch("/api/briefs");
+        const response = await fetch("/api/briefs", { cache: "no-store" });
         const payload = (await response.json()) as {
           briefs?: BriefHistoryItem[];
+          historyScope?: "public" | "session";
         };
 
         if (!response.ok) {
-          if (response.status === 403) {
-            setBriefs([]);
-            setError(null);
-            return;
-          }
-
           throw new Error("Could not load brief history.");
         }
 
         if (!cancelled) {
           setBriefs(payload.briefs ?? []);
+          setHistoryScope(payload.historyScope ?? "session");
           setError(null);
         }
       } catch (caught) {
@@ -61,7 +58,11 @@ export function BriefHistoryPanel() {
       <div className="brief-history-header">
         <div>
           <h2>Recent briefs</h2>
-          <p>Loaded from the active brief repository.</p>
+          <p>
+            {historyScope === "public"
+              ? "Loaded from public brief history."
+              : "Loaded from the current private browser session."}
+          </p>
         </div>
         <span className="badge">{briefs.length}</span>
       </div>

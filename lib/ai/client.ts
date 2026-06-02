@@ -4,6 +4,8 @@ export type AIModelConfig = {
   provider: AIProviderName;
   model: string;
   apiKey?: string;
+  maxTokens: number;
+  thinkingEnabled: boolean;
 };
 
 export type GenerateStructuredInput = {
@@ -35,6 +37,35 @@ function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }
 
+function numberEnv(name: string, fallback: number) {
+  const raw = process.env[name];
+
+  if (!raw) {
+    return fallback;
+  }
+
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function booleanEnv(name: string, fallback: boolean) {
+  const normalized = process.env[name]?.trim().toLowerCase();
+
+  if (!normalized) {
+    return fallback;
+  }
+
+  if (["1", "true", "yes", "on"].includes(normalized)) {
+    return true;
+  }
+
+  if (["0", "false", "no", "off"].includes(normalized)) {
+    return false;
+  }
+
+  return fallback;
+}
+
 function getAIConfig(): AIModelConfig {
   const provider = (process.env.AI_PROVIDER ?? "deepseek") as AIProviderName;
   const model = process.env.AI_MODEL ?? "deepseek-v4-pro";
@@ -48,7 +79,9 @@ function getAIConfig(): AIModelConfig {
   return {
     provider,
     model,
-    apiKey: process.env.DEEPSEEK_API_KEY
+    apiKey: process.env.DEEPSEEK_API_KEY,
+    maxTokens: numberEnv("AI_MAX_OUTPUT_TOKENS", 7000),
+    thinkingEnabled: booleanEnv("AI_THINKING_ENABLED", false)
   };
 }
 
@@ -74,6 +107,41 @@ function extractJsonObject(text: string) {
   throw new AIProviderError("AI provider did not return a JSON object.");
 }
 
+async function runWithRequestTimeout<T>(
+  timeoutMs: number,
+  operation: (signal: AbortSignal) => Promise<T>
+) {
+  const controller = new AbortController();
+  let didTimeout = false;
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<never>((_resolve, reject) => {
+    timeout = setTimeout(() => {
+      didTimeout = true;
+      controller.abort();
+      reject(new Error(`Request timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([operation(controller.signal), timeoutPromise]);
+  } catch (error) {
+    if (
+      didTimeout ||
+      (error instanceof Error &&
+        (error.name === "AbortError" ||
+          error.message.toLowerCase().includes("abort")))
+    ) {
+      throw new Error(`Request timed out after ${timeoutMs}ms`);
+    }
+
+    throw error;
+  } finally {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+  }
+}
+
 function createDeepSeekProvider(config: AIModelConfig): AIProvider {
   return {
     name: "deepseek",
@@ -84,55 +152,68 @@ function createDeepSeekProvider(config: AIModelConfig): AIProvider {
         );
       }
 
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 120000);
-      let response: Response;
-
-      try {
-        response = await fetch("https://api.deepseek.com/chat/completions", {
-          method: "POST",
-          signal: controller.signal,
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${config.apiKey}`
-          },
-          body: JSON.stringify({
-            model: config.model,
-            temperature: 0.2,
-            response_format: { type: "json_object" },
-            messages: [
-              {
-                role: "system",
-                content: input.systemPrompt
-              },
-              {
-                role: "user",
-                content: input.userPrompt
-              }
-            ]
-          })
-        });
-      } catch (error) {
-        const message = getErrorMessage(error);
-        throw new AIProviderError(
-          message.includes("abort")
-            ? "DeepSeek request timed out after 120 seconds."
-            : `DeepSeek request failed before a response was received: ${message}`
-        );
-      } finally {
-        clearTimeout(timeout);
-      }
-
-      if (!response.ok) {
-        const status = `${response.status} ${response.statusText}`.trim();
-        throw new AIProviderError(
-          `DeepSeek request failed (${status}). Check AI_MODEL, DEEPSEEK_API_KEY, and provider availability.`
-        );
-      }
-
-      const payload = (await response.json()) as {
+      const requestTimeoutMs = numberEnv("AI_REQUEST_TIMEOUT_MS", 90000);
+      let payload: {
         choices?: { message?: { content?: string } }[];
       };
+
+      try {
+        payload = await runWithRequestTimeout(requestTimeoutMs, async (signal) => {
+          const response = await fetch("https://api.deepseek.com/chat/completions", {
+            method: "POST",
+            signal,
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${config.apiKey}`
+            },
+            body: JSON.stringify({
+            model: config.model,
+            temperature: 0.2,
+            max_tokens: config.maxTokens,
+            thinking: {
+              type: config.thinkingEnabled ? "enabled" : "disabled"
+            },
+            response_format: { type: "json_object" },
+              messages: [
+                {
+                  role: "system",
+                  content: input.systemPrompt
+                },
+                {
+                  role: "user",
+                  content: input.userPrompt
+                }
+              ]
+            })
+          });
+
+          if (!response.ok) {
+            const status = `${response.status} ${response.statusText}`.trim();
+            throw new AIProviderError(
+              `DeepSeek request failed (${status}). Check AI_MODEL, DEEPSEEK_API_KEY, and provider availability.`
+            );
+          }
+
+          return (await response.json()) as {
+            choices?: { message?: { content?: string } }[];
+          };
+        });
+      } catch (error) {
+        if (error instanceof AIProviderError) {
+          throw error;
+        }
+
+        const message = getErrorMessage(error);
+        const lowerMessage = message.toLowerCase();
+        const timeoutSeconds = Math.max(1, Math.ceil(requestTimeoutMs / 1000));
+        throw new AIProviderError(
+          lowerMessage.includes("abort") ||
+            lowerMessage.includes("timeout") ||
+            lowerMessage.includes("timed out")
+            ? `DeepSeek request timed out after ${timeoutSeconds} seconds.`
+            : `DeepSeek request failed before a response was received: ${message}`
+        );
+      }
       const content = payload.choices?.[0]?.message?.content;
 
       if (!content) {

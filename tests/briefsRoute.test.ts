@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createBriefJob as mockedCreateBriefJob } from "@/lib/jobs/briefJobs";
+import { BRIEF_HISTORY_SESSION_COOKIE } from "@/lib/briefs/session";
 import { resetRateLimitForTests } from "@/lib/security/rateLimit";
 import { getBriefRepository as mockedGetBriefRepository } from "@/lib/storage/repository";
 
@@ -20,6 +21,8 @@ function queuedJob() {
     status: "queued" as const,
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-01T00:00:00.000Z",
+    attemptCount: 0,
+    maxAttempts: 2,
     request: {
       query: "retrieval augmented generation",
       maxPapers: 5,
@@ -36,7 +39,7 @@ describe("POST /api/briefs", () => {
   });
 
   it("returns a job ID when generation is queued", async () => {
-    createBriefJobMock.mockReturnValueOnce(queuedJob());
+    createBriefJobMock.mockResolvedValueOnce(queuedJob());
 
     const { POST } = await import("@/app/api/briefs/route");
     const response = await POST(
@@ -58,11 +61,19 @@ describe("POST /api/briefs", () => {
       jobId: "job_test",
       status: "queued"
     });
-    expect(createBriefJobMock).toHaveBeenCalledWith({
-      query: "retrieval augmented generation",
-      maxPapers: 5,
-      sources: ["mock"]
-    });
+    expect(response.headers.get("set-cookie")).toContain(
+      BRIEF_HISTORY_SESSION_COOKIE
+    );
+    expect(createBriefJobMock).toHaveBeenCalledWith(
+      {
+        query: "retrieval augmented generation",
+        maxPapers: 5,
+        sources: ["mock"]
+      },
+      {
+        ownerSessionId: expect.stringMatching(/^brief_session_/)
+      }
+    );
   });
 
   it("rejects invalid generation requests before creating a job", async () => {
@@ -87,7 +98,7 @@ describe("POST /api/briefs", () => {
   it("rate limits costly brief generation requests per client", async () => {
     vi.stubEnv("BRIEF_RATE_LIMIT_MAX", "1");
     vi.stubEnv("BRIEF_RATE_LIMIT_WINDOW_MS", "60000");
-    createBriefJobMock.mockReturnValue(queuedJob());
+    createBriefJobMock.mockResolvedValue(queuedJob());
 
     const { POST } = await import("@/app/api/briefs/route");
     const requestBody = JSON.stringify({
@@ -177,25 +188,52 @@ describe("GET /api/briefs", () => {
     });
 
     const { GET } = await import("@/app/api/briefs/route");
-    const response = await GET();
+    const response = await GET(new Request("http://localhost/api/briefs"));
     const payload = await response.json();
 
     expect(response.status).toBe(200);
+    expect(payload.historyScope).toBe("public");
     expect(payload.briefs).toHaveLength(1);
     expect(payload.briefs[0].id).toBe("brief_public");
   });
 
-  it("blocks brief summaries when public history is disabled", async () => {
+  it("returns session-scoped brief summaries when public history is disabled", async () => {
     vi.stubEnv("PUBLIC_BRIEF_HISTORY_ENABLED", "false");
+    const repository = {
+      saveWithPapers: vi.fn(),
+      getById: vi.fn(),
+      list: vi.fn(),
+      clear: vi.fn(),
+      listSummaries: vi.fn().mockResolvedValue([
+        {
+          id: "brief_private",
+          title: "Private history item",
+          query: "AI agents",
+          generatedAt: "2026-01-01T00:00:00.000Z",
+          outputLanguage: "en",
+          createdAt: "2026-01-01T00:00:00.000Z"
+        }
+      ])
+    };
+    getBriefRepositoryMock.mockResolvedValueOnce(repository);
 
     const { GET } = await import("@/app/api/briefs/route");
-    const response = await GET();
+    const response = await GET(
+      new Request("http://localhost/api/briefs", {
+        headers: {
+          cookie: `${BRIEF_HISTORY_SESSION_COOKIE}=brief_session_existing`
+        }
+      })
+    );
     const payload = await response.json();
 
-    expect(response.status).toBe(403);
-    expect(payload.status).toBe("disabled");
-    expect(payload.error).toContain("disabled");
-    expect(getBriefRepositoryMock).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toContain("no-store");
+    expect(payload.historyScope).toBe("session");
+    expect(payload.briefs[0].id).toBe("brief_private");
+    expect(getBriefRepositoryMock).toHaveBeenCalled();
+    expect(repository.listSummaries).toHaveBeenCalledWith({
+      ownerSessionId: "brief_session_existing"
+    });
   });
 });
-

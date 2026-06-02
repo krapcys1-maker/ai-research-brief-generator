@@ -33,4 +33,33 @@ describe("inMemoryBriefRepository", () => {
     await inMemoryBriefRepository.clear();
     expect(await inMemoryBriefRepository.getById("brief_repo_test")).toBeNull();
   });
+
+  it("filters brief history by owner session", async () => {
+    const firstBrief = createBrief({ id: "brief_session_one" });
+    const secondBrief = createBrief({ id: "brief_session_two" });
+    const paper = createPaper();
+
+    await inMemoryBriefRepository.saveWithPapers({
+      brief: firstBrief,
+      papers: [paper],
+      ownerSessionId: "session_one"
+    });
+    await inMemoryBriefRepository.saveWithPapers({
+      brief: secondBrief,
+      papers: [paper],
+      ownerSessionId: "session_two"
+    });
+
+    const firstSessionSummaries = await inMemoryBriefRepository.listSummaries({
+      ownerSessionId: "session_one"
+    });
+    const publicSummaries = await inMemoryBriefRepository.listSummaries();
+
+    expect(firstSessionSummaries.map((item) => item.id)).toEqual([
+      "brief_session_one"
+    ]);
+    expect(new Set(publicSummaries.map((item) => item.id))).toEqual(
+      new Set(["brief_session_two", "brief_session_one"])
+    );
+  });
 });

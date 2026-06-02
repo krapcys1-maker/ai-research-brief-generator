@@ -3,6 +3,9 @@ import { ZodError } from "zod";
 import { AIConfigurationError, AIProviderError } from "@/lib/ai/client";
 import { BriefQuestionRequestSchema } from "@/lib/ai/schemas";
 import { synthesizeAnswer } from "@/lib/ai/synthesizeAnswer";
+import { canAccessBriefFromRequest, privateBriefError } from "@/lib/briefs/access";
+import { getFullTextRepository } from "@/lib/fulltext/repository";
+import { retrievePaperTextChunks } from "@/lib/fulltext/retrieval";
 import {
   checkRateLimit,
   getClientIp,
@@ -61,11 +64,34 @@ export async function POST(
       );
     }
 
+    if (!canAccessBriefFromRequest(record, request)) {
+      return NextResponse.json(privateBriefError(), { status: 403 });
+    }
+
+    const fullTextChunks = await (async () => {
+      try {
+        const fullTextRepository = await getFullTextRepository();
+        return await fullTextRepository.getChunksByPaperIds(
+          record.papers.map((paper) => paper.id)
+        );
+      } catch {
+        return [];
+      }
+    })();
+    const retrievedFullTextChunks = retrievePaperTextChunks({
+      question: body.question,
+      chunks: fullTextChunks,
+      topK: 6
+    });
+
     const answer = await synthesizeAnswer({
       question: body.question,
       outputLanguage: detectQueryLanguage(body.question),
       brief: record.brief,
-      papers: record.papers
+      papers: record.papers,
+      ...(retrievedFullTextChunks.length
+        ? { fullTextChunks: retrievedFullTextChunks }
+        : {})
     });
 
     return NextResponse.json(

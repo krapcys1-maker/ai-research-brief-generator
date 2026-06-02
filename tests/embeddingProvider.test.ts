@@ -66,6 +66,27 @@ describe("embedding provider configuration", () => {
     expect(() => createEmbeddingProvider()).toThrow("EMBEDDING_API_KEY");
   });
 
+  it("times out OpenAI-compatible embedding requests", async () => {
+    vi.stubEnv("EMBEDDING_PROVIDER", "openai_compatible");
+    vi.stubEnv("EMBEDDING_BASE_URL", "https://embeddings.example/v1");
+    vi.stubEnv("EMBEDDING_API_KEY", "test-key");
+    vi.stubEnv("EMBEDDING_MODEL", "test-embedding-model");
+    vi.stubEnv("EMBEDDING_REQUEST_TIMEOUT_MS", "5");
+
+    const fetchMock = vi.fn((_url: string | URL | Request, init?: RequestInit) =>
+      new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => {
+          reject(new DOMException("aborted", "AbortError"));
+        });
+      })
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const provider = createEmbeddingProvider();
+
+    await expect(provider.embed(["slow"])).rejects.toThrow("timed out");
+  });
+
   it("falls back to lexical scoring when embeddings are unavailable", async () => {
     const scored = await scorePapersForQueriesHybrid(
       [
@@ -90,4 +111,3 @@ describe("embedding provider configuration", () => {
     expect(scored[0].relevanceScore).toBeGreaterThan(0);
   });
 });
-

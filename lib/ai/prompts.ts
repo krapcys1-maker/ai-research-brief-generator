@@ -16,6 +16,8 @@ If evidence is weak, mark confidence as low.
 If papers disagree or evidence is indirect, include caveats.
 Evidence snippets must be short text spans copied or tightly paraphrased from the selected paper title, abstract, venue, or metadata.
 Each evidence snippet must cite a paperId that is also present in the item's sourcePaperIds.
+Do not use comparative, superlative, quantitative, statistical, causal, or absolute wording unless the same detail appears in the evidence snippets.
+Avoid phrases such as "more than", "better than", "reduced", "increased", "eliminates", "significant", "outperforms", "leading", or exact percentages unless the evidence snippets contain that detail.
 Do not put raw paper IDs inside prose fields. Put citations only in sourcePaperIds arrays and influentialPapers.paperId.
 Return only valid JSON matching the schema.
 Use the exact property names requested by the user prompt.
@@ -28,6 +30,7 @@ export function buildResearchSynthesisPrompt(input: {
   outputLanguage: OutputLanguage;
   papers: NormalizedPaper[];
   queryVariants: string[];
+  validationFeedback?: string;
 }) {
   const papersJson = JSON.stringify(
     input.papers.map((paper) => ({
@@ -80,6 +83,8 @@ Your task:
 8. Add evidence snippets for every important claim using the evidence array.
 9. Prefer concrete claims over generic summaries: include mechanisms, measured effects, evaluation settings, populations, materials, or implementation constraints when the papers support them.
 10. When evidence is thin or selected papers are few, say so plainly instead of over-generalizing.
+11. Keep the output compact enough for reliable JSON generation: use at most 3 keyFindings, 3 majorThemes, 3 researchGaps, 2 controversiesOrUncertainties, 4 influentialPapers, and 5 suggestedNextQuestions.
+12. Keep each evidence array to 1 or 2 short evidence snippets.
 
 Return exactly one JSON object with these keys:
 id, query, outputLanguage, generatedAt, title, tldr, executiveSummary, keyFindings, majorThemes, influentialPapers, researchGaps, controversiesOrUncertainties, suggestedNextQuestions, searchSummary, bibliography.
@@ -185,6 +190,16 @@ The JSON object must match this shape exactly:
 }
 
 The bibliography must use exactly these bibliography objects and must keep titles, authors, URLs, DOI values, and venues unchanged.
+
+${
+  input.validationFeedback
+    ? `Previous output failed server-side grounding validation:
+${input.validationFeedback}
+
+Repair instruction:
+Regenerate the entire JSON object. Make every claim narrower and ensure every comparative, quantitative, causal, or absolute detail appears directly in the cited evidence snippets. If the selected evidence is too weak, lower confidence and state uncertainty instead of strengthening the claim.`
+    : ""
+}
 
 Papers:
 ${papersJson}`;

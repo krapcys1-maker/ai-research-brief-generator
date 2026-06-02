@@ -220,6 +220,25 @@ textarea {
   white-space: nowrap;
 }
 
+.fallback-explainer {
+  display: grid;
+  gap: 8px;
+  border-bottom: 1px solid #fed7aa;
+  padding-bottom: 12px;
+  color: #7c2d12;
+}
+
+.fallback-explainer strong {
+  display: block;
+  margin-top: 2px;
+  color: #7c2d12;
+}
+
+.fallback-explainer p {
+  margin: 0;
+  line-height: 1.55;
+}
+
 .warning-group-list {
   display: grid;
   gap: 8px;
@@ -1240,15 +1259,44 @@ textarea {
   color: var(--error);
 }
 
+.source-health-warning,
+.source-health-good {
+  display: grid;
+  gap: 6px;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.source-health-warning {
+  border: 1px solid #fed7aa;
+  background: #fff7ed;
+  color: var(--warning);
+}
+
+.source-health-good {
+  border: 1px solid #99f6e4;
+  background: #f0fdfa;
+  color: var(--accent-strong);
+}
+
+.source-health-warning p,
+.source-health-good p {
+  margin: 0;
+}
+
 .source-health-metrics,
-.source-health-grid {
+.source-health-grid,
+.ai-health-grid,
+.ai-health-providers {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
 
 .source-health-metrics > div,
-.source-health-grid article {
+.source-health-grid article,
+.ai-health-grid > div,
+.ai-health-providers article {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 12px;
@@ -1297,6 +1345,61 @@ textarea {
 }
 
 .source-health-grid article p {
+  margin-top: 10px;
+  color: var(--warning);
+  font-size: 0.86rem;
+}
+
+.ai-health-panel {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fbfcfe;
+}
+
+.ai-health-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.ai-health-grid span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.ai-health-grid strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.15rem;
+}
+
+.ai-health-providers dl {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 0;
+}
+
+.ai-health-providers dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.ai-health-providers dd {
+  margin: 0;
+  color: var(--foreground);
+  font-weight: 750;
+}
+
+.ai-health-providers article p {
   margin-top: 10px;
   color: var(--warning);
   font-size: 0.86rem;
@@ -1381,6 +1484,231 @@ textarea {
   align-items: start;
 }
 
+.documents-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.document-panel {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+}
+
+.privacy-note {
+  display: grid;
+  gap: 7px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 8%, white);
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.privacy-note strong {
+  color: var(--foreground);
+}
+
+.privacy-note p {
+  margin: 0;
+}
+
+.deployment-privacy {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 18px;
+  border: 1px solid #fed7aa;
+  border-radius: 8px;
+  padding: 14px 16px;
+  background: #fff7ed;
+  color: var(--warning);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.deployment-privacy strong {
+  color: #7c2d12;
+}
+
+.deployment-privacy p {
+  margin: 0;
+}
+
+.document-panel h2,
+.document-panel p {
+  margin: 0;
+}
+
+.document-panel p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.document-list {
+  display: grid;
+  gap: 12px;
+}
+
+.document-card {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfcfe;
+}
+
+.document-card label {
+  line-height: 1.4;
+}
+
+.document-ask-panel,
+.document-answer {
+  grid-column: 1 / -1;
+}
+
+.compare-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.compare-panel,
+.compare-report {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+}
+
+.compare-panel h2,
+.compare-panel p,
+.compare-report h2,
+.compare-report p {
+  margin: 0;
+}
+
+.compare-panel p,
+.compare-report p {
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.compare-form {
+  display: grid;
+  gap: 10px;
+}
+
+.compare-form label {
+  color: var(--foreground);
+  font-weight: 750;
+}
+
+.compare-form textarea,
+.compare-form input[type="file"] {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 11px 12px;
+  background: #fff;
+}
+
+.compare-report {
+  grid-column: 1 / -1;
+}
+
+.compare-report-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.claim-review-list,
+.claim-matrix,
+.similar-work-list {
+  display: grid;
+  gap: 12px;
+}
+
+.claim-review-card {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fbfcfe;
+}
+
+.claim-review-card span {
+  display: grid;
+  gap: 6px;
+}
+
+.claim-review-card small {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.claim-matrix-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fbfcfe;
+}
+
+.claim-matrix-card h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.4;
+}
+
+.claim-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.claim-columns > div,
+.similar-work-list article {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  background: #fff;
+}
+
+.similar-work-list article {
+  display: grid;
+  gap: 8px;
+}
+
+.similar-work-list h3,
+.similar-work-list p {
+  margin: 0;
+}
+
+.source-drawer {
+  position: fixed;
+  inset: auto 20px 20px auto;
+  width: min(460px, calc(100vw - 40px));
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  z-index: 35;
+}
+
+.source-drawer article {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+}
+
 @media (max-width: 760px) {
   .metric-grid,
   .diagnostics-grid,
@@ -1394,7 +1722,9 @@ textarea {
   .preflight-summary-grid,
   .preflight-metrics,
   .source-health-metrics,
-  .source-health-grid {
+  .source-health-grid,
+  .ai-health-grid,
+  .ai-health-providers {
     grid-template-columns: 1fr;
   }
 
@@ -1407,6 +1737,15 @@ textarea {
   }
 
   .research-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .documents-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .compare-grid,
+  .claim-columns {
     grid-template-columns: 1fr;
   }
 

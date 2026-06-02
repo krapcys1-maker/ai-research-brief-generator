@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { canAccessBriefFromRequest, privateBriefError } from "@/lib/briefs/access";
 import { researchBriefToMarkdown } from "@/lib/export/markdown";
 import { getBriefRepository } from "@/lib/storage/repository";
 
@@ -40,6 +41,10 @@ export async function GET(
       },
       { status: 404 }
     );
+  }
+
+  if (!canAccessBriefFromRequest(record, request)) {
+    return NextResponse.json(privateBriefError(), { status: 403 });
   }
 
   const markdown = researchBriefToMarkdown(record);

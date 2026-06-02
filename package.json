@@ -11,6 +11,8 @@
     "embedding:check": "tsx scripts/embedding-provider-check.ts",
     "benchmark:retrieval": "tsx scripts/retrieval-gold-benchmark.ts",
     "benchmark:source-quality": "tsx scripts/source-quality-benchmark.ts",
+    "benchmark:claim-check": "tsx scripts/claim-check-benchmark.ts",
+    "worker:briefs": "tsx scripts/brief-job-worker.ts",
     "smoke:deploy": "node scripts/deployment-smoke.mjs",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev"
@@ -18,6 +20,7 @@
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "next": "^16.0.5",
+    "pdf-parse": "^2.4.5",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "zod": "^4.1.13"

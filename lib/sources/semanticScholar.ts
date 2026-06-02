@@ -1,4 +1,5 @@
 import type { NormalizedPaper, SourceAdapter } from "@/lib/sources/types";
+import { normalizeDoi } from "@/lib/sources/doi";
 import { assertOk, fetchWithRetry } from "@/lib/utils/http";
 
 type SemanticScholarPaper = {
@@ -61,7 +62,7 @@ export const semanticScholarSourceAdapter: SourceAdapter = {
           authors: paper.authors?.map((author) => author.name).filter(Boolean) as string[],
           year: paper.year ?? null,
           publishedAt: paper.publicationDate ?? null,
-          doi: paper.externalIds?.DOI ?? null,
+          doi: normalizeDoi(paper.externalIds?.DOI),
           arxivId: paper.externalIds?.ArXiv ?? null,
           semanticScholarId: paper.paperId,
           openAlexId: null,

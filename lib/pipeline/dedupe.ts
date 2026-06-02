@@ -1,4 +1,5 @@
 import type { NormalizedPaper } from "@/lib/sources/types";
+import { normalizeDoi } from "@/lib/sources/doi";
 
 export function normalizeTitle(title: string) {
   return title
@@ -10,8 +11,10 @@ export function normalizeTitle(title: string) {
 }
 
 function getDedupeKeys(paper: NormalizedPaper) {
+  const doi = normalizeDoi(paper.doi);
+
   return [
-    paper.doi ? `doi:${paper.doi.toLowerCase()}` : null,
+    doi ? `doi:${doi.toLowerCase()}` : null,
     paper.arxivId ? `arxiv:${paper.arxivId.toLowerCase()}` : null,
     paper.semanticScholarId
       ? `semantic:${paper.semanticScholarId.toLowerCase()}`

@@ -9,6 +9,7 @@ datasource db {
 
 model Brief {
   id             String   @id
+  ownerSessionId String?
   query          String
   outputLanguage String
   generatedAt    DateTime
@@ -23,6 +24,30 @@ model Brief {
   updatedAt DateTime @updatedAt
 
   papers BriefPaper[]
+
+  @@index([ownerSessionId])
+}
+
+model BriefGenerationJob {
+  id              String   @id
+  status          String
+  stage           String?
+  stageStartedAt  DateTime?
+  ownerSessionId  String?
+  requestJson     Json
+  briefId         String?
+  error           String?
+  qualityGateJson Json?
+  attemptCount    Int      @default(0)
+  maxAttempts     Int      @default(2)
+  lockedAt        DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status])
+  @@index([ownerSessionId])
+  @@index([lockedAt])
+  @@index([createdAt])
 }
 
 model Paper {
@@ -48,12 +73,55 @@ model Paper {
   updatedAt DateTime @updatedAt
 
   briefs BriefPaper[]
+  fullText PaperFullText?
+  textChunks PaperTextChunk[]
 
   @@index([doi])
   @@index([arxivId])
   @@index([semanticScholarId])
   @@index([openAlexId])
   @@index([normalizedTitle])
+}
+
+model PaperFullText {
+  id           String   @id @default(cuid())
+  paperId      String   @unique
+  status       String
+  sourceType   String
+  sourceUrl    String?
+  parserName   String?
+  textHash     String?
+  extractedAt  DateTime?
+  errorMessage String?
+  qualityScore Float?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  paper  Paper            @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  chunks PaperTextChunk[]
+
+  @@index([status])
+  @@index([sourceType])
+}
+
+model PaperTextChunk {
+  id            String   @id
+  paperId       String
+  fullTextId    String
+  sectionTitle  String?
+  chunkIndex    Int
+  text          String
+  tokenEstimate Int
+  pageStart     Int?
+  pageEnd       Int?
+  createdAt     DateTime @default(now())
+
+  paper    Paper         @relation(fields: [paperId], references: [id], onDelete: Cascade)
+  fullText PaperFullText @relation(fields: [fullTextId], references: [id], onDelete: Cascade)
+
+  @@index([paperId])
+  @@index([fullTextId])
+  @@unique([fullTextId, chunkIndex])
 }
 
 model BriefPaper {
@@ -100,4 +168,67 @@ model SourceDiagnostic {
 
   @@index([createdAt])
   @@index([source])
+}
+
+model AiSynthesisDiagnostic {
+  id           String   @id
+  query        String
+  provider     String
+  status       String
+  attemptCount Int
+  paperCount   Int
+  message      String?
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([provider])
+  @@index([status])
+}
+
+model UserDocument {
+  id             String   @id @default(cuid())
+  ownerId        String?
+  workspaceId    String?
+  sessionId      String?
+  filename       String
+  mimeType       String
+  sizeBytes      Int
+  status         String
+  textHash       String?
+  privacyScope   String
+  errorMessage   String?
+  createdAt      DateTime @default(now())
+  deletedAt      DateTime?
+
+  chunks UserDocumentChunk[]
+
+  @@index([ownerId])
+  @@index([workspaceId])
+  @@index([sessionId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model UserDocumentChunk {
+  id             String @id
+  documentId     String
+  ownerId        String?
+  workspaceId    String?
+  sessionId      String?
+  sectionTitle   String?
+  chunkIndex     Int
+  text           String
+  tokenEstimate  Int
+  pageStart      Int?
+  pageEnd        Int?
+  embeddingJson  Json?
+  embeddingModel String?
+  createdAt      DateTime @default(now())
+
+  document UserDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([ownerId])
+  @@index([workspaceId])
+  @@index([sessionId])
 }

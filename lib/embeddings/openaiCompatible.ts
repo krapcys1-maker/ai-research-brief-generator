@@ -20,6 +20,17 @@ function getRequiredEnv(name: string) {
   return value;
 }
 
+function numberEnv(name: string, fallback: number) {
+  const raw = process.env[name];
+
+  if (!raw) {
+    return fallback;
+  }
+
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 function getEmbeddingsEndpoint() {
   const baseUrl = getRequiredEnv("EMBEDDING_BASE_URL").replace(/\/+$/, "");
   return `${baseUrl}/embeddings`;
@@ -29,21 +40,37 @@ export function createOpenAICompatibleEmbeddingProvider(): EmbeddingProvider {
   const apiKey = getRequiredEnv("EMBEDDING_API_KEY");
   const model = getRequiredEnv("EMBEDDING_MODEL");
   const endpoint = getEmbeddingsEndpoint();
+  const timeoutMs = numberEnv("EMBEDDING_REQUEST_TIMEOUT_MS", 30000);
 
   return {
     name: "openai-compatible",
     async embed(texts: string[]) {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model,
-          input: texts
-        })
-      });
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), timeoutMs);
+      let response: Response;
+
+      try {
+        response = await fetch(endpoint, {
+          method: "POST",
+          signal: controller.signal,
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model,
+            input: texts
+          })
+        });
+      } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+          throw new Error(`Embedding provider request timed out after ${timeoutMs}ms`);
+        }
+
+        throw error;
+      } finally {
+        clearTimeout(timeout);
+      }
 
       if (!response.ok) {
         throw new Error(
@@ -68,4 +95,3 @@ export function createOpenAICompatibleEmbeddingProvider(): EmbeddingProvider {
     }
   };
 }
-
