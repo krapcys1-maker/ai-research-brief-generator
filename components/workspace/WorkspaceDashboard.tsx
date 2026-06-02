@@ -401,6 +401,41 @@ export function WorkspaceDashboard() {
         </div>
       </section>
 
+      <section className="surface workspace-panel workspace-wide-panel">
+        <div className="workspace-panel-header">
+          <div>
+            <h2>Getting started</h2>
+            <p>
+              {dashboard
+                ? `${dashboard.onboarding.completed}/${dashboard.onboarding.total} steps complete`
+                : "Loading workspace checklist"}
+            </p>
+          </div>
+          <span className="badge">
+            {dashboard?.onboarding.percent ?? 0}%
+          </span>
+        </div>
+        <div className="workspace-onboarding-list">
+          {dashboard?.onboarding.steps.map((step) => (
+            <Link
+              className={step.completed ? "is-complete" : ""}
+              href={step.href}
+              key={step.id}
+            >
+              <span className="badge">
+                {step.completed ? "Done" : "Next"}
+              </span>
+              <strong>{step.title}</strong>
+              <span>{step.description}</span>
+            </Link>
+          )) ?? (
+            <div className="source-health-empty">
+              Loading onboarding steps.
+            </div>
+          )}
+        </div>
+      </section>
+
       <section className="surface workspace-panel">
         <div className="workspace-panel-header">
           <h2>Saved projects</h2>

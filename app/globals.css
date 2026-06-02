@@ -1713,7 +1713,8 @@ textarea {
   gap: 10px;
 }
 
-.workspace-list a {
+.workspace-list a,
+.workspace-onboarding-list a {
   display: grid;
   gap: 7px;
   border: 1px solid var(--border);
@@ -1723,12 +1724,25 @@ textarea {
   text-decoration: none;
 }
 
-.workspace-list strong {
+.workspace-onboarding-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.workspace-onboarding-list a.is-complete {
+  background: #f4fbf7;
+  border-color: #b8e1c5;
+}
+
+.workspace-list strong,
+.workspace-onboarding-list strong {
   line-height: 1.35;
 }
 
 .workspace-list span:not(.badge),
-.workspace-list time {
+.workspace-list time,
+.workspace-onboarding-list span:not(.badge) {
   color: var(--muted);
   font-size: 0.88rem;
   line-height: 1.45;
@@ -1868,6 +1882,7 @@ textarea {
   .compare-grid,
   .workspace-dashboard,
   .workspace-overview .metric-grid,
+  .workspace-onboarding-list,
   .workspace-report-list,
   .workspace-source-grid,
   .claim-columns {

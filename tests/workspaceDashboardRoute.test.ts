@@ -230,6 +230,25 @@ describe("workspace dashboard API route", () => {
       paperNotes: 1,
       shareLinks: 1
     });
+    expect(payload.dashboard.onboarding).toMatchObject({
+      completed: 7,
+      total: 7,
+      percent: 100,
+      nextStepId: null
+    });
+    expect(
+      payload.dashboard.onboarding.steps.map(
+        (step: { id: string; completed: boolean }) => [step.id, step.completed]
+      )
+    ).toEqual([
+      ["create_brief", true],
+      ["upload_document", true],
+      ["save_project", true],
+      ["create_collection", true],
+      ["add_paper_note", true],
+      ["share_brief", true],
+      ["export_brief", true]
+    ]);
     expect(
       payload.dashboard.recentResearchProjects.map((item: { title: string }) => item.title)
     ).toEqual(["Session A project"]);
@@ -455,6 +474,25 @@ describe("workspace dashboard API route", () => {
       paperNotes: 1,
       shareLinks: 1
     });
+    expect(payload.dashboard.onboarding).toMatchObject({
+      completed: 7,
+      total: 7,
+      percent: 100,
+      nextStepId: null
+    });
+    expect(
+      payload.dashboard.onboarding.steps.map(
+        (step: { id: string; completed: boolean }) => [step.id, step.completed]
+      )
+    ).toEqual([
+      ["create_brief", true],
+      ["upload_document", true],
+      ["save_project", true],
+      ["create_collection", true],
+      ["add_paper_note", true],
+      ["share_brief", true],
+      ["export_brief", true]
+    ]);
     expect(
       payload.dashboard.recentResearchProjects.map((item: { title: string }) => item.title)
     ).toEqual(["Workspace A project"]);

@@ -69,6 +69,8 @@ The app supports:
   /api/workspace/share-links`, brief access validation, and dashboard UI
 - export history with session/user/workspace ownership, successful Markdown
   export recording, `GET /api/workspace/export-history`, and dashboard UI
+- simple workspace onboarding checklist with progress derived from scoped
+  briefs, documents, projects, collections, notes, share links, and exports
 - deployment smoke coverage for source health, preflight, documents, compare, claim extraction, claim comparison, and AI-backed brief flow when not skipped
 - staging readiness preflight through `npm run staging:check`
 
@@ -424,6 +426,12 @@ First remediation started on 2026-06-02:
   tests/exportHistoryRoute.test.ts tests/workspaceDashboardRoute.test.ts
   tests/identitySchema.test.ts tests/briefAccessRoute.test.ts` and
   `npx prisma validate`.
+- Added simple workspace onboarding: `GET /api/workspace/dashboard` now returns
+  onboarding progress derived from scoped resources, and `/workspace` shows a
+  Getting started checklist for first brief, document, project, collection,
+  paper note, share link, and export. Verified with `npm test --
+  tests/workspaceOnboarding.test.ts tests/workspaceDashboardRoute.test.ts` and
+  `npm run lint`.
 
 ## Next Recommended Step
 
@@ -442,4 +450,4 @@ Next highest-value work:
    failures.
 5. Add a durable DB-backed or external queue adapter for Compare jobs if heavier
    Compare workloads become common.
-6. Add the public `/share/[token]` landing route, then onboarding for new users.
+6. Add the public `/share/[token]` landing route, then paper timeline or topic clustering.

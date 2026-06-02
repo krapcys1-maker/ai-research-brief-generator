@@ -17,6 +17,10 @@ import type { ExportHistoryListItem } from "@/lib/workspace/exportHistoryTypes";
 import { paperNoteFilterFromAccess } from "@/lib/workspace/paperNoteAccess";
 import { getPaperNoteRepository } from "@/lib/workspace/paperNoteRepository";
 import type { PaperNoteListItem } from "@/lib/workspace/paperNoteTypes";
+import {
+  getWorkspaceOnboarding,
+  type WorkspaceOnboarding
+} from "@/lib/workspace/onboarding";
 import { researchProjectFilterFromAccess } from "@/lib/workspace/projectAccess";
 import { getResearchProjectRepository } from "@/lib/workspace/projectRepository";
 import type { ResearchProjectListItem } from "@/lib/workspace/projectTypes";
@@ -38,6 +42,7 @@ export type WorkspaceDashboard = {
   documentScope: DocumentAccessContext["scope"];
   ownerId: string | null;
   workspaceId: string | null;
+  onboarding: WorkspaceOnboarding;
   totals: {
     briefs: number;
     documents: number;
@@ -160,25 +165,28 @@ export async function getWorkspaceDashboard(input: {
     )
   ]);
 
+  const totals = {
+    briefs: briefs.length,
+    documents: documents.length,
+    parsedDocuments: documents.filter((document) => document.status === "parsed")
+      .length,
+    compareReports: compareReports.length,
+    researchProjects: researchProjects.length,
+    briefCollections: briefCollections.length,
+    documentCollections: documentCollections.length,
+    paperNotes: paperNotes.length,
+    shareLinks: shareLinks.length,
+    exportHistory: exportHistory.length
+  };
+
   return {
     scope: combinedScope(input.briefAccess, input.documentAccess),
     briefScope: input.briefAccess.scope,
     documentScope: input.documentAccess.scope,
     ownerId: input.briefAccess.ownerId ?? input.documentAccess.ownerId,
     workspaceId: input.briefAccess.workspaceId ?? input.documentAccess.workspaceId,
-    totals: {
-      briefs: briefs.length,
-      documents: documents.length,
-      parsedDocuments: documents.filter((document) => document.status === "parsed")
-        .length,
-      compareReports: compareReports.length,
-      researchProjects: researchProjects.length,
-      briefCollections: briefCollections.length,
-      documentCollections: documentCollections.length,
-      paperNotes: paperNotes.length,
-      shareLinks: shareLinks.length,
-      exportHistory: exportHistory.length
-    },
+    onboarding: getWorkspaceOnboarding(totals),
+    totals,
     recentResearchProjects: recent(researchProjects),
     recentBriefCollections: recent(briefCollections),
     recentDocumentCollections: recent(documentCollections),

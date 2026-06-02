@@ -85,6 +85,7 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 - [x] Add paper notes/comments in the workspace dashboard.
 - [x] Add share links with visibility controls in the workspace dashboard.
 - [x] Add export history in the workspace dashboard.
+- [x] Add a simple workspace onboarding checklist.
 - [ ] Add paper timeline.
 - [ ] Add topic clustering.
 

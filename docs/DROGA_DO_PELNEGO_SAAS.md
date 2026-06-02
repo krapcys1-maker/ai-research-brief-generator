@@ -149,6 +149,8 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
   memory/PostgreSQL, API i UI w dashboardzie.
 - [x] Export history: `ExportHistory` zapisuje udane eksporty Markdown z
   ownership, formatem, plikiem i lista w dashboardzie workspace.
+- [x] Prosty onboarding workspace: dashboard pokazuje checklistę startowa i
+  postep liczony z realnych zasobow w aktualnym session/user/workspace scope.
 
 ## Najwieksze braki
 
@@ -454,7 +456,13 @@ Status: **czesciowo zrobione**.
   -- tests/exportHistoryRepository.test.ts tests/exportHistoryRoute.test.ts
   tests/workspaceDashboardRoute.test.ts tests/identitySchema.test.ts
   tests/briefAccessRoute.test.ts`, `npx prisma validate`.
-- [ ] Prosty onboarding dla nowego uzytkownika.
+- [x] Prosty onboarding dla nowego uzytkownika.
+  Zweryfikowano 2026-06-02: dodano `getWorkspaceOnboarding`, pole
+  `dashboard.onboarding` w `GET /api/workspace/dashboard`, panel Getting
+  started w `/workspace` oraz responsywne style; checklist liczy kroki:
+  brief, dokument, projekt, kolekcja, notatka papieru, share link i eksport;
+  `npm test -- tests/workspaceOnboarding.test.ts
+  tests/workspaceDashboardRoute.test.ts`, `npm run lint`.
 
 Kryterium odbioru P4:
 

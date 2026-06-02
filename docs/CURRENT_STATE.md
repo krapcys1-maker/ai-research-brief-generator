@@ -135,6 +135,9 @@ paste/upload text -> extract candidate claims -> user selects claims -> academic
     or the private document session fallback.
   - The UI shows workspace/session counters and recent links back into briefs,
     documents, and Compare workflows.
+  - The dashboard includes a simple Getting started checklist that derives
+    onboarding progress from actual scoped resources: first brief, document,
+    project, collection, paper note, share link, and export.
 - Saved topics / research projects:
   - `ResearchProject` stores title, standing query, optional description,
     preferred sources, and session/user/workspace ownership metadata.
@@ -340,8 +343,8 @@ ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true
   the current prototype.
 - `/workspace` is a scoped product dashboard over existing resources, saved
   research projects, saved brief collections, document collections, and paper
-  notes/comments plus share links and export history. It is not yet a full
-  project management layer: onboarding remains future work.
+  notes/comments plus share links, export history, and a simple onboarding
+  checklist. It is not yet a full project management layer.
 - Share links are stored and scoped, but the public `/share/[token]` landing
   route is not implemented yet; current UI exposes the token path for the next
   public-access slice.
@@ -368,6 +371,7 @@ npm test -- tests/shareLinksRoute.test.ts
 npm test -- tests/shareLinkRepository.test.ts
 npm test -- tests/exportHistoryRoute.test.ts
 npm test -- tests/exportHistoryRepository.test.ts
+npm test -- tests/workspaceOnboarding.test.ts
 npm run worker:fulltext
 npm run lint
 npm run build
