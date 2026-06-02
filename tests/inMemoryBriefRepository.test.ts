@@ -26,7 +26,11 @@ describe("inMemoryBriefRepository", () => {
         query: brief.query,
         generatedAt: brief.generatedAt,
         outputLanguage: brief.outputLanguage,
-        createdAt: saved.createdAt
+        createdAt: saved.createdAt,
+        ownerId: null,
+        workspaceId: null,
+        createdByUserId: null,
+        visibility: "private"
       }
     ]);
 
@@ -61,5 +65,48 @@ describe("inMemoryBriefRepository", () => {
     expect(new Set(publicSummaries.map((item) => item.id))).toEqual(
       new Set(["brief_session_two", "brief_session_one"])
     );
+  });
+
+  it("stores and filters app-native ownership metadata", async () => {
+    const firstBrief = createBrief({ id: "brief_workspace_one" });
+    const secondBrief = createBrief({ id: "brief_workspace_two" });
+    const paper = createPaper();
+
+    const saved = await inMemoryBriefRepository.saveWithPapers({
+      brief: firstBrief,
+      papers: [paper],
+      ownerId: "user_owner",
+      workspaceId: "workspace_a",
+      createdByUserId: "user_creator",
+      visibility: "workspace"
+    });
+    await inMemoryBriefRepository.saveWithPapers({
+      brief: secondBrief,
+      papers: [paper],
+      ownerId: "user_owner",
+      workspaceId: "workspace_b",
+      createdByUserId: "user_creator",
+      visibility: "private"
+    });
+
+    expect(saved.ownerId).toBe("user_owner");
+    expect(saved.workspaceId).toBe("workspace_a");
+    expect(saved.createdByUserId).toBe("user_creator");
+    expect(saved.visibility).toBe("workspace");
+
+    const workspaceSummaries = await inMemoryBriefRepository.listSummaries({
+      workspaceId: "workspace_a",
+      visibility: "workspace"
+    });
+
+    expect(workspaceSummaries).toEqual([
+      expect.objectContaining({
+        id: "brief_workspace_one",
+        ownerId: "user_owner",
+        workspaceId: "workspace_a",
+        createdByUserId: "user_creator",
+        visibility: "workspace"
+      })
+    ]);
   });
 });

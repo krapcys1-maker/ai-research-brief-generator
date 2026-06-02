@@ -1,5 +1,6 @@
 import type { BriefRequest } from "@/lib/ai/schemas";
 import type { ResearchQualityGateResult } from "@/lib/pipeline/qualityGate";
+import type { BriefOwnership, BriefVisibility } from "@/lib/storage/types";
 
 export type BriefJobStatus =
   | "queued"
@@ -18,7 +19,7 @@ export type BriefJobStage =
   | "completed"
   | "failed";
 
-export type BriefJob = {
+export type BriefJob = BriefOwnership & {
   id: string;
   status: BriefJobStatus;
   stage?: BriefJobStage;
@@ -28,7 +29,7 @@ export type BriefJob = {
   attemptCount: number;
   maxAttempts: number;
   lockedAt?: string;
-  ownerSessionId?: string | null;
+  visibility: BriefVisibility;
   request: BriefRequest;
   briefId?: string;
   error?: string;

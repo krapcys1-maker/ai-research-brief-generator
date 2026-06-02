@@ -211,12 +211,18 @@ First remediation started on 2026-06-02:
   `WorkspaceRole`, `User`, `Workspace`, and `WorkspaceMember`, plus migration
   `20260602193000_add_app_identity`. The runtime login/session layer and
   user/workspace ownership for briefs/jobs remain the next implementation work.
+- Added user/workspace ownership fields to generated briefs and brief generation
+  jobs: `ownerId`, `workspaceId`, `createdByUserId`, and `visibility`, plus
+  migration `20260602195000_add_brief_workspace_ownership`. In-memory and
+  Prisma repositories now store/filter these fields while preserving session
+  ownership as the demo fallback.
 
 ## Next Recommended Step
 
 Next highest-value work:
 
-1. Add user/workspace ownership to `Brief` and `BriefGenerationJob`.
+1. Extend route access checks from session-only to user/workspace-aware for
+   brief list/detail, export, Q&A, and job polling.
 2. Add app-native login/session runtime, account UI, role enforcement, and
    audit trail.
 3. Add real OpenAI-compatible embedding provider credentials in deployment,

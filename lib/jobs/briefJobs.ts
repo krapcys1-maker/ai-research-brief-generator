@@ -9,10 +9,9 @@ import {
 } from "@/lib/jobs/repository";
 import type { BriefJob, BriefJobStage } from "@/lib/jobs/types";
 import { getPersistenceStatus } from "@/lib/storage/repository";
+import type { BriefOwnership } from "@/lib/storage/types";
 
-export type CreateBriefJobOptions = {
-  ownerSessionId?: string | null;
-};
+export type CreateBriefJobOptions = BriefOwnership;
 
 function numberEnv(name: string, fallback: number) {
   const raw = process.env[name];
@@ -151,6 +150,10 @@ async function runClaimedBriefJob(job: BriefJob) {
     const record = await withJobTimeout(
       createBrief(job.request, {}, {
         ownerSessionId: job.ownerSessionId ?? null,
+        ownerId: job.ownerId ?? null,
+        workspaceId: job.workspaceId ?? null,
+        createdByUserId: job.createdByUserId ?? null,
+        visibility: job.visibility,
         onStage: (stage) => updateJobStage(job.id, stage)
       })
     );
@@ -225,6 +228,10 @@ export async function createBriefJob(
     attemptCount: 0,
     maxAttempts: getMaxAttempts(),
     ownerSessionId: options.ownerSessionId ?? null,
+    ownerId: options.ownerId ?? null,
+    workspaceId: options.workspaceId ?? null,
+    createdByUserId: options.createdByUserId ?? null,
+    visibility: options.visibility ?? "private",
     request
   };
 

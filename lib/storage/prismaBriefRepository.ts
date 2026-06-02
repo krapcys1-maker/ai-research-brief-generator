@@ -5,6 +5,7 @@ import { prisma } from "@/lib/storage/prismaClient";
 import type {
   BriefListFilter,
   BriefListItem,
+  BriefVisibility,
   BriefRepository,
   SaveBriefInput,
   StoredBrief
@@ -21,6 +22,48 @@ function parseDate(value: string | null) {
 
 function toIsoString(value: Date | string) {
   return value instanceof Date ? value.toISOString() : value;
+}
+
+function visibilityToPrisma(value: BriefVisibility | undefined) {
+  if (value === "workspace") {
+    return "WORKSPACE" as const;
+  }
+
+  if (value === "public") {
+    return "PUBLIC" as const;
+  }
+
+  return "PRIVATE" as const;
+}
+
+function visibilityFromPrisma(value: string): BriefVisibility {
+  if (value === "WORKSPACE") {
+    return "workspace";
+  }
+
+  if (value === "PUBLIC") {
+    return "public";
+  }
+
+  return "private";
+}
+
+function briefWhereFromFilter(filter?: BriefListFilter) {
+  return {
+    ...("ownerSessionId" in (filter ?? {})
+      ? { ownerSessionId: filter?.ownerSessionId ?? null }
+      : {}),
+    ...("ownerId" in (filter ?? {}) ? { ownerId: filter?.ownerId ?? null } : {}),
+    ...("workspaceId" in (filter ?? {})
+      ? { workspaceId: filter?.workspaceId ?? null }
+      : {}),
+    ...("createdByUserId" in (filter ?? {})
+      ? { createdByUserId: filter?.createdByUserId ?? null }
+      : {}),
+    ...("visibility" in (filter ?? {})
+      ? { visibility: visibilityToPrisma(filter?.visibility) }
+      : {})
+  };
 }
 
 function paperToPrismaInput(paper: NormalizedPaper) {
@@ -142,6 +185,10 @@ function paperFromPrisma(record: {
 function storedBriefFromPrisma(record: {
   briefJson: Prisma.JsonValue;
   ownerSessionId: string | null;
+  ownerId: string | null;
+  workspaceId: string | null;
+  createdByUserId: string | null;
+  visibility: string;
   createdAt: Date;
   papers: {
     paper: Parameters<typeof paperFromPrisma>[0];
@@ -151,7 +198,11 @@ function storedBriefFromPrisma(record: {
     brief: ResearchBriefSchema.parse(record.briefJson),
     papers: record.papers.map((item) => paperFromPrisma(item.paper)),
     createdAt: record.createdAt.toISOString(),
-    ownerSessionId: record.ownerSessionId
+    ownerSessionId: record.ownerSessionId,
+    ownerId: record.ownerId,
+    workspaceId: record.workspaceId,
+    createdByUserId: record.createdByUserId,
+    visibility: visibilityFromPrisma(record.visibility)
   };
 }
 
@@ -162,6 +213,10 @@ function summaryFromPrisma(record: {
   generatedAt: Date;
   outputLanguage: string;
   createdAt: Date;
+  ownerId: string | null;
+  workspaceId: string | null;
+  createdByUserId: string | null;
+  visibility: string;
 }): BriefListItem {
   return {
     id: record.id,
@@ -169,7 +224,11 @@ function summaryFromPrisma(record: {
     query: record.query,
     generatedAt: toIsoString(record.generatedAt),
     outputLanguage: record.outputLanguage,
-    createdAt: toIsoString(record.createdAt)
+    createdAt: toIsoString(record.createdAt),
+    ownerId: record.ownerId,
+    workspaceId: record.workspaceId,
+    createdByUserId: record.createdByUserId,
+    visibility: visibilityFromPrisma(record.visibility)
   };
 }
 
@@ -183,6 +242,10 @@ export const prismaBriefRepository: BriefRepository = {
         create: {
           id: input.brief.id,
           ownerSessionId: input.ownerSessionId ?? null,
+          ownerId: input.ownerId ?? null,
+          workspaceId: input.workspaceId ?? null,
+          createdByUserId: input.createdByUserId ?? null,
+          visibility: visibilityToPrisma(input.visibility),
           query: input.brief.query,
           outputLanguage: input.brief.outputLanguage,
           generatedAt: new Date(input.brief.generatedAt),
@@ -196,6 +259,10 @@ export const prismaBriefRepository: BriefRepository = {
         update: {
           query: input.brief.query,
           ownerSessionId: input.ownerSessionId ?? null,
+          ownerId: input.ownerId ?? null,
+          workspaceId: input.workspaceId ?? null,
+          createdByUserId: input.createdByUserId ?? null,
+          visibility: visibilityToPrisma(input.visibility),
           outputLanguage: input.brief.outputLanguage,
           generatedAt: new Date(input.brief.generatedAt),
           title: input.brief.title,
@@ -288,10 +355,7 @@ export const prismaBriefRepository: BriefRepository = {
 
   async list(filter?: BriefListFilter) {
     const records = await prisma.brief.findMany({
-      where:
-        "ownerSessionId" in (filter ?? {})
-          ? { ownerSessionId: filter?.ownerSessionId ?? null }
-          : undefined,
+      where: filter ? briefWhereFromFilter(filter) : undefined,
       orderBy: { createdAt: "desc" },
       include: {
         papers: {
@@ -320,10 +384,7 @@ export const prismaBriefRepository: BriefRepository = {
 
   async listSummaries(filter?: BriefListFilter) {
     const records = await prisma.brief.findMany({
-      where:
-        "ownerSessionId" in (filter ?? {})
-          ? { ownerSessionId: filter?.ownerSessionId ?? null }
-          : undefined,
+      where: filter ? briefWhereFromFilter(filter) : undefined,
       orderBy: { createdAt: "desc" },
       select: {
         id: true,
@@ -331,7 +392,11 @@ export const prismaBriefRepository: BriefRepository = {
         query: true,
         generatedAt: true,
         outputLanguage: true,
-        createdAt: true
+        createdAt: true,
+        ownerId: true,
+        workspaceId: true,
+        createdByUserId: true,
+        visibility: true
       }
     });
 

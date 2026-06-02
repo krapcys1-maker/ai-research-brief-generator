@@ -191,6 +191,42 @@ describe("createBrief", () => {
     ).toEqual([]);
   });
 
+  it("stores generated briefs with app-native ownership metadata", async () => {
+    const record = await createBrief(
+      {
+        query: "retrieval augmented generation",
+        maxPapers: 5,
+        sources: ["mock"]
+      },
+      {
+        synthesize: async (input) => createSyntheticBrief(input)
+      },
+      {
+        ownerId: "user_owner",
+        workspaceId: "workspace_a",
+        createdByUserId: "user_creator",
+        visibility: "workspace"
+      }
+    );
+
+    expect(record.ownerId).toBe("user_owner");
+    expect(record.workspaceId).toBe("workspace_a");
+    expect(record.createdByUserId).toBe("user_creator");
+    expect(record.visibility).toBe("workspace");
+    expect(
+      await inMemoryBriefRepository.listSummaries({
+        workspaceId: "workspace_a",
+        visibility: "workspace"
+      })
+    ).toEqual([
+      expect.objectContaining({
+        id: record.brief.id,
+        workspaceId: "workspace_a",
+        visibility: "workspace"
+      })
+    ]);
+  });
+
   it("stores per-source query diagnostics from source search", async () => {
     const record = await createBrief(
       {

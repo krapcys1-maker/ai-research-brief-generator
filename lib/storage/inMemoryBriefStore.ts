@@ -22,7 +22,11 @@ function toSummary(record: StoredBrief) {
     query: record.brief.query,
     generatedAt: record.brief.generatedAt,
     outputLanguage: record.brief.outputLanguage,
-    createdAt: record.createdAt
+    createdAt: record.createdAt,
+    ownerId: record.ownerId,
+    workspaceId: record.workspaceId,
+    createdByUserId: record.createdByUserId,
+    visibility: record.visibility
   };
 }
 
@@ -31,6 +35,10 @@ export const inMemoryBriefRepository: BriefRepository = {
     const record: StoredBrief = {
       ...input,
       ownerSessionId: input.ownerSessionId ?? null,
+      ownerId: input.ownerId ?? null,
+      workspaceId: input.workspaceId ?? null,
+      createdByUserId: input.createdByUserId ?? null,
+      visibility: input.visibility ?? "private",
       createdAt: new Date().toISOString()
     };
 
@@ -47,6 +55,26 @@ export const inMemoryBriefRepository: BriefRepository = {
       .filter((record) =>
         "ownerSessionId" in (filter ?? {})
           ? (record.ownerSessionId ?? null) === filter?.ownerSessionId
+          : true
+      )
+      .filter((record) =>
+        "ownerId" in (filter ?? {})
+          ? (record.ownerId ?? null) === filter?.ownerId
+          : true
+      )
+      .filter((record) =>
+        "workspaceId" in (filter ?? {})
+          ? (record.workspaceId ?? null) === filter?.workspaceId
+          : true
+      )
+      .filter((record) =>
+        "createdByUserId" in (filter ?? {})
+          ? (record.createdByUserId ?? null) === filter?.createdByUserId
+          : true
+      )
+      .filter((record) =>
+        "visibility" in (filter ?? {})
+          ? record.visibility === filter?.visibility
           : true
       )
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));

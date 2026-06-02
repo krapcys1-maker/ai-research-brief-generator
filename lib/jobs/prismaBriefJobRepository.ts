@@ -8,6 +8,7 @@ import type {
 } from "@/lib/jobs/types";
 import { prisma } from "@/lib/storage/prismaClient";
 import type { ResearchQualityGateResult } from "@/lib/pipeline/qualityGate";
+import type { BriefVisibility } from "@/lib/storage/types";
 
 function asJson(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
@@ -36,6 +37,30 @@ function isBriefJobStage(value: string | null): value is BriefJobStage {
   );
 }
 
+function visibilityToPrisma(value: BriefVisibility | undefined) {
+  if (value === "workspace") {
+    return "WORKSPACE" as const;
+  }
+
+  if (value === "public") {
+    return "PUBLIC" as const;
+  }
+
+  return "PRIVATE" as const;
+}
+
+function visibilityFromPrisma(value: string): BriefVisibility {
+  if (value === "WORKSPACE") {
+    return "workspace";
+  }
+
+  if (value === "PUBLIC") {
+    return "public";
+  }
+
+  return "private";
+}
+
 function parseQualityGate(value: Prisma.JsonValue | null) {
   if (!value) {
     return undefined;
@@ -59,6 +84,10 @@ function jobFromPrisma(record: {
   stage: string | null;
   stageStartedAt: Date | null;
   ownerSessionId: string | null;
+  ownerId: string | null;
+  workspaceId: string | null;
+  createdByUserId: string | null;
+  visibility: string;
   requestJson: Prisma.JsonValue;
   briefId: string | null;
   error: string | null;
@@ -77,6 +106,10 @@ function jobFromPrisma(record: {
     stage: isBriefJobStage(record.stage) ? record.stage : undefined,
     stageStartedAt: record.stageStartedAt?.toISOString(),
     ownerSessionId: record.ownerSessionId,
+    ownerId: record.ownerId,
+    workspaceId: record.workspaceId,
+    createdByUserId: record.createdByUserId,
+    visibility: visibilityFromPrisma(record.visibility),
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
     attemptCount: record.attemptCount,
@@ -100,6 +133,10 @@ export const prismaBriefJobRepository: BriefJobRepository = {
           ? new Date(job.stageStartedAt)
           : undefined,
         ownerSessionId: job.ownerSessionId ?? null,
+        ownerId: job.ownerId ?? null,
+        workspaceId: job.workspaceId ?? null,
+        createdByUserId: job.createdByUserId ?? null,
+        visibility: visibilityToPrisma(job.visibility),
         requestJson: asJson(job.request),
         briefId: job.briefId,
         error: job.error,
@@ -135,6 +172,15 @@ export const prismaBriefJobRepository: BriefJobRepository = {
             : undefined,
         ownerSessionId:
           "ownerSessionId" in patch ? (patch.ownerSessionId ?? null) : undefined,
+        ownerId: "ownerId" in patch ? (patch.ownerId ?? null) : undefined,
+        workspaceId:
+          "workspaceId" in patch ? (patch.workspaceId ?? null) : undefined,
+        createdByUserId:
+          "createdByUserId" in patch
+            ? (patch.createdByUserId ?? null)
+            : undefined,
+        visibility:
+          "visibility" in patch ? visibilityToPrisma(patch.visibility) : undefined,
         requestJson: patch.request ? asJson(patch.request) : undefined,
         briefId: "briefId" in patch ? (patch.briefId ?? null) : undefined,
         error: "error" in patch ? (patch.error ?? null) : undefined,

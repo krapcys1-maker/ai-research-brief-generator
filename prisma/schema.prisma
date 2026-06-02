@@ -14,6 +14,12 @@ enum WorkspaceRole {
   VIEWER @map("viewer")
 }
 
+enum BriefVisibility {
+  PRIVATE   @map("private")
+  WORKSPACE @map("workspace")
+  PUBLIC    @map("public")
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -23,6 +29,10 @@ model User {
 
   ownedWorkspaces Workspace[]        @relation("WorkspaceOwner")
   memberships     WorkspaceMember[]
+  ownedBriefs      Brief[]            @relation("BriefOwner")
+  createdBriefs    Brief[]            @relation("BriefCreator")
+  ownedBriefJobs   BriefGenerationJob[] @relation("BriefJobOwner")
+  createdBriefJobs BriefGenerationJob[] @relation("BriefJobCreator")
 }
 
 model Workspace {
@@ -34,6 +44,8 @@ model Workspace {
 
   owner   User              @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Restrict)
   members WorkspaceMember[]
+  briefs  Brief[]
+  briefJobs BriefGenerationJob[]
 
   @@index([ownerId])
 }
@@ -58,6 +70,10 @@ model WorkspaceMember {
 model Brief {
   id             String   @id
   ownerSessionId String?
+  ownerId        String?
+  workspaceId    String?
+  createdByUserId String?
+  visibility     BriefVisibility @default(PRIVATE)
   query          String
   outputLanguage String
   generatedAt    DateTime
@@ -72,8 +88,15 @@ model Brief {
   updatedAt DateTime @updatedAt
 
   papers BriefPaper[]
+  owner  User?      @relation("BriefOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  createdBy User?   @relation("BriefCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
 
   @@index([ownerSessionId])
+  @@index([ownerId])
+  @@index([workspaceId])
+  @@index([createdByUserId])
+  @@index([visibility])
 }
 
 model BriefGenerationJob {
@@ -82,6 +105,10 @@ model BriefGenerationJob {
   stage           String?
   stageStartedAt  DateTime?
   ownerSessionId  String?
+  ownerId         String?
+  workspaceId     String?
+  createdByUserId String?
+  visibility      BriefVisibility @default(PRIVATE)
   requestJson     Json
   briefId         String?
   error           String?
@@ -92,8 +119,16 @@ model BriefGenerationJob {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  owner     User?      @relation("BriefJobOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  createdBy User?      @relation("BriefJobCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+
   @@index([status])
   @@index([ownerSessionId])
+  @@index([ownerId])
+  @@index([workspaceId])
+  @@index([createdByUserId])
+  @@index([visibility])
   @@index([lockedAt])
   @@index([createdAt])
 }

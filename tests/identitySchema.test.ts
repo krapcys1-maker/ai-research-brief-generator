@@ -36,3 +36,36 @@ describe("app-native identity schema", () => {
     expect(migration).toContain("WorkspaceMember_workspaceId_userId_key");
   });
 });
+
+describe("brief workspace ownership schema", () => {
+  const ownershipMigration = readFileSync(
+    join(
+      process.cwd(),
+      "prisma/migrations/20260602195000_add_brief_workspace_ownership/migration.sql"
+    ),
+    "utf8"
+  );
+
+  it("adds visibility and ownership fields to briefs and jobs", () => {
+    expect(schema).toContain("enum BriefVisibility");
+    expect(schema).toContain("PRIVATE   @map(\"private\")");
+    expect(schema).toContain("WORKSPACE @map(\"workspace\")");
+    expect(schema).toContain("PUBLIC    @map(\"public\")");
+    expect(schema).toContain("ownerId        String?");
+    expect(schema).toContain("workspaceId    String?");
+    expect(schema).toContain("createdByUserId String?");
+    expect(schema).toContain("visibility     BriefVisibility @default(PRIVATE)");
+  });
+
+  it("adds a migration for brief and job ownership columns", () => {
+    expect(ownershipMigration).toContain("CREATE TYPE \"BriefVisibility\"");
+    expect(ownershipMigration).toContain(
+      "ALTER TABLE \"Brief\" ADD COLUMN \"ownerId\" TEXT"
+    );
+    expect(ownershipMigration).toContain(
+      "ALTER TABLE \"BriefGenerationJob\" ADD COLUMN \"workspaceId\" TEXT"
+    );
+    expect(ownershipMigration).toContain("Brief_workspaceId_fkey");
+    expect(ownershipMigration).toContain("BriefGenerationJob_createdByUserId_fkey");
+  });
+});

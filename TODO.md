@@ -28,7 +28,8 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 - [x] Decide and document the official identity model for full public SaaS.
 - [x] Add app-native `User`, `Workspace`, `WorkspaceMember`, role enum, and Prisma migration.
 - [ ] Add app-native login/session runtime, account UI, role enforcement, and audit trail.
-- [ ] Add user/workspace ownership to briefs, brief generation jobs, exports, brief Q&A, and saved compare reports.
+- [x] Add user/workspace ownership fields to briefs and brief generation jobs.
+- [ ] Enforce user/workspace ownership for brief list/detail, exports, brief Q&A, job polling, and saved compare reports.
 - [x] Protect brief generation job polling by owner/session access.
 - [x] Add retention/deletion policy copy for uploaded documents.
 - [x] Add a clear production privacy note before public deployment.

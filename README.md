@@ -49,6 +49,8 @@ The app now has three product modes:
 - Prisma identity foundation for app-native SaaS accounts: users, workspaces,
   workspace members, and owner/admin/member/viewer roles. Runtime login/session
   UI is still future work.
+- Briefs and brief generation jobs already include app-native ownership fields:
+  `ownerId`, `workspaceId`, `createdByUserId`, and `visibility`.
 
 ## Environment
 

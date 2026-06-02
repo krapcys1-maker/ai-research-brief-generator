@@ -127,6 +127,40 @@ describe("brief jobs", () => {
     );
   });
 
+  it("carries app-native ownership metadata from jobs to brief persistence", async () => {
+    process.env.BRIEF_JOB_AUTORUN = "false";
+    createBriefMock.mockResolvedValueOnce({
+      brief: createBriefFixture({ id: "brief_workspace_done" }),
+      papers: [],
+      createdAt: "2026-01-01T00:00:00.000Z"
+    });
+
+    const job = await createBriefJob(request, {
+      ownerId: "user_owner",
+      workspaceId: "workspace_a",
+      createdByUserId: "user_creator",
+      visibility: "workspace"
+    });
+    await runNextBriefJob();
+
+    expect(job).toMatchObject({
+      ownerId: "user_owner",
+      workspaceId: "workspace_a",
+      createdByUserId: "user_creator",
+      visibility: "workspace"
+    });
+    expect(createBriefMock).toHaveBeenCalledWith(
+      request,
+      {},
+      expect.objectContaining({
+        ownerId: "user_owner",
+        workspaceId: "workspace_a",
+        createdByUserId: "user_creator",
+        visibility: "workspace"
+      })
+    );
+  });
+
   it("tracks the current generation stage for polling clients", async () => {
     let finishBrief: (
       value: Awaited<ReturnType<typeof mockedCreateBrief>>

@@ -8,6 +8,7 @@ import { ResearchQualityGateError } from "@/lib/pipeline/qualityGate";
 import { preflightBrief } from "@/lib/pipeline/preflightBrief";
 import { searchAllSources } from "@/lib/sources";
 import { getBriefRepository } from "@/lib/storage/repository";
+import type { BriefOwnership } from "@/lib/storage/types";
 import type { NormalizedPaper } from "@/lib/sources/types";
 
 export type CreateBriefDependencies = {
@@ -16,8 +17,7 @@ export type CreateBriefDependencies = {
   ingestFullText?: (papers: NormalizedPaper[]) => Promise<NormalizedPaper[]>;
 };
 
-export type CreateBriefOptions = {
-  ownerSessionId?: string | null;
+export type CreateBriefOptions = BriefOwnership & {
   onStage?: (stage: CreateBriefStage) => void | Promise<void>;
 };
 
@@ -129,7 +129,11 @@ export async function createBrief(
   const record = await briefRepository.saveWithPapers({
     brief,
     papers: synthesisPapers,
-    ownerSessionId: options.ownerSessionId ?? null
+    ownerSessionId: options.ownerSessionId ?? null,
+    ownerId: options.ownerId ?? null,
+    workspaceId: options.workspaceId ?? null,
+    createdByUserId: options.createdByUserId ?? null,
+    visibility: options.visibility ?? "private"
   });
 
   await options.onStage?.("completed");

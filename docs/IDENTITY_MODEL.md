@@ -68,6 +68,11 @@ WorkspaceMember
 
 After that, private product records should gain ownership fields:
 
+Status: implemented for `Brief` and `BriefGenerationJob` on 2026-06-02 through
+`prisma/migrations/20260602195000_add_brief_workspace_ownership/migration.sql`.
+`UserDocument` already stores `ownerId` and `workspaceId`; `uploadedByUserId`
+and saved `CompareReport` are still future work.
+
 ```text
 Brief
   ownerId
@@ -133,8 +138,8 @@ Not allowed for public SaaS:
 ## Immediate Implementation Consequences
 
 1. [x] Add `User`, `Workspace`, and `WorkspaceMember` to Prisma.
-2. [ ] Add workspace/user ownership to `Brief` and `BriefGenerationJob`.
-3. [ ] Keep existing session ownership as demo fallback or migration bridge.
+2. [x] Add workspace/user ownership to `Brief` and `BriefGenerationJob`.
+3. [x] Keep existing session ownership as demo fallback or migration bridge.
 4. [ ] Extend route access checks from session-only to user/workspace-aware.
 5. [ ] Move rate limiting from per-IP to per-user/per-workspace when identity exists.
 6. [ ] Add cross-user and cross-workspace tests for brief list, brief detail,

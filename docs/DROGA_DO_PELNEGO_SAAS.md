@@ -101,6 +101,10 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
 - [x] Prisma identity foundation: `User`, `Workspace`, `WorkspaceMember` i
   role `owner/admin/member/viewer` z migracja
   `20260602193000_add_app_identity`.
+- [x] Brief/job ownership foundation: `ownerId`, `workspaceId`,
+  `createdByUserId`, `visibility` w `Brief` i `BriefGenerationJob`, migracja
+  `20260602195000_add_brief_workspace_ownership`, plus memory/Prisma repo
+  storage dla tych pol.
 - [x] AI synthesis diagnostics i embedding health w `/api/source-cache`.
 - [x] Benchmarki: retrieval, source-quality, claim-check.
 - [x] Deployment smoke obejmuje source health, preflight, documents, compare,
@@ -113,8 +117,8 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
    logowania, sesji uzytkownika, UI kont ani enforcementu rol.
 
 2. **Briefy i joby nie sa jeszcze workspace-scoped.**
-   Brief history jest sesyjna. To dobre dla prywatnego demo, ale nie dla
-   publicznego SaaS.
+   Pola ownership sa juz w schemacie i repozytoriach. Brakuje jeszcze runtime
+   access layer, ktory wymusi user/workspace/role przy list/detail/export/Q&A.
 
 3. **Brakuje user/workspace-aware access layer.**
    Endpointy briefow i jobow maja juz session ownership, a dokumenty maja
@@ -168,8 +172,12 @@ Status: **najwyzszy priorytet**.
   Zweryfikowano 2026-06-02: `npx prisma validate` z tymczasowym
   `DATABASE_URL=postgresql://...`, `npm test -- tests/identitySchema.test.ts`,
   `npm test`, `npm run lint`, `npm run build`.
-- [ ] Dodac `ownerId`, `workspaceId`, `createdByUserId`, `visibility` do
+- [x] Dodac `ownerId`, `workspaceId`, `createdByUserId`, `visibility` do
   briefow i brief generation jobs.
+  Zweryfikowano 2026-06-02: `npx prisma validate`, `npm test --
+  tests/inMemoryBriefRepository.test.ts tests/briefJobs.test.ts
+  tests/createBrief.test.ts tests/identitySchema.test.ts`, `npm test`,
+  `npm run lint`, `npm run build`.
 - [ ] Przeniesc rate limit z per-IP na per-user/per-workspace tam, gdzie jest
   dostepna tozsamosc.
 - [ ] Dodac testy cross-user/cross-workspace dla brief list, detail, export,
@@ -342,7 +350,7 @@ Kryterium odbioru P6:
    - akceptowalne dla B2B/private deployment: trusted auth gateway.
 3. [x] Dodac schemat `User`, `Workspace`, `WorkspaceMember` albo oficjalny dokument
    kontraktu trusted auth gateway.
-4. [ ] Rozszerzyc `Brief` i `BriefGenerationJob` o workspace/user ownership.
+4. [x] Rozszerzyc `Brief` i `BriefGenerationJob` o workspace/user ownership.
 5. [ ] Dodac cross-user tests dla briefow, jobow, eksportu i Q&A.
 6. [ ] Skonfigurowac produkcyjny embedding provider i uruchomic benchmarki.
 7. [ ] Dodac recorded live-source fixtures dla OpenAlex/arXiv/Semantic Scholar.

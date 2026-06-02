@@ -336,6 +336,8 @@ or the local/demo session fallback. For public multi-user deployment:
   only.
 - [ ] App-native identity migration has been deployed before enabling account
   or workspace features.
+- [ ] Brief and brief generation job ownership migration has been deployed
+  before enabling user/workspace-scoped brief history.
 - [ ] Public multi-user uploads require `DOCUMENT_AUTH_REQUIRED=true` and trusted user/workspace headers.
 - [ ] Document retention/deletion policy copy is visible before public upload.
 - [ ] `DOCUMENT_UPLOADS_ENABLED` or `ALLOW_SESSION_DOCUMENT_UPLOADS_IN_PRODUCTION` is set only for private/internal upload deployments.
