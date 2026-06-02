@@ -93,3 +93,23 @@ describe("compare report workspace ownership schema", () => {
     expect(migration).toContain("CompareReport_workspaceId_fkey");
   });
 });
+
+describe("app-native user session schema", () => {
+  it("defines durable user sessions with hashed tokens and revocation", () => {
+    const schema = readFileSync("prisma/schema.prisma", "utf8");
+    const migration = readFileSync(
+      "prisma/migrations/20260602204500_add_app_user_sessions/migration.sql",
+      "utf8"
+    );
+
+    expect(schema).toContain("model UserSession");
+    expect(schema).toContain("tokenHash   String   @unique");
+    expect(schema).toContain("expiresAt   DateTime");
+    expect(schema).toContain("revokedAt   DateTime?");
+    expect(schema).toContain("sessions         UserSession[]");
+    expect(migration).toContain("CREATE TABLE \"UserSession\"");
+    expect(migration).toContain("CREATE UNIQUE INDEX \"UserSession_tokenHash_key\"");
+    expect(migration).toContain("UserSession_userId_fkey");
+    expect(migration).toContain("UserSession_workspaceId_fkey");
+  });
+});

@@ -35,6 +35,7 @@ model User {
   createdBriefJobs BriefGenerationJob[] @relation("BriefJobCreator")
   ownedCompareReports   CompareReport[] @relation("CompareReportOwner")
   createdCompareReports CompareReport[] @relation("CompareReportCreator")
+  sessions         UserSession[]
 }
 
 model Workspace {
@@ -49,6 +50,7 @@ model Workspace {
   briefs  Brief[]
   briefJobs BriefGenerationJob[]
   compareReports CompareReport[]
+  sessions UserSession[]
 
   @@index([ownerId])
 }
@@ -68,6 +70,25 @@ model WorkspaceMember {
   @@index([userId])
   @@index([workspaceId])
   @@index([role])
+}
+
+model UserSession {
+  id          String   @id @default(cuid())
+  userId      String
+  workspaceId String?
+  tokenHash   String   @unique
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime
+  lastSeenAt  DateTime?
+  revokedAt   DateTime?
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([workspaceId])
+  @@index([expiresAt])
+  @@index([revokedAt])
 }
 
 model Brief {

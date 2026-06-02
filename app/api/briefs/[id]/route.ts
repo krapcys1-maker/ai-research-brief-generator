@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { canAccessBriefFromRequest, privateBriefError } from "@/lib/briefs/access";
+import {
+  canAccessBriefFromRequestAsync,
+  privateBriefError
+} from "@/lib/briefs/access";
 import { getBriefRepository } from "@/lib/storage/repository";
 
 export async function GET(
@@ -21,7 +24,7 @@ export async function GET(
     );
   }
 
-  if (!canAccessBriefFromRequest(record, request)) {
+  if (!(await canAccessBriefFromRequestAsync(record, request))) {
     return NextResponse.json(privateBriefError(), { status: 403 });
   }
 

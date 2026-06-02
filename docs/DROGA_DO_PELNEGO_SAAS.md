@@ -120,24 +120,29 @@ Produkt mozna nazwac pelnym publicznym SaaS dopiero, gdy spelnia te warunki:
 - [x] CompareReport ownership foundation: Prisma model, migracja i
   repozytoria memory/PostgreSQL z `ownerSessionId`, `ownerId`, `workspaceId`,
   `createdByUserId` i `visibility`.
+- [x] App-native session runtime foundation: `UserSession`, hashowane tokeny,
+  cookie `ai_brief_app_session`, `GET /api/auth/session` i app-session access
+  dla brief list/detail/export/Q&A/job polling.
 - [x] Deployment smoke obejmuje source health, preflight, documents, compare,
   claim extraction, claim comparison i opcjonalnie AI flow.
 
 ## Najwieksze braki
 
-1. **Brak runtime app-native auth i UI kont.**
-   Decyzja architektoniczna i schemat Prisma sa juz gotowe, ale nie ma jeszcze
-   logowania, sesji uzytkownika, UI kont ani enforcementu rol.
+1. **Brak pelnego app-native auth i UI kont.**
+   Decyzja architektoniczna, schemat Prisma i fundament sesji sa gotowe, ale
+   nie ma jeszcze rejestracji/logowania, UI kont, resetu dostepu ani pelnego
+   enforcementu rol.
 
 2. **Briefy i joby maja trusted-header workspace enforcement, ale nie role.**
    Pola ownership sa w schemacie i repozytoriach, a runtime access layer chroni
    list/detail/export/Q&A/job polling po user/workspace. Brakuje jeszcze
    app-native sesji, membershipow i egzekwowania rol.
 
-3. **Brakuje app-native auth runtime.**
+3. **App-native session runtime istnieje, ale nie ma jeszcze login UI.**
    Trusted user/workspace headers sa teraz mostem dla prywatnego/B2B wdrozenia,
-   ale docelowa warstwa uprawnien musi obslugiwac natywne logowanie,
-   session runtime, role i membershipy workspace.
+   a app-native cookie/token runtime jest przygotowany dla briefow. Docelowa
+   warstwa musi jeszcze obslugiwac rejestracje/logowanie, reset dostepu, role,
+   membership UI i audit trail.
 
 4. **Compare With Science ma fundament zapisanych raportow, ale nie UI historii.**
    `CompareReport` ma juz model, migracje i repozytoria z workspace ownership.
@@ -187,6 +192,10 @@ Status: **najwyzszy priorytet**.
   Zweryfikowano 2026-06-02: `npx prisma validate` z tymczasowym
   `DATABASE_URL=postgresql://...`, `npm test -- tests/identitySchema.test.ts`,
   `npm test`, `npm run lint`, `npm run build`.
+- [x] Dodac app-native `UserSession` runtime foundation.
+  Zweryfikowano 2026-06-02: `npx prisma generate`, `npm test --
+  tests/appSession.test.ts tests/authSessionRoute.test.ts
+  tests/briefAccessAppSession.test.ts tests/identitySchema.test.ts`.
 - [x] Dodac `ownerId`, `workspaceId`, `createdByUserId`, `visibility` do
   briefow i brief generation jobs.
   Zweryfikowano 2026-06-02: `npx prisma validate`, `npm test --

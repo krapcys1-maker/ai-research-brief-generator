@@ -4,8 +4,8 @@ import { AIConfigurationError, AIProviderError } from "@/lib/ai/client";
 import { BriefQuestionRequestSchema } from "@/lib/ai/schemas";
 import { synthesizeAnswer } from "@/lib/ai/synthesizeAnswer";
 import {
-  canAccessBriefFromRequest,
-  getBriefRateLimitKey,
+  canAccessBriefFromRequestAsync,
+  getBriefRateLimitKeyForRequest,
   privateBriefError
 } from "@/lib/briefs/access";
 import { getFullTextRepository } from "@/lib/fulltext/repository";
@@ -36,7 +36,11 @@ export async function POST(
     const { id } = await params;
     const clientIp = getClientIp(request);
     const rateLimit = await checkRateLimit({
-      key: getBriefRateLimitKey("brief-question", request, clientIp)
+      key: await getBriefRateLimitKeyForRequest(
+        "brief-question",
+        request,
+        clientIp
+      )
     });
 
     if (!rateLimit.allowed) {
@@ -68,7 +72,7 @@ export async function POST(
       );
     }
 
-    if (!canAccessBriefFromRequest(record, request)) {
+    if (!(await canAccessBriefFromRequestAsync(record, request))) {
       return NextResponse.json(privateBriefError(), { status: 403 });
     }
 

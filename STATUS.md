@@ -29,8 +29,11 @@ The app supports:
 - session ownership checks for brief detail, Markdown export, and brief Q&A
 - trusted-header user/workspace ownership checks for brief list/detail,
   `/briefs/[id]`, Markdown export, brief Q&A, and brief job polling
+- app-native `UserSession` runtime foundation with hashed tokens,
+  `ai_brief_app_session`, `GET /api/auth/session`, and brief
+  list/detail/export/Q&A/job polling access through resolved app sessions
 - user/workspace-aware rate limiting for brief generation and brief Q&A when
-  trusted identity headers are present
+  trusted identity headers or app-native sessions are present
 - source API cache and source diagnostics
 - production fail-fast persistence and shared Upstash rate limiting
 - rate limiting for brief generation, brief Q&A, document Q&A, document uploads, claim extraction, and claim comparison
@@ -275,13 +278,20 @@ First remediation started on 2026-06-02:
   rollback procedure. Verified with `npm test -- tests/stagingReadiness.test.ts`
   and a complete simulated staging env. Real staging/prod secrets and hosted
   smoke remain deployment tasks.
+- Added the app-native session runtime foundation for public SaaS identity:
+  `UserSession` schema and migration, hashed opaque session tokens,
+  `ai_brief_app_session` cookie helpers, `GET /api/auth/session`, workspace
+  membership validation, session revocation/expiry handling, and app-session
+  ownership/rate-limit support for brief list/detail/export/Q&A/job polling.
+  Login UI, account settings, reset access, audit trail, and full role
+  enforcement remain future work.
 
 ## Next Recommended Step
 
 Next highest-value work:
 
-1. Add app-native login/session runtime, account UI, role enforcement, and
-   audit trail.
+1. Add app-native registration/login UI, account settings, reset access, role
+   enforcement, and audit trail on top of the new session runtime.
 2. Add real OpenAI-compatible embedding provider credentials in deployment,
    rerun `npm run embedding:check`, then rerun
    `npm run benchmark:embedding-comparison` to compare against the local

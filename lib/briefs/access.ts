@@ -8,6 +8,7 @@ import {
   DOCUMENT_AUTH_USER_HEADER,
   DOCUMENT_AUTH_WORKSPACE_HEADER
 } from "@/lib/documents/access";
+import { resolveAppSession } from "@/lib/identity/appSession";
 
 type OwnerSessionScopedRecord = {
   ownerSessionId?: string | null;
@@ -95,6 +96,18 @@ export function getBriefAccessContext(request: Request): BriefAccessContext {
   };
 }
 
+export async function getBriefAccessContextForRequest(
+  request: Request
+): Promise<BriefAccessContext> {
+  const appSession = await resolveAppSession(request);
+
+  if (appSession) {
+    return getBriefUserAccessContext(appSession.userId, appSession.workspaceId);
+  }
+
+  return getBriefAccessContext(request);
+}
+
 export function getBriefRateLimitKey(
   scope: string,
   request: Request,
@@ -107,6 +120,20 @@ export function getBriefRateLimitKey(
   }
 
   return `${scope}:ip:${clientIp}`;
+}
+
+export async function getBriefRateLimitKeyForRequest(
+  scope: string,
+  request: Request,
+  clientIp: string
+) {
+  const appSession = await resolveAppSession(request);
+
+  if (appSession) {
+    return `${scope}:workspace:${appSession.workspaceId ?? "personal"}:user:${appSession.userId}`;
+  }
+
+  return getBriefRateLimitKey(scope, request, clientIp);
 }
 
 function toAccessSource(
@@ -162,6 +189,22 @@ export function canAccessBriefFromRequest(record: StoredBrief, request: Request)
   }
 
   return canAccessBrief(record, getBriefHistorySessionId(request));
+}
+
+export async function canAccessBriefFromRequestAsync(
+  record: StoredBrief,
+  request: Request
+) {
+  const appSession = await resolveAppSession(request);
+
+  if (appSession) {
+    return canAccessBrief(record, getBriefUserAccessContext(
+      appSession.userId,
+      appSession.workspaceId
+    ));
+  }
+
+  return canAccessBriefFromRequest(record, request);
 }
 
 export function getBriefHistorySessionFromCookieStore(

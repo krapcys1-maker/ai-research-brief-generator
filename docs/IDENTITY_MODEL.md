@@ -64,7 +64,22 @@ WorkspaceMember
   role: owner | admin | member | viewer
   createdAt
   updatedAt
+
+UserSession
+  id
+  userId
+  workspaceId
+  tokenHash
+  expiresAt
+  lastSeenAt
+  revokedAt
 ```
+
+`UserSession` was added on 2026-06-02 through
+`prisma/migrations/20260602204500_add_app_user_sessions/migration.sql`. Session
+tokens are stored only as SHA-256 hashes. Runtime resolution supports the
+`ai_brief_app_session` cookie or a bearer token, rejects expired/revoked
+sessions, verifies workspace membership, and exposes `GET /api/auth/session`.
 
 After that, private product records should gain ownership fields:
 
@@ -142,9 +157,13 @@ Not allowed for public SaaS:
 1. [x] Add `User`, `Workspace`, and `WorkspaceMember` to Prisma.
 2. [x] Add workspace/user ownership to `Brief` and `BriefGenerationJob`.
 3. [x] Keep existing session ownership as demo fallback or migration bridge.
-4. [ ] Extend route access checks from session-only to user/workspace-aware.
-5. [ ] Move rate limiting from per-IP to per-user/per-workspace when identity exists.
-6. [ ] Add cross-user and cross-workspace tests for brief list, brief detail,
+4. [x] Add durable app-native `UserSession` schema and resolver foundation.
+5. [x] Extend brief route access checks from session-only to user/workspace-aware.
+6. [x] Move brief and brief Q&A rate limiting from per-IP to per-user/per-workspace when identity exists.
+7. [ ] Add app-native registration/login UI, password or magic-link flow, reset
+   access flow, and account settings.
+8. [ ] Add role enforcement beyond owner/workspace identity checks.
+9. [ ] Add cross-user and cross-workspace tests for brief list, brief detail,
    export, brief Q&A, job polling, documents, and saved compare reports.
 
 ## Acceptance Rule

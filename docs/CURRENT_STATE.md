@@ -141,6 +141,9 @@ paste/upload text -> extract candidate claims -> user selects claims -> academic
 - Staging readiness preflight through `npm run staging:check` for PostgreSQL,
   Upstash, AI secrets, model-grade embeddings, worker split, trusted ownership,
   full AI smoke settings, and rollback procedure.
+- App-native session runtime foundation through `UserSession`, hashed opaque
+  tokens, `ai_brief_app_session`, `GET /api/auth/session`, workspace membership
+  validation, and brief access/rate-limit integration.
 
 ## Storage Modes
 
@@ -208,6 +211,9 @@ ALLOW_MEMORY_RATE_LIMIT_IN_PRODUCTION=true
 - Uploaded documents can be scoped to durable authenticated user/workspace IDs
   supplied by trusted infrastructure. Brief history remains session-scoped in
   the current prototype.
+- App-native sessions can resolve durable users/workspaces for brief access, but
+  registration/login UI, password or magic-link flow, reset access, account
+  settings, audit trail, and full role enforcement are not implemented yet.
 - shadcn/ui is not implemented; current UI uses custom CSS.
 
 ## Verification Commands

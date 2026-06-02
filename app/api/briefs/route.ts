@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { BriefRequestSchema } from "@/lib/ai/schemas";
 import {
-  getBriefAccessContext,
-  getBriefRateLimitKey
+  getBriefAccessContextForRequest,
+  getBriefRateLimitKeyForRequest
 } from "@/lib/briefs/access";
 import {
   appendBriefHistorySessionCookie
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   try {
     const clientIp = getClientIp(request);
     const rateLimit = await checkRateLimit({
-      key: getBriefRateLimitKey("brief", request, clientIp)
+      key: await getBriefRateLimitKeyForRequest("brief", request, clientIp)
     });
 
     if (!rateLimit.allowed) {
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
     }
 
     const body = BriefRequestSchema.parse(await request.json());
-    const access = getBriefAccessContext(request);
+    const access = await getBriefAccessContextForRequest(request);
     const job = await createBriefJob(
       body,
       access.scope === "user"
@@ -127,7 +127,7 @@ export async function GET(request: Request) {
     });
   }
 
-  const access = getBriefAccessContext(request);
+  const access = await getBriefAccessContextForRequest(request);
   const headers = new Headers({
     "Cache-Control": "no-store, private",
     "X-Brief-History-Scope": access.scope

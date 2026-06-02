@@ -29,7 +29,8 @@ Active work only. Historical milestones are summarized in `docs/CHANGELOG.md`; i
 - [x] Add trusted-header user/workspace ownership for uploaded documents before public multi-user deployment.
 - [x] Decide and document the official identity model for full public SaaS.
 - [x] Add app-native `User`, `Workspace`, `WorkspaceMember`, role enum, and Prisma migration.
-- [ ] Add app-native login/session runtime, account UI, role enforcement, and audit trail.
+- [x] Add app-native `UserSession` schema, session resolver, cookie helper, and `/api/auth/session`.
+- [ ] Add app-native registration/login UI, account settings, reset access, role enforcement, and audit trail.
 - [x] Add user/workspace ownership fields to briefs and brief generation jobs.
 - [x] Enforce trusted-header user/workspace ownership for brief list/detail, exports, brief Q&A, job polling, uploaded documents, and Compare With Science uploaded-document retrieval.
 - [x] Add `CompareReport` schema/repository foundation with user/workspace ownership.
