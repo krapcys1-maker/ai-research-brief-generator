@@ -42,6 +42,7 @@ The app supports:
 - recorded PDF parser fixture and parser-quality diagnostics for full-text extraction
 - `CompareReport` schema and repository foundation with user/workspace ownership
 - deployment smoke coverage for source health, preflight, documents, compare, claim extraction, claim comparison, and AI-backed brief flow when not skipped
+- staging readiness preflight through `npm run staging:check`
 
 ## Current Docs
 
@@ -267,6 +268,13 @@ First remediation started on 2026-06-02:
   `ownerSessionId`, `ownerId`, `workspaceId`, `createdByUserId`, `visibility`,
   request JSON, report JSON, claim count, and workspace-scoped summary listing.
   The history API/UI and background compare polling remain future product work.
+- Added `npm run staging:check` with a tested staging readiness preflight for
+  PostgreSQL, Upstash, DeepSeek secrets/model/timeouts, model-grade embeddings,
+  web/worker split, trusted document ownership, disabled demo escape hatches,
+  remote smoke target, full AI smoke without `SMOKE_SKIP_AI=true`, and a
+  rollback procedure. Verified with `npm test -- tests/stagingReadiness.test.ts`
+  and a complete simulated staging env. Real staging/prod secrets and hosted
+  smoke remain deployment tasks.
 
 ## Next Recommended Step
 
@@ -278,7 +286,10 @@ Next highest-value work:
    rerun `npm run embedding:check`, then rerun
    `npm run benchmark:embedding-comparison` to compare against the local
    fallback baseline.
-3. Expand recorded live-source benchmarks for OpenAlex/arXiv/Semantic Scholar
+3. Run `npm run staging:check`, `npx prisma migrate deploy`,
+   `npm run embedding:check`, and full `npm run smoke:deploy` against the real
+   staging deployment after secrets are configured.
+4. Expand recorded live-source benchmarks for OpenAlex/arXiv/Semantic Scholar
    and Compare With Science.
-4. Add saved Compare With Science report history API/UI and background compare
+5. Add saved Compare With Science report history API/UI and background compare
    polling on top of the new `CompareReport` storage foundation.

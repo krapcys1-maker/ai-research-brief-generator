@@ -244,7 +244,11 @@ Status: **czesciowo zrobione**.
 - [ ] Uruchomic pelny `npm run smoke:deploy` bez `SMOKE_SKIP_AI=true`.
 - [ ] Ustawic `BRIEF_JOB_AUTORUN=false` dla web process.
 - [ ] Uruchomic worker jako osobny proces.
-- [ ] Dodac staging checklist i rollback procedure dla migracji.
+- [x] Dodac staging checklist i rollback procedure dla migracji.
+  Zweryfikowano 2026-06-02: `npm test --
+  tests/stagingReadiness.test.ts`; `npm run staging:check` przechodzi na
+  kompletnej, zasymulowanej konfiguracji stagingowej i fail-fast wskazuje braki
+  dla lokalnego env bez sekretow.
 
 Kryterium odbioru P1:
 
@@ -397,8 +401,14 @@ Kryterium odbioru P6:
 9. [x] Zaprojektowac `CompareReport` z workspace ownership.
    Zweryfikowano 2026-06-02: `npx prisma validate`, `npm test --
    tests/compareReportRepository.test.ts tests/identitySchema.test.ts`.
-10. [ ] Przygotowac staging env: PostgreSQL, Upstash, AI secrets, worker i smoke
-    bez `SMOKE_SKIP_AI=true`.
+10. [x] Przygotowac staging env checklist: PostgreSQL, Upstash, AI secrets,
+    worker i smoke bez `SMOKE_SKIP_AI=true`.
+    Zweryfikowano 2026-06-02: dodano `npm run staging:check`,
+    `lib/config/stagingReadiness.ts`, `scripts/staging-readiness-check.ts` oraz
+    `tests/stagingReadiness.test.ts`. Checklista wymusza stagingowe env vars,
+    osobny worker, model-grade embeddings, pelny AI smoke i zawiera rollback
+    procedure. Realne sekrety staging/prod, `npx prisma migrate deploy` na
+    prawdziwej bazie i smoke na hostingu pozostaja nieodhaczone w P1.
 
 ## Ostatni znany snapshot weryfikacji
 
@@ -413,6 +423,8 @@ Wedlug aktualnych zapiskow projekt przeszedl:
 - `npm run benchmark:claim-check` - pass na obecnych fixtures
 - `SMOKE_SKIP_AI=true npm run smoke:deploy` - pass na lokalnym produkcyjnym
   buildzie
+- `npm run staging:check` - pass na kompletnej, zasymulowanej konfiguracji
+  stagingowej; lokalny env bez produkcyjnych sekretow celowo raportuje blokery
 
 Znany caveat:
 

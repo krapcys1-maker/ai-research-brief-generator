@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "embedding:check": "tsx scripts/embedding-provider-check.ts",
+    "staging:check": "tsx scripts/staging-readiness-check.ts",
     "benchmark:retrieval": "tsx scripts/retrieval-gold-benchmark.ts",
     "benchmark:source-quality": "tsx scripts/source-quality-benchmark.ts",
     "benchmark:claim-check": "tsx scripts/claim-check-benchmark.ts",

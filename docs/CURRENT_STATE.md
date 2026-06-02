@@ -138,6 +138,9 @@ paste/upload text -> extract candidate claims -> user selects claims -> academic
 - Metadata-quality warnings flag suspicious live-source records, including known canonical papers with unexpected publication years or non-canonical identifiers, and surface those warnings in preflight, brief source details, and Markdown export.
 - Claim/evidence benchmark fixtures for direct, indirect, weak, unsupported-claim, overclaim, numeric, statistical-significance, and comparative cases.
 - Repeatable deployment smoke check through `npm run smoke:deploy`.
+- Staging readiness preflight through `npm run staging:check` for PostgreSQL,
+  Upstash, AI secrets, model-grade embeddings, worker split, trusted ownership,
+  full AI smoke settings, and rollback procedure.
 
 ## Storage Modes
 
@@ -218,6 +221,15 @@ npm run benchmark:claim-check
 npm run lint
 npm run build
 ```
+
+Staging-only preflight:
+
+```bash
+npm run staging:check
+```
+
+Run it with the exact staging environment variables. A local env without
+production secrets should report blockers.
 
 Optional PostgreSQL integration test:
 

@@ -8,18 +8,20 @@ export type EmbeddingConfigSummary = {
   missing: string[];
 };
 
+type EnvLike = Record<string, string | undefined>;
+
 const openAICompatibleRequiredEnv = [
   "EMBEDDING_BASE_URL",
   "EMBEDDING_API_KEY",
   "EMBEDDING_MODEL"
 ] as const;
 
-function configuredProvider(env: NodeJS.ProcessEnv) {
+function configuredProvider(env: EnvLike) {
   return env.EMBEDDING_PROVIDER?.trim().toLowerCase() || "local";
 }
 
 export function getEmbeddingConfigSummary(
-  env: NodeJS.ProcessEnv = process.env
+  env: EnvLike = process.env
 ): EmbeddingConfigSummary {
   const provider = configuredProvider(env);
 

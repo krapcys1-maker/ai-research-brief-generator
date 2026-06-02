@@ -25,6 +25,10 @@ DATABASE_URL=postgresql://...
 RATE_LIMIT_BACKEND=upstash
 UPSTASH_REDIS_REST_URL=...
 UPSTASH_REDIS_REST_TOKEN=...
+EMBEDDING_PROVIDER=openai_compatible
+EMBEDDING_BASE_URL=...
+EMBEDDING_API_KEY=...
+EMBEDDING_MODEL=...
 ```
 
 Production requires a valid PostgreSQL `DATABASE_URL` by default. Missing or invalid database configuration fails fast instead of falling back to non-durable memory storage.
@@ -223,6 +227,35 @@ and the report records the missing configuration without printing secrets.
 
 ## Runtime Checks
 
+Before running migrations or smoke checks, run the staging readiness preflight
+with the exact staging environment variables:
+
+```bash
+npm run staging:check
+```
+
+The check fails closed for production blockers:
+
+- PostgreSQL `DATABASE_URL`
+- Upstash shared rate limiting
+- DeepSeek provider, model, timeout, and secret presence
+- OpenAI-compatible/model-grade embedding configuration
+- `BRIEF_JOB_AUTORUN=false` for the web process
+- trusted document ownership for public multi-user staging
+- disabled public/demo escape hatches
+- `SMOKE_BASE_URL` and full AI smoke without `SMOKE_SKIP_AI=true`
+
+Recommended staging sequence:
+
+```bash
+npm run staging:check
+npx prisma migrate deploy
+npm run embedding:check
+npm run build
+SMOKE_BASE_URL=https://your-staging.example npm run smoke:deploy
+npm run worker:briefs
+```
+
 After deploy, check:
 
 ```bash
@@ -331,6 +364,7 @@ or the local/demo session fallback. For public multi-user deployment:
 - [ ] `DEEPSEEK_API_KEY` is configured in the hosting provider.
 - [ ] `AI_PROVIDER=deepseek`.
 - [ ] `AI_MODEL=deepseek-v4-pro`.
+- [ ] `AI_REQUEST_TIMEOUT_MS` is set intentionally for the expected latency.
 - [ ] `DATABASE_URL` points to production PostgreSQL.
 - [ ] `ALLOW_MEMORY_STORAGE_IN_PRODUCTION` is not set for real production deployments.
 - [ ] `RATE_LIMIT_BACKEND=upstash`.
@@ -340,6 +374,8 @@ or the local/demo session fallback. For public multi-user deployment:
 - [ ] `PUBLIC_BRIEF_HISTORY_ENABLED` is unset or `false` unless public history is intentional.
 - [ ] `DEPLOYMENT_PRIVACY_NOTICE` is enabled, or equivalent production privacy copy is shown elsewhere.
 - [ ] Production embeddings are configured, or local embeddings are intentionally accepted for the deployment.
+- [ ] Public staging uses `EMBEDDING_PROVIDER=openai_compatible`, `EMBEDDING_BASE_URL`, `EMBEDDING_API_KEY`, and `EMBEDDING_MODEL`.
+- [ ] `npm run staging:check` succeeds against the exact staging env.
 - [ ] `npm run embedding:check` succeeds with the intended embedding provider.
 - [ ] `npx prisma migrate deploy` succeeds.
 - [ ] `npm run build` succeeds.
@@ -370,3 +406,11 @@ or the local/demo session fallback. For public multi-user deployment:
 ## Rollback Notes
 
 If a deploy fails after a migration, keep the database online and roll back the app version first. Do not drop production tables. Prisma migrations should be treated as forward-only unless a manual rollback plan has been tested.
+
+Minimum rollback procedure:
+
+1. Keep PostgreSQL online and preserve backups/snapshots.
+2. Roll back the app and worker release first.
+3. Stop or scale down the worker if it is processing bad jobs.
+4. Treat Prisma migrations as forward-only unless a tested manual rollback exists.
+5. Run `npm run staging:check` and `npm run smoke:deploy` again after rollback.
