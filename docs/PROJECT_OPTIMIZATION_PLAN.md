@@ -197,14 +197,21 @@ For every meaningful system change:
 - Done: track `trendRepoCount`, `sourceRepoCount`, `handoffReadyCount`, `averageHandoffQualityScore` and `blockerCount` before research spend.
 - Done: include compact `repoEvidence` and `scoredCandidates` sections so live outputs can be audited without raw large dumps.
 - Done: require `allowLiveSpend: true` in addition to `mode: "live"` so a copied JSON file cannot accidentally run a live BigQuery query.
+- Done: run one real controlled live GH Archive sample for 2026-06-01 with a 500,000,000 byte cap and no auto-escalation.
+
+### P5: Live-Derived Architecture Smoke
+
+- Done: run `AI Short-Video Content QA Console` from the live sample through research, PRD, architecture and architecture judge.
+- Done: catch the first weak result: architecture judge `84/fail` due to a generic fallback component.
+- Done: add media/publishing QA architecture blueprint and judge vocabulary; rerun result: `96/pass`, generic components `0`.
+- Done: add `live_short_video_arch_ready` to `npm run benchmark:project-architecture` so the regression is covered by the pipeline.
 
 ## Current Recommended Next Step
 
-Run the first real controlled live sample:
+Promote live-derived smoke tests into a small end-to-end benchmark set:
 
-- use `npm run project:live-batch -- --input path/to/live-batch.json --out runs/live-batch/<date>`,
-- start in `dry_run` mode and inspect `controlled_live_batch_summary.md`,
-- switch to `live` only for one small date window after the dry-run estimate is under `maxBytesBilled`, and only with `allowLiveSpend: true`,
-- compare `sourceRepoCount`, `handoffReadyCount`, `averageHandoffQualityScore` and `blockerCount` before spending research/architecture calls.
+- select 2-3 live-derived ideas from the controlled sample,
+- run each through research, PRD, architecture and architecture judge with controlled evidence fixtures,
+- fail the benchmark if any ready live-derived architecture has judge score below 90 or generic components above 0.
 
-This closes the next gap between “locally benchmarked pipeline” and controlled live discovery quality.
+This closes the next gap between a single local live-derived smoke test and repeatable end-to-end live category coverage.

@@ -113,6 +113,19 @@ const ideas: Record<string, ProjectIdeaInput> = {
     ],
     preferredDomains: ["AI developer tools", "provider routing", "CLI reliability"],
     outputLanguage: "pl"
+  },
+  liveShortVideoQa: {
+    title: "AI Short-Video Content QA Console",
+    description:
+      "System for content operations teams that audits AI-generated short-video scripts, prompts, voiceover text, render metadata, brand safety, unsupported claims, repetition, source grounding, and publishing risk before export or upload. This case is derived from the controlled GH Archive live sample where MoneyPrinterTurbo appeared as a trending source repository.",
+    constraints: [
+      "MVP audits quality and publishing risk instead of generating video",
+      "requires evidence gates before publishing recommendations",
+      "human approval before public release",
+      "avoid cloning source repositories"
+    ],
+    preferredDomains: ["AI media", "content operations", "publishing QA"],
+    outputLanguage: "pl"
   }
 };
 
@@ -302,6 +315,11 @@ async function main() {
     {
       id: "provider_compatibility_arch_ready",
       idea: ideas.providerCompatibility,
+      mode: "ready"
+    },
+    {
+      id: "live_short_video_arch_ready",
+      idea: ideas.liveShortVideoQa,
       mode: "ready"
     },
     { id: "repo_arch_blocked", idea: ideas.repo, mode: "blocked" }
