@@ -21,6 +21,33 @@ export const AiIdeaResponseSchema = z.object({
 export type AiIdeaCandidate = z.infer<typeof AiIdeaCandidateSchema>;
 export type AiIdeaResponse = z.infer<typeof AiIdeaResponseSchema>;
 
+export const requiredAiIdeaSystemPromptSnippets = [
+  "evidence-backed product discovery architect",
+  "adjacent product ideas from GitHub trend evidence",
+  "avoid cloning the source repository",
+  "diagnostic, QA, audit, evaluation, readiness, monitoring, or reliability",
+  "Return strict JSON only"
+] as const;
+
+export const requiredAiIdeaUserPromptSnippets = [
+  "Do not create a fork",
+  "Do not build another converter",
+  "prefer conversion QA",
+  "Do not build another context compressor",
+  "prefer fidelity",
+  "Do not build another provider switcher",
+  "prefer failure diagnosis",
+  "Do not build another agent client",
+  "prefer session reliability QA",
+  "Do not build another self-hosted workspace",
+  "prefer deployment risk auditing",
+  "Every idea must be feasible as an MVP in 2-4 weeks",
+  "Every idea must cite at least two evidenceSignals",
+  "Every idea must explain why it is not a clone",
+  "If an idea would have high clone risk, do not include it",
+  "Return exactly one JSON object"
+] as const;
+
 type BuildAiIdeaGenerationPromptInput = {
   sourceRepos: IdeaSourceRepo[];
   maxIdeas: number;
@@ -65,6 +92,20 @@ export const aiIdeaGenerationSystemPrompt = [
   "Do not output generic AI assistant ideas.",
   "Return strict JSON only."
 ].join(" ");
+
+export function missingAiIdeaPromptGuardrails(input: {
+  systemPrompt: string;
+  userPrompt: string;
+}) {
+  return {
+    system: requiredAiIdeaSystemPromptSnippets.filter(
+      (snippet) => !input.systemPrompt.includes(snippet)
+    ),
+    user: requiredAiIdeaUserPromptSnippets.filter(
+      (snippet) => !input.userPrompt.includes(snippet)
+    )
+  };
+}
 
 export function buildAiIdeaGenerationPrompt(input: BuildAiIdeaGenerationPromptInput) {
   const compactRepos = input.sourceRepos.map(compactRepoForAiIdeaPrompt);

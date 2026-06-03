@@ -31,10 +31,11 @@ Current fix:
 
 - `docs/PROJECT_IDEA_SCOUT_ARCHITECTURE.md` updated to reflect implemented GH Archive, trend radar, AI guardrail benchmark, audit and per-source cap.
 - `docs/PROJECT_SYSTEM_AUDIT.md` is the audit reference.
+- `npm run benchmark:project-docs` verifies that key project scripts, artifacts and metrics are documented.
 
-Next guard:
+Implemented guard:
 
-- Add a benchmark or script that checks docs mention all current project pipeline scripts.
+- Docs/script consistency check is part of `npm run benchmark:project-pipeline`.
 
 ### 2. Prompt Drift
 
@@ -45,10 +46,11 @@ Current guard:
 - `npm run benchmark:project-ai-ideas` compares raw clone-shaped AI candidates to guarded adjacent candidates.
 - Raw clone outputs must be rejected.
 - Guarded QA/audit/diagnostic outputs must remain usable or strong.
+- `tests/projectAiIdeaPrompt.test.ts` checks required AI idea prompt snippets so hard rules cannot silently disappear.
 
-Next guard:
+Implemented guard:
 
-- Add prompt snapshot tests for all project prompts and fail if required hard rules disappear.
+- Prompt hard-rule checks cover system prompt and user prompt requirements.
 
 ### 3. Data Noise
 
@@ -72,10 +74,11 @@ Current guard:
 - `maxIdeasPerSource = 1` by default.
 - Report metric: `shortlistSourceDominance`.
 - Multi-source benchmark requires diverse shortlist behavior.
+- Project idea audit warns when small batches use `maxIdeasPerSource > 1`.
 
-Next guard:
+Implemented guard:
 
-- Add an explicit warning in `project_ideas_audit` when `maxIdeasPerSource > 1` on small batches.
+- `source_cap` warning appears in `project_ideas_audit` for risky small-batch source caps.
 
 ### 5. Research Handoff Weakness
 
@@ -143,8 +146,9 @@ For every meaningful system change:
 
 - Keep `runs/` out of commits.
 - Keep PR body updated with current benchmark numbers.
-- Add docs/script consistency check.
-- Add prompt hard-rule snapshot checks.
+- Done: docs/script consistency check.
+- Done: prompt hard-rule snapshot checks.
+- Done: source-cap audit warning for small batches.
 
 ### P1: Data Quality
 
@@ -180,15 +184,11 @@ For every meaningful system change:
 
 ## Current Recommended Next Step
 
-Implement a docs/script consistency check:
+Implement recorded live GitHub fixture expansion:
 
-- read `package.json` project scripts,
-- verify docs mention key project commands,
-- fail if core commands are missing from docs:
-  - `project:ideas`,
-  - `project:research`,
-  - `benchmark:project-pipeline`,
-  - `benchmark:project-ai-ideas`,
-  - `benchmark:project-architecture`.
+- add stable fixture files for the five current workflow buckets,
+- include noisy README and issue text,
+- include multilingual issue reports,
+- make benchmarks read from these fixtures instead of recreating every case inline.
 
-This will prevent the system documentation from drifting again while the pipeline grows.
+This will make data-noise regression testing easier as the pipeline grows.

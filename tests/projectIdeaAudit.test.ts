@@ -119,4 +119,42 @@ describe("auditIdeaDiscoveryReport", () => {
     expect(audit.weaknesses.some((item) => item.area === "trend_radar")).toBe(true);
     expect(audit.mitigationMoves.length).toBeGreaterThanOrEqual(3);
   });
+
+  it("warns when a small batch allows multiple shortlist ideas per source", () => {
+    const report = discoverProjectIdeas({
+      domain: "AI developer infrastructure",
+      constraints: ["preserve discovery diversity"],
+      maxIdeas: 5,
+      maxIdeasPerSource: 2,
+      outputLanguage: "pl",
+      sourceRepos: [
+        sourceRepo({}),
+        sourceRepo({
+          repoId: "repo_headroom",
+          name: "headroom",
+          owner: "chopratejas",
+          description: "Context compression for LLM and RAG workflows.",
+          topics: ["context-compression", "rag", "llm"],
+          readmeText:
+            "Compresses context windows and RAG chunks to reduce token usage.",
+          issueSignals: [
+            {
+              title: "Need factual fidelity checks",
+              body: "Compression can lose facts, code intent, or retrieval evidence.",
+              labels: ["enhancement"]
+            }
+          ]
+        })
+      ]
+    });
+    const trendRadar = buildTrendRadar({
+      sourceRepos: report.sourceRepos,
+      repoInsights: report.repoInsights,
+      generatedAt: report.generatedAt
+    });
+    const audit = auditIdeaDiscoveryReport({ report, trendRadar });
+
+    expect(audit.weaknesses.some((item) => item.area === "source_cap")).toBe(true);
+    expect(audit.mitigationMoves.join(" ")).toContain("maxIdeasPerSource=1");
+  });
 });

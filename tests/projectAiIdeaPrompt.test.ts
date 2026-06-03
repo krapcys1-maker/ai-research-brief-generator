@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   AiIdeaResponseSchema,
+  aiIdeaGenerationSystemPrompt,
   buildAiIdeaGenerationPrompt,
+  missingAiIdeaPromptGuardrails,
+  requiredAiIdeaSystemPromptSnippets,
+  requiredAiIdeaUserPromptSnippets,
   scoreAiIdeaCandidateForQuality
 } from "@/lib/project-ideas";
 import type { IdeaSourceRepo } from "@/lib/project-ideas";
@@ -58,6 +62,61 @@ describe("AI idea generation prompt", () => {
     expect(prompt).toContain("Do not build another self-hosted workspace");
     expect(prompt).toContain("prefer conversion QA");
     expect(prompt).toContain("estimatedMvpWeeks");
+  });
+
+  it("keeps every required hard rule in the AI idea prompts", () => {
+    const prompt = buildAiIdeaGenerationPrompt({
+      sourceRepos: [
+        repo({}),
+        repo({
+          repoId: "github_headroom",
+          name: "headroom",
+          owner: "chopratejas",
+          description: "Context compression for LLM workflows.",
+          topics: ["context-compression", "llm", "rag"],
+          readmeText:
+            "Compresses context windows and RAG chunks to reduce token usage."
+        }),
+        repo({
+          repoId: "github_cc_switch",
+          name: "cc-switch",
+          owner: "farion1231",
+          description: "Switches AI CLI providers and model routing.",
+          topics: ["codex", "provider-management"],
+          readmeText:
+            "Configure provider routing for Codex, Claude Code, OpenCode, and Gemini CLI."
+        }),
+        repo({
+          repoId: "github_hermes",
+          name: "hermes-agent",
+          owner: "NousResearch",
+          description: "AI agent desktop client.",
+          topics: ["ai-agent", "desktop-app"],
+          readmeText: "Agent client with desktop sessions and tool calls."
+        }),
+        repo({
+          repoId: "github_odysseus",
+          name: "odysseus",
+          owner: "pewdiepie-archdaemon",
+          description: "Self-hosted AI workspace.",
+          topics: ["self-hosted", "ai-workspace"],
+          readmeText:
+            "Self-hosted AI workspace with local data, agents, memory and deployment settings."
+        })
+      ],
+      maxIdeas: 5,
+      constraints: ["MVP in 2-4 weeks"],
+      outputLanguage: "pl"
+    });
+    const missing = missingAiIdeaPromptGuardrails({
+      systemPrompt: aiIdeaGenerationSystemPrompt,
+      userPrompt: prompt
+    });
+
+    expect(missing.system).toEqual([]);
+    expect(missing.user).toEqual([]);
+    expect(requiredAiIdeaSystemPromptSnippets.length).toBeGreaterThanOrEqual(5);
+    expect(requiredAiIdeaUserPromptSnippets.length).toBeGreaterThanOrEqual(10);
   });
 
   it("rejects clone-like AI candidates even when they claim good scores", () => {

@@ -194,6 +194,23 @@ export function auditIdeaDiscoveryReport(input: {
     );
   }
 
+  if (metrics.sourceRepoCount < 10 && input.report.metrics.maxIdeasPerSource > 1) {
+    weaknesses.push(
+      finding({
+        severity: "warning",
+        area: "source_cap",
+        message:
+          "Small source batches should keep maxIdeasPerSource at 1 to preserve discovery diversity.",
+        evidence: [
+          `sourceRepoCount=${metrics.sourceRepoCount}`,
+          `maxIdeasPerSource=${input.report.metrics.maxIdeasPerSource}`
+        ],
+        action:
+          "Use maxIdeasPerSource=1 for small batches; increase maxIdeas before allowing multiple ideas from one source."
+      })
+    );
+  }
+
   if (metrics.genericTitleCount > 0) {
     weaknesses.push(
       finding({
