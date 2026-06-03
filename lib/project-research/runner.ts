@@ -9,8 +9,9 @@ import {
   ProjectIdeaInputSchema,
   ReviewedPaperSchema
 } from "@/lib/project-research/schemas";
+import { searchAllSources } from "@/lib/sources";
 import type { ProjectResearchBrief } from "@/lib/project-research/types";
-import type { NormalizedPaper } from "@/lib/sources/types";
+import type { NormalizedPaper, ResearchSource } from "@/lib/sources/types";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { z } from "zod";
@@ -37,18 +38,33 @@ const NormalizedPaperRunnerSchema = z.object({
     .optional()
 });
 
+const ResearchSourceRunnerSchema = z.enum([
+  "mock",
+  "arxiv",
+  "semantic_scholar",
+  "openalex"
+]);
+
+const SourceSearchRunnerSchema = z.object({
+  sources: z.array(ResearchSourceRunnerSchema).min(1).default(["mock"]),
+  maxResults: z.number().int().min(1).max(100).default(20),
+  fromYear: z.number().int().min(1900).max(2100).optional(),
+  toYear: z.number().int().min(1900).max(2100).optional()
+});
+
 export const ProjectResearchRunnerInputSchema = z
   .object({
     idea: ProjectIdeaInputSchema,
     reviewedPapers: z.array(ReviewedPaperSchema).min(1).optional(),
     papers: z.array(NormalizedPaperRunnerSchema).min(1).optional(),
+    sourceSearch: SourceSearchRunnerSchema.optional(),
     generatedAt: z.string().trim().min(1).optional()
   })
   .superRefine((value, ctx) => {
-    if (!value.reviewedPapers?.length && !value.papers?.length) {
+    if (!value.reviewedPapers?.length && !value.papers?.length && !value.sourceSearch) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Provide reviewedPapers or papers.",
+        message: "Provide reviewedPapers, papers, or sourceSearch.",
         path: ["reviewedPapers"]
       });
     }
@@ -76,6 +92,8 @@ export type ProjectResearchRunManifest = {
     normalizedIdea: string;
     researchPlan: string;
     coverage: string;
+    sourceSearch: string;
+    sourcePapers: string;
     evidenceCollection: string;
     reviewedPapers: string;
     projectResearchBriefJson: string;
@@ -92,6 +110,8 @@ const artifactFiles = {
   normalizedIdea: "normalized_idea.json",
   researchPlan: "research_plan.json",
   coverage: "coverage.json",
+  sourceSearch: "source_search.json",
+  sourcePapers: "source_papers.json",
   evidenceCollection: "evidence_collection.json",
   reviewedPapers: "reviewed_papers.json",
   projectResearchBriefJson: "project_research_brief.json",
@@ -134,16 +154,28 @@ export async function runProjectResearch(
 ): Promise<ProjectResearchRunManifest> {
   const parsed = parseProjectResearchRunnerInput(input);
   const outputDir = input.outputDir;
+  const planResult = buildProjectResearchPlan(parsed.idea);
+  const sourceSearchResult = parsed.sourceSearch
+    ? await searchAllSources({
+        query: parsed.idea.title,
+        queryVariants: planResult.researchPlan.queryVariants,
+        maxResults: parsed.sourceSearch.maxResults,
+        fromYear: parsed.sourceSearch.fromYear,
+        toYear: parsed.sourceSearch.toYear,
+        sources: parsed.sourceSearch.sources as ResearchSource[]
+      })
+    : null;
+  const sourcePapers = sourceSearchResult?.papers ?? null;
   const evidenceCollection = parsed.reviewedPapers
     ? {
         mode: "manual_reviewed_papers" as const,
         reviewedPaperCount: parsed.reviewedPapers.length
       }
     : {
-        mode: "collected_from_papers" as const,
+        mode: sourcePapers ? "collected_from_source_search" as const : "collected_from_papers" as const,
         ...collectProjectEvidenceFromPapers({
-          researchPlan: buildProjectResearchPlan(parsed.idea).researchPlan,
-          papers: parsed.papers as NormalizedPaper[]
+          researchPlan: planResult.researchPlan,
+          papers: (parsed.papers ?? sourcePapers) as NormalizedPaper[]
         })
       };
   const reviewedPapers = parsed.reviewedPapers ?? (
@@ -163,6 +195,27 @@ export async function runProjectResearch(
     writeFile(join(outputDir, artifactFiles.normalizedIdea), toJson(brief.normalizedIdea), "utf8"),
     writeFile(join(outputDir, artifactFiles.researchPlan), toJson(brief.researchPlan), "utf8"),
     writeFile(join(outputDir, artifactFiles.coverage), toJson(brief.evidenceCoverage), "utf8"),
+    writeFile(
+      join(outputDir, artifactFiles.sourceSearch),
+      toJson(
+        sourceSearchResult
+          ? {
+              mode: "source_search",
+              sourcesUsed: sourceSearchResult.sourcesUsed,
+              warnings: sourceSearchResult.warnings,
+              sourceDiagnostics: sourceSearchResult.sourceDiagnostics,
+              queryVariants: planResult.researchPlan.queryVariants,
+              totalFound: sourceSearchResult.papers.length
+            }
+          : { mode: "not_used" }
+      ),
+      "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.sourcePapers),
+      toJson(sourcePapers ?? []),
+      "utf8"
+    ),
     writeFile(
       join(outputDir, artifactFiles.evidenceCollection),
       toJson(evidenceCollection),

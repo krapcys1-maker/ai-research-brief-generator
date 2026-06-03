@@ -20,6 +20,10 @@ type BenchmarkCase = {
   idea: ProjectIdeaInput;
   reviewedPapers?: ReviewedPaper[];
   papers?: NormalizedPaper[];
+  sourceSearch?: {
+    sources: ["mock"];
+    maxResults: number;
+  };
 };
 
 type CaseResult = {
@@ -40,6 +44,8 @@ const requiredFiles = [
   "normalized_idea.json",
   "research_plan.json",
   "coverage.json",
+  "source_search.json",
+  "source_papers.json",
   "evidence_collection.json",
   "reviewed_papers.json",
   "project_research_brief.json",
@@ -170,7 +176,9 @@ async function evaluateCase(
     idea: testCase.idea,
     ...(testCase.reviewedPapers
       ? { reviewedPapers: testCase.reviewedPapers }
-      : { papers: testCase.papers ?? [] }),
+      : testCase.papers
+        ? { papers: testCase.papers }
+        : { sourceSearch: testCase.sourceSearch }),
     generatedAt: "2026-06-03T13:30:00.000Z",
     outputDir
   });
@@ -277,6 +285,22 @@ async function main() {
       expectedReady: true,
       idea: tradingIdea,
       papers: sourcePapersForIdea(tradingIdea)
+    },
+    {
+      id: "medical_mock_source_search_artifacts",
+      expectedReady: true,
+      idea: {
+        title: "Medical RAG Assistant",
+        description:
+          "Healthcare AI assistant that retrieves clinical documents and supports diagnostic review.",
+        constraints: ["nie stawia samodzielnej diagnozy"],
+        preferredDomains: [],
+        outputLanguage: "pl"
+      },
+      sourceSearch: {
+        sources: ["mock"],
+        maxResults: 20
+      }
     },
     {
       id: "repo_blocked_artifacts",

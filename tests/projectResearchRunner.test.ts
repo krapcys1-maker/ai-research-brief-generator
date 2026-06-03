@@ -118,6 +118,8 @@ describe("runProjectResearch", () => {
       normalizedIdea: "normalized_idea.json",
       researchPlan: "research_plan.json",
       coverage: "coverage.json",
+      sourceSearch: "source_search.json",
+      sourcePapers: "source_papers.json",
       evidenceCollection: "evidence_collection.json",
       reviewedPapers: "reviewed_papers.json",
       projectResearchBriefJson: "project_research_brief.json",
@@ -178,6 +180,51 @@ describe("runProjectResearch", () => {
       manifest.requiredBucketCount
     );
     expect(reviewedPapers.length).toBeGreaterThanOrEqual(
+      manifest.requiredBucketCount
+    );
+  });
+
+  it("searches configured sources before collecting evidence", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "project-research-search-"));
+
+    const manifest = await runProjectResearch({
+      idea: {
+        title: "Medical RAG Assistant",
+        description:
+          "Healthcare AI assistant that retrieves clinical documents and supports diagnostic review.",
+        constraints: ["nie stawia samodzielnej diagnozy"],
+        preferredDomains: [],
+        outputLanguage: "pl"
+      },
+      sourceSearch: {
+        sources: ["mock"],
+        maxResults: 20
+      },
+      generatedAt: "2026-06-03T13:00:00.000Z",
+      outputDir
+    });
+
+    const sourceSearch = await readJson<{
+      mode: string;
+      totalFound: number;
+      queryVariants: string[];
+      sourcesUsed: string[];
+    }>(join(outputDir, "source_search.json"));
+    const sourcePapers = await readJson<NormalizedPaper[]>(
+      join(outputDir, "source_papers.json")
+    );
+    const evidenceCollection = await readJson<{
+      mode: string;
+      bucketMetrics: unknown[];
+    }>(join(outputDir, "evidence_collection.json"));
+
+    expect(sourceSearch.mode).toBe("source_search");
+    expect(sourceSearch.sourcesUsed).toContain("mock");
+    expect(sourceSearch.totalFound).toBeGreaterThan(0);
+    expect(sourceSearch.queryVariants.length).toBeGreaterThan(1);
+    expect(sourcePapers.length).toBe(sourceSearch.totalFound);
+    expect(evidenceCollection.mode).toBe("collected_from_source_search");
+    expect(evidenceCollection.bucketMetrics.length).toBe(
       manifest.requiredBucketCount
     );
   });
