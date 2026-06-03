@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  findBareGithubTokenInEnvText,
   IdeaDiscoveryReportSchema,
   runProjectIdeaDiscovery
 } from "@/lib/project-ideas";
@@ -142,6 +143,18 @@ async function exists(path: string) {
 }
 
 describe("runProjectIdeaDiscovery", () => {
+  it("detects bare GitHub PAT lines from .env files", () => {
+    const token = findBareGithubTokenInEnvText(
+      [
+        "AI_PROVIDER=deepseek",
+        "github_pat_abcDEF123_456",
+        "DATABASE_URL=postgres://example"
+      ].join("\n")
+    );
+
+    expect(token).toBe("github_pat_abcDEF123_456");
+  });
+
   it("writes complete idea discovery artifacts", async () => {
     const outputDir = join(
       tmpdir(),

@@ -30,6 +30,7 @@ import type {
   IdeaScore,
   IdeaSourceRepo
 } from "@/lib/project-ideas/types";
+import { existsSync, readFileSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { loadEnvFile } from "node:process";
@@ -125,6 +126,31 @@ const artifactFiles = {
 
 let envLoaded = false;
 
+export function findBareGithubTokenInEnvText(content: string) {
+  return (
+    content
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .find(
+        (line) =>
+          !line.startsWith("#") &&
+          !line.includes("=") &&
+          /^(github_pat_|gh[pousr]_)[A-Za-z0-9_]+$/.test(line)
+      ) ?? null
+  );
+}
+
+function loadBareGithubTokenFromEnvFile(path = ".env") {
+  if (process.env.GITHUB_TOKEN || !existsSync(path)) {
+    return;
+  }
+
+  const token = findBareGithubTokenInEnvText(readFileSync(path, "utf8"));
+  if (token) {
+    process.env.GITHUB_TOKEN = token;
+  }
+}
+
 function ensureEnvLoaded() {
   if (envLoaded) {
     return;
@@ -137,6 +163,8 @@ function ensureEnvLoaded() {
   } catch {
     // .env is optional; callers can still provide process.env directly.
   }
+
+  loadBareGithubTokenFromEnvFile();
 }
 
 function githubToken(tokenEnv?: string) {
