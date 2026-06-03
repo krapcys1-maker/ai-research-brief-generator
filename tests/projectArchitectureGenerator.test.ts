@@ -66,6 +66,19 @@ const documentConversionIdea: ProjectIdeaInput = {
   outputLanguage: "pl"
 };
 
+const shortVideoIdea: ProjectIdeaInput = {
+  title: "AI Short-Video Content QA Console",
+  description:
+    "System for content operations teams that audits AI-generated short-video scripts, prompts, voiceover text, render metadata, brand safety, unsupported claims, repetition, source grounding, and publishing risk before export or upload.",
+  constraints: [
+    "MVP audits quality and publishing risk instead of generating video",
+    "requires evidence gates before publishing recommendations",
+    "human approval before public release"
+  ],
+  preferredDomains: ["AI media", "content operations", "publishing QA"],
+  outputLanguage: "pl"
+};
+
 describe("generateProjectArchitecture", () => {
   it("generates ready architecture from ready PRD and research brief", () => {
     const brief = buildProjectResearchBrief({
@@ -167,6 +180,36 @@ describe("generateProjectArchitecture", () => {
     expect(judge.verdict).toBe("fail");
     expect(judge.genericComponentCount).toBeGreaterThan(0);
     expect(judge.requiredFixes.join(" ")).toContain("generic");
+  });
+
+  it("generates non-generic architecture for live short-video QA ideas", () => {
+    const brief = buildProjectResearchBrief({
+      idea: shortVideoIdea,
+      reviewedPapers: fullEvidenceForIdea(shortVideoIdea),
+      generatedAt: "2026-06-03T16:00:00.000Z"
+    });
+    const prd = generateProjectPrd({ brief });
+
+    const architecture = generateProjectArchitecture({
+      prd,
+      brief,
+      generatedAt: "2026-06-03T16:05:00.000Z"
+    });
+    const judge = judgeProjectArchitecture({ architecture, prd, brief });
+    const componentNames = architecture.components
+      .map((component) => component.name)
+      .join(" ");
+
+    expect(componentNames).toContain(
+      "Script Prompt Voiceover And Render Metadata Intake Adapter"
+    );
+    expect(componentNames).toContain(
+      "Script Repetition Grounding And Publishing Risk AI Evaluator"
+    );
+    expect(architecture.audit.verdict).toContain("ai_media_publishing_qa");
+    expect(judge.verdict).toBe("pass");
+    expect(judge.score).toBeGreaterThanOrEqual(90);
+    expect(judge.genericComponentCount).toBe(0);
   });
 
   it("blocks architecture when PRD is blocked", () => {

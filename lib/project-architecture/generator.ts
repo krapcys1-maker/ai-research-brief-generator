@@ -284,6 +284,43 @@ function architectureBlueprint(input: GenerateProjectArchitectureInput): Bluepri
   }
 
   if (
+    text.includes("short-video") ||
+    text.includes("short video") ||
+    text.includes("ai media") ||
+    text.includes("content operations") ||
+    text.includes("publishing qa") ||
+    text.includes("publishing risk") ||
+    text.includes("brand safety")
+  ) {
+    return commonBlueprint({
+      profile: "ai_media_publishing_qa",
+      noun: "AI short-video publishing QA",
+      intake: "Script Prompt Voiceover And Render Metadata",
+      evidence: "Publishing Claim And Brand Safety",
+      evaluator: "Script Repetition Grounding And Publishing Risk",
+      report: "Content QA Review Queue"
+    });
+  }
+
+  if (
+    text.includes("data quality") ||
+    text.includes("analytics engineering") ||
+    text.includes("extraction drift") ||
+    text.includes("warehouse") ||
+    text.includes("scraping") ||
+    text.includes("crawler")
+  ) {
+    return commonBlueprint({
+      profile: "data_quality_investigation",
+      noun: "data quality and extraction investigation",
+      intake: "Dataset Schema And Extraction",
+      evidence: "Data Quality Evidence",
+      evaluator: "Anomaly Drift And Root Cause",
+      report: "Data Investigation"
+    });
+  }
+
+  if (
     text.includes("context budget") ||
     text.includes("context compression") ||
     text.includes("token") ||
