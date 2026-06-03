@@ -151,6 +151,138 @@ describe("discoverProjectIdeas", () => {
     expect(report.shortlist[0]?.mvpScope.join(" ")).toContain("tool calls");
   });
 
+  it.each([
+    {
+      name: "self-hosted AI workspace",
+      expectedTitle: "Self-Hosted AI Workspace Policy Auditor",
+      repo: sourceRepo({
+        repoId: "repo_self_hosted_workspace",
+        name: "odysseus",
+        description: "Self-hosted AI workspace.",
+        topics: ["ai", "workspace", "self-hosted"],
+        readmeText:
+          "A self-hosted AI workspace, local-first and privacy-first, with chat, agents, memory, email, documents, and deployment settings.",
+        issueSignals: [
+          {
+            title: "Proposal: encrypt secrets at rest via SOPS",
+            body: "Operators need better secret handling before self-hosted rollout.",
+            labels: ["security"]
+          }
+        ]
+      })
+    },
+    {
+      name: "document conversion",
+      expectedTitle: "Document Conversion QA Harness",
+      repo: sourceRepo({
+        repoId: "repo_markitdown",
+        name: "markitdown",
+        description: "Python tool for converting files and office documents to Markdown.",
+        topics: ["markdown", "pdf", "microsoft-office", "document-ai"],
+        readmeText:
+          "MarkItDown converts PDF, CSV, Office documents, and files to Markdown for downstream LLM and RAG workflows.",
+        issueSignals: [
+          {
+            title: "CsvConverter produces broken Markdown tables",
+            body: "Pipe characters in cells break converted Markdown tables.",
+            labels: ["bug"]
+          }
+        ]
+      })
+    },
+    {
+      name: "context compression",
+      expectedTitle: "LLM Context Budget QA Monitor",
+      repo: sourceRepo({
+        repoId: "repo_headroom",
+        name: "headroom",
+        description:
+          "Compress tool outputs, logs, files, and RAG chunks before they reach the LLM.",
+        topics: ["llm", "rag", "context-window", "token-optimization"],
+        readmeText:
+          "The context compression layer for AI agents. Compress tool outputs, logs, files, and RAG chunks.",
+        issueSignals: [
+          {
+            title: "panic with code-aware enabled",
+            body: "Code-aware compression can fail and needs QA before production.",
+            labels: ["bug"]
+          }
+        ]
+      })
+    },
+    {
+      name: "provider switching",
+      expectedTitle: "AI CLI Provider Compatibility Monitor",
+      repo: sourceRepo({
+        repoId: "repo_cc_switch",
+        name: "cc-switch",
+        description:
+          "All-in-One assistant for Claude Code, Codex, OpenCode, Gemini CLI, and provider management.",
+        topics: ["codex", "claude-code", "provider-management", "desktop-app"],
+        readmeText:
+          "CC Switch manages Claude Code, Codex, OpenCode, Gemini CLI, provider routing, and desktop app configuration.",
+        issueSignals: [
+          {
+            title: "Third-party GPT relay cannot use codex app conversation",
+            body: "A proxy provider passes health checks but fails during Codex conversation.",
+            labels: ["question"]
+          }
+        ]
+      })
+    },
+    {
+      name: "agent approval UX",
+      expectedTitle: "Agent Action Approval UX Console",
+      repo: sourceRepo({
+        repoId: "repo_hermes_agent",
+        name: "hermes-agent",
+        description: "The agent that grows with you.",
+        topics: ["ai-agent", "codex", "tool-calls", "openai"],
+        readmeText:
+          "A self-improving AI agent with tools, scheduled automations, memory, and command execution.",
+        issueSignals: [
+          {
+            title: "Desktop client needs approval dialog for command confirmation",
+            body: "Blocked terminal calls need a security approval popup instead of hanging.",
+            labels: ["feature"]
+          }
+        ]
+      })
+    },
+    {
+      name: "agent session reliability",
+      expectedTitle: "Agent Session Reliability Monitor",
+      repo: sourceRepo({
+        repoId: "repo_agent_sessions",
+        name: "hermes-agent",
+        description: "The agent that grows with you.",
+        topics: ["ai-agent", "desktop-app", "session-continuity"],
+        readmeText:
+          "A self-improving AI agent with cross-platform conversation continuity and desktop sessions.",
+        issueSignals: [
+          {
+            title: "Desktop sessions get spurious parent_session_id and disappear from sidebar",
+            body: "Session metadata can attach to the wrong parent context and become invisible.",
+            labels: ["bug"]
+          }
+        ]
+      })
+    }
+  ])("generates a specific idea for $name repo trends", ({ expectedTitle, repo }) => {
+    const report = discoverProjectIdeas({
+      domain: "AI apps and developer tools",
+      constraints: ["avoid cloning the source repo"],
+      maxIdeas: 2,
+      outputLanguage: "pl",
+      sourceRepos: [repo]
+    });
+
+    expect(report.shortlist[0]?.title).toBe(expectedTitle);
+    expect(report.shortlist[0]?.differentiation.join(" ")).not.toContain(
+      "same workflow"
+    );
+  });
+
   it("deduplicates repeated shortlist ideas across similar source repos", () => {
     const report = discoverProjectIdeas({
       domain: "AI developer tools",
@@ -174,6 +306,35 @@ describe("discoverProjectIdeas", () => {
 
     expect(titles).toEqual([...new Set(titles)]);
     expect(titles.filter((title) => title === "AI Technical Debt Sprint Planner")).toHaveLength(1);
+  });
+
+  it("keeps strong adjacent ideas from popular repos in the promising shortlist", () => {
+    const report = discoverProjectIdeas({
+      domain: "self-hosted AI security",
+      constraints: ["do not clone workspace UI"],
+      maxIdeas: 2,
+      outputLanguage: "pl",
+      sourceRepos: [
+        sourceRepo({
+          repoId: "repo_popular_workspace",
+          name: "odysseus",
+          description: "Self-hosted AI workspace.",
+          topics: ["ai", "agent", "workspace"],
+          stars: 40_000,
+          forks: 4000,
+          issueSignals: [],
+          readmeText:
+            "A self-hosted AI workspace, local-first and privacy-first, with deployment settings and model providers."
+        })
+      ]
+    });
+
+    expect(report.shortlist[0]?.title).toBe(
+      "Self-Hosted AI Workspace Policy Auditor"
+    );
+    expect(report.ideaScores.find((score) => score.ideaId === report.shortlist[0]?.ideaId)?.verdict).toBe(
+      "promising"
+    );
   });
 
   it("penalizes direct clones of source repository workflow", () => {

@@ -70,6 +70,10 @@ function verdictFor(input: {
     return "reject" as const;
   }
 
+  if (input.total >= 90 && !input.cloneRejected) {
+    return "promising" as const;
+  }
+
   if (input.total >= 80 && input.sourceCloneRisk !== "high") {
     return "promising" as const;
   }
@@ -154,4 +158,3 @@ export function scoreIdeas(input: {
     return scoreIdea({ idea, repo, insight });
   });
 }
-

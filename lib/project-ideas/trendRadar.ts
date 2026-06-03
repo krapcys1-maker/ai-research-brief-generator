@@ -207,14 +207,61 @@ function signalFor(input: {
   };
 }
 
-function anglesFor(category: string) {
-  return (
+function signalText(signals: TrendRadarRepoSignal[]) {
+  return signals
+    .map((signal) => `${signal.repoFullName} ${signal.evidence.join(" ")}`)
+    .join(" ")
+    .toLowerCase();
+}
+
+function evidenceBackedAngles(category: string, signals: TrendRadarRepoSignal[]) {
+  const text = signalText(signals);
+  const angles: string[] = [];
+
+  if (text.includes("odysseus") || text.includes("self-hosted")) {
+    angles.push("self-hosted AI workspace policy auditor for rollout readiness");
+  }
+
+  if (
+    text.includes("markitdown") ||
+    text.includes("csvconverter") ||
+    text.includes("markdown tables") ||
+    text.includes("document")
+  ) {
+    angles.push("document conversion QA harness before RAG ingestion");
+  }
+
+  if (text.includes("headroom") || text.includes("context bloat")) {
+    angles.push("LLM context budget QA monitor for compression quality");
+  }
+
+  if (
+    text.includes("cc-switch") ||
+    text.includes("codex") ||
+    text.includes("claude") ||
+    text.includes("gemini") ||
+    text.includes("provider")
+  ) {
+    angles.push("AI CLI provider compatibility monitor for auth and routing failures");
+  }
+
+  if (
+    text.includes("hermes-agent") ||
+    text.includes("parent_session") ||
+    text.includes("sidebar") ||
+    text.includes("desktop sessions")
+  ) {
+    angles.push("agent session reliability monitor for continuity and recovery");
+  }
+
+  const defaults =
     categoryRules.find((rule) => rule.category === category)?.angles ?? [
       "evidence planner for a narrow AI workflow",
       "human-reviewed automation cockpit",
       "workflow risk and readiness checker"
-    ]
-  );
+    ];
+
+  return [...new Set([...angles, ...defaults])].slice(0, 3);
 }
 
 function whyHotFor(signals: TrendRadarRepoSignal[]) {
@@ -255,7 +302,7 @@ function categoryReports(signals: TrendRadarRepoSignal[]): TrendRadarCategory[] 
         ),
         representativeRepos: sorted.slice(0, 3).map((signal) => signal.repoFullName),
         whyHot: whyHotFor(sorted),
-        opportunityAngles: anglesFor(category)
+        opportunityAngles: evidenceBackedAngles(category, sorted)
       };
     })
     .sort((left, right) => {

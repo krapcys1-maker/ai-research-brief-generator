@@ -24,16 +24,278 @@ function repoText(repo: IdeaSourceRepo) {
     .toLowerCase();
 }
 
+function focusedRepoText(repo: IdeaSourceRepo) {
+  return [
+    repo.name,
+    repo.description,
+    repo.topics.join(" "),
+    repo.issueSignals.map((issue) => `${issue.title} ${issue.body}`).join(" ")
+  ]
+    .join(" ")
+    .toLowerCase();
+}
+
 function adjacentBlueprint(
   repo: IdeaSourceRepo,
   insight: RepoInsight
 ) {
   const text = repoText(repo);
+  const focusedText = focusedRepoText(repo);
+  const repoName = repo.name.toLowerCase();
+
+  if (
+    focusedText.includes("self-hosted ai workspace") ||
+    focusedText.includes("local-first") ||
+    focusedText.includes("privacy-first") ||
+    focusedText.includes("secrets at rest") ||
+    focusedText.includes("sops")
+  ) {
+    return {
+      title: "Self-Hosted AI Workspace Policy Auditor",
+      problem:
+        "Teams want private AI workspaces, but deployment security, secret handling, and policy readiness are hard to verify before rollout.",
+      targetUsers: ["AI platform teams", "self-hosted app operators"],
+      mvpScope: [
+        "ingest self-hosted AI workspace config, README, issues, and deployment notes",
+        "audit secrets, auth, network exposure, local data, and approval settings",
+        "produce a rollout readiness report with concrete policy and remediation tasks"
+      ],
+      differentiation: [
+        "audits deployment readiness instead of building another AI workspace",
+        "focuses on self-hosted privacy, secrets, and operational controls",
+        "keeps recommendations as a reviewable policy checklist before rollout"
+      ],
+      domains: ["self-hosted AI", "AI security", "workspace governance"],
+      researchQuestions: [
+        "Which self-hosted AI workspace controls most reduce secret and data exposure risk?",
+        "How should local-first AI systems document approval, memory, and network boundaries?"
+      ],
+      aiLeverage: [
+        "maps README and issue signals into deployment risk controls",
+        "turns messy configuration evidence into an operator-ready policy checklist"
+      ]
+    };
+  }
+
+  if (
+    focusedText.includes("markdown") ||
+    focusedText.includes("pdf") ||
+    focusedText.includes("csvconverter") ||
+    focusedText.includes("office documents") ||
+    focusedText.includes("document conversion")
+  ) {
+    return {
+      title: "Document Conversion QA Harness",
+      problem:
+        "Teams using document-to-Markdown pipelines need to catch broken tables, unsafe input handling, and lost structure before documents enter RAG or agent workflows.",
+      targetUsers: ["RAG builders", "documentation automation teams"],
+      mvpScope: [
+        "ingest converted Markdown outputs and source document metadata",
+        "detect table, citation, encoding, and structure regressions",
+        "produce conversion quality reports with reproducible fixture cases"
+      ],
+      differentiation: [
+        "tests document conversion quality instead of doing the conversion itself",
+        "targets downstream RAG and agent reliability",
+        "turns GitHub issue patterns into regression fixtures"
+      ],
+      domains: ["document AI", "RAG ingestion", "conversion quality"],
+      researchQuestions: [
+        "Which document conversion errors most harm retrieval and answer grounding?",
+        "How should Markdown conversion quality be evaluated across tables, PDFs, and Office files?"
+      ],
+      aiLeverage: [
+        "classifies conversion failures into reusable QA cases",
+        "summarizes broken document structures into actionable regression reports"
+      ]
+    };
+  }
+
+  if (
+    (focusedText.includes("context compression") ||
+      focusedText.includes("token optimization") ||
+      focusedText.includes("context-window") ||
+      focusedText.includes("compress tool outputs") ||
+      focusedText.includes("rag chunks")) &&
+    !repoName.includes("hermes-agent") &&
+    !focusedText.includes("ai-agent") &&
+    !focusedText.includes("ai-agents")
+  ) {
+    return {
+      title: "LLM Context Budget QA Monitor",
+      problem:
+        "Agent and RAG teams compress context to save tokens, but they need to know when compression drops facts, code intent, or retrieval evidence.",
+      targetUsers: ["AI agent teams", "RAG platform engineers"],
+      mvpScope: [
+        "ingest original and compressed context examples",
+        "compare answer quality, fact retention, and code-aware failure cases",
+        "produce context budget reports with safe compression thresholds"
+      ],
+      differentiation: [
+        "evaluates context compression quality instead of providing another compression proxy",
+        "targets factual retention and agent reliability",
+        "links token savings to evidence loss and failure risk"
+      ],
+      domains: ["LLM context engineering", "RAG evaluation", "agent reliability"],
+      researchQuestions: [
+        "How should context compression be scored for factual retention and downstream task success?",
+        "Which context loss patterns are most dangerous for tool-using agents?"
+      ],
+      aiLeverage: [
+        "compares compressed and original context for missing facts",
+        "turns logs and RAG chunks into compression risk diagnostics"
+      ]
+    };
+  }
+
+  if (
+    focusedText.includes("desktop sessions") ||
+    focusedText.includes("parent_session") ||
+    focusedText.includes("sidebar") ||
+    focusedText.includes("session continuity") ||
+    focusedText.includes("conversation continuity")
+  ) {
+    return {
+      title: "Agent Session Reliability Monitor",
+      problem:
+        "AI agent products lose user trust when conversations, desktop sessions, and cross-platform state disappear or attach to the wrong parent context.",
+      targetUsers: ["AI agent product teams", "desktop AI app builders"],
+      mvpScope: [
+        "ingest session metadata, issue reports, and UI state transitions",
+        "detect broken parent-child session links, missing sidebar entries, and continuity gaps",
+        "produce reliability reports with reproduction steps and recovery actions"
+      ],
+      differentiation: [
+        "monitors session reliability instead of building another agent client",
+        "targets continuity, recovery, and user-visible trust failures",
+        "turns issue reports into reproducible product QA scenarios"
+      ],
+      domains: ["AI agent UX", "session reliability", "desktop AI apps"],
+      researchQuestions: [
+        "Which session-state failures most damage user trust in AI agent products?",
+        "How should cross-platform agent sessions be tested for continuity and recoverability?"
+      ],
+      aiLeverage: [
+        "clusters session bug reports into reproducible reliability scenarios",
+        "maps UI state failures to likely metadata and lifecycle causes"
+      ]
+    };
+  }
+
+  if (
+    (focusedText.includes("provider-management") ||
+      focusedText.includes("cc switch") ||
+      focusedText.includes("claude code") ||
+      focusedText.includes("codex") ||
+      focusedText.includes("opencode") ||
+      focusedText.includes("gemini cli")) &&
+    !focusedText.includes("approval dialog") &&
+    !focusedText.includes("command confirmation") &&
+    !focusedText.includes("security approval") &&
+    !repoName.includes("hermes-agent") &&
+    !focusedText.includes("ai-agent") &&
+    !focusedText.includes("ai-agents")
+  ) {
+    return {
+      title: "AI CLI Provider Compatibility Monitor",
+      problem:
+        "Teams switching between AI coding CLIs and third-party providers hit confusing auth, capability, and model-routing failures that are hard to diagnose.",
+      targetUsers: ["AI coding tool users", "developer tooling teams"],
+      mvpScope: [
+        "ingest provider configs, CLI health checks, and failed conversation logs",
+        "classify failures by auth, capability mismatch, proxy behavior, and model routing",
+        "produce provider compatibility reports and suggested fallback routes"
+      ],
+      differentiation: [
+        "monitors provider compatibility instead of managing the provider list",
+        "focuses on failure diagnosis across AI CLIs",
+        "keeps fixes as explainable routing and config recommendations"
+      ],
+      domains: ["AI developer tools", "provider routing", "CLI reliability"],
+      researchQuestions: [
+        "Which provider metadata predicts tool, image, and model capability failures?",
+        "How should AI CLI routing systems explain proxy and provider incompatibilities?"
+      ],
+      aiLeverage: [
+        "summarizes multilingual issue reports into failure classes",
+        "maps failed CLI sessions to provider capability requirements"
+      ]
+    };
+  }
+
+  if (
+    focusedText.includes("approval dialog") ||
+    focusedText.includes("command confirmation") ||
+    focusedText.includes("security approval") ||
+    focusedText.includes("tool calls") ||
+    focusedText.includes("desktop client")
+  ) {
+    return {
+      title: "Agent Action Approval UX Console",
+      problem:
+        "Agent products need secure command approval flows, but desktop and chat interfaces often leave users stuck between unsafe auto-approval and blocked automation.",
+      targetUsers: ["AI agent product teams", "security-conscious automation builders"],
+      mvpScope: [
+        "ingest blocked tool calls, approval logs, and user issue reports",
+        "classify approval failures by risk, UI state, and missing recovery path",
+        "produce approval UX recommendations and test scenarios for agent releases"
+      ],
+      differentiation: [
+        "focuses on human approval UX instead of building another agent",
+        "targets command safety, recovery, and trust",
+        "turns issue reports into concrete approval-flow test cases"
+      ],
+      domains: ["AI agent safety", "approval UX", "tool-use governance"],
+      researchQuestions: [
+        "Which approval UX patterns preserve safety without blocking legitimate agent work?",
+        "How should command risk be explained to users in desktop and chat agent interfaces?"
+      ],
+      aiLeverage: [
+        "clusters blocked action reports into UX and safety failure modes",
+        "generates approval-flow test scenarios from real issue evidence"
+      ]
+    };
+  }
+
+  if (
+    (focusedText.includes("agent") ||
+      focusedText.includes("tool") ||
+      focusedText.includes("workflow") ||
+      focusedText.includes("orchestration")) &&
+    !focusedText.includes("code review") &&
+    !focusedText.includes("pull request") &&
+    !focusedText.includes("review comments")
+  ) {
+    return {
+      title: "AI Agent Run QA Console",
+      problem:
+        "Teams can prototype agents fast, but they struggle to understand failed runs, unsafe tool calls, and production readiness.",
+      targetUsers: ["AI product teams", "automation builders"],
+      mvpScope: [
+        "ingest agent run logs, tool calls, and issue signals",
+        "classify failures by planning, tool use, missing context, and unsafe action risk",
+        "produce a QA report with replay cases and release blockers"
+      ],
+      differentiation: [
+        "evaluates agent runs instead of building another agent framework",
+        "targets reliability and rollout decisions before automation",
+        "keeps the core workflow as QA and governance rather than task execution"
+      ],
+      domains: ["AI agents", "workflow automation", "agent evaluation"],
+      researchQuestions: [
+        "Which agent failure categories best predict production risk?",
+        "How should tool-using agents be evaluated before real user workflows?"
+      ],
+      aiLeverage: [
+        "clusters failed agent traces into actionable QA themes",
+        "turns messy run logs into reproducible test and review cases"
+      ]
+    };
+  }
 
   if (
     text.includes("code review") ||
-    text.includes("pull request") ||
-    text.includes("repositories") ||
+    text.includes("review comments") ||
     text.includes("static analysis")
   ) {
     return {
@@ -64,11 +326,11 @@ function adjacentBlueprint(
   }
 
   if (
-    text.includes("llm") ||
-    text.includes("inference") ||
-    text.includes("model serving") ||
-    text.includes("benchmark") ||
-    text.includes("deployment")
+    focusedText.includes("llm") ||
+    focusedText.includes("inference") ||
+    focusedText.includes("model serving") ||
+    focusedText.includes("benchmark") ||
+    focusedText.includes("deployment")
   ) {
     return {
       title: "LLM Release Readiness Radar",
@@ -93,39 +355,6 @@ function adjacentBlueprint(
       aiLeverage: [
         "summarizes model repo evidence into release risks",
         "maps unstructured issues and benchmark notes into concrete readiness checks"
-      ]
-    };
-  }
-
-  if (
-    text.includes("agent") ||
-    text.includes("tool") ||
-    text.includes("workflow") ||
-    text.includes("orchestration")
-  ) {
-    return {
-      title: "AI Agent Run QA Console",
-      problem:
-        "Teams can prototype agents fast, but they struggle to understand failed runs, unsafe tool calls, and production readiness.",
-      targetUsers: ["AI product teams", "automation builders"],
-      mvpScope: [
-        "ingest agent run logs, tool calls, and issue signals",
-        "classify failures by planning, tool use, missing context, and unsafe action risk",
-        "produce a QA report with replay cases and release blockers"
-      ],
-      differentiation: [
-        "evaluates agent runs instead of building another agent framework",
-        "targets reliability and rollout decisions before automation",
-        "keeps the core workflow as QA and governance rather than task execution"
-      ],
-      domains: ["AI agents", "workflow automation", "agent evaluation"],
-      researchQuestions: [
-        "Which agent failure categories best predict production risk?",
-        "How should tool-using agents be evaluated before real user workflows?"
-      ],
-      aiLeverage: [
-        "clusters failed agent traces into actionable QA themes",
-        "turns messy run logs into reproducible test and review cases"
       ]
     };
   }
