@@ -28,6 +28,7 @@ type CaseResult = {
   decisionCount: number;
   componentTraceabilityCoverage: number;
   decisionPaperCoverage: number;
+  componentTypeDiversity: number;
   blockerCount: number;
   auditScore: number;
 };
@@ -40,6 +41,8 @@ const markdownOutputPath =
   "benchmark-results/project-architecture-latest.md";
 const minAverageComponentTraceability = 0.75;
 const minAverageDecisionPaperCoverage = 0.75;
+const minAverageComponentTypeDiversity = 4;
+const minReadyArchitectureAuditScore = 88;
 
 const ideas: Record<string, ProjectIdeaInput> = {
   trading: {
@@ -64,6 +67,42 @@ const ideas: Record<string, ProjectIdeaInput> = {
       "Healthcare AI assistant that retrieves clinical documents and supports diagnostic review.",
     constraints: ["nie stawia samodzielnej diagnozy"],
     preferredDomains: [],
+    outputLanguage: "pl"
+  },
+  documentConversionQa: {
+    title: "Document Conversion QA Harness",
+    description:
+      "QA harness for Markdown, PDF and Office document conversion before RAG ingestion.",
+    constraints: [
+      "MVP: ingest converted Markdown outputs and source document metadata",
+      "MVP: detect table, citation, encoding, and structure regressions",
+      "MVP: produce conversion quality reports with reproducible fixture cases"
+    ],
+    preferredDomains: ["document AI", "RAG ingestion", "conversion quality"],
+    outputLanguage: "pl"
+  },
+  contextBudgetQa: {
+    title: "LLM Context Budget QA Monitor",
+    description:
+      "Monitor context compression, token budget tradeoffs and fact retention for RAG chunks.",
+    constraints: [
+      "MVP: ingest original and compressed context examples",
+      "MVP: compare answer quality, fact retention and code-aware failure cases",
+      "MVP: produce context budget reports with safe compression thresholds"
+    ],
+    preferredDomains: ["LLM context engineering", "RAG evaluation", "agent reliability"],
+    outputLanguage: "pl"
+  },
+  providerCompatibility: {
+    title: "AI CLI Provider Compatibility Monitor",
+    description:
+      "Diagnose provider routing, auth, proxy and model routing failures for AI coding CLIs.",
+    constraints: [
+      "MVP: ingest provider configs, CLI health checks and failed conversation logs",
+      "MVP: classify failures by auth, capability mismatch, proxy behavior and model routing",
+      "MVP: produce provider compatibility reports and suggested fallback routes"
+    ],
+    preferredDomains: ["AI developer tools", "provider routing", "CLI reliability"],
     outputLanguage: "pl"
   }
 };
@@ -145,6 +184,9 @@ function evaluateCase(testCase: BenchmarkCase): CaseResult {
         : 0
       : architecture.traceability.decisionsWithPaperSources /
         architecture.traceability.decisionCount;
+  const componentTypeDiversity = new Set(
+    architecture.components.map((component) => component.componentType)
+  ).size;
 
   return {
     id: testCase.id,
@@ -156,6 +198,7 @@ function evaluateCase(testCase: BenchmarkCase): CaseResult {
     decisionCount: architecture.decisions.length,
     componentTraceabilityCoverage,
     decisionPaperCoverage,
+    componentTypeDiversity,
     blockerCount: architecture.blockers.length,
     auditScore: architecture.audit.score
   };
@@ -168,6 +211,7 @@ function renderMarkdownReport(input: {
   schemaValidCount: number;
   averageComponentTraceability: number;
   averageDecisionPaperCoverage: number;
+  averageComponentTypeDiversity: number;
   results: CaseResult[];
 }) {
   const lines = [
@@ -179,7 +223,8 @@ function renderMarkdownReport(input: {
     `Schema valid: ${input.schemaValidCount}/${input.caseCount}`,
     `Average component traceability: ${pct(input.averageComponentTraceability)}`,
     `Average decision paper coverage: ${pct(input.averageDecisionPaperCoverage)}`,
-    `Thresholds: component traceability >= ${pct(minAverageComponentTraceability)}, decision paper coverage >= ${pct(minAverageDecisionPaperCoverage)}`,
+    `Average component type diversity: ${input.averageComponentTypeDiversity.toFixed(1)}`,
+    `Thresholds: component traceability >= ${pct(minAverageComponentTraceability)}, decision paper coverage >= ${pct(minAverageDecisionPaperCoverage)}, component type diversity >= ${minAverageComponentTypeDiversity.toFixed(1)}, ready audit score >= ${minReadyArchitectureAuditScore}`,
     "",
     "## Cases",
     ""
@@ -199,6 +244,7 @@ function renderMarkdownReport(input: {
       `- Component traceability: ${pct(result.componentTraceabilityCoverage)}`
     );
     lines.push(`- Decision paper coverage: ${pct(result.decisionPaperCoverage)}`);
+    lines.push(`- Component type diversity: ${result.componentTypeDiversity}`);
     lines.push(`- Blockers: ${result.blockerCount}`);
     lines.push(`- Audit score: ${result.auditScore}/100`);
     lines.push("");
@@ -212,6 +258,21 @@ async function main() {
     { id: "trading_arch_ready", idea: ideas.trading, mode: "ready" },
     { id: "repo_arch_ready", idea: ideas.repo, mode: "ready" },
     { id: "medical_arch_ready", idea: ideas.medical, mode: "ready" },
+    {
+      id: "document_conversion_qa_arch_ready",
+      idea: ideas.documentConversionQa,
+      mode: "ready"
+    },
+    {
+      id: "context_budget_qa_arch_ready",
+      idea: ideas.contextBudgetQa,
+      mode: "ready"
+    },
+    {
+      id: "provider_compatibility_arch_ready",
+      idea: ideas.providerCompatibility,
+      mode: "ready"
+    },
     { id: "repo_arch_blocked", idea: ideas.repo, mode: "blocked" }
   ];
   const results = cases.map(evaluateCase);
@@ -225,6 +286,10 @@ async function main() {
   const averageDecisionPaperCoverage =
     results.reduce((sum, result) => sum + result.decisionPaperCoverage, 0) /
     results.length;
+  const readyResults = results.filter((result) => result.expectedStatus === "ready");
+  const averageComponentTypeDiversity =
+    readyResults.reduce((sum, result) => sum + result.componentTypeDiversity, 0) /
+    readyResults.length;
   const report = {
     generatedAt: new Date().toISOString(),
     caseCount: results.length,
@@ -232,8 +297,11 @@ async function main() {
     schemaValidCount,
     averageComponentTraceability,
     averageDecisionPaperCoverage,
+    averageComponentTypeDiversity,
     minAverageComponentTraceability,
     minAverageDecisionPaperCoverage,
+    minAverageComponentTypeDiversity,
+    minReadyArchitectureAuditScore,
     results
   };
 
@@ -248,6 +316,7 @@ async function main() {
       `Schema valid: ${report.schemaValidCount}/${report.caseCount}`,
       `Average component traceability: ${pct(report.averageComponentTraceability)}`,
       `Average decision paper coverage: ${pct(report.averageDecisionPaperCoverage)}`,
+      `Average component type diversity: ${report.averageComponentTypeDiversity.toFixed(1)}`,
       `JSON: ${jsonOutputPath}`,
       `Markdown: ${markdownOutputPath}`
     ].join("\n")
@@ -256,7 +325,9 @@ async function main() {
   if (
     report.passCount !== report.caseCount ||
     report.averageComponentTraceability < minAverageComponentTraceability ||
-    report.averageDecisionPaperCoverage < minAverageDecisionPaperCoverage
+    report.averageDecisionPaperCoverage < minAverageDecisionPaperCoverage ||
+    report.averageComponentTypeDiversity < minAverageComponentTypeDiversity ||
+    readyResults.some((result) => result.auditScore < minReadyArchitectureAuditScore)
   ) {
     process.exitCode = 1;
   }

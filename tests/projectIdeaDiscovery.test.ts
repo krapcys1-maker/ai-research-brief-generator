@@ -283,6 +283,41 @@ describe("discoverProjectIdeas", () => {
     );
   });
 
+  it("keeps original repo inspiration aligned with the source workflow", () => {
+    const report = discoverProjectIdeas({
+      domain: "AI apps and developer tools",
+      constraints: ["avoid cloning the source repo"],
+      maxIdeas: 2,
+      outputLanguage: "pl",
+      sourceRepos: [
+        sourceRepo({
+          repoId: "repo_cc_switch",
+          name: "cc-switch",
+          owner: "farion1231",
+          description:
+            "All-in-One assistant for Claude Code, Codex, OpenCode, Gemini CLI, and provider management.",
+          topics: ["codex", "claude-code", "provider-management", "desktop-app"],
+          readmeText:
+            "CC Switch manages Claude Code, Codex, OpenCode, Gemini CLI, provider routing, and desktop app configuration.",
+          issueSignals: [
+            {
+              title: "Third-party GPT relay cannot use codex app conversation",
+              body: "A proxy provider passes health checks but fails during Codex conversation.",
+              labels: ["question"]
+            }
+          ]
+        })
+      ]
+    });
+
+    expect(report.shortlist[0]?.originalInspiration).toContain(
+      "switches and configures AI coding CLI providers"
+    );
+    expect(report.shortlist[0]?.originalInspiration).not.toContain(
+      "medical documentation"
+    );
+  });
+
   it("deduplicates repeated shortlist ideas across similar source repos", () => {
     const report = discoverProjectIdeas({
       domain: "AI developer tools",

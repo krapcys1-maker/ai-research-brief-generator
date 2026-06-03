@@ -128,6 +128,86 @@ describe("buildProjectResearchPlan", () => {
     expectPlanIsNotSingleGenericQuery(researchPlan);
   });
 
+  it.each([
+    {
+      title: "Document Conversion QA Harness",
+      description:
+        "QA harness for Markdown, PDF and Office document conversion before RAG ingestion.",
+      domains: ["document AI", "RAG ingestion", "conversion quality"],
+      expectedBuckets: [
+        "document_structure_preservation",
+        "rag_ingestion_quality",
+        "conversion_regression_fixtures",
+        "unsafe_document_inputs"
+      ]
+    },
+    {
+      title: "LLM Context Budget QA Monitor",
+      description:
+        "Monitor context compression, token budget tradeoffs and fact retention for RAG chunks.",
+      domains: ["LLM context engineering", "RAG evaluation", "agent reliability"],
+      expectedBuckets: [
+        "context_compression_fidelity",
+        "token_budget_tradeoffs",
+        "agent_task_success",
+        "rag_evidence_loss"
+      ]
+    },
+    {
+      title: "AI CLI Provider Compatibility Monitor",
+      description:
+        "Diagnose provider routing, auth, proxy and model routing failures for AI coding CLIs.",
+      domains: ["AI developer tools", "provider routing", "CLI reliability"],
+      expectedBuckets: [
+        "provider_capability_modeling",
+        "auth_proxy_failure_modes",
+        "cli_observability",
+        "fallback_routing_governance"
+      ],
+      unexpectedBuckets: ["clinical_evidence", "safety_validation"]
+    },
+    {
+      title: "Agent Session Reliability Monitor",
+      description:
+        "Detect broken desktop sessions, parent_session links and conversation continuity failures.",
+      domains: ["AI agent UX", "session reliability", "desktop AI apps"],
+      expectedBuckets: [
+        "session_state_consistency",
+        "agent_ux_recovery",
+        "cross_platform_sync",
+        "session_qa_repro_cases"
+      ]
+    },
+    {
+      title: "Self-Hosted AI Workspace Policy Auditor",
+      description:
+        "Audit self-hosted AI workspace policy, secrets, local-first privacy and deployment readiness.",
+      domains: ["self-hosted AI", "AI security", "workspace governance"],
+      expectedBuckets: [
+        "self_hosted_security_controls",
+        "ai_workspace_governance",
+        "local_first_privacy",
+        "deployment_readiness_audit"
+      ]
+    }
+  ])("builds dedicated research buckets for $title", ({ title, description, domains, expectedBuckets, unexpectedBuckets = [] }) => {
+    const { researchPlan } = buildProjectResearchPlan({
+      title,
+      description,
+      constraints: ["MVP must be evidence-backed"],
+      preferredDomains: domains,
+      outputLanguage: "pl"
+    });
+
+    expect(bucketIds(researchPlan)).toEqual(expect.arrayContaining(expectedBuckets));
+    if (unexpectedBuckets.length > 0) {
+      expect(bucketIds(researchPlan)).not.toEqual(
+        expect.arrayContaining(unexpectedBuckets)
+      );
+    }
+    expectPlanIsNotSingleGenericQuery(researchPlan);
+  });
+
   it("creates a plan from an already normalized idea", () => {
     const normalizedIdea = normalizeProjectIdea({
       title: "Contract Compliance Reviewer",

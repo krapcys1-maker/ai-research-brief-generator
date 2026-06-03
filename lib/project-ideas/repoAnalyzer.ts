@@ -24,6 +24,26 @@ function unique(values: string[]) {
 function inferTargetUsers(text: string) {
   const users: string[] = [];
 
+  if (includesAny(text, ["markdown", "pdf", "office documents", "document conversion"])) {
+    users.push("RAG builders", "documentation automation teams");
+  }
+
+  if (includesAny(text, ["context compression", "context-window", "token-optimization", "rag chunks"])) {
+    users.push("AI agent teams", "RAG platform engineers");
+  }
+
+  if (includesAny(text, ["provider-management", "claude code", "codex", "gemini cli", "opencode"])) {
+    users.push("AI coding tool users", "developer tooling teams");
+  }
+
+  if (includesAny(text, ["desktop sessions", "parent_session", "sidebar", "session continuity"])) {
+    users.push("AI agent product teams", "desktop AI app builders");
+  }
+
+  if (includesAny(text, ["self-hosted ai workspace", "local-first", "privacy-first", "secrets at rest"])) {
+    users.push("AI platform teams", "self-hosted app operators");
+  }
+
   if (includesAny(text, ["developer", "repo", "code", "pull request", "github"])) {
     users.push("software developers", "small engineering teams");
   }
@@ -48,6 +68,26 @@ function inferTargetUsers(text: string) {
 }
 
 function inferWorkflow(text: string) {
+  if (includesAny(text, ["markdown", "pdf", "office documents", "document conversion"])) {
+    return "converts heterogeneous documents into Markdown for downstream AI and RAG workflows";
+  }
+
+  if (includesAny(text, ["context compression", "context-window", "token-optimization", "rag chunks"])) {
+    return "compresses LLM and RAG context to reduce token usage before model calls";
+  }
+
+  if (includesAny(text, ["provider-management", "claude code", "codex", "gemini cli", "opencode"])) {
+    return "switches and configures AI coding CLI providers, models, and routing settings";
+  }
+
+  if (includesAny(text, ["desktop sessions", "parent_session", "sidebar", "session continuity"])) {
+    return "manages AI agent sessions, desktop state, and conversation continuity";
+  }
+
+  if (includesAny(text, ["self-hosted ai workspace", "local-first", "privacy-first", "secrets at rest"])) {
+    return "runs a self-hosted AI workspace with local data, agents, memory, and deployment controls";
+  }
+
   if (includesAny(text, ["code review", "pull request", "review comments"])) {
     return "reviews code changes and comments on pull requests";
   }
@@ -74,6 +114,26 @@ function inferWorkflow(text: string) {
 function inferTechnicalMechanisms(text: string) {
   const mechanisms: string[] = [];
 
+  if (includesAny(text, ["markdown", "pdf", "office documents", "document conversion"])) {
+    mechanisms.push("document conversion pipeline");
+  }
+
+  if (includesAny(text, ["context compression", "context-window", "token-optimization", "rag chunks"])) {
+    mechanisms.push("LLM context compression");
+  }
+
+  if (includesAny(text, ["provider-management", "provider routing", "claude code", "codex", "gemini cli"])) {
+    mechanisms.push("AI provider routing and capability checks");
+  }
+
+  if (includesAny(text, ["desktop sessions", "parent_session", "sidebar", "session continuity"])) {
+    mechanisms.push("session lifecycle and state synchronization");
+  }
+
+  if (includesAny(text, ["self-hosted", "local-first", "privacy-first", "secrets at rest"])) {
+    mechanisms.push("self-hosted deployment and policy controls");
+  }
+
   if (includesAny(text, ["agent", "tool", "workflow"])) {
     mechanisms.push("agentic workflow orchestration");
   }
@@ -98,6 +158,26 @@ function inferTechnicalMechanisms(text: string) {
 }
 
 function inferProblem(repo: IdeaSourceRepo, text: string) {
+  if (includesAny(text, ["markdown", "pdf", "office documents", "document conversion"])) {
+    return "Document conversion pipelines are useful, but downstream AI teams still need QA for structure loss, unsafe inputs, and broken Markdown.";
+  }
+
+  if (includesAny(text, ["context compression", "context-window", "token-optimization", "rag chunks"])) {
+    return "Context compression saves tokens, but teams need evidence that important facts and code intent were not lost.";
+  }
+
+  if (includesAny(text, ["provider-management", "claude code", "codex", "gemini cli", "opencode"])) {
+    return "AI coding CLI users need reliable provider routing and clear diagnosis when auth, capability, or model routing fails.";
+  }
+
+  if (includesAny(text, ["desktop sessions", "parent_session", "sidebar", "session continuity"])) {
+    return "AI agent products need reliable conversation and desktop session continuity before users can trust long-running workflows.";
+  }
+
+  if (includesAny(text, ["self-hosted ai workspace", "local-first", "privacy-first", "secrets at rest"])) {
+    return "Self-hosted AI workspaces need deployment policy checks before teams expose secrets, local data, tools, and agents.";
+  }
+
   if (includesAny(text, ["code review", "pull request"])) {
     return "Teams get review comments, but still struggle to prioritize larger engineering work.";
   }
@@ -190,4 +270,3 @@ export function analyzeIdeaSourceRepo(value: unknown): RepoInsight {
 export function analyzeIdeaSourceRepos(values: unknown[]) {
   return values.map(analyzeIdeaSourceRepo);
 }
-

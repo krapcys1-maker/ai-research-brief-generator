@@ -316,6 +316,246 @@ const LEGAL_BUCKETS: EvidenceBucket[] = [
   })
 ];
 
+const DOCUMENT_CONVERSION_BUCKETS: EvidenceBucket[] = [
+  bucket({
+    id: "document_structure_preservation",
+    label: "Document structure preservation for Markdown conversion",
+    query:
+      "document conversion Markdown table structure preservation PDF Office RAG ingestion evaluation",
+    keywords: [
+      "document conversion",
+      "Markdown tables",
+      "structure preservation",
+      "RAG ingestion"
+    ],
+    targetQuestions: [
+      "Ktore bledy konwersji najbardziej niszcza wyszukiwanie i grounding?",
+      "Jak wykrywac utrate tabel, cytowan, sekcji i kolejnosci tresci?"
+    ]
+  }),
+  bucket({
+    id: "rag_ingestion_quality",
+    label: "RAG ingestion quality and retrieval impact",
+    query:
+      "RAG ingestion document preprocessing retrieval quality grounding evaluation",
+    keywords: ["RAG ingestion", "retrieval quality", "grounding", "document preprocessing"],
+    targetQuestions: [
+      "Jak jakosc konwersji dokumentu wplywa na retrieval i odpowiedzi?",
+      "Jakie metryki lacza regresje konwersji z downstream RAG quality?"
+    ]
+  }),
+  bucket({
+    id: "conversion_regression_fixtures",
+    label: "Conversion regression fixtures and reproducible QA",
+    query:
+      "document processing regression test fixtures OCR PDF tables benchmark",
+    keywords: ["regression fixtures", "PDF tables", "OCR", "document benchmark"],
+    targetQuestions: [
+      "Jak budowac fixture cases dla trudnych dokumentow?",
+      "Jak odtwarzac i wersjonowac regresje konwersji?"
+    ]
+  }),
+  bucket({
+    id: "unsafe_document_inputs",
+    label: "Unsafe document inputs and content risk controls",
+    query:
+      "document ingestion security prompt injection untrusted documents LLM RAG",
+    keywords: ["untrusted documents", "prompt injection", "document ingestion security"],
+    targetQuestions: [
+      "Jakie ryzyka niosa dokumenty przed wejsciem do RAG?",
+      "Jak oddzielic QA struktury od kontroli bezpieczenstwa tresci?"
+    ]
+  })
+];
+
+const LLM_CONTEXT_BUCKETS: EvidenceBucket[] = [
+  bucket({
+    id: "context_compression_fidelity",
+    label: "Context compression fidelity and fact retention",
+    query:
+      "LLM context compression fact retention summarization evaluation long context",
+    keywords: ["context compression", "fact retention", "long context", "summarization evaluation"],
+    targetQuestions: [
+      "Jak mierzyc utrate faktow po kompresji kontekstu?",
+      "Ktore typy informacji sa krytyczne dla agentow i RAG?"
+    ]
+  }),
+  bucket({
+    id: "token_budget_tradeoffs",
+    label: "Token budget tradeoffs and threshold selection",
+    query:
+      "large language model token budget context window tradeoff evaluation cost latency",
+    keywords: ["token budget", "context window", "cost latency", "threshold"],
+    targetQuestions: [
+      "Jak wybrac bezpieczny prog kompresji?",
+      "Jak laczyc oszczednosc tokenow z ryzykiem utraty evidence?"
+    ]
+  }),
+  bucket({
+    id: "agent_task_success",
+    label: "Agent task success after context transformation",
+    query:
+      "AI agent task success context summarization tool use evaluation",
+    keywords: ["agent task success", "tool use", "context summarization", "evaluation"],
+    targetQuestions: [
+      "Jak kompresja wplywa na wykonywanie zadan przez agentow?",
+      "Jakie testy wykrywaja utrate intencji kodu lub instrukcji?"
+    ]
+  }),
+  bucket({
+    id: "rag_evidence_loss",
+    label: "RAG evidence loss and citation quality",
+    query:
+      "retrieval augmented generation context compression citation quality evidence loss",
+    keywords: ["RAG", "citation quality", "evidence loss", "retrieval augmented generation"],
+    targetQuestions: [
+      "Kiedy kompresja niszczy cytowalnosc odpowiedzi?",
+      "Jak wykrywac brakujace fragmenty evidence w skompresowanym kontekscie?"
+    ]
+  })
+];
+
+const AI_CLI_PROVIDER_BUCKETS: EvidenceBucket[] = [
+  bucket({
+    id: "provider_capability_modeling",
+    label: "Provider capability modeling for AI coding CLIs",
+    query:
+      "AI coding assistants provider capabilities tool use model routing evaluation",
+    keywords: ["provider capabilities", "AI coding assistants", "tool use", "model routing"],
+    targetQuestions: [
+      "Jak modelowac roznice capability miedzy providerami?",
+      "Ktore capability musza blokowac wybor modelu lub narzedzia?"
+    ]
+  }),
+  bucket({
+    id: "auth_proxy_failure_modes",
+    label: "Auth, proxy and routing failure modes",
+    query:
+      "developer tools authentication proxy failure model routing diagnostics",
+    keywords: ["authentication", "proxy failure", "routing diagnostics", "developer tools"],
+    targetQuestions: [
+      "Jak klasyfikowac awarie auth, proxy i routingu?",
+      "Jakie health checki wykrywaja awarie przed rozmowa z modelem?"
+    ]
+  }),
+  bucket({
+    id: "cli_observability",
+    label: "CLI observability and reproducible diagnostics",
+    query:
+      "command line developer tool observability diagnostics logs reproducible bug report",
+    keywords: ["CLI observability", "diagnostics", "logs", "reproducible bug report"],
+    targetQuestions: [
+      "Jakie logi sa potrzebne do wyjasnienia failure providerow?",
+      "Jak generowac bezpieczne raporty diagnostyczne bez sekretow?"
+    ]
+  }),
+  bucket({
+    id: "fallback_routing_governance",
+    label: "Fallback routing governance and human review",
+    query:
+      "AI model routing fallback governance human review reliability",
+    keywords: ["fallback routing", "governance", "human review", "reliability"],
+    targetQuestions: [
+      "Kiedy system moze sugerowac fallback route?",
+      "Jak unikac automatycznej zmiany providera bez zgody uzytkownika?"
+    ]
+  })
+];
+
+const AGENT_SESSION_BUCKETS: EvidenceBucket[] = [
+  bucket({
+    id: "session_state_consistency",
+    label: "Session state consistency and lifecycle modeling",
+    query:
+      "conversation session state consistency lifecycle desktop application reliability",
+    keywords: ["session state", "lifecycle", "desktop application", "consistency"],
+    targetQuestions: [
+      "Jak modelowac parent-child session links i lifecycle?",
+      "Jak wykrywac sesje znikajace albo podpiete do zlego parenta?"
+    ]
+  }),
+  bucket({
+    id: "agent_ux_recovery",
+    label: "Agent UX recovery and trust after state failures",
+    query:
+      "AI agent user experience trust recovery state failure conversation continuity",
+    keywords: ["agent UX", "trust recovery", "state failure", "conversation continuity"],
+    targetQuestions: [
+      "Jakie awarie sesji najbardziej niszcza zaufanie?",
+      "Jak projektowac recovery path dla uzytkownika?"
+    ]
+  }),
+  bucket({
+    id: "cross_platform_sync",
+    label: "Cross-platform sync and desktop state reliability",
+    query:
+      "desktop application cross platform synchronization state reliability offline conflict resolution",
+    keywords: ["cross-platform sync", "desktop state", "offline", "conflict resolution"],
+    targetQuestions: [
+      "Jak testowac synchronizacje stanu miedzy klientami?",
+      "Jak unikac konfliktow i utraty sesji?"
+    ]
+  }),
+  bucket({
+    id: "session_qa_repro_cases",
+    label: "Session QA reproduction and telemetry",
+    query:
+      "software reliability telemetry reproduction test cases session bugs",
+    keywords: ["telemetry", "reproduction test cases", "session bugs", "software reliability"],
+    targetQuestions: [
+      "Jak zamieniac issue reports w scenariusze QA?",
+      "Jakie telemetry events sa potrzebne do debugowania sesji?"
+    ]
+  })
+];
+
+const SELF_HOSTED_AI_BUCKETS: EvidenceBucket[] = [
+  bucket({
+    id: "self_hosted_security_controls",
+    label: "Self-hosted AI security controls",
+    query:
+      "self hosted AI security controls secrets management local data deployment",
+    keywords: ["self-hosted AI", "security controls", "secrets management", "local data"],
+    targetQuestions: [
+      "Jakie kontrole sa wymagane przed rolloutem self-hosted AI?",
+      "Jak audytowac sekrety, storage i ekspozycje sieciowa?"
+    ]
+  }),
+  bucket({
+    id: "ai_workspace_governance",
+    label: "AI workspace governance and policy readiness",
+    query:
+      "AI workspace governance policy readiness audit tool approval data privacy",
+    keywords: ["workspace governance", "policy readiness", "tool approval", "data privacy"],
+    targetQuestions: [
+      "Jak opisac polityki workspace przed wdrozeniem?",
+      "Jak oceniac approval settings, memory i tool boundaries?"
+    ]
+  }),
+  bucket({
+    id: "local_first_privacy",
+    label: "Local-first privacy and data boundary design",
+    query:
+      "local first software privacy data boundary self hosted applications",
+    keywords: ["local-first", "privacy", "data boundary", "self-hosted"],
+    targetQuestions: [
+      "Jak definiowac granice danych w lokalnym AI workspace?",
+      "Co musi byc widoczne dla operatora przed wlaczeniem integracji?"
+    ]
+  }),
+  bucket({
+    id: "deployment_readiness_audit",
+    label: "Deployment readiness audit and remediation workflow",
+    query:
+      "deployment readiness audit configuration security remediation workflow",
+    keywords: ["deployment readiness", "configuration audit", "security remediation"],
+    targetQuestions: [
+      "Jak punktowac readiness konfiguracji?",
+      "Jak zamieniac wykryte luki na konkretne remediation tasks?"
+    ]
+  })
+];
+
 const GENERIC_BUCKETS: EvidenceBucket[] = [
   bucket({
     id: "domain_methods",
@@ -431,6 +671,54 @@ function selectBuckets(idea: NormalizedProjectIdea) {
     titleText.includes("contract")
   ) {
     buckets.push(...LEGAL_BUCKETS);
+  }
+
+  if (
+    hasDomain("document ai") ||
+    hasDomain("rag ingestion") ||
+    hasDomain("conversion quality") ||
+    titleText.includes("document conversion") ||
+    titleText.includes("markdown")
+  ) {
+    buckets.push(...DOCUMENT_CONVERSION_BUCKETS);
+  }
+
+  if (
+    hasDomain("llm context engineering") ||
+    hasDomain("rag evaluation") ||
+    hasDomain("agent reliability") ||
+    titleText.includes("context budget") ||
+    titleText.includes("context compression")
+  ) {
+    buckets.push(...LLM_CONTEXT_BUCKETS);
+  }
+
+  if (
+    hasDomain("provider routing") ||
+    hasDomain("cli reliability") ||
+    titleText.includes("provider compatibility") ||
+    titleText.includes("ai cli")
+  ) {
+    buckets.push(...AI_CLI_PROVIDER_BUCKETS);
+  }
+
+  if (
+    hasDomain("ai agent ux") ||
+    hasDomain("session reliability") ||
+    hasDomain("desktop ai apps") ||
+    titleText.includes("session reliability")
+  ) {
+    buckets.push(...AGENT_SESSION_BUCKETS);
+  }
+
+  if (
+    hasDomain("self-hosted ai") ||
+    hasDomain("ai security") ||
+    hasDomain("workspace governance") ||
+    titleText.includes("self-hosted") ||
+    titleText.includes("workspace policy")
+  ) {
+    buckets.push(...SELF_HOSTED_AI_BUCKETS);
   }
 
   return uniqueBuckets(buckets.length > 0 ? buckets : GENERIC_BUCKETS);

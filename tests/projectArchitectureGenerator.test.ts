@@ -51,6 +51,19 @@ const tradingIdea: ProjectIdeaInput = {
   outputLanguage: "pl"
 };
 
+const documentConversionIdea: ProjectIdeaInput = {
+  title: "Document Conversion QA Harness",
+  description:
+    "QA harness for Markdown, PDF and Office document conversion before RAG ingestion.",
+  constraints: [
+    "MVP: ingest converted Markdown outputs and source document metadata",
+    "MVP: detect table, citation, encoding, and structure regressions",
+    "MVP: produce conversion quality reports with reproducible fixture cases"
+  ],
+  preferredDomains: ["document AI", "RAG ingestion", "conversion quality"],
+  outputLanguage: "pl"
+};
+
 describe("generateProjectArchitecture", () => {
   it("generates ready architecture from ready PRD and research brief", () => {
     const brief = buildProjectResearchBrief({
@@ -77,6 +90,38 @@ describe("generateProjectArchitecture", () => {
     expect(architecture.traceability.componentsWithRequirements).toBe(
       architecture.components.length
     );
+    expect(architecture.traceability.decisionsWithPaperSources).toBe(
+      architecture.decisions.length
+    );
+  });
+
+  it("generates layered architecture for a discovered shortlist idea", () => {
+    const brief = buildProjectResearchBrief({
+      idea: documentConversionIdea,
+      reviewedPapers: fullEvidenceForIdea(documentConversionIdea),
+      generatedAt: "2026-06-03T16:00:00.000Z"
+    });
+    const prd = generateProjectPrd({ brief });
+
+    const architecture = generateProjectArchitecture({
+      prd,
+      brief,
+      generatedAt: "2026-06-03T16:05:00.000Z"
+    });
+    const componentTypes = new Set(
+      architecture.components.map((component) => component.componentType)
+    );
+    const componentNames = architecture.components
+      .map((component) => component.name)
+      .join(" ");
+
+    expect(architecture.status).toBe("ready");
+    expect(architecture.audit.score).toBeGreaterThanOrEqual(90);
+    expect(componentTypes.size).toBeGreaterThanOrEqual(5);
+    expect(componentNames).toContain("Document Fixture Intake Adapter");
+    expect(componentNames).toContain("Structure And RAG Quality AI Evaluator");
+    expect(architecture.testStrategy.join(" ")).toContain("golden fixtures");
+    expect(architecture.audit.verdict).toContain("document_conversion_qa");
     expect(architecture.traceability.decisionsWithPaperSources).toBe(
       architecture.decisions.length
     );
