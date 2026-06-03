@@ -1,3 +1,4 @@
+export * from "@/lib/project-research/briefBuilder";
 export * from "@/lib/project-research/markdown";
 export * from "@/lib/project-research/ideaNormalizer";
 export * from "@/lib/project-research/researchPlan";
