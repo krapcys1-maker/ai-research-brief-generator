@@ -1,0 +1,484 @@
+import { normalizeProjectIdea } from "@/lib/project-research/ideaNormalizer";
+import {
+  NormalizedProjectIdeaSchema,
+  ProjectIdeaInputSchema,
+  ResearchPlanSchema
+} from "@/lib/project-research/schemas";
+import type {
+  EvidenceBucket,
+  NormalizedProjectIdea,
+  ProjectIdeaInput,
+  ResearchPlan
+} from "@/lib/project-research/types";
+
+type ResearchPlanResult = {
+  normalizedIdea: NormalizedProjectIdea;
+  researchPlan: ResearchPlan;
+};
+
+type BucketSeed = Omit<EvidenceBucket, "required" | "minParsedPapers"> & {
+  required?: boolean;
+  minParsedPapers?: number;
+};
+
+const REQUIRED_PAPERS_PER_BUCKET = 2;
+
+function bucket(seed: BucketSeed): EvidenceBucket {
+  return {
+    required: true,
+    minParsedPapers: REQUIRED_PAPERS_PER_BUCKET,
+    ...seed
+  };
+}
+
+const TRADING_BUCKETS: EvidenceBucket[] = [
+  bucket({
+    id: "model_experiments",
+    label: "Modeling methods for trading decisions",
+    query:
+      "algorithmic trading reinforcement learning transformers market prediction empirical evaluation",
+    keywords: [
+      "algorithmic trading",
+      "reinforcement learning",
+      "market prediction",
+      "empirical evaluation"
+    ],
+    targetQuestions: [
+      "Jakie metody modelowania maja powtarzalne wyniki na danych rynkowych?",
+      "Jak porownywac modele bez mylenia predykcji z rentownoscia strategii?"
+    ]
+  }),
+  bucket({
+    id: "backtest_validation",
+    label: "Backtest validity and overfitting control",
+    query:
+      "backtest overfitting deflated sharpe ratio probability of backtest overfitting trading strategies",
+    keywords: [
+      "backtest overfitting",
+      "deflated sharpe ratio",
+      "probability of backtest overfitting",
+      "strategy validation"
+    ],
+    targetQuestions: [
+      "Jak wykrywac strategie dopasowane do szumu?",
+      "Jakie metryki powinny blokowac przejscie z researchu do paper tradingu?"
+    ]
+  }),
+  bucket({
+    id: "data_correctness",
+    label: "Market data leakage and validation splits",
+    query:
+      "financial machine learning data leakage purged cross validation embargo look ahead bias",
+    keywords: [
+      "data leakage",
+      "purged cross validation",
+      "embargo",
+      "look-ahead bias"
+    ],
+    targetQuestions: [
+      "Jak dzielic dane czasowe, zeby nie wpuscic przecieku informacji?",
+      "Jak oznaczac cechy i targety w pipeline treningowym?"
+    ]
+  }),
+  bucket({
+    id: "execution_market_impact",
+    label: "Execution, transaction costs, slippage and market impact",
+    query:
+      "optimal execution market impact transaction costs slippage algorithmic trading",
+    keywords: [
+      "optimal execution",
+      "market impact",
+      "transaction costs",
+      "slippage"
+    ],
+    targetQuestions: [
+      "Jak modelowac koszty i poslizg przed symulacja wyniku?",
+      "Kiedy strategia przestaje byc wykonalna mimo dobrego backtestu?"
+    ]
+  }),
+  bucket({
+    id: "risk_governance",
+    label: "Trading risk controls and model governance",
+    query:
+      "algorithmic trading risk management kill switch model governance pre trade risk controls",
+    keywords: [
+      "risk management",
+      "kill switch",
+      "model governance",
+      "pre-trade risk controls"
+    ],
+    targetQuestions: [
+      "Jakie bramki ryzyka sa wymagane przed paper/live tradingiem?",
+      "Jak audytowac decyzje modelu i zmiany strategii?"
+    ]
+  })
+];
+
+const CODE_REVIEW_BUCKETS: EvidenceBucket[] = [
+  bucket({
+    id: "static_analysis",
+    label: "Static analysis and bug detection",
+    query:
+      "static analysis bug detection false positives software engineering empirical study",
+    keywords: [
+      "static analysis",
+      "bug detection",
+      "false positives",
+      "empirical study"
+    ],
+    targetQuestions: [
+      "Ktore klasyczne analizatory daja stabilne sygnaly dla MVP?",
+      "Jak ograniczyc false positives przed pokazaniem rekomendacji?"
+    ]
+  }),
+  bucket({
+    id: "llm_code_review",
+    label: "LLM assisted code review",
+    query:
+      "large language models automated code review code quality software engineering",
+    keywords: [
+      "large language models",
+      "code review",
+      "code quality",
+      "software engineering"
+    ],
+    targetQuestions: [
+      "Gdzie LLM realnie pomaga w review, a gdzie halucynuje?",
+      "Czy LLM ma wykrywac problemy, wyjasniac je, czy tylko priorytetyzowac?"
+    ]
+  }),
+  bucket({
+    id: "program_repair",
+    label: "Automated program repair and patch validation",
+    query:
+      "automated program repair patch generation validation test adequacy software engineering",
+    keywords: [
+      "automated program repair",
+      "patch generation",
+      "patch validation",
+      "test adequacy"
+    ],
+    targetQuestions: [
+      "Kiedy sugerowanie poprawek jest bezpieczne?",
+      "Jak walidowac patch bez niszczenia zaufania uzytkownika?"
+    ]
+  }),
+  bucket({
+    id: "repository_mining",
+    label: "Mining software repositories and technical debt",
+    query:
+      "mining software repositories technical debt code smells maintainability prioritization",
+    keywords: [
+      "mining software repositories",
+      "technical debt",
+      "code smells",
+      "maintainability"
+    ],
+    targetQuestions: [
+      "Jak agregowac sygnaly z historii repozytorium?",
+      "Jak priorytetyzowac problemy techniczne w wielu plikach?"
+    ]
+  }),
+  bucket({
+    id: "developer_workflow",
+    label: "Developer workflow and actionable recommendations",
+    query:
+      "developer tools code review recommendation triage human factors software engineering",
+    keywords: [
+      "developer tools",
+      "recommendation",
+      "triage",
+      "human factors"
+    ],
+    targetQuestions: [
+      "Jak przedstawic rekomendacje, zeby byly uzyteczne dla developera?",
+      "Jakie metryki mierza akceptacje i uzytecznosc narzedzia?"
+    ]
+  })
+];
+
+const HEALTHCARE_BUCKETS: EvidenceBucket[] = [
+  bucket({
+    id: "clinical_evidence",
+    label: "Clinical evidence and diagnostic support limits",
+    query:
+      "clinical decision support artificial intelligence diagnostic accuracy validation systematic review",
+    keywords: [
+      "clinical decision support",
+      "diagnostic accuracy",
+      "validation",
+      "systematic review"
+    ],
+    targetQuestions: [
+      "Jakie sa granice systemu wspierajacego decyzje kliniczne?",
+      "Jak mierzyc jakosc bez obiecywania diagnozy?"
+    ]
+  }),
+  bucket({
+    id: "safety_validation",
+    label: "Safety, calibration and human oversight",
+    query:
+      "medical AI safety calibration uncertainty human oversight clinical workflow",
+    keywords: ["medical AI", "safety", "calibration", "human oversight"],
+    targetQuestions: [
+      "Jak sygnalizowac niepewnosc i eskalowac przypadki?",
+      "Jakie bramki bezpieczenstwa sa wymagane przed wdrozeniem?"
+    ]
+  }),
+  bucket({
+    id: "privacy_compliance",
+    label: "Privacy and data governance",
+    query:
+      "healthcare AI privacy data governance patient data de identification compliance",
+    keywords: [
+      "privacy",
+      "data governance",
+      "patient data",
+      "de-identification"
+    ],
+    targetQuestions: [
+      "Jak chronione sa dane pacjenta?",
+      "Co musi byc logowane i anonimizowane?"
+    ]
+  }),
+  bucket({
+    id: "workflow_integration",
+    label: "Clinical workflow integration",
+    query:
+      "clinical workflow integration AI decision support usability implementation study",
+    keywords: [
+      "clinical workflow",
+      "decision support",
+      "usability",
+      "implementation study"
+    ],
+    targetQuestions: [
+      "Jak system wchodzi w prace lekarza bez blokowania procesu?",
+      "Jak mierzyc uzytecznosc i zaufanie?"
+    ]
+  })
+];
+
+const LEGAL_BUCKETS: EvidenceBucket[] = [
+  bucket({
+    id: "legal_retrieval",
+    label: "Legal retrieval and citation grounding",
+    query:
+      "legal information retrieval citation grounding document question answering evaluation",
+    keywords: [
+      "legal information retrieval",
+      "citation grounding",
+      "question answering",
+      "evaluation"
+    ],
+    targetQuestions: [
+      "Jak wyszukiwac przepisy i fragmenty dokumentow z cytowaniem?",
+      "Jak mierzyc trafnosc odpowiedzi prawnych?"
+    ]
+  }),
+  bucket({
+    id: "contract_analysis",
+    label: "Contract analysis and clause extraction",
+    query:
+      "contract analysis clause extraction legal NLP obligation risk classification",
+    keywords: [
+      "contract analysis",
+      "clause extraction",
+      "legal NLP",
+      "risk classification"
+    ],
+    targetQuestions: [
+      "Jak ekstraktowac klauzule, obowiazki i ryzyka?",
+      "Jak walidowac klasyfikacje klauzul?"
+    ]
+  }),
+  bucket({
+    id: "compliance_risk",
+    label: "Compliance risk and auditability",
+    query:
+      "compliance risk management auditability legal AI governance explainability",
+    keywords: ["compliance risk", "auditability", "legal AI", "governance"],
+    targetQuestions: [
+      "Jak zapewnic audytowalnosc decyzji?",
+      "Jak oddzielic rekomendacje od porady prawnej?"
+    ]
+  }),
+  bucket({
+    id: "human_review",
+    label: "Human legal review workflow",
+    query:
+      "legal AI human review workflow document review decision support",
+    keywords: ["human review", "legal workflow", "document review", "decision support"],
+    targetQuestions: [
+      "Gdzie czlowiek zatwierdza wnioski?",
+      "Jak projektowac workflow review, zeby ograniczyc ryzyko?"
+    ]
+  })
+];
+
+const GENERIC_BUCKETS: EvidenceBucket[] = [
+  bucket({
+    id: "domain_methods",
+    label: "Domain methods and prior art",
+    query:
+      "applied AI system design empirical evaluation prior work methods",
+    keywords: ["applied AI", "system design", "empirical evaluation", "methods"],
+    targetQuestions: [
+      "Jakie metody sa uzywane w podobnych systemach?",
+      "Co jest sprawdzone, a co jest tylko zalozeniem?"
+    ]
+  }),
+  bucket({
+    id: "data_requirements",
+    label: "Data requirements and data quality",
+    query:
+      "machine learning system data quality dataset requirements evaluation pipeline",
+    keywords: ["data quality", "dataset requirements", "evaluation", "pipeline"],
+    targetQuestions: [
+      "Jakich danych potrzebuje MVP?",
+      "Jak mierzyc jakosc i pokrycie danych?"
+    ]
+  }),
+  bucket({
+    id: "evaluation_validation",
+    label: "Evaluation and validation",
+    query:
+      "AI system evaluation validation benchmark metrics reliability",
+    keywords: ["evaluation", "validation", "benchmark", "reliability"],
+    targetQuestions: [
+      "Jakie metryki mowia, ze system dziala?",
+      "Jak wyglada minimalny uczciwy benchmark?"
+    ]
+  }),
+  bucket({
+    id: "risk_safety",
+    label: "Risk, safety and failure modes",
+    query:
+      "AI system risk safety failure modes human oversight governance",
+    keywords: ["risk", "safety", "failure modes", "human oversight"],
+    targetQuestions: [
+      "Jakie sa najgrozniejsze tryby awarii?",
+      "Jak ograniczyc skutki blednych decyzji?"
+    ]
+  }),
+  bucket({
+    id: "implementation_operations",
+    label: "Implementation and operations",
+    query:
+      "production AI system architecture monitoring operations reliability",
+    keywords: ["architecture", "monitoring", "operations", "reliability"],
+    targetQuestions: [
+      "Jakie komponenty sa potrzebne w pierwszej wersji?",
+      "Jak monitorowac jakosc po wdrozeniu?"
+    ]
+  })
+];
+
+function uniqueBuckets(buckets: EvidenceBucket[]) {
+  const seen = new Set<string>();
+  return buckets.filter((bucketItem) => {
+    if (seen.has(bucketItem.id)) {
+      return false;
+    }
+    seen.add(bucketItem.id);
+    return true;
+  });
+}
+
+function selectBuckets(idea: NormalizedProjectIdea) {
+  const normalizedDomains = idea.domains.map((domain) => domain.toLowerCase());
+  const titleText = `${idea.title} ${idea.oneSentence}`.toLowerCase();
+  const hasDomain = (domain: string) => normalizedDomains.includes(domain);
+  const buckets: EvidenceBucket[] = [];
+
+  if (
+    hasDomain("algorithmic trading") ||
+    hasDomain("quant research") ||
+    hasDomain("financial risk") ||
+    titleText.includes("trading") ||
+    titleText.includes("quant")
+  ) {
+    buckets.push(...TRADING_BUCKETS);
+  }
+
+  if (
+    hasDomain("software engineering") ||
+    hasDomain("static analysis") ||
+    hasDomain("llm code review") ||
+    titleText.includes("code review") ||
+    titleText.includes("repo")
+  ) {
+    buckets.push(...CODE_REVIEW_BUCKETS);
+  }
+
+  if (
+    hasDomain("clinical ai") ||
+    hasDomain("healthcare safety") ||
+    hasDomain("medical validation") ||
+    titleText.includes("clinical") ||
+    titleText.includes("healthcare") ||
+    titleText.includes("medical")
+  ) {
+    buckets.push(...HEALTHCARE_BUCKETS);
+  }
+
+  if (
+    hasDomain("legal retrieval") ||
+    hasDomain("compliance risk") ||
+    hasDomain("document review") ||
+    titleText.includes("legal") ||
+    titleText.includes("compliance") ||
+    titleText.includes("contract")
+  ) {
+    buckets.push(...LEGAL_BUCKETS);
+  }
+
+  return uniqueBuckets(buckets.length > 0 ? buckets : GENERIC_BUCKETS);
+}
+
+function buildResearchGoals(idea: NormalizedProjectIdea, buckets: EvidenceBucket[]) {
+  return [
+    `Zbudowac ResearchPlan dla: ${idea.title}.`,
+    "Oddzielic evidence-backed decisions od zalozen bez zrodel.",
+    "Zebrac pelnotekstowe lub przynajmniej abstraktowe dowody dla kazdego wymaganego bucketu.",
+    `Pokryc buckety: ${buckets.map((bucketItem) => bucketItem.id).join(", ")}.`
+  ];
+}
+
+function buildQueryVariants(idea: NormalizedProjectIdea, buckets: EvidenceBucket[]) {
+  return Array.from(
+    new Set([
+      ...buckets.map((bucketItem) => bucketItem.query),
+      ...buckets.flatMap((bucketItem) =>
+        bucketItem.keywords.slice(0, 2).map((keyword) => `${idea.title} ${keyword}`)
+      )
+    ])
+  );
+}
+
+export function createResearchPlanForIdea(
+  value: NormalizedProjectIdea
+): ResearchPlan {
+  const idea = NormalizedProjectIdeaSchema.parse(value);
+  const evidenceBuckets = selectBuckets(idea);
+  const researchPlan: ResearchPlan = {
+    ideaId: idea.ideaId,
+    researchGoals: buildResearchGoals(idea, evidenceBuckets),
+    evidenceBuckets,
+    queryVariants: buildQueryVariants(idea, evidenceBuckets),
+    sources: ["arxiv", "semantic_scholar", "openalex"]
+  };
+
+  return ResearchPlanSchema.parse(researchPlan);
+}
+
+export function buildProjectResearchPlan(value: unknown): ResearchPlanResult {
+  const normalizedIdea = ProjectIdeaInputSchema.safeParse(value).success
+    ? normalizeProjectIdea(value as ProjectIdeaInput)
+    : NormalizedProjectIdeaSchema.parse(value);
+
+  return {
+    normalizedIdea,
+    researchPlan: createResearchPlanForIdea(normalizedIdea)
+  };
+}

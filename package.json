@@ -15,6 +15,7 @@
     "benchmark:claim-check": "tsx scripts/claim-check-benchmark.ts",
     "benchmark:quality-gate": "tsx scripts/benchmark-quality-gate.ts",
     "benchmark:embedding-comparison": "tsx scripts/embedding-provider-comparison.ts",
+    "benchmark:project-research-plan": "tsx scripts/project-research-plan-benchmark.ts",
     "worker:briefs": "tsx scripts/brief-job-worker.ts",
     "worker:fulltext": "tsx scripts/fulltext-ingestion-worker.ts",
     "smoke:deploy": "node scripts/deployment-smoke.mjs",
