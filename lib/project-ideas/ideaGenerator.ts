@@ -264,7 +264,15 @@ function adjacentBlueprint(
       focusedText.includes("orchestration")) &&
     !focusedText.includes("code review") &&
     !focusedText.includes("pull request") &&
-    !focusedText.includes("review comments")
+    !focusedText.includes("review comments") &&
+    !focusedText.includes("trading") &&
+    !focusedText.includes("market") &&
+    !focusedText.includes("backtest") &&
+    !focusedText.includes("portfolio") &&
+    !focusedText.includes("data") &&
+    !focusedText.includes("analytics") &&
+    !focusedText.includes("dashboard") &&
+    !focusedText.includes("csv")
   ) {
     return {
       title: "AI Agent Run QA Console",

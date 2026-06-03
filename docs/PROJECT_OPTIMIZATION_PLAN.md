@@ -60,10 +60,13 @@ Current guard:
 
 - Repo analyzer does not let noisy README feature text override workflow classification.
 - Session reliability has priority over incidental context-compression mentions.
+- `projectIdeaBenchmarkCases` stores stable benchmark fixtures outside the benchmark script.
+- `npm run benchmark:project-ideas` verifies expected top ideas for regression cases.
 
-Next guard:
+Implemented guard:
 
-- Add recorded live GitHub fixtures with noisy README/issues for every major workflow bucket.
+- Recorded-style GitHub fixtures cover document conversion, context compression, AI CLI provider routing, agent session reliability and self-hosted AI governance.
+- Noisy README, multilingual issue, incidental issue-noise and multi-source diversity fixtures are included.
 
 ### 4. Source Dominance
 
@@ -152,13 +155,14 @@ For every meaningful system change:
 
 ### P1: Data Quality
 
-- Expand recorded GitHub fixtures for:
+- Done: expand recorded-style GitHub fixtures for:
   - document conversion,
   - context compression,
   - AI CLI provider routing,
   - agent session reliability,
   - self-hosted AI governance.
-- Add fixture cases for misleading README text and multilingual issues.
+- Done: add fixture cases for misleading README text, multilingual issues and incidental context-compression issue noise.
+- Done: make benchmark read from stable fixture module instead of recreating every case inline.
 - Add source freshness and trend acceleration fields when data source allows it.
 
 ### P2: Handoff Quality
@@ -184,11 +188,10 @@ For every meaningful system change:
 
 ## Current Recommended Next Step
 
-Implement recorded live GitHub fixture expansion:
+Implement handoff quality scoring:
 
-- add stable fixture files for the five current workflow buckets,
-- include noisy README and issue text,
-- include multilingual issue reports,
-- make benchmarks read from these fixtures instead of recreating every case inline.
+- score every `ProjectIdeaInput` before research,
+- write an artifact explaining why a shortlisted idea is ready or not ready for research,
+- fail the project idea benchmark when constraints, domains, non-goals or research questions become generic.
 
-This will make data-noise regression testing easier as the pipeline grows.
+This will close the next gap between “good-looking idea” and a research-ready input for PRD and architecture generation.
