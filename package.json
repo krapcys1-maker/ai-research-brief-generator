@@ -15,6 +15,7 @@
     "benchmark:claim-check": "tsx scripts/claim-check-benchmark.ts",
     "benchmark:quality-gate": "tsx scripts/benchmark-quality-gate.ts",
     "benchmark:embedding-comparison": "tsx scripts/embedding-provider-comparison.ts",
+    "benchmark:project-pipeline": "tsx scripts/project-pipeline-benchmark.ts",
     "benchmark:project-architecture": "tsx scripts/project-architecture-benchmark.ts",
     "benchmark:project-prd": "tsx scripts/project-prd-benchmark.ts",
     "benchmark:project-research-evidence": "tsx scripts/project-research-evidence-benchmark.ts",
