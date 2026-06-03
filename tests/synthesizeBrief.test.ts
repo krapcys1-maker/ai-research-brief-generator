@@ -99,6 +99,12 @@ describe("synthesizeBrief", () => {
     });
 
     expect(generateStructured).toHaveBeenCalledTimes(2);
+    expect(generateStructured.mock.calls[0]?.[0]).toEqual(
+      expect.objectContaining({
+        schemaName: "ResearchBrief",
+        timeoutMs: 240000
+      })
+    );
     expect(generateStructured.mock.calls[1]?.[0].userPrompt).toContain(
       "Previous output failed server-side grounding validation"
     );
@@ -168,11 +174,11 @@ describe("synthesizeBrief", () => {
 
     expect(generateStructured).toHaveBeenCalledTimes(2);
     expect(brief.id).toBe("brief_from_app");
-    expect(brief.title).toContain("Source-grounded evidence summary");
+    expect(brief.title).toContain("Conservative source brief");
     expect(brief.searchSummary.warnings.join(" ")).toContain(
       "AI synthesis fallback used"
     );
-    expect(brief.keyFindings[0]?.finding).toBe(paper.title);
+    expect(brief.keyFindings[0]?.finding).toContain(paper.title);
     expect(brief.keyFindings[0]?.explanation).not.toBe(
       brief.keyFindings[0]?.finding
     );
@@ -185,7 +191,7 @@ describe("synthesizeBrief", () => {
     expect(diagnostics.byProvider[0]?.provider).toBe("deepseek");
   });
 
-  it("falls back after one provider failure in development", async () => {
+  it("uses two synthesis attempts in development before falling back", async () => {
     vi.stubEnv("NODE_ENV", "development");
     const paper = createPaper();
     const generatedBrief = createBrief();
@@ -211,13 +217,46 @@ describe("synthesizeBrief", () => {
       searchSummary: generatedBrief.searchSummary
     });
 
-    expect(generateStructured).toHaveBeenCalledTimes(1);
+    expect(generateStructured).toHaveBeenCalledTimes(2);
     expect(brief.id).toBe("brief_from_app");
-    expect(brief.title).toContain("Source-grounded evidence summary");
+    expect(brief.title).toContain("Conservative source brief");
 
     const diagnostics = await getAiSynthesisHealthSummary();
-    expect(diagnostics.retry).toBe(0);
+    expect(diagnostics.retry).toBe(1);
     expect(diagnostics.providerError).toBe(1);
     expect(diagnostics.fallback).toBe(1);
+  });
+
+  it("creates Polish fallback copy for Polish requests", async () => {
+    const paper = createPaper({
+      title:
+        "A Deep Reinforcement Learning-Based Decision Support System for Automated Stock Market Trading",
+      abstract:
+        "Deep reinforcement learning methods and trading bots are commonly utilized for algorithmic trading."
+    });
+    const generatedBrief = createBrief();
+    const generateStructured = vi
+      .fn()
+      .mockRejectedValue(new AIProviderError("DeepSeek request timed out."));
+
+    vi.mocked(createAIProvider).mockReturnValue({
+      name: "deepseek",
+      generateStructured
+    });
+
+    const brief = await synthesizeBrief({
+      id: "brief_from_app",
+      query: "tworzenie bota który gra na giełdzie",
+      outputLanguage: "pl",
+      queryVariants: ["automated trading bot stock market"],
+      papers: [paper],
+      searchSummary: generatedBrief.searchSummary
+    });
+
+    expect(brief.title).toContain("Ostrożny brief źródłowy");
+    expect(brief.tldr).toContain("Provider AI nie zwrócił");
+    expect(brief.executiveSummary.paragraph).toContain("Wybrane źródła");
+    expect(brief.researchGaps[0]?.gap).toContain("pełnotekstowa");
+    expect(brief.suggestedNextQuestions[0]).toContain("pełny tekst");
   });
 });

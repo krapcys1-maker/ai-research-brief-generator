@@ -56,6 +56,30 @@ describe("paperInsights", () => {
     );
   });
 
+  it("does not call a weakly aligned paper a strong query match", () => {
+    const insight = getPaperInsight(
+      createPaper({
+        title: "A Deep Reinforcement Learning Technique for Stock Price Prediction",
+        abstract: "Deep learning can support stock market forecasting.",
+        source: "openalex",
+        relevanceScore: 1,
+        doi: "10.1000/trading",
+        citationCount: 20
+      }),
+      2026,
+      "automated trading bot architecture"
+    );
+
+    expect(insight.queryAlignment?.label).toBe("Weak topic match");
+    expect(insight.role).not.toBe("Strong query match");
+    expect(insight.strengths).not.toContain(
+      "strong title/abstract match to the query"
+    );
+    expect(insight.limitations).toContain(
+      "weak query wording match, so verify whether it really fits"
+    );
+  });
+
   it("summarizes source quality signals across selected papers", () => {
     const summary = getSourceQualitySummary([
       createPaper({

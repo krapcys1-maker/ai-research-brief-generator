@@ -70,29 +70,28 @@ ${getLanguageInstruction(input.outputLanguage)}
 Query variants used:
 ${JSON.stringify(input.queryVariants)}
 
-You are given a list of papers with IDs, titles, abstracts, years, authors, citation counts, DOI values, venues, and URLs.
+You are given papers with IDs, titles, abstracts, years, authors, citations, DOI values, venues, and URLs.
 
-Your task:
-1. Summarize the current research landscape.
-2. Identify major themes.
-3. Extract key findings.
-4. Identify research gaps.
-5. Identify controversies or uncertainties.
-6. Suggest next research questions.
-7. Cite paper IDs for every important claim.
-8. Add evidence snippets for every important claim using the evidence array.
-9. Prefer concrete claims over generic summaries: include mechanisms, measured effects, evaluation settings, populations, materials, or implementation constraints when the papers support them.
-10. When evidence is thin or selected papers are few, say so plainly instead of over-generalizing.
-11. Keep the output compact enough for reliable JSON generation: use at most 3 keyFindings, 3 majorThemes, 3 researchGaps, 2 controversiesOrUncertainties, 4 influentialPapers, and 5 suggestedNextQuestions.
-12. Keep each evidence array to 1 or 2 short evidence snippets.
+Return one compact JSON object. Use at most:
+- 3 keyFindings
+- 3 majorThemes
+- 2 researchGaps
+- 2 controversiesOrUncertainties
+- 4 influentialPapers
+- 4 suggestedNextQuestions
+- 1 evidence snippet per claim unless a second snippet is essential
 
-Return exactly one JSON object with these keys:
+Every executiveSummary, keyFinding, majorTheme, researchGap, and uncertainty needs sourcePaperIds and evidence.
+Evidence snippets must be short spans copied or tightly paraphrased from the supplied title, abstract, venue, year, or metadata.
+Keep claims narrow. Do not add quantitative, comparative, causal, or absolute wording unless that same detail is in the evidence snippet.
+
+Required top-level keys:
 id, query, outputLanguage, generatedAt, title, tldr, executiveSummary, keyFindings, majorThemes, influentialPapers, researchGaps, controversiesOrUncertainties, suggestedNextQuestions, searchSummary, bibliography.
 
 Use only paper IDs from this list:
 ${JSON.stringify(paperIds)}
 
-The JSON object must match this shape exactly:
+Use this compact shape exactly:
 {
   "id": "will_be_overwritten_by_server",
   "query": "original query",
@@ -104,11 +103,7 @@ The JSON object must match this shape exactly:
     "paragraph": "summary paragraph in the final report language",
     "sourcePaperIds": ["paper_id"],
     "evidence": [
-      {
-        "paperId": "paper_id",
-        "evidenceText": "short evidence span from the paper title, abstract, venue, or metadata",
-        "supportLevel": "direct|indirect|weak"
-      }
+      {"paperId": "paper_id", "evidenceText": "short evidence span", "supportLevel": "direct|indirect|weak"}
     ]
   },
   "keyFindings": [
@@ -118,11 +113,7 @@ The JSON object must match this shape exactly:
       "confidence": "low|medium|high",
       "sourcePaperIds": ["paper_id"],
       "evidence": [
-        {
-          "paperId": "paper_id",
-          "evidenceText": "short evidence span from the paper title, abstract, venue, or metadata",
-          "supportLevel": "direct|indirect|weak"
-        }
+        {"paperId": "paper_id", "evidenceText": "short evidence span", "supportLevel": "direct|indirect|weak"}
       ],
       "caveats": ["optional caveat in the final report language"]
     }
@@ -133,11 +124,7 @@ The JSON object must match this shape exactly:
       "description": "description in the final report language",
       "sourcePaperIds": ["paper_id"],
       "evidence": [
-        {
-          "paperId": "paper_id",
-          "evidenceText": "short evidence span from the paper title, abstract, venue, or metadata",
-          "supportLevel": "direct|indirect|weak"
-        }
+        {"paperId": "paper_id", "evidenceText": "short evidence span", "supportLevel": "direct|indirect|weak"}
       ]
     }
   ],
@@ -153,11 +140,7 @@ The JSON object must match this shape exactly:
       "whyItMatters": "why it matters in the final report language",
       "sourcePaperIds": ["paper_id"],
       "evidence": [
-        {
-          "paperId": "paper_id",
-          "evidenceText": "short evidence span from the paper title, abstract, venue, or metadata",
-          "supportLevel": "direct|indirect|weak"
-        }
+        {"paperId": "paper_id", "evidenceText": "short evidence span", "supportLevel": "direct|indirect|weak"}
       ]
     }
   ],
@@ -167,11 +150,7 @@ The JSON object must match this shape exactly:
       "explanation": "explanation in the final report language",
       "sourcePaperIds": ["paper_id"],
       "evidence": [
-        {
-          "paperId": "paper_id",
-          "evidenceText": "short evidence span from the paper title, abstract, venue, or metadata",
-          "supportLevel": "direct|indirect|weak"
-        }
+        {"paperId": "paper_id", "evidenceText": "short evidence span", "supportLevel": "direct|indirect|weak"}
       ]
     }
   ],

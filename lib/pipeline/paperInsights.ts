@@ -82,7 +82,11 @@ function hasStableIdentifier(paper: NormalizedPaper) {
   );
 }
 
-function getRole(paper: NormalizedPaper, currentYear: number) {
+function getRole(
+  paper: NormalizedPaper,
+  currentYear: number,
+  queryAlignment?: PaperQueryAlignment
+) {
   const title = paper.title.toLowerCase();
 
   if (/\b(systematic review|review|survey|meta-analysis)\b/.test(title)) {
@@ -101,8 +105,12 @@ function getRole(paper: NormalizedPaper, currentYear: number) {
     return "Recent evidence";
   }
 
-  if ((paper.relevanceScore ?? 0) >= 0.65) {
+  if (queryAlignment && queryAlignment.combinedScore >= 0.65) {
     return "Strong query match";
+  }
+
+  if (!queryAlignment && (paper.relevanceScore ?? 0) >= 0.65) {
+    return "High source relevance";
   }
 
   return "Supporting source";
@@ -117,20 +125,25 @@ export function getPaperInsight(
   const limitations: string[] = [];
   const relevance = paper.relevanceScore ?? 0;
   const citations = paper.citationCount ?? 0;
-  const role = getRole(paper, currentYear);
   const queryAlignment = query ? getPaperQueryAlignment(paper, query) : undefined;
+  const role = getRole(paper, currentYear, queryAlignment);
 
-  if (queryAlignment?.combinedScore && queryAlignment.combinedScore >= 0.65) {
-    strengths.push("direct query-title/abstract alignment");
-  } else if (relevance >= 0.65) {
-    strengths.push("strong title/abstract match to the query");
-  } else if (
-    (queryAlignment?.combinedScore && queryAlignment.combinedScore >= 0.35) ||
-    relevance >= 0.35
-  ) {
-    strengths.push("reasonable topical match");
+  if (queryAlignment) {
+    if (queryAlignment.combinedScore >= 0.65) {
+      strengths.push("direct query-title/abstract alignment");
+    } else if (queryAlignment.combinedScore >= 0.3) {
+      strengths.push("partial query-title/abstract alignment");
+    } else {
+      limitations.push("weak query wording match, so verify whether it really fits");
+    }
   } else {
-    limitations.push("weak query match, so verify whether it really fits");
+    if (relevance >= 0.65) {
+      strengths.push("strong title/abstract match to the query");
+    } else if (relevance >= 0.35) {
+      strengths.push("reasonable topical match");
+    } else {
+      limitations.push("weak query match, so verify whether it really fits");
+    }
   }
 
   if (isLiveSource(paper)) {

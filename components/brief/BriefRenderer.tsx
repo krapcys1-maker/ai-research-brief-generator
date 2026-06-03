@@ -764,32 +764,62 @@ function AskBriefPanel({
 }
 
 
-function WarningSummary({ warnings }: { warnings: string[] }) {
+function WarningSummary({
+  warnings,
+  outputLanguage
+}: {
+  warnings: string[];
+  outputLanguage: string;
+}) {
   if (!warnings.length) {
     return null;
   }
 
   const groups = getWarningGroups(warnings);
   const fallbackWarning = getFallbackWarning(warnings);
+  const isPolish = outputLanguage === "pl";
 
   return (
     <div className="warning-panel" role="status">
       {fallbackWarning ? (
         <div className="fallback-explainer">
           <div>
-            <span className="metric-label">Fallback mode</span>
-            <strong>Extractive evidence summary</strong>
+            <span className="metric-label">
+              {isPolish ? "Tryb awaryjny" : "Fallback mode"}
+            </span>
+            <strong>
+              {isPolish
+                ? "Ostrożny brief z abstraktów"
+                : "Extractive evidence summary"}
+            </strong>
           </div>
-          <p>
-            The AI synthesis provider did not return a fully validated narrative.
-            This page uses a safer fallback built from selected paper titles,
-            abstracts, and source metadata only.
-          </p>
-          <p>
-            For a richer synthesized brief, retry generation, narrow the topic, or
-            use stronger provider settings. Keep treating this output as
-            abstract-level evidence, not full-text verification.
-          </p>
+          {isPolish ? (
+            <>
+              <p>
+                Provider AI nie zwrócił pełnej zwalidowanej syntezy. Ta
+                strona pokazuje bezpieczniejszy brief z tytułów, abstraktów i
+                metadanych wybranych prac.
+              </p>
+              <p>
+                Traktuj ten wynik jako analizę na poziomie abstraktów, nie jako
+                pełnotekstową weryfikację. Pełniejszy brief wymaga udanej
+                syntezy modelowej albo mocniejszych ustawień providera.
+              </p>
+            </>
+          ) : (
+            <>
+              <p>
+                The AI synthesis provider did not return a fully validated
+                narrative. This page uses a safer fallback built from selected
+                paper titles, abstracts, and source metadata only.
+              </p>
+              <p>
+                For a richer synthesized brief, retry generation, narrow the
+                topic, or use stronger provider settings. Keep treating this
+                output as abstract-level evidence, not full-text verification.
+              </p>
+            </>
+          )}
         </div>
       ) : null}
       <div className="warning-panel-header">
@@ -1130,7 +1160,10 @@ export function BriefRenderer({
             Papers used: {brief.searchSummary.totalUsedInBrief}
           </span>
         </div>
-        <WarningSummary warnings={brief.searchSummary.warnings} />
+        <WarningSummary
+          warnings={brief.searchSummary.warnings}
+          outputLanguage={brief.outputLanguage}
+        />
         <h1 style={{ margin: "16px 0 10px", fontSize: "2rem", lineHeight: 1.15 }}>
           {brief.title}
         </h1>

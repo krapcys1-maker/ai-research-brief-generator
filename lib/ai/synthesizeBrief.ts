@@ -49,8 +49,90 @@ function getDisplayExcerpt(paper: NormalizedPaper) {
   return sourceText.length > 300 ? `${sourceText.slice(0, 297)}...` : sourceText;
 }
 
-function getFallbackCaveat() {
-  return "This fallback section is extractive and limited to selected paper metadata or abstracts.";
+function getFallbackCopy(language: OutputLanguage) {
+  if (language === "pl") {
+    return {
+      titlePrefix: "Ostrożny brief źródłowy",
+      tldr:
+        "Provider AI nie zwrócił pełnej zwalidowanej syntezy, więc ten brief pokazuje ostrożną analizę z tytułów, abstraktów i metadanych wybranych prac.",
+      executiveIntro:
+        "Wybrane źródła tworzą użyteczną bazę do wstępnej analizy tematu, ale ten wariant nie zastępuje pełnej syntezy modelowej ani weryfikacji pełnych tekstów.",
+      caveat:
+        "Sekcja awaryjna: wniosek oparty na abstraktach i metadanych, bez pełnotekstowej weryfikacji PDF.",
+      sourceFindingPrefix: "Najbliższe źródło",
+      abstractIndicates: "Abstrakt wskazuje",
+      themes: [
+        "Główny kierunek literatury",
+        "Metody i dane wejściowe",
+        "Praktyczne ograniczenia"
+      ],
+      gaps: [
+        {
+          title: "Potrzebna jest pełnotekstowa weryfikacja wyników",
+          detail:
+            "Ten przebieg korzysta z abstraktów i metadanych, więc przed decyzjami produktowymi trzeba sprawdzić metody, dane, metryki i ograniczenia w pełnych tekstach."
+        },
+        {
+          title: "Ryzyko przeniesienia wyników z badań do realnego wdrożenia",
+          detail:
+            "Prace mogą raportować wyniki w warunkach eksperymentalnych; wdrożenie wymaga osobnej oceny kosztów, opóźnień, ryzyka i jakości danych."
+        }
+      ],
+      uncertainties: [
+        {
+          title: "Niepewna porównywalność wyników między pracami",
+          detail:
+            "Wybrane źródła mogą używać różnych zbiorów danych, metryk i założeń, więc nie należy traktować wyników jako bezpośrednio porównywalnych bez ręcznej kontroli."
+        }
+      ],
+      nextQuestions: [
+        "Które wybrane prace mają dostępny pełny tekst i konkretne metryki?",
+        "Jakie dane, założenia i ograniczenia powtarzają się w najlepszych źródłach?",
+        "Które wyniki są wystarczająco praktyczne, żeby przełożyć je na wymagania produktu?"
+      ]
+    };
+  }
+
+  return {
+    titlePrefix: "Conservative source brief",
+    tldr:
+      "The AI provider did not return a fully validated synthesis, so this brief gives a cautious analysis from selected paper titles, abstracts, and metadata.",
+    executiveIntro:
+      "The selected sources are useful for an initial analysis, but this fallback does not replace full model synthesis or full-text verification.",
+    caveat:
+      "Fallback section: abstract- and metadata-grounded, without full-text PDF verification.",
+    sourceFindingPrefix: "Closest source",
+    abstractIndicates: "The abstract indicates",
+    themes: [
+      "Main research direction",
+      "Methods and input data",
+      "Practical limitations"
+    ],
+    gaps: [
+      {
+        title: "Full-text verification is still needed",
+        detail:
+          "This run uses abstracts and metadata, so methods, data, metrics, and limitations should be checked in the full papers before product decisions."
+      },
+      {
+        title: "Research-to-production transfer risk remains",
+        detail:
+          "Reported results may come from experimental settings; deployment needs a separate review of cost, latency, risk, and data quality."
+      }
+    ],
+    uncertainties: [
+      {
+        title: "Results may not be directly comparable across papers",
+        detail:
+          "The selected sources may use different datasets, metrics, and assumptions, so their findings should not be compared directly without manual review."
+      }
+    ],
+    nextQuestions: [
+      "Which selected papers have full text and concrete metrics?",
+      "Which data assumptions and limitations repeat across the strongest sources?",
+      "Which findings are practical enough to turn into product requirements?"
+    ]
+  };
 }
 
 function getDiagnosticStatus(error: unknown) {
@@ -77,8 +159,24 @@ function numberEnv(name: string, fallback: number) {
 }
 
 function getSynthesisAttemptCount() {
-  const defaultAttempts = process.env.NODE_ENV === "development" ? 1 : 2;
-  return numberEnv("AI_SYNTHESIS_ATTEMPTS", defaultAttempts);
+  return numberEnv("AI_SYNTHESIS_ATTEMPTS", 2);
+}
+
+function getSynthesisRequestTimeoutMs() {
+  return numberEnv("AI_SYNTHESIS_REQUEST_TIMEOUT_MS", 240000);
+}
+
+function getPaperEvidence(paper: NormalizedPaper) {
+  return [
+    {
+      paperId: paper.id,
+      evidenceText: getEvidenceText(paper),
+      supportLevel: "direct" as const,
+      evidenceLevel: paper.abstract
+        ? ("abstract_supported" as const)
+        : ("metadata_only" as const)
+    }
+  ];
 }
 
 function createFallbackBrief(
@@ -91,16 +189,10 @@ function createFallbackBrief(
     throw new Error("AI output validation failed and no papers were available.");
   }
 
-  const primaryEvidenceText = getEvidenceText(primaryPaper);
+  const copy = getFallbackCopy(input.outputLanguage);
   const primaryExcerpt = getDisplayExcerpt(primaryPaper);
-  const primaryEvidence = [
-    {
-      paperId: primaryPaper.id,
-      evidenceText: primaryEvidenceText,
-      supportLevel: "direct" as const,
-      evidenceLevel: primaryPaper.abstract ? ("abstract_supported" as const) : ("metadata_only" as const)
-    }
-  ];
+  const primaryEvidence = getPaperEvidence(primaryPaper);
+  const topPapers = input.papers.slice(0, 3);
   const fallbackReason =
     error instanceof Error ? error.message : "AI output validation failed.";
   const warnings = [
@@ -113,73 +205,49 @@ function createFallbackBrief(
     query: input.query,
     outputLanguage: input.outputLanguage,
     generatedAt: new Date().toISOString(),
-    title: `Source-grounded evidence summary: ${input.query}`,
-    tldr:
-      "The AI synthesis provider did not return a validated brief, so this fallback summary uses only selected paper metadata and abstract evidence.",
+    title: `${copy.titlePrefix}: ${input.query}`,
+    tldr: copy.tldr,
     executiveSummary: {
-      paragraph: primaryExcerpt,
+      paragraph: `${copy.executiveIntro} ${copy.abstractIndicates}: ${primaryExcerpt}`,
       sourcePaperIds: [primaryPaper.id],
       evidence: primaryEvidence
     },
-    keyFindings: input.papers.slice(0, 3).map((paper) => {
-      const evidenceText = getEvidenceText(paper);
+    keyFindings: topPapers.map((paper) => {
       const excerpt = getDisplayExcerpt(paper);
       return {
-        finding: paper.title,
-        explanation: excerpt,
+        finding: `${copy.sourceFindingPrefix}: ${paper.title}`,
+        explanation: `${copy.abstractIndicates}: ${excerpt}`,
         confidence: "low" as const,
         sourcePaperIds: [paper.id],
-        evidence: [
-          {
-            paperId: paper.id,
-            evidenceText,
-            supportLevel: "direct" as const,
-            evidenceLevel: paper.abstract ? ("abstract_supported" as const) : ("metadata_only" as const)
-          }
-        ],
-        caveats: [getFallbackCaveat()]
+        evidence: getPaperEvidence(paper),
+        caveats: [copy.caveat]
       };
     }),
-    majorThemes: input.papers.slice(0, 3).map((paper) => {
-      const evidenceText = getEvidenceText(paper);
-      const excerpt = getDisplayExcerpt(paper);
-      return {
-        theme: paper.title,
-        description: excerpt,
-        sourcePaperIds: [paper.id],
-        evidence: [
-          {
-            paperId: paper.id,
-            evidenceText,
-            supportLevel: "direct" as const,
-            evidenceLevel: paper.abstract ? ("abstract_supported" as const) : ("metadata_only" as const)
-          }
-        ]
-      };
-    }),
+    majorThemes: topPapers.map((paper, index) => ({
+      theme: `${copy.themes[index] ?? copy.themes[0] ?? "Source theme"}: ${paper.title}`,
+      description: `${copy.abstractIndicates}: ${getDisplayExcerpt(paper)}`,
+      sourcePaperIds: [paper.id],
+      evidence: getPaperEvidence(paper)
+    })),
     influentialPapers: input.papers.slice(0, 4).map((paper) => ({
       paperId: paper.id,
       reason: getDisplayExcerpt(paper)
     })),
-    researchGaps: [
-      {
-        gap: primaryPaper.title,
-        whyItMatters: primaryExcerpt,
-        sourcePaperIds: [primaryPaper.id],
-        evidence: primaryEvidence
-      }
-    ],
+    researchGaps: topPapers.slice(0, 2).map((paper, index) => ({
+      gap: `${copy.gaps[index]?.title ?? copy.gaps[0]?.title ?? "Evidence gap"}: ${paper.title}`,
+      whyItMatters: `${copy.abstractIndicates}: ${getDisplayExcerpt(paper)}`,
+      sourcePaperIds: [paper.id],
+      evidence: getPaperEvidence(paper)
+    })),
     controversiesOrUncertainties: [
       {
-        issue: primaryPaper.title,
-        explanation: primaryExcerpt,
+        issue: `${copy.uncertainties[0].title}: ${primaryPaper.title}`,
+        explanation: `${copy.abstractIndicates}: ${primaryExcerpt}`,
         sourcePaperIds: [primaryPaper.id],
         evidence: primaryEvidence
       }
     ],
-    suggestedNextQuestions: [
-      "Which selected papers provide full-text evidence beyond abstracts?"
-    ],
+    suggestedNextQuestions: copy.nextQuestions,
     searchSummary: {
       ...input.searchSummary,
       warnings
@@ -204,6 +272,7 @@ export async function synthesizeBrief(input: SynthesizeBriefInput) {
     try {
       const raw = await provider.generateStructured({
         schemaName: "ResearchBrief",
+        timeoutMs: getSynthesisRequestTimeoutMs(),
         systemPrompt: researchSynthesisSystemPrompt,
         userPrompt: buildResearchSynthesisPrompt({
           ...input,
