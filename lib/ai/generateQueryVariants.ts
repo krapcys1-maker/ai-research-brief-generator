@@ -4,6 +4,8 @@ const polishToEnglishTerms: Record<string, string> = {
   agentow: "agents",
   ai: "artificial intelligence",
   odpowiedzi: "responses",
+  raka: "cancer",
+  rak: "cancer",
   detekcja: "detection",
   diagnozie: "diagnosis",
   diagnostyce: "diagnosis",
@@ -33,15 +35,21 @@ const polishToEnglishTerms: Record<string, string> = {
   oparzen: "burns",
   oparzeniowych: "burn wound",
   oprogramowania: "software engineering",
+  piersi: "breast",
   prywatnosc: "privacy",
   sieciach: "networks",
   sieci: "networks",
+  tlumaczenie: "translation",
+  tlumaczenia: "translation",
+  transformatorow: "transformers",
   transformerach: "transformers",
   transformery: "transformers",
   transformey: "transformers",
   uczenie: "learning",
+  uczenia: "learning",
   wplyw: "impact",
   wykrywanie: "detection",
+  zastosowanie: "application",
   zdrowiu: "healthcare"
 };
 
@@ -70,6 +78,7 @@ function normalizeWhitespace(value: string) {
 
 function normalizeLookupTerm(value: string) {
   return value
+    .replace(/[łŁ]/g, "l")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
@@ -116,7 +125,10 @@ function translatePolishTerms(query: string) {
     .filter(Boolean)
     .join(" ")
     .replace(/\bcells stem\b/g, "stem cells")
-    .replace(/\btreatment burns\b/g, "burn treatment");
+    .replace(/\btreatment burns\b/g, "burn treatment")
+    .replace(/\blearning machine\b/g, "machine learning")
+    .replace(/\bcancer breast\b/g, "breast cancer")
+    .replace(/\btranslation machine\b/g, "machine translation");
 }
 
 function getPolishAcademicPhraseVariants(query: string) {
@@ -130,6 +142,14 @@ function getPolishAcademicPhraseVariants(query: string) {
     /\bmodel\w*\b/.test(normalized) && /\bjezykow\w*\b/.test(normalized);
   const mentionsResponseQuality =
     /\bjakosc\b/.test(normalized) || /\bodpowiedz\w*\b/.test(normalized);
+  const mentionsMachineLearning =
+    /\buczen\w*\b/.test(normalized) && /\bmaszynow\w*\b/.test(normalized);
+  const mentionsDiagnosis = /\bdiagnost\w*\b/.test(normalized);
+  const mentionsBreastCancer =
+    /\brak\w*\b/.test(normalized) && /\bpiers\w*\b/.test(normalized);
+  const mentionsTransformers = /\btransformator\w*\b/.test(normalized);
+  const mentionsMachineTranslation =
+    /\btlumaczen\w*\b/.test(normalized) && /\bmaszynow\w*\b/.test(normalized);
 
   if (mentionsInstructionTuning && mentionsLanguageModels) {
     variants.push(
@@ -139,6 +159,24 @@ function getPolishAcademicPhraseVariants(query: string) {
       "instruction fine-tuning language models response quality",
       "instruction tuning large language models evaluation",
       "fine tuning language models instruction following"
+    );
+  }
+
+  if (mentionsMachineLearning && mentionsDiagnosis && mentionsBreastCancer) {
+    variants.push(
+      "machine learning breast cancer diagnosis",
+      "breast cancer diagnosis machine learning",
+      "artificial intelligence breast cancer diagnosis",
+      "deep learning breast cancer detection"
+    );
+  }
+
+  if (mentionsTransformers && mentionsMachineTranslation) {
+    variants.push(
+      "transformer machine translation",
+      "transformer neural machine translation",
+      "Attention Is All You Need machine translation",
+      "transformer architecture sequence transduction"
     );
   }
 

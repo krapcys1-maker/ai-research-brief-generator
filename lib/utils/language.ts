@@ -1,37 +1,42 @@
 export type OutputLanguage = "pl" | "en";
 
 const POLISH_MARKERS = [
-  "ą",
-  "ć",
-  "ę",
-  "ł",
-  "ń",
-  "ó",
-  "ś",
-  "ź",
-  "ż",
   " czy ",
   " dlaczego ",
   " jak ",
   " oraz ",
-  " wpływ ",
+  " wplyw ",
   " badania ",
   " sztuczna ",
   " uczenie ",
+  " uczenia ",
   " wykrywanie ",
   " halucynacji ",
   " modelach ",
-  " językowych ",
   " jezykowych ",
   " modeli ",
+  " diagnostyce ",
+  " diagnozie ",
+  " raka ",
+  " piersi ",
+  " tlumaczenie ",
+  " transformatorow ",
   " badawczy ",
   " badawcze ",
   " medycznej ",
   " medycznych "
 ];
 
+function normalizeLanguageLookup(value: string) {
+  return value
+    .replace(/[łŁ]/g, "l")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
 export function detectQueryLanguage(query: string): OutputLanguage {
-  const normalized = ` ${query.toLowerCase()} `;
+  const normalized = ` ${normalizeLanguageLookup(query)} `;
   return POLISH_MARKERS.some((marker) => normalized.includes(marker))
     ? "pl"
     : "en";

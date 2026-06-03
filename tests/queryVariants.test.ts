@@ -55,4 +55,26 @@ describe("generateQueryVariants", () => {
       false
     );
   });
+
+  it("creates English variants for Polish breast cancer diagnosis questions", () => {
+    const variants = generateQueryVariants({
+      query: "zastosowanie uczenia maszynowego w diagnostyce raka piersi",
+      outputLanguage: "pl"
+    });
+
+    expect(variants).toContain("machine learning breast cancer diagnosis");
+    expect(variants).toContain("breast cancer diagnosis machine learning");
+    expect(variants).toContain("artificial intelligence breast cancer diagnosis");
+  });
+
+  it("creates English variants for Polish transformer translation questions", () => {
+    const variants = generateQueryVariants({
+      query: "wpływ transformatorów na tłumaczenie maszynowe",
+      outputLanguage: "pl"
+    });
+
+    expect(variants).toContain("transformer machine translation");
+    expect(variants).toContain("transformer neural machine translation");
+    expect(variants).toContain("Attention Is All You Need machine translation");
+  });
 });
