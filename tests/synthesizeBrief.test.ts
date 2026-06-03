@@ -102,7 +102,9 @@ describe("synthesizeBrief", () => {
     expect(generateStructured.mock.calls[0]?.[0]).toEqual(
       expect.objectContaining({
         schemaName: "ResearchBrief",
-        timeoutMs: 240000
+        timeoutMs: 240000,
+        maxTokens: 3600,
+        model: "deepseek-v4-flash"
       })
     );
     expect(generateStructured.mock.calls[1]?.[0].userPrompt).toContain(

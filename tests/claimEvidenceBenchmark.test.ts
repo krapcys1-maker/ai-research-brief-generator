@@ -29,6 +29,16 @@ const comparativePaper = createPaper({
   doi: "10.1000/rag-compare"
 });
 
+const privacyGraphPaper = createPaper({
+  id: "privacy_graph",
+  title:
+    "Federated Graph Learning with Differential Privacy for Coordinated Misinformation Detection",
+  abstract:
+    "Federated graph learning enables privacy-preserving detection of coordinated misinformation campaigns in social media networks without centralizing user data.",
+  source: "openalex",
+  doi: "10.1000/privacy-graph"
+});
+
 function briefWithFinding(input: {
   finding: string;
   explanation: string;
@@ -44,11 +54,49 @@ function briefWithFinding(input: {
       ? "Retrieval grounding reduced unsupported clinical answers"
       : paper.id === "rag_compare"
         ? "Retrieval grounding outperformed baseline clinical question answering"
-      : "Retrieval augmented generation supports clinical evaluation";
+        : paper.id === "privacy_graph"
+          ? "Federated graph learning enables privacy-preserving detection of coordinated misinformation campaigns"
+          : "Retrieval augmented generation supports clinical evaluation";
+  const themeTitle =
+    paper.id === "privacy_graph"
+      ? "Privacy-preserving graph learning"
+      : "Clinical evaluation";
+  const themeDescription =
+    paper.id === "privacy_graph"
+      ? "Federated graph learning supports privacy-preserving detection."
+      : "Retrieved medical evidence supports evaluation.";
+  const themeEvidence =
+    paper.id === "privacy_graph"
+      ? "privacy-preserving detection of coordinated misinformation campaigns"
+      : "retrieved medical evidence and reducing unsupported answers";
+  const gapText =
+    paper.id === "privacy_graph"
+      ? "Coordinated misinformation detection"
+      : "Clinical evaluation";
+  const gapWhy =
+    paper.id === "privacy_graph"
+      ? "Detection needs privacy-preserving graph evidence."
+      : "Clinical evaluation needs medical evidence.";
+  const uncertaintyIssue =
+    paper.id === "privacy_graph"
+      ? "User data centralization"
+      : "Unsupported answers";
+  const uncertaintyExplanation =
+    paper.id === "privacy_graph"
+      ? "User data centralization remains a privacy concern."
+      : "Unsupported answers can still occur.";
+  const uncertaintyEvidence =
+    paper.id === "privacy_graph"
+      ? "without centralizing user data"
+      : "reducing unsupported answers";
+  const executiveParagraph =
+    paper.id === "privacy_graph"
+      ? "Federacyjne uczenie grafowe wspiera prywatne wykrywanie skoordynowanej dezinformacji."
+      : "Retrieval augmented generation supports clinical evaluation.";
 
   return createBrief({
     executiveSummary: {
-      paragraph: "Retrieval augmented generation supports clinical evaluation.",
+      paragraph: executiveParagraph,
       sourcePaperIds: [paper.id],
       evidence: [
         {
@@ -76,14 +124,13 @@ function briefWithFinding(input: {
     ],
     majorThemes: [
       {
-        theme: "Clinical evaluation",
-        description: "Retrieved medical evidence supports evaluation.",
+        theme: themeTitle,
+        description: themeDescription,
         sourcePaperIds: [paper.id],
         evidence: [
           {
             paperId: paper.id,
-            evidenceText:
-              "retrieved medical evidence and reducing unsupported answers",
+            evidenceText: themeEvidence,
             supportLevel: "direct"
           }
         ]
@@ -91,8 +138,8 @@ function briefWithFinding(input: {
     ],
     researchGaps: [
       {
-        gap: "Clinical evaluation",
-        whyItMatters: "Clinical evaluation needs medical evidence.",
+        gap: gapText,
+        whyItMatters: gapWhy,
         sourcePaperIds: [paper.id],
         evidence: [
           {
@@ -105,13 +152,13 @@ function briefWithFinding(input: {
     ],
     controversiesOrUncertainties: [
       {
-        issue: "Unsupported answers",
-        explanation: "Unsupported answers can still occur.",
+        issue: uncertaintyIssue,
+        explanation: uncertaintyExplanation,
         sourcePaperIds: [paper.id],
         evidence: [
           {
             paperId: paper.id,
-            evidenceText: "reducing unsupported answers",
+            evidenceText: uncertaintyEvidence,
             supportLevel: "indirect"
           }
         ]
@@ -149,6 +196,24 @@ describe("claim/evidence benchmark fixtures", () => {
     });
 
     expect(() => validateBriefGrounding(brief, [ragPaper])).not.toThrow();
+  });
+
+  it("accepts Polish claims grounded in English evidence for privacy-preserving graph learning", () => {
+    const brief = briefWithFinding({
+      paper: privacyGraphPaper,
+      finding:
+        "Federacyjne uczenie grafowe wspiera prywatne wykrywanie skoordynowanej dezinformacji.",
+      explanation:
+        "Źródło opisuje wykrywanie kampanii dezinformacyjnych w mediach społecznościowych bez centralizacji danych użytkowników.",
+      confidence: "medium",
+      evidenceText:
+        "Federated graph learning enables privacy-preserving detection of coordinated misinformation campaigns in social media networks without centralizing user data",
+      supportLevel: "direct"
+    });
+
+    expect(() =>
+      validateBriefGrounding(brief, [privacyGraphPaper])
+    ).not.toThrow();
   });
 
   it("accepts indirect evidence when evidence is metadata-backed and claim-related", () => {

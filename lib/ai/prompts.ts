@@ -25,6 +25,15 @@ Do not rename properties.
 Do not return markdown.
 Do not wrap the JSON in code fences.`;
 
+function truncateForPrompt(value: string | null, limit = 900) {
+  if (!value) {
+    return value;
+  }
+
+  const trimmed = value.replace(/\s+/g, " ").trim();
+  return trimmed.length > limit ? `${trimmed.slice(0, limit - 3)}...` : trimmed;
+}
+
 export function buildResearchSynthesisPrompt(input: {
   query: string;
   outputLanguage: OutputLanguage;
@@ -36,13 +45,13 @@ export function buildResearchSynthesisPrompt(input: {
     input.papers.map((paper) => ({
       id: paper.id,
       title: paper.title,
-      abstract: paper.abstract,
-      authors: paper.authors,
+      abstract: truncateForPrompt(paper.abstract),
+      authors: paper.authors.slice(0, 8),
       year: paper.year,
       venue: paper.venue,
       doi: paper.doi,
       citationCount: paper.citationCount,
-      urls: paper.sourceUrls
+      urls: paper.sourceUrls.slice(0, 2)
     })),
     null,
     2
@@ -72,14 +81,24 @@ ${JSON.stringify(input.queryVariants)}
 
 You are given papers with IDs, titles, abstracts, years, authors, citations, DOI values, venues, and URLs.
 
-Return one compact JSON object. Use at most:
-- 3 keyFindings
-- 3 majorThemes
-- 2 researchGaps
-- 2 controversiesOrUncertainties
-- 4 influentialPapers
-- 4 suggestedNextQuestions
+Return one compact JSON object. Use exactly:
+- 2 keyFindings
+- 2 majorThemes
+- 1 researchGap
+- 1 controversyOrUncertainty
+- 3 influentialPapers
+- 3 suggestedNextQuestions
 - 1 evidence snippet per claim unless a second snippet is essential
+
+Keep the JSON short and easy to parse:
+- title <= 120 characters
+- tldr <= 220 characters
+- executiveSummary.paragraph <= 420 characters
+- finding, theme, gap, issue <= 140 characters each
+- explanation, description, whyItMatters <= 260 characters each
+- evidenceText <= 220 characters each
+- suggestedNextQuestions <= 120 characters each
+- Do not use markdown, bullet characters, newline characters inside JSON strings, or unescaped quotes inside string values.
 
 Every executiveSummary, keyFinding, majorTheme, researchGap, and uncertainty needs sourcePaperIds and evidence.
 Evidence snippets must be short spans copied or tightly paraphrased from the supplied title, abstract, venue, year, or metadata.

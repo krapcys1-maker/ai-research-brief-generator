@@ -166,6 +166,14 @@ function getSynthesisRequestTimeoutMs() {
   return numberEnv("AI_SYNTHESIS_REQUEST_TIMEOUT_MS", 240000);
 }
 
+function getSynthesisMaxOutputTokens() {
+  return numberEnv("AI_SYNTHESIS_MAX_OUTPUT_TOKENS", 3600);
+}
+
+function getSynthesisModel() {
+  return process.env.AI_SYNTHESIS_MODEL?.trim() || "deepseek-v4-flash";
+}
+
 function getPaperEvidence(paper: NormalizedPaper) {
   return [
     {
@@ -273,6 +281,8 @@ export async function synthesizeBrief(input: SynthesizeBriefInput) {
       const raw = await provider.generateStructured({
         schemaName: "ResearchBrief",
         timeoutMs: getSynthesisRequestTimeoutMs(),
+        maxTokens: getSynthesisMaxOutputTokens(),
+        model: getSynthesisModel(),
         systemPrompt: researchSynthesisSystemPrompt,
         userPrompt: buildResearchSynthesisPrompt({
           ...input,

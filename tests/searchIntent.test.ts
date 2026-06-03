@@ -52,7 +52,8 @@ describe("buildSearchIntent", () => {
     expect(generateStructured).toHaveBeenCalledWith(
       expect.objectContaining({
         schemaName: "SearchIntent",
-        timeoutMs: 8000
+        timeoutMs: 8000,
+        maxTokens: 1200
       })
     );
   });

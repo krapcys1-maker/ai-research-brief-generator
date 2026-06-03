@@ -101,6 +101,7 @@ export async function buildSearchIntent(query: string): Promise<SearchIntentResu
     const raw = await provider.generateStructured({
       schemaName: "SearchIntent",
       timeoutMs: numberEnv("AI_QUERY_EXPANSION_TIMEOUT_MS", 8000),
+      maxTokens: numberEnv("AI_QUERY_EXPANSION_MAX_TOKENS", 1200),
       systemPrompt:
         "You translate informal user research topics into source-search intent. Return only JSON. Prefer English academic search phrases because arXiv, OpenAlex, and Semantic Scholar work best in English. Do not answer the topic; only prepare search queries.",
       userPrompt: `Original user query:

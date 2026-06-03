@@ -13,6 +13,8 @@ export type GenerateStructuredInput = {
   userPrompt: string;
   schemaName: string;
   timeoutMs?: number;
+  maxTokens?: number;
+  model?: string;
 };
 
 export type AIProvider = {
@@ -174,13 +176,13 @@ function createDeepSeekProvider(config: AIModelConfig): AIProvider {
               Authorization: `Bearer ${config.apiKey}`
             },
             body: JSON.stringify({
-            model: config.model,
-            temperature: 0.2,
-            max_tokens: config.maxTokens,
-            thinking: {
-              type: config.thinkingEnabled ? "enabled" : "disabled"
-            },
-            response_format: { type: "json_object" },
+              model: input.model ?? config.model,
+              temperature: 0.2,
+              max_tokens: input.maxTokens ?? config.maxTokens,
+              thinking: {
+                type: config.thinkingEnabled ? "enabled" : "disabled"
+              },
+              response_format: { type: "json_object" },
               messages: [
                 {
                   role: "system",

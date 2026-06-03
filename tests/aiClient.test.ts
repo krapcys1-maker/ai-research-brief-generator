@@ -96,4 +96,33 @@ describe("AI provider client", () => {
     expect(body.max_tokens).toBe(1200);
     expect(body.thinking).toEqual({ type: "enabled" });
   });
+
+  it("allows a structured request to override model and output token limits", async () => {
+    vi.stubEnv("AI_PROVIDER", "deepseek");
+    vi.stubEnv("AI_MODEL", "deepseek-test");
+    vi.stubEnv("DEEPSEEK_API_KEY", "test-key");
+    vi.stubEnv("AI_MAX_OUTPUT_TOKENS", "7000");
+
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        choices: [{ message: { content: "{\"ok\":true}" } }]
+      })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const provider = createAIProvider();
+    await provider.generateStructured({
+      schemaName: "ResearchBrief",
+      systemPrompt: "Return JSON.",
+      userPrompt: "Return JSON.",
+      model: "deepseek-v4-flash",
+      maxTokens: 4500
+    });
+
+    const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
+
+    expect(body.model).toBe("deepseek-v4-flash");
+    expect(body.max_tokens).toBe(4500);
+  });
 });
