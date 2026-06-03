@@ -5,10 +5,12 @@ import {
 } from "@/lib/project-research";
 import { ProjectResearchBriefSchema } from "@/lib/project-research/schemas";
 import type {
+  EvidenceBucket,
   ProjectIdeaInput,
   ProjectResearchRunManifest,
   ReviewedPaper
 } from "@/lib/project-research";
+import type { NormalizedPaper } from "@/lib/sources/types";
 import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -36,6 +38,39 @@ function papersForRequiredBuckets(idea: ProjectIdeaInput) {
   return researchPlan.evidenceBuckets.flatMap((bucket) => [
     paperForBucket(bucket.id, 1),
     paperForBucket(bucket.id, 2)
+  ]);
+}
+
+function normalizedPaperForBucket(
+  bucket: EvidenceBucket,
+  index: number
+): NormalizedPaper {
+  return {
+    id: `runner_source_${bucket.id}_${index}`,
+    title: `${bucket.label} ${bucket.keywords.join(" ")} source ${index}`,
+    abstract: `${bucket.query}. ${bucket.targetQuestions.join(" ")}`,
+    authors: ["Runner Source Author"],
+    year: 2025,
+    publishedAt: "2025-01-01",
+    doi: `10.1000/runner.${bucket.id}.${index}`,
+    arxivId: null,
+    semanticScholarId: `runner-${bucket.id}-${index}`,
+    openAlexId: null,
+    sourceUrls: [`https://example.com/source/${bucket.id}/${index}`],
+    pdfUrl: `https://example.com/source/${bucket.id}/${index}.pdf`,
+    venue: "Runner Source Venue",
+    citationCount: 100,
+    influentialCitationCount: 12,
+    source: "semantic_scholar",
+    fullTextStatus: "parsed"
+  };
+}
+
+function normalizedPapersForRequiredBuckets(idea: ProjectIdeaInput) {
+  const { researchPlan } = buildProjectResearchPlan(idea);
+  return researchPlan.evidenceBuckets.flatMap((bucket) => [
+    normalizedPaperForBucket(bucket, 1),
+    normalizedPaperForBucket(bucket, 2)
   ]);
 }
 
@@ -83,6 +118,7 @@ describe("runProjectResearch", () => {
       normalizedIdea: "normalized_idea.json",
       researchPlan: "research_plan.json",
       coverage: "coverage.json",
+      evidenceCollection: "evidence_collection.json",
       reviewedPapers: "reviewed_papers.json",
       projectResearchBriefJson: "project_research_brief.json",
       projectResearchBriefMarkdown: "project_research_brief.md"
@@ -114,5 +150,35 @@ describe("runProjectResearch", () => {
     expect(manifest.readyForArchitecture).toBe(false);
     expect(coverage.canSynthesizeProject).toBe(false);
     expect(coverage.missingRequiredBuckets.length).toBeGreaterThan(0);
+  });
+
+  it("collects evidence from normalized papers before writing artifacts", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "project-research-papers-"));
+
+    const manifest = await runProjectResearch({
+      idea: tradingIdea,
+      papers: normalizedPapersForRequiredBuckets(tradingIdea),
+      generatedAt: "2026-06-03T13:00:00.000Z",
+      outputDir
+    });
+
+    const evidenceCollection = await readJson<{
+      mode: string;
+      canBuildReadyBrief: boolean;
+      bucketMetrics: unknown[];
+    }>(join(outputDir, "evidence_collection.json"));
+    const reviewedPapers = await readJson<ReviewedPaper[]>(
+      join(outputDir, "reviewed_papers.json")
+    );
+
+    expect(manifest.readyForArchitecture).toBe(true);
+    expect(evidenceCollection.mode).toBe("collected_from_papers");
+    expect(evidenceCollection.canBuildReadyBrief).toBe(true);
+    expect(evidenceCollection.bucketMetrics.length).toBe(
+      manifest.requiredBucketCount
+    );
+    expect(reviewedPapers.length).toBeGreaterThanOrEqual(
+      manifest.requiredBucketCount
+    );
   });
 });

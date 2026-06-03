@@ -4,10 +4,12 @@ import {
 } from "@/lib/project-research";
 import { ProjectResearchBriefSchema } from "@/lib/project-research/schemas";
 import type {
+  EvidenceBucket,
   ProjectIdeaInput,
   ProjectResearchRunManifest,
   ReviewedPaper
 } from "@/lib/project-research";
+import type { NormalizedPaper } from "@/lib/sources/types";
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -16,7 +18,8 @@ type BenchmarkCase = {
   id: string;
   expectedReady: boolean;
   idea: ProjectIdeaInput;
-  reviewedPapers: ReviewedPaper[];
+  reviewedPapers?: ReviewedPaper[];
+  papers?: NormalizedPaper[];
 };
 
 type CaseResult = {
@@ -37,6 +40,7 @@ const requiredFiles = [
   "normalized_idea.json",
   "research_plan.json",
   "coverage.json",
+  "evidence_collection.json",
   "reviewed_papers.json",
   "project_research_brief.json",
   "project_research_brief.md"
@@ -112,6 +116,39 @@ function partialEvidenceForIdea(idea: ProjectIdeaInput) {
   ];
 }
 
+function normalizedPaperForBucket(
+  bucket: EvidenceBucket,
+  index: number
+): NormalizedPaper {
+  return {
+    id: `runner_bench_source_${bucket.id}_${index}`,
+    title: `${bucket.label} ${bucket.keywords.join(" ")} source ${index}`,
+    abstract: `${bucket.query}. ${bucket.targetQuestions.join(" ")}`,
+    authors: ["Runner Benchmark Source"],
+    year: 2025,
+    publishedAt: "2025-01-01",
+    doi: `10.1000/runner.${bucket.id}.${index}`,
+    arxivId: null,
+    semanticScholarId: `runner-source-${bucket.id}-${index}`,
+    openAlexId: null,
+    sourceUrls: [`https://example.com/runner-source/${bucket.id}/${index}`],
+    pdfUrl: `https://example.com/runner-source/${bucket.id}/${index}.pdf`,
+    venue: "Runner Source Benchmark",
+    citationCount: 100,
+    influentialCitationCount: 12,
+    source: "semantic_scholar",
+    fullTextStatus: "parsed"
+  };
+}
+
+function sourcePapersForIdea(idea: ProjectIdeaInput) {
+  const { researchPlan } = buildProjectResearchPlan(idea);
+  return researchPlan.evidenceBuckets.flatMap((bucket) => [
+    normalizedPaperForBucket(bucket, 1),
+    normalizedPaperForBucket(bucket, 2)
+  ]);
+}
+
 async function fileExists(path: string) {
   try {
     await access(path);
@@ -131,7 +168,9 @@ async function evaluateCase(
   );
   const manifest = await runProjectResearch({
     idea: testCase.idea,
-    reviewedPapers: testCase.reviewedPapers,
+    ...(testCase.reviewedPapers
+      ? { reviewedPapers: testCase.reviewedPapers }
+      : { papers: testCase.papers ?? [] }),
     generatedAt: "2026-06-03T13:30:00.000Z",
     outputDir
   });
@@ -232,6 +271,12 @@ async function main() {
       expectedReady: true,
       idea: repoIdea,
       reviewedPapers: fullEvidenceForIdea(repoIdea)
+    },
+    {
+      id: "trading_ready_from_source_papers",
+      expectedReady: true,
+      idea: tradingIdea,
+      papers: sourcePapersForIdea(tradingIdea)
     },
     {
       id: "repo_blocked_artifacts",
