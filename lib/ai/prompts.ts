@@ -25,7 +25,7 @@ Do not rename properties.
 Do not return markdown.
 Do not wrap the JSON in code fences.`;
 
-function truncateForPrompt(value: string | null, limit = 900) {
+function truncateForPrompt(value: string | null, limit = 1600) {
   if (!value) {
     return value;
   }
@@ -81,22 +81,22 @@ ${JSON.stringify(input.queryVariants)}
 
 You are given papers with IDs, titles, abstracts, years, authors, citations, DOI values, venues, and URLs.
 
-Return one compact JSON object. Use exactly:
-- 2 keyFindings
-- 2 majorThemes
-- 1 researchGap
-- 1 controversyOrUncertainty
-- 3 influentialPapers
-- 3 suggestedNextQuestions
+Return one complete but concise JSON object. Use exactly:
+- 3 keyFindings
+- 3 majorThemes
+- 2 researchGaps
+- 2 controversiesOrUncertainties
+- 4 influentialPapers
+- 4 suggestedNextQuestions
 - 1 evidence snippet per claim unless a second snippet is essential
 
 Keep the JSON short and easy to parse:
 - title <= 120 characters
-- tldr <= 220 characters
-- executiveSummary.paragraph <= 420 characters
+- tldr <= 320 characters
+- executiveSummary.paragraph <= 650 characters
 - finding, theme, gap, issue <= 140 characters each
-- explanation, description, whyItMatters <= 260 characters each
-- evidenceText <= 220 characters each
+- explanation, description, whyItMatters <= 420 characters each
+- evidenceText <= 280 characters each
 - suggestedNextQuestions <= 120 characters each
 - Do not use markdown, bullet characters, newline characters inside JSON strings, or unescaped quotes inside string values.
 

@@ -95,20 +95,31 @@ function getDefaultAiRequestTimeoutMs() {
 function extractJsonObject(text: string) {
   const trimmed = text.trim();
 
-  if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-    return JSON.parse(trimmed);
-  }
+  try {
+    if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+      return JSON.parse(trimmed);
+    }
 
-  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  if (fenced?.[1]) {
-    return JSON.parse(fenced[1].trim());
-  }
+    const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (fenced?.[1]) {
+      return JSON.parse(fenced[1].trim());
+    }
 
-  const first = trimmed.indexOf("{");
-  const last = trimmed.lastIndexOf("}");
+    const first = trimmed.indexOf("{");
+    const last = trimmed.lastIndexOf("}");
 
-  if (first >= 0 && last > first) {
-    return JSON.parse(trimmed.slice(first, last + 1));
+    if (first >= 0 && last > first) {
+      return JSON.parse(trimmed.slice(first, last + 1));
+    }
+
+    if (first >= 0) {
+      return JSON.parse(trimmed.slice(first));
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new AIProviderError(
+      `AI provider returned invalid JSON for structured output: ${message}`
+    );
   }
 
   throw new AIProviderError("AI provider did not return a JSON object.");

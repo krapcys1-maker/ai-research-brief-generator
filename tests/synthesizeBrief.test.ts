@@ -102,9 +102,15 @@ describe("synthesizeBrief", () => {
     expect(generateStructured.mock.calls[0]?.[0]).toEqual(
       expect.objectContaining({
         schemaName: "ResearchBrief",
-        timeoutMs: 240000,
-        maxTokens: 3600,
-        model: "deepseek-v4-flash"
+        timeoutMs: 3600000,
+        maxTokens: 9000,
+        model: "deepseek-v4-pro"
+      })
+    );
+    expect(generateStructured.mock.calls[1]?.[0]).toEqual(
+      expect.objectContaining({
+        model: "deepseek-v4-flash",
+        maxTokens: 9000
       })
     );
     expect(generateStructured.mock.calls[1]?.[0].userPrompt).toContain(
@@ -149,7 +155,45 @@ describe("synthesizeBrief", () => {
     expect(brief.id).toBe("brief_from_app");
   });
 
+  it("retries invalid structured JSON with repair feedback", async () => {
+    const paper = createPaper();
+    const validBrief = createBrief({
+      id: "model_brief_id",
+      query: "retrieval augmented generation",
+      outputLanguage: "en"
+    });
+    const generateStructured = vi
+      .fn()
+      .mockRejectedValueOnce(
+        new AIProviderError(
+          "AI provider returned invalid JSON for structured output: Expected ',' or ']'"
+        )
+      )
+      .mockResolvedValueOnce(validBrief);
+
+    vi.mocked(createAIProvider).mockReturnValue({
+      name: "deepseek",
+      generateStructured
+    });
+
+    const brief = await synthesizeBrief({
+      id: "brief_from_app",
+      query: "retrieval augmented generation",
+      outputLanguage: "en",
+      queryVariants: ["retrieval augmented generation"],
+      papers: [paper],
+      searchSummary: validBrief.searchSummary
+    });
+
+    expect(generateStructured).toHaveBeenCalledTimes(2);
+    expect(generateStructured.mock.calls[1]?.[0].userPrompt).toContain(
+      "invalid JSON"
+    );
+    expect(brief.id).toBe("brief_from_app");
+  });
+
   it("returns a conservative grounded fallback after repeated provider failures", async () => {
+    vi.stubEnv("AI_SYNTHESIS_ATTEMPTS", "2");
     const paper = createPaper();
     const generatedBrief = createBrief();
     const generateStructured = vi
@@ -193,8 +237,8 @@ describe("synthesizeBrief", () => {
     expect(diagnostics.byProvider[0]?.provider).toBe("deepseek");
   });
 
-  it("uses two synthesis attempts in development before falling back", async () => {
-    vi.stubEnv("NODE_ENV", "development");
+  it("uses configured synthesis attempts before falling back", async () => {
+    vi.stubEnv("AI_SYNTHESIS_ATTEMPTS", "3");
     const paper = createPaper();
     const generatedBrief = createBrief();
     const generateStructured = vi
@@ -219,17 +263,18 @@ describe("synthesizeBrief", () => {
       searchSummary: generatedBrief.searchSummary
     });
 
-    expect(generateStructured).toHaveBeenCalledTimes(2);
+    expect(generateStructured).toHaveBeenCalledTimes(3);
     expect(brief.id).toBe("brief_from_app");
     expect(brief.title).toContain("Conservative source brief");
 
     const diagnostics = await getAiSynthesisHealthSummary();
-    expect(diagnostics.retry).toBe(1);
+    expect(diagnostics.retry).toBe(2);
     expect(diagnostics.providerError).toBe(1);
     expect(diagnostics.fallback).toBe(1);
   });
 
   it("creates Polish fallback copy for Polish requests", async () => {
+    vi.stubEnv("AI_SYNTHESIS_ATTEMPTS", "2");
     const paper = createPaper({
       title:
         "A Deep Reinforcement Learning-Based Decision Support System for Automated Stock Market Trading",

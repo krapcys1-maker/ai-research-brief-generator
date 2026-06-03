@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { validateBriefGrounding } from "@/lib/pipeline/validateGrounding";
+import {
+  validateBriefGrounding,
+  validateClaimGrounding
+} from "@/lib/pipeline/validateGrounding";
 import { createBrief, createPaper } from "./fixtures";
 
 describe("validateBriefGrounding", () => {
@@ -128,5 +131,33 @@ describe("validateBriefGrounding", () => {
     expect(() => validateBriefGrounding(brief, [createPaper()])).toThrow(
       "bibliography DOI mismatch"
     );
+  });
+
+  it("allows quantitative technical details when cited paper metadata supports them", () => {
+    const paper = createPaper({
+      title:
+        "Fault Detection in 5G Networks using Bi-level Federated Graph Neural Networks",
+      abstract:
+        "5G and Beyond Networks become increasingly complex and heterogeneous."
+    });
+
+    expect(() =>
+      validateClaimGrounding({
+        section: "executiveSummary",
+        claimText:
+          "Federated graph neural networks can be discussed in the context of 5G network fault detection.",
+        sourcePaperIds: [paper.id],
+        evidence: [
+          {
+            paperId: paper.id,
+            evidenceText:
+              "Bi-level Federated Graph Neural Networks for network fault detection",
+            supportLevel: "direct"
+          }
+        ],
+        papers: [paper],
+        additionalSupportText: `${paper.title} ${paper.abstract ?? ""}`
+      })
+    ).not.toThrow();
   });
 });

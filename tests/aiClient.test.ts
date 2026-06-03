@@ -125,4 +125,30 @@ describe("AI provider client", () => {
     expect(body.model).toBe("deepseek-v4-flash");
     expect(body.max_tokens).toBe(4500);
   });
+
+  it("reports invalid structured JSON as a provider error", async () => {
+    vi.stubEnv("AI_PROVIDER", "deepseek");
+    vi.stubEnv("AI_MODEL", "deepseek-test");
+    vi.stubEnv("DEEPSEEK_API_KEY", "test-key");
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          choices: [{ message: { content: "{\"ok\":" } }]
+        })
+      })
+    );
+
+    const provider = createAIProvider();
+
+    await expect(
+      provider.generateStructured({
+        schemaName: "ResearchBrief",
+        systemPrompt: "Return JSON.",
+        userPrompt: "Return JSON."
+      })
+    ).rejects.toThrow("AI provider returned invalid JSON");
+  });
 });

@@ -420,7 +420,8 @@ export function hasClaimEvidenceOverlap(
 
 export function hasUnsupportedAbsoluteClaim(
   claimText: string,
-  evidence: EvidenceLink[]
+  evidence: EvidenceLink[],
+  additionalSupportText = ""
 ) {
   const absoluteClaimTerms = getAbsoluteClaimTerms(claimText);
 
@@ -428,7 +429,7 @@ export function hasUnsupportedAbsoluteClaim(
     return false;
   }
 
-  const evidenceText = evidence.map((item) => item.evidenceText).join(" ");
+  const evidenceText = `${evidence.map((item) => item.evidenceText).join(" ")} ${additionalSupportText}`;
   const absoluteEvidenceTerms = new Set(getAbsoluteClaimTerms(evidenceText));
 
   return absoluteClaimTerms.some((term) => !absoluteEvidenceTerms.has(term));
@@ -436,21 +437,23 @@ export function hasUnsupportedAbsoluteClaim(
 
 export function hasUnsupportedQuantitativeClaim(
   claimText: string,
-  evidence: EvidenceLink[]
+  evidence: EvidenceLink[],
+  additionalSupportText = ""
 ) {
   return hasUnsupportedQuantitativeDetail(
     claimText,
-    evidence.map((item) => item.evidenceText).join(" ")
+    `${evidence.map((item) => item.evidenceText).join(" ")} ${additionalSupportText}`
   );
 }
 
 export function hasUnsupportedComparativeClaim(
   claimText: string,
-  evidence: EvidenceLink[]
+  evidence: EvidenceLink[],
+  additionalSupportText = ""
 ) {
   return hasUnsupportedComparativeDetail(
     claimText,
-    evidence.map((item) => item.evidenceText).join(" ")
+    `${evidence.map((item) => item.evidenceText).join(" ")} ${additionalSupportText}`
   );
 }
 
@@ -532,21 +535,39 @@ export function validateClaimGrounding(input: {
     );
   }
 
-  if (hasUnsupportedAbsoluteClaim(input.claimText, input.evidence)) {
+  if (
+    hasUnsupportedAbsoluteClaim(
+      input.claimText,
+      input.evidence,
+      input.additionalSupportText
+    )
+  ) {
     throw new Error(
       `${input.section} claim is stronger than its evidence snippets`
     );
   }
 
-  if (hasUnsupportedQuantitativeClaim(input.claimText, input.evidence)) {
+  if (
+    hasUnsupportedQuantitativeClaim(
+      input.claimText,
+      input.evidence,
+      input.additionalSupportText
+    )
+  ) {
     throw new Error(
-      `${input.section} claim includes quantitative/statistical detail not found in evidence snippets`
+      `${input.section} claim includes quantitative/statistical detail not found in evidence snippets or cited paper metadata`
     );
   }
 
-  if (hasUnsupportedComparativeClaim(input.claimText, input.evidence)) {
+  if (
+    hasUnsupportedComparativeClaim(
+      input.claimText,
+      input.evidence,
+      input.additionalSupportText
+    )
+  ) {
     throw new Error(
-      `${input.section} claim includes comparative detail not found in evidence snippets`
+      `${input.section} claim includes comparative detail not found in evidence snippets or cited paper metadata`
     );
   }
 
@@ -583,7 +604,16 @@ export function validateBriefGrounding(
     claimText: string;
     allowsWeakSupport?: boolean;
   }) {
-    validateClaimGrounding({ ...input, papers });
+    const additionalSupportText = input.sourcePaperIds
+      .map((paperId) => {
+        const paper = papersById.get(paperId);
+        return paper
+          ? `${paper.title} ${paper.abstract ?? ""} ${paper.venue ?? ""}`
+          : "";
+      })
+      .join(" ");
+
+    validateClaimGrounding({ ...input, papers, additionalSupportText });
   }
 
   assertValidPaperIds(

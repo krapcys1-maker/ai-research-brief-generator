@@ -29,6 +29,26 @@ export type SearchAllSourcesResult = {
   sourceDiagnostics: SourceSearchDiagnostic[];
 };
 
+export function filterWarningsForSuccessfulSources(
+  warnings: string[],
+  sourceDiagnostics: SourceSearchDiagnostic[]
+) {
+  const successfulSources = new Set(
+    sourceDiagnostics
+      .filter((diagnostic) => diagnostic.status === "success")
+      .map((diagnostic) => diagnostic.source)
+  );
+
+  return warnings.filter(
+    (warning) =>
+      ![...successfulSources].some(
+        (source) =>
+          warning === `${source} returned no papers.` ||
+          warning.startsWith(`${source} failed:`)
+      )
+  );
+}
+
 async function searchSourcesForOneQuery(input: SearchPapersInput & {
   sources: ResearchSource[];
 }): Promise<SearchAllSourcesResult> {
@@ -184,10 +204,15 @@ export async function searchAllSources(input: SearchPapersInput & {
     );
   }
 
+  const filteredWarnings = filterWarningsForSuccessfulSources(
+    warnings,
+    sourceDiagnostics
+  );
+
   return {
     papers,
     sourcesUsed: [...sourcesUsed],
-    warnings,
+    warnings: filteredWarnings,
     sourceDiagnostics
   };
 }

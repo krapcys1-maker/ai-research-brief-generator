@@ -28,6 +28,7 @@ function isRetryableProviderError(error: AIProviderError) {
   return (
     message.includes("timed out") ||
     message.includes("before a response") ||
+    message.includes("invalid json") ||
     message.includes("terminated") ||
     message.includes("(408") ||
     message.includes("(429") ||
@@ -159,19 +160,49 @@ function numberEnv(name: string, fallback: number) {
 }
 
 function getSynthesisAttemptCount() {
-  return numberEnv("AI_SYNTHESIS_ATTEMPTS", 2);
+  return numberEnv("AI_SYNTHESIS_ATTEMPTS", 5);
 }
 
 function getSynthesisRequestTimeoutMs() {
-  return numberEnv("AI_SYNTHESIS_REQUEST_TIMEOUT_MS", 240000);
+  return numberEnv("AI_SYNTHESIS_REQUEST_TIMEOUT_MS", 3600000);
 }
 
 function getSynthesisMaxOutputTokens() {
-  return numberEnv("AI_SYNTHESIS_MAX_OUTPUT_TOKENS", 3600);
+  return numberEnv("AI_SYNTHESIS_MAX_OUTPUT_TOKENS", 9000);
 }
 
-function getSynthesisModel() {
-  return process.env.AI_SYNTHESIS_MODEL?.trim() || "deepseek-v4-flash";
+function getSynthesisModelSequence(maxAttempts: number) {
+  const explicitSequence = process.env.AI_SYNTHESIS_MODEL_SEQUENCE
+    ?.split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  const explicitModel = process.env.AI_SYNTHESIS_MODEL?.trim();
+  const baseSequence = explicitSequence?.length
+    ? explicitSequence
+    : explicitModel
+      ? [explicitModel]
+      : ["deepseek-v4-pro", "deepseek-v4-flash"];
+  const result: string[] = [];
+
+  for (let index = 0; index < maxAttempts; index += 1) {
+    result.push(baseSequence[index] ?? baseSequence[baseSequence.length - 1]);
+  }
+
+  return result;
+}
+
+function getAttemptMaxTokens(attempt: number) {
+  const configuredMax = getSynthesisMaxOutputTokens();
+
+  if (attempt <= 1) {
+    return configuredMax;
+  }
+
+  if (attempt === 2) {
+    return Math.max(6000, Math.round(configuredMax * 0.85));
+  }
+
+  return Math.max(4500, Math.round(configuredMax * 0.65));
 }
 
 function getPaperEvidence(paper: NormalizedPaper) {
@@ -274,6 +305,7 @@ function createFallbackBrief(
 export async function synthesizeBrief(input: SynthesizeBriefInput) {
   const provider = createAIProvider();
   const maxAttempts = getSynthesisAttemptCount();
+  const modelSequence = getSynthesisModelSequence(maxAttempts);
   let lastError: unknown;
 
   for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
@@ -281,8 +313,8 @@ export async function synthesizeBrief(input: SynthesizeBriefInput) {
       const raw = await provider.generateStructured({
         schemaName: "ResearchBrief",
         timeoutMs: getSynthesisRequestTimeoutMs(),
-        maxTokens: getSynthesisMaxOutputTokens(),
-        model: getSynthesisModel(),
+        maxTokens: getAttemptMaxTokens(attempt),
+        model: modelSequence[attempt],
         systemPrompt: researchSynthesisSystemPrompt,
         userPrompt: buildResearchSynthesisPrompt({
           ...input,
