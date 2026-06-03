@@ -67,6 +67,14 @@ It outputs:
 - mitigation moves,
 - readiness: `ready`, `needs_review`, or `blocked`.
 
+The system also includes a first-class AI idea guardrail benchmark:
+
+- `npm run benchmark:project-ai-ideas`
+- output: `benchmark-results/project-ai-idea-latest.json`
+- output: `benchmark-results/project-ai-idea-latest.md`
+
+This benchmark uses controlled raw-vs-guarded AI candidate fixtures. It verifies that clone-like raw AI ideas are rejected, while guarded adjacent QA/audit/diagnostic ideas are kept.
+
 ## Current Smoke Result
 
 Local smoke run:
@@ -100,7 +108,6 @@ Do not move an idea into expensive research or architecture generation unless:
 
 ## Next Optimization Targets
 
-- Add AI-vs-deterministic idea comparison as a first-class benchmark artifact, not only a local experiment.
 - Add per-source shortlist caps when using larger GH Archive batches.
 - Add live trend batch sampling with strict cost ceilings and cached enrichment.
 - Add architecture judge scoring that compares generated architecture against audit findings and research evidence.

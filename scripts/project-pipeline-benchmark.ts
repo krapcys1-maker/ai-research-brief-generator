@@ -35,6 +35,12 @@ const benchmarkDefinitions: BenchmarkDefinition[] = [
     jsonPath: "benchmark-results/project-idea-discovery-latest.json"
   },
   {
+    id: "project_ai_ideas",
+    label: "ProjectAIIdeas",
+    npmScript: "benchmark:project-ai-ideas",
+    jsonPath: "benchmark-results/project-ai-idea-latest.json"
+  },
+  {
     id: "project_github_collector",
     label: "ProjectGithubCollector",
     npmScript: "benchmark:project-github-collector",
@@ -146,6 +152,12 @@ function extractKeyMetrics(report: Record<string, unknown>) {
     "averageNovelty",
     "averageMvpFeasibility",
     "averageGithubSignalStrength",
+    "rawRejectCount",
+    "guardedUsableCount",
+    "guardedStrongCount",
+    "cloneCandidateRejectedCount",
+    "averageRawScore",
+    "averageGuardedScore",
     "researchReadyCount",
     "pipelineInputValidCount",
     "returnedRepoCount",

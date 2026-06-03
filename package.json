@@ -17,6 +17,7 @@
     "benchmark:embedding-comparison": "tsx scripts/embedding-provider-comparison.ts",
     "benchmark:project-pipeline": "tsx scripts/project-pipeline-benchmark.ts",
     "benchmark:project-ideas": "tsx scripts/project-idea-discovery-benchmark.ts",
+    "benchmark:project-ai-ideas": "tsx scripts/project-ai-idea-benchmark.ts",
     "benchmark:project-ideas-runner": "tsx scripts/project-idea-runner-benchmark.ts",
     "benchmark:project-idea-to-research": "tsx scripts/project-idea-to-research-benchmark.ts",
     "benchmark:project-github-collector": "tsx scripts/project-github-collector-benchmark.ts",
