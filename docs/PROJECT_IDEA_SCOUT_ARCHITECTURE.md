@@ -17,6 +17,7 @@ GitHub repos
 -> shortlist
 -> trend radar
 -> idea quality audit
+-> handoff quality scoring
 -> ProjectIdeaInput
 -> project:research
 ```
@@ -53,6 +54,7 @@ Project Idea Scout
   +--> Per-Source Shortlist Selector
   +--> Trend Radar
   +--> Project Idea System Audit
+  +--> Project Idea Handoff Quality Gate
   +--> Idea Discovery Report
   |
   v
@@ -164,6 +166,20 @@ type IdeaScore = {
   verdict: "reject" | "needs_research" | "promising";
   reasons: string[];
 };
+
+type ProjectIdeaHandoffQuality = {
+  ideaId: string;
+  title: string;
+  score: number;
+  readiness: "ready" | "needs_review" | "blocked";
+  inputValid: boolean;
+  constraintsQuality: number;
+  domainSpecificity: number;
+  researchQuestionCoverage: number;
+  nonGoalClarity: number;
+  descriptionSpecificity: number;
+  requiredFixes: string[];
+};
 ```
 
 Current report metrics also include:
@@ -180,6 +196,8 @@ type IdeaDiscoveryMetrics = {
   maxIdeasPerSource: number;
   researchReadyCount: number;
   pipelineInputValidCount: number;
+  averageHandoffQualityScore: number;
+  handoffReadyCount: number;
 };
 ```
 
@@ -263,6 +281,25 @@ Top ideas are converted to `ProjectIdeaInput`:
 }
 ```
 
+Before research spend, each input is scored by the handoff quality gate. The
+gate checks:
+
+- schema validity,
+- concrete MVP constraints,
+- explicit non-goals,
+- preferred-domain specificity,
+- research question coverage from the original idea,
+- description specificity for downstream PRD and architecture.
+
+Runs emit:
+
+```text
+project_idea_handoff_quality.json
+project_idea_handoff_quality.md
+```
+
+The project idea benchmark fails when shortlisted ideas are not handoff-ready.
+
 Then the existing CLI can run:
 
 ```text
@@ -280,6 +317,7 @@ lib/project-ideas/noveltyGuard.ts
 lib/project-ideas/aiIdeaPrompt.ts
 lib/project-ideas/aiIdeaBenchmark.ts
 lib/project-ideas/audit.ts
+lib/project-ideas/handoffQuality.ts
 lib/project-ideas/trendRadar.ts
 lib/project-ideas/githubCollector.ts
 lib/project-ideas/ghArchiveTrendCollector.ts
@@ -312,6 +350,8 @@ trend_radar.json
 trend_radar.md
 project_ideas_audit.json
 project_ideas_audit.md
+project_idea_handoff_quality.json
+project_idea_handoff_quality.md
 repo_insights.json
 discovered_ideas.json
 idea_scores.json
@@ -353,6 +393,8 @@ shortlistSourceDominance
 maxIdeasPerSource
 researchReadyCount
 pipelineInputValidCount
+averageHandoffQualityScore
+handoffReadyCount
 ```
 
 MVP pass criteria:
@@ -365,12 +407,14 @@ cloneRejectedCount >= 1
 averageNovelty >= 0.70
 averageMvpFeasibility >= 0.70
 researchReadyCount >= 5
+handoffReadyCount == promisingCount
+averageHandoffQualityScore >= 82
 ```
 
 ## Current Optimization Loop
 
 1. Run `npm run benchmark:project-pipeline`.
-2. Inspect `project_ideas_audit.json` for blocked or weak runs.
+2. Inspect `project_ideas_audit.json` and `project_idea_handoff_quality.json` for blocked or weak runs.
 3. If AI output is involved, run `npm run benchmark:project-ai-ideas`.
 4. If a source dominates the shortlist, lower or keep `maxIdeasPerSource=1`.
 5. If research/architecture quality drops, add a fixture before tuning prompts.

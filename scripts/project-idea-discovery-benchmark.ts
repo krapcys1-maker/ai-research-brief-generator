@@ -25,6 +25,8 @@ type CaseResult = {
   maxIdeasPerSource: number;
   researchReadyCount: number;
   pipelineInputValidCount: number;
+  averageHandoffQualityScore: number;
+  handoffReadyCount: number;
   passed: boolean;
   topIdeaTitle: string | null;
   expectedTopIdeaTitle: string | null;
@@ -75,6 +77,8 @@ function evaluateCase(testCase: ProjectIdeaBenchmarkCase): CaseResult {
     sourceDiversityPass &&
     topIdeaMatchesExpectation &&
     report.metrics.researchReadyCount >= 1 &&
+    report.metrics.handoffReadyCount === report.metrics.promisingCount &&
+    report.metrics.averageHandoffQualityScore >= 82 &&
     pipelineInputValidCount === report.metrics.promisingCount;
 
   return {
@@ -92,6 +96,8 @@ function evaluateCase(testCase: ProjectIdeaBenchmarkCase): CaseResult {
     maxIdeasPerSource: report.metrics.maxIdeasPerSource,
     researchReadyCount: report.metrics.researchReadyCount,
     pipelineInputValidCount,
+    averageHandoffQualityScore: report.metrics.averageHandoffQualityScore,
+    handoffReadyCount: report.metrics.handoffReadyCount,
     passed,
     topIdeaTitle,
     expectedTopIdeaTitle: testCase.expectedTopIdeaTitle ?? null,
@@ -118,6 +124,8 @@ function renderMarkdownReport(input: {
   maxIdeasPerSource: number;
   researchReadyCount: number;
   pipelineInputValidCount: number;
+  averageHandoffQualityScore: number;
+  handoffReadyCount: number;
   results: CaseResult[];
 }) {
   const lines = [
@@ -137,6 +145,8 @@ function renderMarkdownReport(input: {
     `Max ideas per source: ${input.maxIdeasPerSource}`,
     `Research-ready ideas: ${input.researchReadyCount}`,
     `Pipeline inputs valid: ${input.pipelineInputValidCount}`,
+    `Average handoff quality score: ${input.averageHandoffQualityScore.toFixed(1)}`,
+    `Handoff ready ideas: ${input.handoffReadyCount}`,
     "",
     "## Cases",
     ""
@@ -155,6 +165,8 @@ function renderMarkdownReport(input: {
     lines.push(`- Max ideas per source: ${result.maxIdeasPerSource}`);
     lines.push(`- Research-ready: ${result.researchReadyCount}`);
     lines.push(`- Pipeline inputs valid: ${result.pipelineInputValidCount}`);
+    lines.push(`- Average handoff quality score: ${result.averageHandoffQualityScore.toFixed(1)}`);
+    lines.push(`- Handoff ready: ${result.handoffReadyCount}`);
     lines.push(`- Tags: ${result.tags.join(", ")}`);
     lines.push(`- Top idea: ${result.topIdeaTitle ?? "none"}`);
     if (result.expectedTopIdeaTitle) {
@@ -207,6 +219,13 @@ async function main() {
       (sum, result) => sum + result.pipelineInputValidCount,
       0
     ),
+    averageHandoffQualityScore: Number(
+      average(results.map((result) => result.averageHandoffQualityScore)).toFixed(1)
+    ),
+    handoffReadyCount: results.reduce(
+      (sum, result) => sum + result.handoffReadyCount,
+      0
+    ),
     results
   };
 
@@ -224,6 +243,8 @@ async function main() {
       `Average shortlist source dominance: ${pct(report.averageShortlistSourceDominance)}`,
       `Max ideas per source: ${report.maxIdeasPerSource}`,
       `Research-ready ideas: ${report.researchReadyCount}`,
+      `Average handoff quality score: ${report.averageHandoffQualityScore.toFixed(1)}`,
+      `Handoff ready ideas: ${report.handoffReadyCount}`,
       `JSON: ${jsonOutputPath}`,
       `Markdown: ${markdownOutputPath}`
     ].join("\n")

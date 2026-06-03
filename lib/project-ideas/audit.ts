@@ -118,7 +118,15 @@ export function auditIdeaDiscoveryReport(input: {
     maxSourceDominance: rounded(maxSourceDominance(input.report)),
     trendRadarCategoryCount: input.trendRadar?.categories.length ?? 0,
     trendRadarOpportunityCount: input.trendRadar?.topOpportunities.length ?? 0,
-    genericTitleCount: genericTitleCount(input.report)
+    genericTitleCount: genericTitleCount(input.report),
+    averageHandoffQualityScore: input.report.metrics.averageHandoffQualityScore,
+    handoffReadyRatio:
+      input.report.projectIdeaHandoffQuality.length > 0
+        ? rounded(
+            input.report.metrics.handoffReadyCount /
+              input.report.projectIdeaHandoffQuality.length
+          )
+        : 0
   };
   const weaknesses: ProjectIdeaAuditFinding[] = [];
 
@@ -235,6 +243,25 @@ export function auditIdeaDiscoveryReport(input: {
     );
   }
 
+  if (
+    metrics.handoffReadyRatio < 1 ||
+    metrics.averageHandoffQualityScore < 82
+  ) {
+    weaknesses.push(
+      finding({
+        severity: metrics.averageHandoffQualityScore < 65 ? "critical" : "warning",
+        area: "research_handoff_quality",
+        message: "Some ProjectIdeaInput handoffs are not strong enough for research.",
+        evidence: [
+          `handoffReadyRatio=${metrics.handoffReadyRatio}`,
+          `averageHandoffQualityScore=${metrics.averageHandoffQualityScore}`
+        ],
+        action:
+          "Fix constraints, domain specificity, non-goals, research questions and description specificity before research generation."
+      })
+    );
+  }
+
   if (metrics.trendRadarCategoryCount === 0) {
     weaknesses.push(
       finding({
@@ -262,6 +289,9 @@ export function auditIdeaDiscoveryReport(input: {
       : []),
     ...(metrics.researchReadyRatio === 1 && metrics.shortlistCount > 0
       ? ["Every shortlisted idea is ready for research handoff."]
+      : []),
+    ...(metrics.handoffReadyRatio === 1 && metrics.averageHandoffQualityScore >= 82
+      ? [`Handoff quality is strong at ${metrics.averageHandoffQualityScore}.`]
       : []),
     ...(metrics.trendRadarCategoryCount > 0
       ? [`Trend radar found ${metrics.trendRadarCategoryCount} market categories.`]

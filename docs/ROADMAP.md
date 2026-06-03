@@ -43,7 +43,9 @@ Last updated: 2026-06-02
 - Expand recorded GitHub fixtures for noisy README text, multilingual issues,
   session reliability, provider routing, document conversion, context
   compression and self-hosted AI governance.
-- Add `ProjectIdeaInput` handoff quality scoring before research spend.
+- Keep `ProjectIdeaInput` handoff quality scoring in the idea benchmark so
+  generic constraints, weak domains, missing non-goals or missing research
+  questions fail before research spend.
 - Add architecture judge scoring that compares generated architecture against
   research evidence, PRD requirements and project idea audit findings.
 - Add controlled live GH Archive batch sampling with strict byte caps and

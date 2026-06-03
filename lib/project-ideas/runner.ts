@@ -10,6 +10,7 @@ import {
 import { analyzeIdeaSourceRepos } from "@/lib/project-ideas/repoAnalyzer";
 import { generateIdeasFromRepos } from "@/lib/project-ideas/ideaGenerator";
 import { scoreIdeas } from "@/lib/project-ideas/ranker";
+import { scoreProjectIdeaHandoffs } from "@/lib/project-ideas/handoffQuality";
 import {
   collectGithubIdeaSourceRepos,
   collectGithubIdeaSourceReposByFullName
@@ -17,6 +18,7 @@ import {
 import { collectGhArchiveTrends } from "@/lib/project-ideas/ghArchiveTrendCollector";
 import {
   ideaDiscoveryReportToMarkdown,
+  projectIdeaHandoffQualityToMarkdown,
   trendRadarToMarkdown
 } from "@/lib/project-ideas/markdown";
 import { buildTrendRadar } from "@/lib/project-ideas/trendRadar";
@@ -98,6 +100,8 @@ export type ProjectIdeaDiscoveryRunManifest = {
   maxIdeasPerSource: number;
   cloneRejectedCount: number;
   projectIdeaInputCount: number;
+  handoffReadyCount: number;
+  averageHandoffQualityScore: number;
   githubMode: "not_used" | "used";
   ghArchiveMode: "not_used" | "dry_run" | "used";
   ghArchiveTrendRepoCount: number;
@@ -128,6 +132,8 @@ const artifactFiles = {
   rejectedIdeas: "rejected_ideas.json",
   shortlist: "shortlist.json",
   projectIdeaInputs: "project_idea_inputs.json",
+  projectIdeaHandoffQualityJson: "project_idea_handoff_quality.json",
+  projectIdeaHandoffQualityMarkdown: "project_idea_handoff_quality.md",
   ideaDiscoveryReportJson: "idea_discovery_report.json",
   ideaDiscoveryReportMarkdown: "idea_discovery_report.md"
 } as const;
@@ -327,6 +333,10 @@ export function discoverProjectIdeas(value: unknown): IdeaDiscoveryReport {
   const projectIdeaInputs = shortlist.map((idea) =>
     toProjectIdeaInput(idea, input.outputLanguage)
   );
+  const projectIdeaHandoffQuality = scoreProjectIdeaHandoffs({
+    ideas: shortlist,
+    projectIdeaInputs
+  });
   const shortlistedScores = shortlist.map((idea) => scoreFor(idea, ideaScores));
   const metrics = {
     ideaCount: discoveredIdeas.length,
@@ -347,7 +357,13 @@ export function discoverProjectIdeas(value: unknown): IdeaDiscoveryReport {
     shortlistSourceDominance: Number(sourceDominance(shortlist).toFixed(3)),
     maxIdeasPerSource: input.maxIdeasPerSource,
     researchReadyCount: shortlist.filter((idea) => idea.researchQuestions.length >= 2).length,
-    pipelineInputValidCount: projectIdeaInputs.length
+    pipelineInputValidCount: projectIdeaInputs.length,
+    averageHandoffQualityScore: Number(
+      average(projectIdeaHandoffQuality.map((quality) => quality.score)).toFixed(1)
+    ),
+    handoffReadyCount: projectIdeaHandoffQuality.filter(
+      (quality) => quality.readiness === "ready"
+    ).length
   };
   const report: IdeaDiscoveryReport = {
     id: `idea_discovery_${slug(input.domain)}`,
@@ -360,6 +376,7 @@ export function discoverProjectIdeas(value: unknown): IdeaDiscoveryReport {
     rejectedIdeas,
     shortlist,
     projectIdeaInputs,
+    projectIdeaHandoffQuality,
     metrics
   };
 
@@ -393,6 +410,8 @@ function createManifest(input: {
     maxIdeasPerSource: input.report.metrics.maxIdeasPerSource,
     cloneRejectedCount: input.report.metrics.cloneRejectedCount,
     projectIdeaInputCount: input.report.projectIdeaInputs.length,
+    handoffReadyCount: input.report.metrics.handoffReadyCount,
+    averageHandoffQualityScore: input.report.metrics.averageHandoffQualityScore,
     githubMode: input.githubMode,
     ghArchiveMode: input.ghArchiveMode,
     ghArchiveTrendRepoCount: input.ghArchiveTrendRepoCount,
@@ -546,6 +565,16 @@ export async function runProjectIdeaDiscovery(
     writeFile(
       join(outputDir, artifactFiles.projectIdeaInputs),
       toJson(report.projectIdeaInputs),
+      "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.projectIdeaHandoffQualityJson),
+      toJson(report.projectIdeaHandoffQuality),
+      "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.projectIdeaHandoffQualityMarkdown),
+      projectIdeaHandoffQualityToMarkdown(report.projectIdeaHandoffQuality),
       "utf8"
     ),
     writeFile(

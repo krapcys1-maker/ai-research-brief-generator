@@ -159,6 +159,10 @@ GitHub / GH Archive signals -> trend radar -> adjacent idea discovery -> anti-cl
     dominating larger batches.
   - Project idea audit artifacts report strengths, weaknesses, readiness,
     promotion moves and mitigation moves before research/architecture spend.
+  - Project idea handoff quality artifacts score each shortlisted
+    `ProjectIdeaInput` for constraints, domain specificity, research question
+    coverage, non-goal clarity and description specificity before research
+    spend.
   - `npm run project:research` turns `ProjectIdeaInput` into research brief,
     PRD and architecture artifacts.
   - `npm run benchmark:project-pipeline` aggregates the project planning

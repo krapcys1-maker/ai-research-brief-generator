@@ -92,10 +92,13 @@ Current guard:
 - `ProjectIdeaInput` schema validation.
 - `researchReadyCount`.
 - `pipelineInputValidCount`.
+- `project_idea_handoff_quality.json` and `.md` artifacts score every shortlisted idea before research.
+- Report metrics: `averageHandoffQualityScore`, `handoffReadyCount`.
 
-Next guard:
+Implemented guard:
 
-- Add a handoff quality score for each `ProjectIdeaInput`: constraints quality, domain specificity, research question coverage and non-goal clarity.
+- Handoff quality score checks constraints quality, domain specificity, research question coverage, non-goal clarity and description specificity.
+- `npm run benchmark:project-ideas` fails if promising ideas are not handoff-ready.
 
 ### 6. Architecture Quality Drift
 
@@ -167,9 +170,9 @@ For every meaningful system change:
 
 ### P2: Handoff Quality
 
-- Score every `ProjectIdeaInput` before research.
-- Reject ideas with generic constraints or missing non-goals.
-- Add artifact showing why a shortlisted idea should or should not enter research.
+- Done: score every `ProjectIdeaInput` before research.
+- Done: block generic constraints, missing non-goals, weak domains, weak descriptions or missing research questions.
+- Done: add artifact showing why a shortlisted idea should or should not enter research.
 
 ### P3: Architecture Judge
 
@@ -188,10 +191,10 @@ For every meaningful system change:
 
 ## Current Recommended Next Step
 
-Implement handoff quality scoring:
+Implement architecture judge:
 
-- score every `ProjectIdeaInput` before research,
-- write an artifact explaining why a shortlisted idea is ready or not ready for research,
-- fail the project idea benchmark when constraints, domains, non-goals or research questions become generic.
+- compare `project_architecture.json` against `project_research_brief.json` and `project_prd.json`,
+- score component traceability, generic component risk, requirement coverage and paper-backed decisions,
+- fail `npm run benchmark:project-architecture` when architecture is schema-valid but not evidence-specific.
 
-This will close the next gap between “good-looking idea” and a research-ready input for PRD and architecture generation.
+This closes the next gap between “research-ready idea” and architecture that is genuinely better because it used the research evidence.

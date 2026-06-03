@@ -76,6 +76,28 @@ export const IdeaScoreSchema = z.object({
   reasons: z.array(z.string().trim().min(1)).default([])
 });
 
+export const ProjectIdeaHandoffReadinessSchema = z.enum([
+  "ready",
+  "needs_review",
+  "blocked"
+]);
+
+export const ProjectIdeaHandoffQualitySchema = z.object({
+  ideaId: z.string().trim().min(1),
+  title: z.string().trim().min(3),
+  score: z.number().min(0).max(100),
+  readiness: ProjectIdeaHandoffReadinessSchema,
+  inputValid: z.boolean(),
+  constraintsQuality: z.number().min(0).max(1),
+  domainSpecificity: z.number().min(0).max(1),
+  researchQuestionCoverage: z.number().min(0).max(1),
+  nonGoalClarity: z.number().min(0).max(1),
+  descriptionSpecificity: z.number().min(0).max(1),
+  strengths: z.array(z.string().trim().min(1)).default([]),
+  weaknesses: z.array(z.string().trim().min(1)).default([]),
+  requiredFixes: z.array(z.string().trim().min(1)).default([])
+});
+
 export const IdeaDiscoveryInputSchema = z.object({
   domain: z.string().trim().min(2),
   constraints: z.array(z.string().trim().min(1)).default([]),
@@ -96,6 +118,7 @@ export const IdeaDiscoveryReportSchema = z.object({
   rejectedIdeas: z.array(DiscoveredIdeaSchema).default([]),
   shortlist: z.array(DiscoveredIdeaSchema).default([]),
   projectIdeaInputs: z.array(ProjectIdeaInputSchema).default([]),
+  projectIdeaHandoffQuality: z.array(ProjectIdeaHandoffQualitySchema).default([]),
   metrics: z.object({
     ideaCount: z.number().int().nonnegative(),
     promisingCount: z.number().int().nonnegative(),
@@ -106,7 +129,9 @@ export const IdeaDiscoveryReportSchema = z.object({
     shortlistSourceDominance: z.number().min(0).max(1),
     maxIdeasPerSource: z.number().int().min(1),
     researchReadyCount: z.number().int().nonnegative(),
-    pipelineInputValidCount: z.number().int().nonnegative()
+    pipelineInputValidCount: z.number().int().nonnegative(),
+    averageHandoffQualityScore: z.number().min(0).max(100),
+    handoffReadyCount: z.number().int().nonnegative()
   })
 });
 
@@ -229,7 +254,9 @@ export const ProjectIdeaAuditSchema = z.object({
     maxSourceDominance: z.number().min(0).max(1),
     trendRadarCategoryCount: z.number().int().nonnegative(),
     trendRadarOpportunityCount: z.number().int().nonnegative(),
-    genericTitleCount: z.number().int().nonnegative()
+    genericTitleCount: z.number().int().nonnegative(),
+    averageHandoffQualityScore: z.number().min(0).max(100),
+    handoffReadyRatio: z.number().min(0).max(1)
   })
 });
 

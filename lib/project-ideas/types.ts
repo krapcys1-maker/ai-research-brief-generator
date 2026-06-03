@@ -10,6 +10,7 @@ import type {
   GhArchiveTrendResultSchema,
   IdeaScoreSchema,
   IdeaSourceRepoSchema,
+  ProjectIdeaHandoffQualitySchema,
   ProjectIdeaAuditFindingSchema,
   ProjectIdeaAuditSchema,
   RepoInsightSchema,
@@ -25,6 +26,9 @@ export type IdeaSourceRepo = z.infer<typeof IdeaSourceRepoSchema>;
 export type RepoInsight = z.infer<typeof RepoInsightSchema>;
 export type DiscoveredIdea = z.infer<typeof DiscoveredIdeaSchema>;
 export type IdeaScore = z.infer<typeof IdeaScoreSchema>;
+export type ProjectIdeaHandoffQuality = z.infer<
+  typeof ProjectIdeaHandoffQualitySchema
+>;
 export type IdeaDiscoveryInput = z.infer<typeof IdeaDiscoveryInputSchema>;
 export type IdeaDiscoveryReport = z.infer<typeof IdeaDiscoveryReportSchema>;
 export type GithubIdeaCollectorDiagnostics = z.infer<

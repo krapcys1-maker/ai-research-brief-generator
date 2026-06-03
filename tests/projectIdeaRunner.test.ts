@@ -26,6 +26,8 @@ const requiredFiles = [
   "rejected_ideas.json",
   "shortlist.json",
   "project_idea_inputs.json",
+  "project_idea_handoff_quality.json",
+  "project_idea_handoff_quality.md",
   "idea_discovery_report.json",
   "idea_discovery_report.md"
 ];
@@ -180,16 +182,24 @@ describe("runProjectIdeaDiscovery", () => {
     const projectIdeaInputs = JSON.parse(
       await readFile(join(outputDir, "project_idea_inputs.json"), "utf8")
     );
+    const handoffQuality = JSON.parse(
+      await readFile(join(outputDir, "project_idea_handoff_quality.json"), "utf8")
+    );
     const audit = JSON.parse(
       await readFile(join(outputDir, "project_ideas_audit.json"), "utf8")
     );
 
     expect(existingCount).toBe(requiredFiles.length);
     expect(manifest.promisingCount).toBeGreaterThanOrEqual(1);
+    expect(manifest.handoffReadyCount).toBe(manifest.projectIdeaInputCount);
+    expect(manifest.averageHandoffQualityScore).toBeGreaterThanOrEqual(82);
     expect(IdeaDiscoveryReportSchema.parse(report)).toEqual(report);
     expect(ProjectIdeaAuditSchema.parse(audit)).toEqual(audit);
     expect(audit.score).toBeGreaterThanOrEqual(70);
     expect(projectIdeaInputs.every((idea: unknown) => ProjectIdeaInputSchema.safeParse(idea).success)).toBe(
+      true
+    );
+    expect(handoffQuality.every((quality: { readiness?: string }) => quality.readiness === "ready")).toBe(
       true
     );
   });
@@ -259,6 +269,7 @@ describe("runProjectIdeaDiscovery", () => {
     expect(manifest.ghArchiveTrendRepoCount).toBe(1);
     expect(manifest.trendRadarCategoryCount).toBeGreaterThanOrEqual(1);
     expect(manifest.trendRadarTopOpportunityCount).toBeGreaterThanOrEqual(1);
+    expect(manifest.handoffReadyCount).toBe(manifest.projectIdeaInputCount);
     expect(sourceRepos).toHaveLength(1);
     expect(ghArchiveTrends.repos[0].repoFullName).toBe("deepseek-ai/DeepSeek-V3");
     expect(trendRadar.repoSignals[0].repoFullName).toBe("deepseek-ai/DeepSeek-V3");

@@ -1,5 +1,6 @@
 import type {
   IdeaDiscoveryReport,
+  ProjectIdeaHandoffQuality,
   TrendRadarReport
 } from "@/lib/project-ideas/types";
 
@@ -23,6 +24,8 @@ export function ideaDiscoveryReportToMarkdown(report: IdeaDiscoveryReport) {
     `**Shortlist source dominance:** ${report.metrics.shortlistSourceDominance}`,
     `**Clone rejections:** ${report.metrics.cloneRejectedCount}`,
     `**Research ready:** ${report.metrics.researchReadyCount}`,
+    `**Handoff ready:** ${report.metrics.handoffReadyCount}`,
+    `**Average handoff quality:** ${report.metrics.averageHandoffQualityScore}`,
     "",
     "## Shortlist",
     ""
@@ -59,6 +62,54 @@ export function ideaDiscoveryReportToMarkdown(report: IdeaDiscoveryReport) {
     lines.push("");
     lines.push(`**Score:** ${score?.total ?? "n/a"}`);
     lines.push(`**Reason:** ${(score?.reasons ?? []).join(" ") || "not selected"}`);
+    lines.push("");
+  }
+
+  return `${lines.join("\n")}\n`;
+}
+
+export function projectIdeaHandoffQualityToMarkdown(
+  qualities: ProjectIdeaHandoffQuality[]
+) {
+  const averageScore =
+    qualities.length > 0
+      ? qualities.reduce((sum, quality) => sum + quality.score, 0) /
+        qualities.length
+      : 0;
+  const readyCount = qualities.filter(
+    (quality) => quality.readiness === "ready"
+  ).length;
+  const lines = [
+    "# Project Idea Handoff Quality",
+    "",
+    `**Ideas:** ${qualities.length}`,
+    `**Ready:** ${readyCount}/${qualities.length}`,
+    `**Average score:** ${averageScore.toFixed(1)}`,
+    "",
+    "## Ideas",
+    ""
+  ];
+
+  for (const quality of qualities) {
+    lines.push(`### ${quality.title}`);
+    lines.push("");
+    lines.push(`**Score:** ${quality.score}/100`);
+    lines.push(`**Readiness:** ${quality.readiness}`);
+    lines.push(`**Input valid:** ${quality.inputValid ? "yes" : "no"}`);
+    lines.push(`**Constraints quality:** ${quality.constraintsQuality}`);
+    lines.push(`**Domain specificity:** ${quality.domainSpecificity}`);
+    lines.push(`**Research question coverage:** ${quality.researchQuestionCoverage}`);
+    lines.push(`**Non-goal clarity:** ${quality.nonGoalClarity}`);
+    lines.push(`**Description specificity:** ${quality.descriptionSpecificity}`);
+    lines.push("");
+    lines.push("**Strengths:**");
+    lines.push(...listItems(quality.strengths));
+    lines.push("");
+    lines.push("**Weaknesses:**");
+    lines.push(...listItems(quality.weaknesses));
+    lines.push("");
+    lines.push("**Required fixes:**");
+    lines.push(...listItems(quality.requiredFixes));
     lines.push("");
   }
 

@@ -3,6 +3,7 @@ export * from "@/lib/project-ideas/types";
 export * from "@/lib/project-ideas/aiIdeaPrompt";
 export * from "@/lib/project-ideas/aiIdeaBenchmark";
 export * from "@/lib/project-ideas/audit";
+export * from "@/lib/project-ideas/handoffQuality";
 export * from "@/lib/project-ideas/repoAnalyzer";
 export * from "@/lib/project-ideas/ideaGenerator";
 export * from "@/lib/project-ideas/noveltyGuard";

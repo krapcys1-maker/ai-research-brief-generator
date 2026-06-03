@@ -11,6 +11,7 @@ GitHub / GH Archive signals
 -> Project Idea Scout
 -> trend radar
 -> idea quality audit
+-> handoff quality gate
 -> research brief
 -> PRD
 -> architecture
@@ -25,7 +26,7 @@ The goal is not to manually invent one good architecture. The goal is to improve
 - Anti-clone behavior: the system now rejects direct replacements and prefers adjacent QA, audit, diagnostic, readiness, compatibility, governance, and reliability products.
 - Measurable gates: project idea discovery, GitHub collection, GH Archive budget safety, research planning, PRD generation, and architecture generation all have benchmark coverage.
 - Cost control: GH Archive collection uses exact date tables, dry-run estimates, `maxDays`, and `maxBytesBilled`.
-- Handoff quality: shortlisted ideas are converted into `ProjectIdeaInput`, then into research, PRD, and architecture artifacts with schema validation.
+- Handoff quality: shortlisted ideas are converted into `ProjectIdeaInput`, scored for research readiness, then moved into research, PRD, and architecture artifacts only when the handoff is strong enough.
 
 ## Biggest Weaknesses
 
@@ -42,6 +43,8 @@ Each `project:ideas` run writes:
 
 - `project_ideas_audit.json`
 - `project_ideas_audit.md`
+- `project_idea_handoff_quality.json`
+- `project_idea_handoff_quality.md`
 
 The audit scores:
 
@@ -54,6 +57,8 @@ The audit scores:
 - MVP feasibility,
 - GitHub signal strength,
 - research handoff readiness,
+- handoff quality score,
+- handoff ready ratio,
 - domain diversity,
 - target user diversity,
 - source dominance,
@@ -112,6 +117,8 @@ Do not move an idea into expensive research or architecture generation unless:
 - audit readiness is not `blocked`,
 - clone rejection ratio is non-zero on benchmarked runs,
 - shortlisted ideas are research-ready,
+- `handoffReadyCount` equals the number of generated `ProjectIdeaInput` records,
+- `averageHandoffQualityScore` is at least 82,
 - trend radar has at least one category,
 - the idea has a specific QA/audit/diagnostic/reliability/governance job rather than a broad clone-shaped title.
 

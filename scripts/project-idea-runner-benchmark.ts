@@ -22,6 +22,8 @@ type CaseResult = {
   artifactCompleteness: number;
   schemaValid: boolean;
   projectIdeaInputValidCount: number;
+  handoffReadyCount: number;
+  averageHandoffQualityScore: number;
   promisingCount: number;
   cloneRejectedCount: number;
   ghArchiveMode: string;
@@ -48,6 +50,8 @@ const requiredFiles = [
   "rejected_ideas.json",
   "shortlist.json",
   "project_idea_inputs.json",
+  "project_idea_handoff_quality.json",
+  "project_idea_handoff_quality.md",
   "idea_discovery_report.json",
   "idea_discovery_report.md"
 ];
@@ -268,6 +272,8 @@ async function evaluateCase(testCase: BenchmarkCase, index: number) {
     manifest.trendRadarTopOpportunityCount >= 1 &&
     audit.score >= 70 &&
     audit.readiness !== "blocked" &&
+    manifest.handoffReadyCount === manifest.projectIdeaInputCount &&
+    manifest.averageHandoffQualityScore >= 82 &&
     projectIdeaInputValidCount === manifest.projectIdeaInputCount;
 
   return {
@@ -276,6 +282,8 @@ async function evaluateCase(testCase: BenchmarkCase, index: number) {
     artifactCompleteness,
     schemaValid,
     projectIdeaInputValidCount,
+    handoffReadyCount: manifest.handoffReadyCount,
+    averageHandoffQualityScore: manifest.averageHandoffQualityScore,
     promisingCount: manifest.promisingCount,
     cloneRejectedCount: manifest.cloneRejectedCount,
     ghArchiveMode: manifest.ghArchiveMode,
@@ -295,6 +303,8 @@ function renderMarkdownReport(input: {
   averageArtifactCompleteness: number;
   schemaValidCount: number;
   projectIdeaInputValidCount: number;
+  handoffReadyCount: number;
+  averageHandoffQualityScore: number;
   promisingCount: number;
   cloneRejectedCount: number;
   ghArchiveUsedCount: number;
@@ -313,6 +323,8 @@ function renderMarkdownReport(input: {
     `Average artifact completeness: ${pct(input.averageArtifactCompleteness)}`,
     `Schema valid: ${input.schemaValidCount}/${input.caseCount}`,
     `Project idea inputs valid: ${input.projectIdeaInputValidCount}`,
+    `Handoff ready: ${input.handoffReadyCount}`,
+    `Average handoff quality score: ${input.averageHandoffQualityScore.toFixed(1)}`,
     `Promising ideas: ${input.promisingCount}`,
     `Clone rejections: ${input.cloneRejectedCount}`,
     `GH Archive used cases: ${input.ghArchiveUsedCount}`,
@@ -332,6 +344,8 @@ function renderMarkdownReport(input: {
     lines.push(`- Artifact completeness: ${pct(result.artifactCompleteness)}`);
     lines.push(`- Schema valid: ${result.schemaValid ? "yes" : "no"}`);
     lines.push(`- Project idea inputs valid: ${result.projectIdeaInputValidCount}`);
+    lines.push(`- Handoff ready: ${result.handoffReadyCount}`);
+    lines.push(`- Average handoff quality score: ${result.averageHandoffQualityScore.toFixed(1)}`);
     lines.push(`- Promising ideas: ${result.promisingCount}`);
     lines.push(`- Clone rejections: ${result.cloneRejectedCount}`);
     lines.push(`- GH Archive mode: ${result.ghArchiveMode}`);
@@ -401,6 +415,13 @@ async function main() {
       (sum, result) => sum + result.projectIdeaInputValidCount,
       0
     ),
+    handoffReadyCount: results.reduce(
+      (sum, result) => sum + result.handoffReadyCount,
+      0
+    ),
+    averageHandoffQualityScore:
+      results.reduce((sum, result) => sum + result.averageHandoffQualityScore, 0) /
+      results.length,
     promisingCount: results.reduce((sum, result) => sum + result.promisingCount, 0),
     cloneRejectedCount: results.reduce(
       (sum, result) => sum + result.cloneRejectedCount,
@@ -431,6 +452,8 @@ async function main() {
       `Cases: ${report.passCount}/${report.caseCount}`,
       `Average artifact completeness: ${pct(report.averageArtifactCompleteness)}`,
       `Project idea inputs valid: ${report.projectIdeaInputValidCount}`,
+      `Handoff ready: ${report.handoffReadyCount}`,
+      `Average handoff quality score: ${report.averageHandoffQualityScore.toFixed(1)}`,
       `Promising ideas: ${report.promisingCount}`,
       `Clone rejections: ${report.cloneRejectedCount}`,
       `GH Archive used cases: ${report.ghArchiveUsedCount}`,

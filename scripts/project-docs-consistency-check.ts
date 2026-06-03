@@ -41,7 +41,9 @@ const requiredArtifacts = [
   "trend_radar.json",
   "trend_radar.md",
   "shortlist.json",
-  "project_idea_inputs.json"
+  "project_idea_inputs.json",
+  "project_idea_handoff_quality.json",
+  "project_idea_handoff_quality.md"
 ];
 
 const requiredMetrics = [
@@ -49,7 +51,9 @@ const requiredMetrics = [
   "maxIdeasPerSource",
   "cloneRejectedCount",
   "averageNovelty",
-  "averageMvpFeasibility"
+  "averageMvpFeasibility",
+  "averageHandoffQualityScore",
+  "handoffReadyCount"
 ];
 
 async function writeTextFile(path: string, content: string) {

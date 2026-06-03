@@ -43,6 +43,8 @@ const ideaRequiredFiles = [
   "rejected_ideas.json",
   "shortlist.json",
   "project_idea_inputs.json",
+  "project_idea_handoff_quality.json",
+  "project_idea_handoff_quality.md",
   "idea_discovery_report.json",
   "idea_discovery_report.md"
 ];
@@ -408,4 +410,3 @@ main().catch((error: unknown) => {
   console.error(error);
   process.exitCode = 1;
 });
-
