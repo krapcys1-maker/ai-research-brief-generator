@@ -18,6 +18,7 @@
     "benchmark:project-pipeline": "tsx scripts/project-pipeline-benchmark.ts",
     "benchmark:project-ideas": "tsx scripts/project-idea-discovery-benchmark.ts",
     "benchmark:project-ideas-runner": "tsx scripts/project-idea-runner-benchmark.ts",
+    "benchmark:project-idea-to-research": "tsx scripts/project-idea-to-research-benchmark.ts",
     "benchmark:project-github-collector": "tsx scripts/project-github-collector-benchmark.ts",
     "benchmark:project-cli": "tsx scripts/project-cli-benchmark.ts",
     "benchmark:project-architecture": "tsx scripts/project-architecture-benchmark.ts",

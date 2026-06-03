@@ -47,6 +47,12 @@ const benchmarkDefinitions: BenchmarkDefinition[] = [
     jsonPath: "benchmark-results/project-idea-runner-latest.json"
   },
   {
+    id: "project_idea_to_research",
+    label: "ProjectIdeaToResearch",
+    npmScript: "benchmark:project-idea-to-research",
+    jsonPath: "benchmark-results/project-idea-to-research-latest.json"
+  },
+  {
     id: "research_evidence",
     label: "ProjectResearchEvidence",
     npmScript: "benchmark:project-research-evidence",
@@ -141,6 +147,11 @@ function extractKeyMetrics(report: Record<string, unknown>) {
     "issuesFetchedCount",
     "warningCount",
     "cacheHitCount",
+    "averageIdeaArtifactCompleteness",
+    "averageResearchArtifactCompleteness",
+    "ideaInputValidCount",
+    "briefSchemaValidCount",
+    "readyForArchitectureCount",
     "averageBucketCoverage",
     "averageRequiredCoverage",
     "averageArtifactCompleteness",
