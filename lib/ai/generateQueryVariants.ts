@@ -3,6 +3,7 @@ import type { OutputLanguage } from "@/lib/utils/language";
 const polishToEnglishTerms: Record<string, string> = {
   agentow: "agents",
   ai: "artificial intelligence",
+  odpowiedzi: "responses",
   detekcja: "detection",
   diagnozie: "diagnosis",
   diagnostyce: "diagnosis",
@@ -11,7 +12,9 @@ const polishToEnglishTerms: Record<string, string> = {
   grafowych: "graph",
   halucynacje: "hallucination",
   halucynacji: "hallucination",
+  instrukcyjnego: "instruction",
   jak: "",
+  jakosc: "quality",
   jezykowych: "language",
   komorek: "cells",
   komorki: "cells",
@@ -24,8 +27,8 @@ const polishToEnglishTerms: Record<string, string> = {
   maszynowe: "machine",
   medycznej: "medical",
   medycznych: "medical",
-  modelach: "models",
   modeli: "models",
+  modelach: "models",
   oparzenia: "burns",
   oparzen: "burns",
   oparzeniowych: "burn wound",
@@ -37,6 +40,7 @@ const polishToEnglishTerms: Record<string, string> = {
   transformery: "transformers",
   transformey: "transformers",
   uczenie: "learning",
+  wplyw: "impact",
   wykrywanie: "detection",
   zdrowiu: "healthcare"
 };
@@ -115,6 +119,32 @@ function translatePolishTerms(query: string) {
     .replace(/\btreatment burns\b/g, "burn treatment");
 }
 
+function getPolishAcademicPhraseVariants(query: string) {
+  const normalized = normalizeLookupTerm(query);
+  const variants: string[] = [];
+  const mentionsInstructionTuning =
+    /\bfine[-\s]?tuningu\b/.test(normalized) ||
+    /\bfine[-\s]?tuning\b/.test(normalized) ||
+    /\binstrukcyjn\w*\b/.test(normalized);
+  const mentionsLanguageModels =
+    /\bmodel\w*\b/.test(normalized) && /\bjezykow\w*\b/.test(normalized);
+  const mentionsResponseQuality =
+    /\bjakosc\b/.test(normalized) || /\bodpowiedz\w*\b/.test(normalized);
+
+  if (mentionsInstructionTuning && mentionsLanguageModels) {
+    variants.push(
+      mentionsResponseQuality
+        ? "instruction tuning response quality language models"
+        : "instruction tuning language models",
+      "instruction fine-tuning language models response quality",
+      "instruction tuning large language models evaluation",
+      "fine tuning language models instruction following"
+    );
+  }
+
+  return variants;
+}
+
 export function generateQueryVariants(input: {
   query: string;
   outputLanguage: OutputLanguage;
@@ -125,6 +155,10 @@ export function generateQueryVariants(input: {
       : input.query;
   const expandedOriginal = expandAcronyms(input.query);
   const expandedTranslated = expandAcronyms(translated);
+  const phraseVariants =
+    input.outputLanguage === "pl"
+      ? getPolishAcademicPhraseVariants(input.query)
+      : [];
 
   const domainVariants =
     expandedTranslated.includes("stem cells") && expandedTranslated.includes("burn")
@@ -144,6 +178,7 @@ export function generateQueryVariants(input: {
 
   const variants = unique([
     input.query,
+    ...phraseVariants,
     translated,
     expandedOriginal,
     expandedTranslated,

@@ -34,4 +34,25 @@ describe("generateQueryVariants", () => {
     expect(variants).toContain("stem cells burn treatment");
     expect(variants).toContain("mesenchymal stem cells burn wound treatment");
   });
+
+  it("creates academic English variants for Polish instruction tuning questions", () => {
+    const variants = generateQueryVariants({
+      query:
+        "Wpływ fine-tuningu instrukcyjnego na jakość odpowiedzi modeli językowych",
+      outputLanguage: "pl"
+    });
+
+    expect(variants).toContain(
+      "instruction tuning response quality language models"
+    );
+    expect(variants).toContain(
+      "instruction fine-tuning language models response quality"
+    );
+    expect(variants).toContain(
+      "instruction tuning large language models evaluation"
+    );
+    expect(variants.some((variant) => variant.includes("wplyw fine-tuningu"))).toBe(
+      false
+    );
+  });
 });

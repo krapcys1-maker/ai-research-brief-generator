@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { synthesizeBrief } from "@/lib/ai/synthesizeBrief";
 import { createBrief, createPaper } from "@/tests/fixtures";
 import { AIProviderError, createAIProvider } from "@/lib/ai/client";
@@ -19,6 +19,10 @@ describe("synthesizeBrief", () => {
     vi.clearAllMocks();
     await clearAiSynthesisDiagnostics();
     clearAiSynthesisDiagnosticsMemoryForTests();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it("uses app-controlled metadata over model-supplied metadata", async () => {
@@ -179,5 +183,41 @@ describe("synthesizeBrief", () => {
     expect(diagnostics.providerError).toBe(1);
     expect(diagnostics.fallback).toBe(1);
     expect(diagnostics.byProvider[0]?.provider).toBe("deepseek");
+  });
+
+  it("falls back after one provider failure in development", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    const paper = createPaper();
+    const generatedBrief = createBrief();
+    const generateStructured = vi
+      .fn()
+      .mockRejectedValue(
+        new AIProviderError(
+          "DeepSeek request failed before a response was received: terminated"
+        )
+      );
+
+    vi.mocked(createAIProvider).mockReturnValue({
+      name: "deepseek",
+      generateStructured
+    });
+
+    const brief = await synthesizeBrief({
+      id: "brief_from_app",
+      query: "retrieval augmented generation",
+      outputLanguage: "en",
+      queryVariants: ["retrieval augmented generation"],
+      papers: [paper],
+      searchSummary: generatedBrief.searchSummary
+    });
+
+    expect(generateStructured).toHaveBeenCalledTimes(1);
+    expect(brief.id).toBe("brief_from_app");
+    expect(brief.title).toContain("Source-grounded evidence summary");
+
+    const diagnostics = await getAiSynthesisHealthSummary();
+    expect(diagnostics.retry).toBe(0);
+    expect(diagnostics.providerError).toBe(1);
+    expect(diagnostics.fallback).toBe(1);
   });
 });

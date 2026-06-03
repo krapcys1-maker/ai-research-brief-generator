@@ -85,6 +85,10 @@ function getAIConfig(): AIModelConfig {
   };
 }
 
+function getDefaultAiRequestTimeoutMs() {
+  return process.env.NODE_ENV === "development" ? 30000 : 90000;
+}
+
 function extractJsonObject(text: string) {
   const trimmed = text.trim();
 
@@ -152,7 +156,10 @@ function createDeepSeekProvider(config: AIModelConfig): AIProvider {
         );
       }
 
-      const requestTimeoutMs = numberEnv("AI_REQUEST_TIMEOUT_MS", 90000);
+      const requestTimeoutMs = numberEnv(
+        "AI_REQUEST_TIMEOUT_MS",
+        getDefaultAiRequestTimeoutMs()
+      );
       let payload: {
         choices?: { message?: { content?: string } }[];
       };

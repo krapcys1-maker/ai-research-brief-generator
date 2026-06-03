@@ -65,6 +65,22 @@ function getDiagnosticMessage(error: unknown) {
   return error instanceof Error ? error.message : "AI output validation failed.";
 }
 
+function numberEnv(name: string, fallback: number) {
+  const raw = process.env[name];
+
+  if (!raw) {
+    return fallback;
+  }
+
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function getSynthesisAttemptCount() {
+  const defaultAttempts = process.env.NODE_ENV === "development" ? 1 : 2;
+  return numberEnv("AI_SYNTHESIS_ATTEMPTS", defaultAttempts);
+}
+
 function createFallbackBrief(
   input: SynthesizeBriefInput,
   error: unknown
@@ -181,9 +197,10 @@ function createFallbackBrief(
 
 export async function synthesizeBrief(input: SynthesizeBriefInput) {
   const provider = createAIProvider();
+  const maxAttempts = getSynthesisAttemptCount();
   let lastError: unknown;
 
-  for (let attempt = 0; attempt < 2; attempt += 1) {
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
     try {
       const raw = await provider.generateStructured({
         schemaName: "ResearchBrief",
@@ -244,7 +261,8 @@ export async function synthesizeBrief(input: SynthesizeBriefInput) {
       await recordAiSynthesisDiagnostic({
         query: input.query,
         provider: provider.name,
-        status: attempt === 0 ? "retry" : getDiagnosticStatus(error),
+        status:
+          attempt < maxAttempts - 1 ? "retry" : getDiagnosticStatus(error),
         attemptCount: attempt + 1,
         paperCount: input.papers.length,
         message: getDiagnosticMessage(error)
@@ -258,7 +276,7 @@ export async function synthesizeBrief(input: SynthesizeBriefInput) {
     query: input.query,
     provider: provider.name,
     status: "fallback",
-    attemptCount: 2,
+    attemptCount: maxAttempts,
     paperCount: input.papers.length,
     message: getDiagnosticMessage(lastError)
   });

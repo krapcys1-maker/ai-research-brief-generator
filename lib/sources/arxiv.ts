@@ -58,7 +58,7 @@ export const arxivSourceAdapter: SourceAdapter = {
 
     const response = await fetchWithRetry(
       `https://export.arxiv.org/api/query?${params.toString()}`,
-      { timeoutMs: 18000, retries: 1 }
+      { timeoutMs: 8000, retries: 0 }
     );
     assertOk(response, "arXiv");
 

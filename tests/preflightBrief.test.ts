@@ -119,4 +119,65 @@ describe("preflightBrief", () => {
     );
     expect(result.qualityGate.warningCount).toBeGreaterThan(0);
   });
+
+  it("uses English academic variants for Polish instruction tuning queries", async () => {
+    const result = await preflightBrief(
+      {
+        query:
+          "Wpływ fine-tuningu instrukcyjnego na jakość odpowiedzi modeli językowych",
+        maxPapers: 5,
+        sources: ["openalex"]
+      },
+      {
+        search: async ({ queryVariants }) => {
+          expect(queryVariants).toContain(
+            "instruction tuning response quality language models"
+          );
+          return {
+            papers: [
+              createPaper({
+                id: "openalex:instruction_tuning_quality",
+                title:
+                  "A Survey on Quality Evaluation of Instruction Fine-tuning Datasets for Large Language Models",
+                abstract:
+                  "Instruction fine-tuning datasets affect response quality and evaluation of large language models.",
+                source: "openalex",
+                openAlexId: "W_instruction_tuning_quality",
+                doi: "10.1000/instruction-tuning-quality",
+                sourceUrls: ["https://openalex.org/W_instruction_tuning_quality"]
+              }),
+              createPaper({
+                id: "openalex:instruction_eval",
+                title:
+                  "INSTRUCTEVAL: Holistic Evaluation of Instruction-Tuned Large Language Models",
+                abstract:
+                  "Instruction-tuned large language models are evaluated across response quality, safety, and following behavior.",
+                source: "openalex",
+                openAlexId: "W_instruction_eval",
+                doi: "10.1000/instructeval",
+                sourceUrls: ["https://openalex.org/W_instruction_eval"]
+              }),
+              createPaper({
+                id: "openalex:instruction_following",
+                title: "Fine-Tuning Language Models for Instruction Following",
+                abstract:
+                  "Fine-tuning improves instruction following behavior and response quality in language models.",
+                source: "openalex",
+                openAlexId: "W_instruction_following",
+                doi: "10.1000/instruction-following",
+                sourceUrls: ["https://openalex.org/W_instruction_following"]
+              })
+            ],
+            sourcesUsed: ["openalex"],
+            warnings: [],
+            sourceDiagnostics: []
+          };
+        }
+      }
+    );
+
+    expect(result.qualityGate.canSynthesize).toBe(true);
+    expect(result.qualityGate.livePaperCount).toBe(3);
+    expect(result.qualityGate.mockPaperCount).toBe(0);
+  });
 });

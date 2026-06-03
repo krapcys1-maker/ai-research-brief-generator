@@ -24,9 +24,9 @@ function SourceRefs({
 }) {
   return (
     <span className="source-ref-list">
-      {ids.map((id) => (
+      {ids.map((id, index) => (
         <button
-          key={id}
+          key={`source-ref:${id}:${index}`}
           type="button"
           onClick={() => onSelect(id)}
           className="citation"
@@ -70,8 +70,10 @@ function EvidenceList({
   return (
     <div className="evidence-list" aria-label="Claim evidence">
       <strong>Evidence</strong>
-      {evidence.map((item) => (
-        <blockquote key={`${item.paperId}:${item.evidenceText}`}>
+      {evidence.map((item, index) => (
+        <blockquote
+          key={`evidence:${item.paperId}:${item.chunkId ?? "no-chunk"}:${index}`}
+        >
           <p>{item.evidenceText}</p>
           <footer>
             <button
@@ -167,6 +169,10 @@ function formatGeneratedAt(value: string) {
   }
 
   return `${date.toISOString().slice(0, 16).replace("T", " ")} UTC`;
+}
+
+function listKey(prefix: string, index: number, value: string) {
+  return `${prefix}:${index}:${value.slice(0, 80)}`;
 }
 
 function getWarningGroups(warnings: string[]) {
@@ -310,8 +316,8 @@ function QualitySummary({
         <div>
           <span className="metric-label">Strengths</span>
           <ul className="compact-list">
-            {sourceQuality.strengths.map((item) => (
-              <li key={item}>{item}</li>
+            {sourceQuality.strengths.map((item, index) => (
+              <li key={listKey("source-strength", index, item)}>{item}</li>
             ))}
           </ul>
         </div>
@@ -320,8 +326,8 @@ function QualitySummary({
         <div>
           <span className="metric-label">Cautions</span>
           <ul className="compact-list">
-            {sourceQuality.cautions.map((item) => (
-              <li key={item}>{item}</li>
+            {sourceQuality.cautions.map((item, index) => (
+              <li key={listKey("source-caution", index, item)}>{item}</li>
             ))}
           </ul>
         </div>
@@ -435,8 +441,8 @@ function EvidenceBoundaryContent({
         </div>
       </div>
       <ul className="compact-list" style={{ marginTop: 14 }}>
-        {boundary.bullets.map((item) => (
-          <li key={item}>{item}</li>
+        {boundary.bullets.map((item, index) => (
+          <li key={listKey("boundary-bullet", index, item)}>{item}</li>
         ))}
       </ul>
     </>
@@ -472,8 +478,8 @@ function PriorityTakeaways({
         <div>
           <h3>Best-supported points</h3>
           <div className="takeaway-list">
-            {mainFindings.map((item) => (
-              <article key={item.finding}>
+            {mainFindings.map((item, index) => (
+              <article key={listKey("priority-finding", index, item.finding)}>
                 <h4>{formatNarrativeText(item.finding, papersById)}</h4>
                 <p>{formatNarrativeText(item.explanation, papersById)}</p>
                 <div className="takeaway-meta">
@@ -491,8 +497,8 @@ function PriorityTakeaways({
         <div>
           <h3>Check before relying on it</h3>
           <div className="takeaway-list">
-            {cautions.map((item) => (
-              <article key={item.title}>
+            {cautions.map((item, index) => (
+              <article key={listKey("priority-caution", index, item.title)}>
                 <h4>{formatNarrativeText(item.title, papersById)}</h4>
                 <p>{formatNarrativeText(item.detail, papersById)}</p>
                 <SourceRefs
@@ -715,8 +721,8 @@ function AskBriefPanel({
 
           {answer.claims.length ? (
             <div className="ask-brief-claims">
-              {answer.claims.map((claim) => (
-                <article key={claim.claim}>
+              {answer.claims.map((claim, index) => (
+                <article key={listKey("answer-claim", index, claim.claim)}>
                   <h3>{claim.claim}</h3>
                   <p>{claim.explanation}</p>
                   <SourceRefs
@@ -738,9 +744,9 @@ function AskBriefPanel({
             <div className="ask-brief-followups">
               <h3>Follow-up questions</h3>
               <div className="token-list">
-                {answer.suggestedFollowUpQuestions.map((item) => (
+                {answer.suggestedFollowUpQuestions.map((item, index) => (
                   <button
-                    key={item}
+                    key={listKey("answer-followup", index, item)}
                     type="button"
                     className="citation"
                     onClick={() => setQuestion(item)}
@@ -869,8 +875,8 @@ function SearchDiagnostics({
       <div style={{ marginTop: 18 }}>
         <h3 className="compact-heading">Query variants</h3>
         <ol className="compact-list">
-          {brief.searchSummary.queryVariants.map((query) => (
-            <li key={query}>{query}</li>
+          {brief.searchSummary.queryVariants.map((query, index) => (
+            <li key={listKey("query-variant", index, query)}>{query}</li>
           ))}
         </ol>
       </div>
@@ -1058,8 +1064,8 @@ function SourceDrawer({
             <div>
               <span className="metric-label">Limitations</span>
               <ul className="compact-list">
-                {insight.limitations.map((item) => (
-                  <li key={item}>{item}</li>
+                {insight.limitations.map((item, index) => (
+                  <li key={listKey("source-limitation", index, item)}>{item}</li>
                 ))}
               </ul>
             </div>
@@ -1068,8 +1074,10 @@ function SourceDrawer({
             <div>
               <span className="metric-label">Metadata warnings</span>
               <ul className="compact-list warning-list">
-                {metadataWarnings.map((item) => (
-                  <li key={item}>{item.replace("metadata warning:", "").trim()}</li>
+                {metadataWarnings.map((item, index) => (
+                  <li key={listKey("metadata-warning", index, item)}>
+                    {item.replace("metadata warning:", "").trim()}
+                  </li>
                 ))}
               </ul>
             </div>
@@ -1180,8 +1188,11 @@ export function BriefRenderer({
 
       <Section title="Key Findings">
         <div className="stack">
-          {brief.keyFindings.map((item) => (
-            <article key={item.finding} style={{ lineHeight: 1.6 }}>
+          {brief.keyFindings.map((item, index) => (
+            <article
+              key={listKey("key-finding", index, item.finding)}
+              style={{ lineHeight: 1.6 }}
+            >
               <h3 style={{ margin: "0 0 6px", fontSize: "1.05rem" }}>
                 {formatNarrativeText(item.finding, papersById)}
               </h3>
@@ -1213,8 +1224,11 @@ export function BriefRenderer({
 
       <Section title="Major Themes">
         <div className="stack">
-          {brief.majorThemes.map((item) => (
-            <article key={item.theme} style={{ lineHeight: 1.6 }}>
+          {brief.majorThemes.map((item, index) => (
+            <article
+              key={listKey("major-theme", index, item.theme)}
+              style={{ lineHeight: 1.6 }}
+            >
               <h3 style={{ margin: "0 0 6px", fontSize: "1.05rem" }}>
                 {formatNarrativeText(item.theme, papersById)}
               </h3>
@@ -1238,8 +1252,11 @@ export function BriefRenderer({
 
       <Section title="Influential Papers">
         <div className="stack">
-          {brief.influentialPapers.map((item) => (
-            <article key={item.paperId} style={{ lineHeight: 1.6 }}>
+          {brief.influentialPapers.map((item, index) => (
+            <article
+              key={`influential-paper:${item.paperId}:${index}`}
+              style={{ lineHeight: 1.6 }}
+            >
               <h3 style={{ margin: "0 0 6px", fontSize: "1.05rem" }}>
                 <a href={`#${item.paperId}`} title={item.paperId}>
                   {formatCitationLabel(papersById.get(item.paperId), item.paperId)}
@@ -1255,8 +1272,11 @@ export function BriefRenderer({
 
       <Section title="Research Gaps">
         <div className="stack">
-          {brief.researchGaps.map((item) => (
-            <article key={item.gap} style={{ lineHeight: 1.6 }}>
+          {brief.researchGaps.map((item, index) => (
+            <article
+              key={listKey("research-gap", index, item.gap)}
+              style={{ lineHeight: 1.6 }}
+            >
               <h3 style={{ margin: "0 0 6px", fontSize: "1.05rem" }}>
                 {formatNarrativeText(item.gap, papersById)}
               </h3>
@@ -1280,8 +1300,11 @@ export function BriefRenderer({
 
       <Section title="Controversies / Uncertainties">
         <div className="stack">
-          {brief.controversiesOrUncertainties.map((item) => (
-            <article key={item.issue} style={{ lineHeight: 1.6 }}>
+          {brief.controversiesOrUncertainties.map((item, index) => (
+            <article
+              key={listKey("uncertainty", index, item.issue)}
+              style={{ lineHeight: 1.6 }}
+            >
               <h3 style={{ margin: "0 0 6px", fontSize: "1.05rem" }}>
                 {formatNarrativeText(item.issue, papersById)}
               </h3>
@@ -1305,8 +1328,8 @@ export function BriefRenderer({
 
       <Section title="Suggested Next Questions">
         <ol style={{ margin: 0, paddingLeft: 22, lineHeight: 1.7 }}>
-          {brief.suggestedNextQuestions.map((question) => (
-            <li key={question}>{question}</li>
+          {brief.suggestedNextQuestions.map((question, index) => (
+            <li key={listKey("next-question", index, question)}>{question}</li>
           ))}
         </ol>
       </Section>
