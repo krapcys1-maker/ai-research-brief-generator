@@ -48,6 +48,8 @@ async function main() {
       `GitHub mode: ${manifest.githubMode}`,
       `GH Archive mode: ${manifest.ghArchiveMode}`,
       `GH Archive trend repos: ${manifest.ghArchiveTrendRepoCount}`,
+      `Trend radar categories: ${manifest.trendRadarCategoryCount}`,
+      `Trend radar opportunities: ${manifest.trendRadarTopOpportunityCount}`,
       `Warnings: ${manifest.warnings.length}`,
       `Output: ${manifest.outputDir}`
     ].join("\n")

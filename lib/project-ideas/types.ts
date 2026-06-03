@@ -11,7 +11,11 @@ import type {
   IdeaScoreSchema,
   IdeaSourceRepoSchema,
   RepoInsightSchema,
-  RepoIssueSignalSchema
+  RepoIssueSignalSchema,
+  TrendRadarCategorySchema,
+  TrendRadarOpportunitySchema,
+  TrendRadarRepoSignalSchema,
+  TrendRadarReportSchema
 } from "@/lib/project-ideas/schemas";
 
 export type RepoIssueSignal = z.infer<typeof RepoIssueSignalSchema>;
@@ -32,3 +36,7 @@ export type GhArchiveTrendDiagnostics = z.infer<
   typeof GhArchiveTrendDiagnosticsSchema
 >;
 export type GhArchiveTrendResult = z.infer<typeof GhArchiveTrendResultSchema>;
+export type TrendRadarRepoSignal = z.infer<typeof TrendRadarRepoSignalSchema>;
+export type TrendRadarCategory = z.infer<typeof TrendRadarCategorySchema>;
+export type TrendRadarOpportunity = z.infer<typeof TrendRadarOpportunitySchema>;
+export type TrendRadarReport = z.infer<typeof TrendRadarReportSchema>;

@@ -1,4 +1,7 @@
-import type { IdeaDiscoveryReport } from "@/lib/project-ideas/types";
+import type {
+  IdeaDiscoveryReport,
+  TrendRadarReport
+} from "@/lib/project-ideas/types";
 
 function listItems(items: string[]) {
   if (items.length === 0) {
@@ -60,3 +63,64 @@ export function ideaDiscoveryReportToMarkdown(report: IdeaDiscoveryReport) {
   return `${lines.join("\n")}\n`;
 }
 
+export function trendRadarToMarkdown(report: TrendRadarReport) {
+  const lines = [
+    "# Trend Radar",
+    "",
+    `**Generated:** ${report.generatedAt}`,
+    `**Categories:** ${report.categories.length}`,
+    `**Repo signals:** ${report.repoSignals.length}`,
+    "",
+    "## Top Categories",
+    ""
+  ];
+
+  for (const category of report.categories) {
+    lines.push(`### ${category.category}`);
+    lines.push("");
+    lines.push(`**Heat:** ${category.heatScore}`);
+    lines.push(`**Sexiness:** ${category.sexinessScore}`);
+    lines.push(`**Feasibility:** ${category.feasibilityScore}`);
+    lines.push(`**Repos:** ${category.representativeRepos.join(", ")}`);
+    lines.push("");
+    lines.push("**Why hot:**");
+    lines.push(...listItems(category.whyHot));
+    lines.push("");
+    lines.push("**Opportunity angles:**");
+    lines.push(...listItems(category.opportunityAngles));
+    lines.push("");
+  }
+
+  lines.push("## Top Opportunities");
+  lines.push("");
+
+  for (const opportunity of report.topOpportunities) {
+    lines.push(`### ${opportunity.title}`);
+    lines.push("");
+    lines.push(`**Category:** ${opportunity.category}`);
+    lines.push(`**Rationale:** ${opportunity.rationale}`);
+    lines.push("");
+    lines.push("**Suggested constraints:**");
+    lines.push(...listItems(opportunity.suggestedConstraints));
+    lines.push("");
+  }
+
+  lines.push("## Repo Signals");
+  lines.push("");
+
+  for (const signal of report.repoSignals) {
+    lines.push(`### ${signal.repoFullName}`);
+    lines.push("");
+    lines.push(`**Category:** ${signal.category}`);
+    lines.push(`**Heat:** ${signal.heatScore}`);
+    lines.push(`**Sexiness:** ${signal.sexinessScore}`);
+    lines.push(`**Feasibility:** ${signal.feasibilityScore}`);
+    lines.push(`**Trend score:** ${signal.trendScore}`);
+    lines.push("");
+    lines.push("**Evidence:**");
+    lines.push(...listItems(signal.evidence));
+    lines.push("");
+  }
+
+  return `${lines.join("\n")}\n`;
+}

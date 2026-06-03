@@ -18,6 +18,8 @@ describe("GH Archive trend collector", () => {
     expect(built.query).toContain("`githubarchive.day.20250102`");
     expect(built.query).toContain("LIMIT 20");
     expect(built.query).not.toContain("githubarchive.day.*");
+    expect(built.query).toContain("COUNTIF(type = 'WatchEvent') > 0");
+    expect(built.query).toContain("LEAST(COUNTIF(type = 'PushEvent'), 100)");
   });
 
   it("rejects ranges above maxDays before calling BigQuery", async () => {
@@ -129,4 +131,3 @@ describe("GH Archive trend collector", () => {
     expect(calls).toHaveLength(2);
   });
 });
-

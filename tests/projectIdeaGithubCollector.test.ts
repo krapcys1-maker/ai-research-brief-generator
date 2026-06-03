@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import {
   clearGithubIdeaCollectorCache,
+  collectGithubIdeaSourceReposByFullName,
   collectGithubIdeaSourceRepos,
   GithubIdeaCollectorResultSchema
 } from "@/lib/project-ideas";
@@ -194,5 +195,59 @@ describe("collectGithubIdeaSourceRepos", () => {
     expect(result.diagnostics.warnings).toContain("API rate limit exceeded");
     expect(result.diagnostics.rateLimit?.remaining).toBe(0);
   });
-});
 
+  it("normalizes empty issue bodies while enriching explicit repo names", async () => {
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValueOnce(
+        response({
+          json: {
+            id: 456,
+            name: "agent-workflow-kit",
+            full_name: "example/agent-workflow-kit",
+            owner: { login: "example" },
+            html_url: "https://github.com/example/agent-workflow-kit",
+            description: "AI agent framework for tool workflows.",
+            topics: ["ai", "agents", "workflow"],
+            language: "Python",
+            stargazers_count: 4200,
+            forks_count: 330,
+            open_issues_count: 38,
+            created_at: "2025-01-01T00:00:00.000Z",
+            pushed_at: "2026-05-01T00:00:00.000Z"
+          }
+        })
+      )
+      .mockResolvedValueOnce(
+        response({
+          json: {
+            content: Buffer.from(
+              "README: AI agent framework for tool workflows."
+            ).toString("base64")
+          }
+        })
+      )
+      .mockResolvedValueOnce(
+        response({
+          json: [
+            {
+              title: "Empty issue body from GitHub",
+              body: "",
+              labels: [{ name: "enhancement" }]
+            }
+          ]
+        })
+      );
+
+    const result = await collectGithubIdeaSourceReposByFullName({
+      repoFullNames: ["example/agent-workflow-kit"],
+      fetchFn
+    });
+
+    expect(GithubIdeaCollectorResultSchema.parse(result)).toEqual(result);
+    expect(result.sourceRepos[0]?.issueSignals[0]).toMatchObject({
+      title: "Empty issue body from GitHub",
+      body: "No issue body provided."
+    });
+  });
+});

@@ -8,3 +8,4 @@ export * from "@/lib/project-ideas/runner";
 export * from "@/lib/project-ideas/githubCollector";
 export * from "@/lib/project-ideas/markdown";
 export * from "@/lib/project-ideas/ghArchiveTrendCollector";
+export * from "@/lib/project-ideas/trendRadar";

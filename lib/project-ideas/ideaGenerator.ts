@@ -63,6 +63,73 @@ function adjacentBlueprint(
     };
   }
 
+  if (
+    text.includes("llm") ||
+    text.includes("inference") ||
+    text.includes("model serving") ||
+    text.includes("benchmark") ||
+    text.includes("deployment")
+  ) {
+    return {
+      title: "LLM Release Readiness Radar",
+      problem:
+        "AI teams can ship model changes quickly, but they lack a practical release gate for cost, regressions, and rollback readiness.",
+      targetUsers: ["AI platform teams", "product engineering teams"],
+      mvpScope: [
+        "ingest model repo metadata, README, issues, and benchmark notes",
+        "extract release risks around quality, cost, latency, and rollback",
+        "produce a model release readiness report with required checks and owner actions"
+      ],
+      differentiation: [
+        "focuses on release readiness instead of model training or inference hosting",
+        "turns repo and issue signals into operational gates",
+        "keeps human approval before deployment decisions"
+      ],
+      domains: ["LLM operations", "AI release management", "model evaluation"],
+      researchQuestions: [
+        "Which evaluation signals best predict unsafe or costly LLM releases?",
+        "How should model release gates balance regression quality, latency, and cost?"
+      ],
+      aiLeverage: [
+        "summarizes model repo evidence into release risks",
+        "maps unstructured issues and benchmark notes into concrete readiness checks"
+      ]
+    };
+  }
+
+  if (
+    text.includes("agent") ||
+    text.includes("tool") ||
+    text.includes("workflow") ||
+    text.includes("orchestration")
+  ) {
+    return {
+      title: "AI Agent Run QA Console",
+      problem:
+        "Teams can prototype agents fast, but they struggle to understand failed runs, unsafe tool calls, and production readiness.",
+      targetUsers: ["AI product teams", "automation builders"],
+      mvpScope: [
+        "ingest agent run logs, tool calls, and issue signals",
+        "classify failures by planning, tool use, missing context, and unsafe action risk",
+        "produce a QA report with replay cases and release blockers"
+      ],
+      differentiation: [
+        "evaluates agent runs instead of building another agent framework",
+        "targets reliability and rollout decisions before automation",
+        "keeps the core workflow as QA and governance rather than task execution"
+      ],
+      domains: ["AI agents", "workflow automation", "agent evaluation"],
+      researchQuestions: [
+        "Which agent failure categories best predict production risk?",
+        "How should tool-using agents be evaluated before real user workflows?"
+      ],
+      aiLeverage: [
+        "clusters failed agent traces into actionable QA themes",
+        "turns messy run logs into reproducible test and review cases"
+      ]
+    };
+  }
+
   if (text.includes("trading") || text.includes("market") || text.includes("backtest")) {
     return {
       title: "AI Strategy Risk Simulator",

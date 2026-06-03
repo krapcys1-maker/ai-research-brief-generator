@@ -4,7 +4,8 @@ import {
   GhArchiveTrendResultSchema,
   IdeaDiscoveryInputSchema,
   IdeaDiscoveryReportSchema,
-  IdeaSourceRepoSchema
+  IdeaSourceRepoSchema,
+  TrendRadarReportSchema
 } from "@/lib/project-ideas/schemas";
 import { analyzeIdeaSourceRepos } from "@/lib/project-ideas/repoAnalyzer";
 import { generateIdeasFromRepos } from "@/lib/project-ideas/ideaGenerator";
@@ -14,7 +15,11 @@ import {
   collectGithubIdeaSourceReposByFullName
 } from "@/lib/project-ideas/githubCollector";
 import { collectGhArchiveTrends } from "@/lib/project-ideas/ghArchiveTrendCollector";
-import { ideaDiscoveryReportToMarkdown } from "@/lib/project-ideas/markdown";
+import {
+  ideaDiscoveryReportToMarkdown,
+  trendRadarToMarkdown
+} from "@/lib/project-ideas/markdown";
+import { buildTrendRadar } from "@/lib/project-ideas/trendRadar";
 import type { BqExecutor } from "@/lib/project-ideas/ghArchiveTrendCollector";
 import type { FetchLike } from "@/lib/project-ideas/githubCollector";
 import type {
@@ -27,6 +32,7 @@ import type {
 } from "@/lib/project-ideas/types";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { loadEnvFile } from "node:process";
 import { z } from "zod";
 
 const GithubSearchRunnerSchema = z.object({
@@ -88,6 +94,8 @@ export type ProjectIdeaDiscoveryRunManifest = {
   githubMode: "not_used" | "used";
   ghArchiveMode: "not_used" | "dry_run" | "used";
   ghArchiveTrendRepoCount: number;
+  trendRadarCategoryCount: number;
+  trendRadarTopOpportunityCount: number;
   warnings: string[];
   files: typeof artifactFiles;
 };
@@ -103,6 +111,8 @@ const artifactFiles = {
   sourceRepos: "source_repos.json",
   githubCollection: "github_collection.json",
   ghArchiveTrends: "gh_archive_trends.json",
+  trendRadarJson: "trend_radar.json",
+  trendRadarMarkdown: "trend_radar.md",
   repoInsights: "repo_insights.json",
   discoveredIdeas: "discovered_ideas.json",
   ideaScores: "idea_scores.json",
@@ -112,6 +122,27 @@ const artifactFiles = {
   ideaDiscoveryReportJson: "idea_discovery_report.json",
   ideaDiscoveryReportMarkdown: "idea_discovery_report.md"
 } as const;
+
+let envLoaded = false;
+
+function ensureEnvLoaded() {
+  if (envLoaded) {
+    return;
+  }
+
+  envLoaded = true;
+
+  try {
+    loadEnvFile();
+  } catch {
+    // .env is optional; callers can still provide process.env directly.
+  }
+}
+
+function githubToken(tokenEnv?: string) {
+  ensureEnvLoaded();
+  return tokenEnv ? process.env[tokenEnv] : process.env.GITHUB_TOKEN;
+}
 
 function slug(value: string) {
   return value
@@ -167,6 +198,21 @@ function uniqueRepos(repos: IdeaSourceRepo[]) {
   return unique;
 }
 
+function uniqueIdeasByTitle(ideas: DiscoveredIdea[]) {
+  const seen = new Set<string>();
+  const unique: DiscoveredIdea[] = [];
+
+  for (const idea of ideas) {
+    const key = idea.title.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(idea);
+    }
+  }
+
+  return unique;
+}
+
 export function discoverProjectIdeas(value: unknown): IdeaDiscoveryReport {
   const input = IdeaDiscoveryInputSchema.parse(value);
   const repoInsights = analyzeIdeaSourceRepos(input.sourceRepos);
@@ -186,6 +232,7 @@ export function discoverProjectIdeas(value: unknown): IdeaDiscoveryReport {
   const shortlist = discoveredIdeas
     .filter((idea) => scoreFor(idea, ideaScores).verdict === "promising")
     .sort((left, right) => scoreFor(right, ideaScores).total - scoreFor(left, ideaScores).total)
+    .reduce<DiscoveredIdea[]>((unique, idea) => uniqueIdeasByTitle([...unique, idea]), [])
     .slice(0, input.maxIdeas);
   const projectIdeaInputs = shortlist.map((idea) =>
     toProjectIdeaInput(idea, input.outputLanguage)
@@ -239,6 +286,8 @@ function createManifest(input: {
   githubMode: "not_used" | "used";
   ghArchiveMode: "not_used" | "dry_run" | "used";
   ghArchiveTrendRepoCount: number;
+  trendRadarCategoryCount: number;
+  trendRadarTopOpportunityCount: number;
   warnings: string[];
 }): ProjectIdeaDiscoveryRunManifest {
   return {
@@ -254,6 +303,8 @@ function createManifest(input: {
     githubMode: input.githubMode,
     ghArchiveMode: input.ghArchiveMode,
     ghArchiveTrendRepoCount: input.ghArchiveTrendRepoCount,
+    trendRadarCategoryCount: input.trendRadarCategoryCount,
+    trendRadarTopOpportunityCount: input.trendRadarTopOpportunityCount,
     warnings: input.warnings,
     files: artifactFiles
   };
@@ -271,9 +322,7 @@ export async function runProjectIdeaDiscovery(
         includeReadme: parsed.githubSearch.includeReadme,
         includeIssues: parsed.githubSearch.includeIssues,
         timeoutMs: parsed.githubSearch.timeoutMs,
-        token: parsed.githubSearch.tokenEnv
-          ? process.env[parsed.githubSearch.tokenEnv]
-          : process.env.GITHUB_TOKEN
+        token: githubToken(parsed.githubSearch.tokenEnv)
       })
     : null;
   const ghArchiveTrendResult: GhArchiveTrendResult | null = parsed.ghArchiveTrends
@@ -294,9 +343,7 @@ export async function runProjectIdeaDiscovery(
           includeReadme: parsed.ghArchiveTrends.includeReadme,
           includeIssues: parsed.ghArchiveTrends.includeIssues,
           timeoutMs: parsed.ghArchiveTrends.timeoutMs,
-          token: parsed.ghArchiveTrends.tokenEnv
-            ? process.env[parsed.ghArchiveTrends.tokenEnv]
-            : process.env.GITHUB_TOKEN,
+          token: githubToken(parsed.ghArchiveTrends.tokenEnv),
           fetchFn: input.fetchFn
         })
       : null;
@@ -323,12 +370,19 @@ export async function runProjectIdeaDiscovery(
     outputLanguage: parsed.outputLanguage,
     sourceRepos
   });
+  const trendRadar = buildTrendRadar({
+    sourceRepos: report.sourceRepos,
+    repoInsights: report.repoInsights,
+    ghArchiveTrendRepos: ghArchiveTrendResult?.repos,
+    generatedAt: report.generatedAt
+  });
   const githubCollectionArtifact = githubCollection
     ? GithubIdeaCollectorResultSchema.parse(githubCollection)
     : { mode: "not_used" };
   const ghArchiveTrendsArtifact = ghArchiveTrendResult
     ? GhArchiveTrendResultSchema.parse(ghArchiveTrendResult)
     : { mode: "not_used" };
+  const trendRadarArtifact = TrendRadarReportSchema.parse(trendRadar);
   const warnings = [
     ...(githubCollection?.diagnostics.warnings ?? []),
     ...(ghArchiveTrendResult?.diagnostics.warnings ?? []),
@@ -344,6 +398,8 @@ export async function runProjectIdeaDiscovery(
         : "used"
       : "not_used",
     ghArchiveTrendRepoCount: ghArchiveTrendResult?.repos.length ?? 0,
+    trendRadarCategoryCount: trendRadar.categories.length,
+    trendRadarTopOpportunityCount: trendRadar.topOpportunities.length,
     warnings
   });
 
@@ -358,6 +414,12 @@ export async function runProjectIdeaDiscovery(
     writeFile(
       join(outputDir, artifactFiles.ghArchiveTrends),
       toJson(ghArchiveTrendsArtifact),
+      "utf8"
+    ),
+    writeFile(join(outputDir, artifactFiles.trendRadarJson), toJson(trendRadarArtifact), "utf8"),
+    writeFile(
+      join(outputDir, artifactFiles.trendRadarMarkdown),
+      trendRadarToMarkdown(trendRadarArtifact),
       "utf8"
     ),
     writeFile(join(outputDir, artifactFiles.repoInsights), toJson(report.repoInsights), "utf8"),

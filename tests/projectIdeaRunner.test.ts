@@ -14,6 +14,8 @@ const requiredFiles = [
   "source_repos.json",
   "github_collection.json",
   "gh_archive_trends.json",
+  "trend_radar.json",
+  "trend_radar.md",
   "repo_insights.json",
   "discovered_ideas.json",
   "idea_scores.json",
@@ -224,11 +226,18 @@ describe("runProjectIdeaDiscovery", () => {
     const projectIdeaInputs = JSON.parse(
       await readFile(join(outputDir, "project_idea_inputs.json"), "utf8")
     ) as unknown[];
+    const trendRadar = JSON.parse(
+      await readFile(join(outputDir, "trend_radar.json"), "utf8")
+    );
 
     expect(manifest.ghArchiveMode).toBe("used");
     expect(manifest.ghArchiveTrendRepoCount).toBe(1);
+    expect(manifest.trendRadarCategoryCount).toBeGreaterThanOrEqual(1);
+    expect(manifest.trendRadarTopOpportunityCount).toBeGreaterThanOrEqual(1);
     expect(sourceRepos).toHaveLength(1);
     expect(ghArchiveTrends.repos[0].repoFullName).toBe("deepseek-ai/DeepSeek-V3");
+    expect(trendRadar.repoSignals[0].repoFullName).toBe("deepseek-ai/DeepSeek-V3");
+    expect(trendRadar.categories[0].sexinessScore).toBeGreaterThanOrEqual(70);
     expect(projectIdeaInputs.length).toBeGreaterThanOrEqual(1);
     expect(projectIdeaInputs.every((idea) => ProjectIdeaInputSchema.safeParse(idea).success)).toBe(
       true

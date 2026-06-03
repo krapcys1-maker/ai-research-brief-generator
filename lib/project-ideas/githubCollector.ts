@@ -136,6 +136,11 @@ function labelName(label: string | { name?: string }) {
   return typeof label === "string" ? label : label.name ?? "";
 }
 
+function issueBody(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  return trimmed || "No issue body provided.";
+}
+
 function fallbackReadme(repo: GithubRepoSearchItem) {
   return [
     repo.description ?? repo.name ?? "GitHub repository",
@@ -257,7 +262,7 @@ async function fetchIssues(input: {
     .filter((item: GithubIssueItem) => !item.pull_request)
     .map((item: GithubIssueItem) => ({
       title: item.title ?? "Untitled issue",
-      body: item.body ?? "",
+      body: issueBody(item.body),
       labels: (item.labels ?? []).map(labelName).filter(Boolean)
     }))
     .slice(0, 5);

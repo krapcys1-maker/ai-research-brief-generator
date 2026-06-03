@@ -155,6 +155,8 @@ function extractKeyMetrics(report: Record<string, unknown>) {
     "cacheHitCount",
     "maxBqCallCount",
     "averageIdeaArtifactCompleteness",
+    "trendRadarCategoryCount",
+    "trendRadarTopOpportunityCount",
     "averageResearchArtifactCompleteness",
     "ideaInputValidCount",
     "briefSchemaValidCount",

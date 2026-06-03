@@ -25,6 +25,8 @@ type CaseResult = {
   cloneRejectedCount: number;
   ghArchiveMode: string;
   ghArchiveTrendRepoCount: number;
+  trendRadarCategoryCount: number;
+  trendRadarTopOpportunityCount: number;
   passed: boolean;
 };
 
@@ -33,6 +35,8 @@ const requiredFiles = [
   "source_repos.json",
   "github_collection.json",
   "gh_archive_trends.json",
+  "trend_radar.json",
+  "trend_radar.md",
   "repo_insights.json",
   "discovered_ideas.json",
   "idea_scores.json",
@@ -248,6 +252,8 @@ async function evaluateCase(testCase: BenchmarkCase, index: number) {
     schemaValid &&
     manifest.promisingCount >= 1 &&
     manifest.cloneRejectedCount >= 1 &&
+    manifest.trendRadarCategoryCount >= 1 &&
+    manifest.trendRadarTopOpportunityCount >= 1 &&
     projectIdeaInputValidCount === manifest.projectIdeaInputCount;
 
   return {
@@ -260,6 +266,8 @@ async function evaluateCase(testCase: BenchmarkCase, index: number) {
     cloneRejectedCount: manifest.cloneRejectedCount,
     ghArchiveMode: manifest.ghArchiveMode,
     ghArchiveTrendRepoCount: manifest.ghArchiveTrendRepoCount,
+    trendRadarCategoryCount: manifest.trendRadarCategoryCount,
+    trendRadarTopOpportunityCount: manifest.trendRadarTopOpportunityCount,
     passed
   } satisfies CaseResult;
 }
@@ -274,6 +282,8 @@ function renderMarkdownReport(input: {
   promisingCount: number;
   cloneRejectedCount: number;
   ghArchiveUsedCount: number;
+  trendRadarCategoryCount: number;
+  trendRadarTopOpportunityCount: number;
   results: CaseResult[];
 }) {
   const lines = [
@@ -288,6 +298,8 @@ function renderMarkdownReport(input: {
     `Promising ideas: ${input.promisingCount}`,
     `Clone rejections: ${input.cloneRejectedCount}`,
     `GH Archive used cases: ${input.ghArchiveUsedCount}`,
+    `Trend radar categories: ${input.trendRadarCategoryCount}`,
+    `Trend radar opportunities: ${input.trendRadarTopOpportunityCount}`,
     "",
     "## Cases",
     ""
@@ -304,6 +316,8 @@ function renderMarkdownReport(input: {
     lines.push(`- Clone rejections: ${result.cloneRejectedCount}`);
     lines.push(`- GH Archive mode: ${result.ghArchiveMode}`);
     lines.push(`- GH Archive trend repos: ${result.ghArchiveTrendRepoCount}`);
+    lines.push(`- Trend radar categories: ${result.trendRadarCategoryCount}`);
+    lines.push(`- Trend radar opportunities: ${result.trendRadarTopOpportunityCount}`);
     lines.push("");
   }
 
@@ -372,6 +386,14 @@ async function main() {
     ),
     ghArchiveUsedCount: results.filter((result) => result.ghArchiveMode === "used")
       .length,
+    trendRadarCategoryCount: results.reduce(
+      (sum, result) => sum + result.trendRadarCategoryCount,
+      0
+    ),
+    trendRadarTopOpportunityCount: results.reduce(
+      (sum, result) => sum + result.trendRadarTopOpportunityCount,
+      0
+    ),
     results
   };
 
@@ -387,6 +409,8 @@ async function main() {
       `Promising ideas: ${report.promisingCount}`,
       `Clone rejections: ${report.cloneRejectedCount}`,
       `GH Archive used cases: ${report.ghArchiveUsedCount}`,
+      `Trend radar categories: ${report.trendRadarCategoryCount}`,
+      `Trend radar opportunities: ${report.trendRadarTopOpportunityCount}`,
       `JSON: ${jsonOutputPath}`,
       `Markdown: ${markdownOutputPath}`
     ].join("\n")

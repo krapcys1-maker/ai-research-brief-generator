@@ -158,6 +158,42 @@ export const GhArchiveTrendResultSchema = z.object({
   diagnostics: GhArchiveTrendDiagnosticsSchema
 });
 
+export const TrendRadarRepoSignalSchema = z.object({
+  repoId: z.string().trim().min(1),
+  repoFullName: z.string().trim().min(1),
+  category: z.string().trim().min(1),
+  heatScore: z.number().min(0).max(100),
+  sexinessScore: z.number().min(0).max(100),
+  feasibilityScore: z.number().min(0).max(100),
+  trendScore: z.number().nonnegative(),
+  evidence: z.array(z.string().trim().min(1)).min(1)
+});
+
+export const TrendRadarCategorySchema = z.object({
+  category: z.string().trim().min(1),
+  repoCount: z.number().int().min(1),
+  heatScore: z.number().min(0).max(100),
+  sexinessScore: z.number().min(0).max(100),
+  feasibilityScore: z.number().min(0).max(100),
+  representativeRepos: z.array(z.string().trim().min(1)).min(1),
+  whyHot: z.array(z.string().trim().min(1)).min(1),
+  opportunityAngles: z.array(z.string().trim().min(1)).min(1)
+});
+
+export const TrendRadarOpportunitySchema = z.object({
+  category: z.string().trim().min(1),
+  title: z.string().trim().min(3),
+  rationale: z.string().trim().min(10),
+  suggestedConstraints: z.array(z.string().trim().min(1)).min(1)
+});
+
+export const TrendRadarReportSchema = z.object({
+  generatedAt: z.string().trim().min(1),
+  repoSignals: z.array(TrendRadarRepoSignalSchema).default([]),
+  categories: z.array(TrendRadarCategorySchema).default([]),
+  topOpportunities: z.array(TrendRadarOpportunitySchema).default([])
+});
+
 export function validateIdeaDiscoveryReport(value: unknown) {
   return IdeaDiscoveryReportSchema.parse(value);
 }

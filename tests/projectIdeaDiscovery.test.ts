@@ -71,6 +71,111 @@ describe("discoverProjectIdeas", () => {
     );
   });
 
+  it("generates specific LLM operations ideas for model deployment trends", () => {
+    const report = discoverProjectIdeas({
+      domain: "AI model operations",
+      constraints: ["avoid cloning model repositories"],
+      maxIdeas: 2,
+      outputLanguage: "pl",
+      sourceRepos: [
+        sourceRepo({
+          repoId: "repo_llm_inference",
+          name: "llm-inference-runtime",
+          owner: "example",
+          url: "https://github.com/example/llm-inference-runtime",
+          description:
+            "LLM inference runtime with benchmark harness and deployment examples.",
+          topics: ["ai", "llm", "inference", "benchmark"],
+          primaryLanguage: "Python",
+          stars: 4800,
+          forks: 360,
+          openIssues: 42,
+          readmeText:
+            "LLM inference project with model serving, benchmark harness, evaluations, and deployment examples.",
+          issueSignals: [
+            {
+              title: "Need safer deployment checks before inference release",
+              body: "Teams need regression gates, cost checks, and rollback planning before shipping model changes.",
+              labels: ["enhancement"]
+            }
+          ]
+        })
+      ]
+    });
+
+    expect(report.shortlist[0]?.title).toBe("LLM Release Readiness Radar");
+    expect(report.shortlist[0]?.differentiation.join(" ")).toContain(
+      "release readiness"
+    );
+    expect(report.shortlist[0]?.researchQuestions.join(" ")).toContain(
+      "LLM releases"
+    );
+  });
+
+  it("generates specific agent QA ideas for agent framework trends", () => {
+    const report = discoverProjectIdeas({
+      domain: "AI agent operations",
+      constraints: ["avoid building another agent framework"],
+      maxIdeas: 2,
+      outputLanguage: "pl",
+      sourceRepos: [
+        sourceRepo({
+          repoId: "repo_agent_framework",
+          name: "agent-workflow-kit",
+          owner: "example",
+          url: "https://github.com/example/agent-workflow-kit",
+          description:
+            "AI agent framework for tool use, workflow orchestration, and repeatable automation.",
+          topics: ["ai", "agents", "workflow", "tools"],
+          primaryLanguage: "Python",
+          stars: 4200,
+          forks: 330,
+          openIssues: 38,
+          readmeText:
+            "AI agent framework that coordinates tools, code execution, and repeatable workflows.",
+          issueSignals: [
+            {
+              title: "Need workflow evaluation before production runs",
+              body: "Agent runs need repeatable scoring, failure review, and safe rollout plans.",
+              labels: ["enhancement"]
+            }
+          ]
+        })
+      ]
+    });
+
+    expect(report.shortlist[0]?.title).toBe("AI Agent Run QA Console");
+    expect(report.shortlist[0]?.differentiation.join(" ")).toContain(
+      "another agent framework"
+    );
+    expect(report.shortlist[0]?.mvpScope.join(" ")).toContain("tool calls");
+  });
+
+  it("deduplicates repeated shortlist ideas across similar source repos", () => {
+    const report = discoverProjectIdeas({
+      domain: "AI developer tools",
+      constraints: ["avoid repeated ideas"],
+      maxIdeas: 5,
+      outputLanguage: "pl",
+      sourceRepos: [
+        sourceRepo({
+          repoId: "repo_code_review_agent_one",
+          name: "code-review-agent-one"
+        }),
+        sourceRepo({
+          repoId: "repo_code_review_agent_two",
+          name: "code-review-agent-two",
+          stars: 2200,
+          forks: 160
+        })
+      ]
+    });
+    const titles = report.shortlist.map((idea) => idea.title);
+
+    expect(titles).toEqual([...new Set(titles)]);
+    expect(titles.filter((title) => title === "AI Technical Debt Sprint Planner")).toHaveLength(1);
+  });
+
   it("penalizes direct clones of source repository workflow", () => {
     const report = discoverProjectIdeas({
       domain: "AI developer tools",
@@ -97,4 +202,3 @@ describe("discoverProjectIdeas", () => {
     expect(score.reasons.join(" ")).toContain("core workflow");
   });
 });
-
