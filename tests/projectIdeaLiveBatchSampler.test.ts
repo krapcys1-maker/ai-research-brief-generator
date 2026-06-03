@@ -218,6 +218,7 @@ describe("controlled live idea batch sampling", () => {
       constraints: ["avoid cloning source repositories", "MVP in two weeks"],
       windows: [{ id: "live_day", startDate: "2025-01-01" }],
       mode: "live",
+      allowLiveSpend: true,
       maxReposPerWindow: 10,
       maxBytesBilledPerWindow: 200_000_000,
       minSourceReposForPass: 5,
@@ -249,6 +250,7 @@ describe("controlled live idea batch sampling", () => {
       domain: "AI developer tools",
       windows: [{ id: "too_small", startDate: "2025-01-01" }],
       mode: "live",
+      allowLiveSpend: true,
       maxReposPerWindow: 10,
       maxBytesBilledPerWindow: 200_000_000,
       minSourceReposForPass: 5,
@@ -261,5 +263,20 @@ describe("controlled live idea batch sampling", () => {
     expect(summary.quality.passed).toBe(false);
     expect(summary.quality.verdict).toBe("needs_review");
     expect(summary.quality.blockers.join(" ")).toContain("Only 1 enriched repos");
+  });
+
+  it("refuses live sampling unless live spend is explicitly allowed", async () => {
+    await expect(() =>
+      runControlledLiveBatchSampling({
+        domain: "AI developer tools",
+        windows: [{ id: "blocked_live", startDate: "2025-01-01" }],
+        mode: "live",
+        maxReposPerWindow: 10,
+        maxBytesBilledPerWindow: 200_000_000,
+        outputDir: join(tmpdir(), `live-batch-blocked-${Date.now()}`),
+        bqExecutor: liveBqExecutor(),
+        fetchFn: fixtureFetch
+      })
+    ).rejects.toThrow("allowLiveSpend=true");
   });
 });

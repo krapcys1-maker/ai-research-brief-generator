@@ -28,6 +28,7 @@ export const ProjectIdeaLiveBatchSamplerInputSchema = z.object({
   outputLanguage: z.string().trim().min(2).default("pl"),
   windows: z.array(ProjectIdeaLiveBatchWindowInputSchema).min(1).max(5),
   mode: z.enum(["dry_run", "live"]).default("dry_run"),
+  allowLiveSpend: z.boolean().default(false),
   maxReposPerWindow: z.number().int().min(1).max(25).default(10),
   maxDaysPerWindow: z.number().int().min(1).max(3).default(1),
   maxBytesBilledPerWindow: z
@@ -359,6 +360,13 @@ export async function runControlledLiveBatchSampling(
   input: RunControlledLiveBatchSamplingInput
 ): Promise<ProjectIdeaLiveBatchSummary> {
   const parsed = ProjectIdeaLiveBatchSamplerInputSchema.parse(input);
+
+  if (parsed.mode === "live" && !parsed.allowLiveSpend) {
+    throw new Error(
+      "Live GH Archive sampling requires allowLiveSpend=true. Run dry_run first and inspect controlled_live_batch_summary.md before enabling live mode."
+    );
+  }
+
   const generatedAt = new Date().toISOString();
   const windowResults = await Promise.all(
     parsed.windows.map(async (window, index) => {

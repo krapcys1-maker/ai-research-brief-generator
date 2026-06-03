@@ -153,7 +153,8 @@ GitHub / GH Archive signals -> trend radar -> adjacent idea discovery -> anti-cl
     estimates, `maxDays`, and `maxBytesBilled` to control cost.
   - `npm run project:live-batch` runs controlled GH Archive live batch
     sampling in safe `dry_run` mode by default, with explicit `live` mode,
-    cached GitHub enrichment and no auto-spend escalation.
+    `allowLiveSpend: true`, cached GitHub enrichment and no auto-spend
+    escalation.
   - Controlled live sampling stores only `controlled_live_batch_summary.json`
     and `controlled_live_batch_summary.md`, with `trendRepoCount`,
     `sourceRepoCount`, `handoffReadyCount`, `averageHandoffQualityScore` and

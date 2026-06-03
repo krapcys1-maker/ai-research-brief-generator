@@ -112,13 +112,13 @@ Implemented with budget guards. GH Archive / BigQuery collection uses exact date
 
 Controlled live batch sampling is implemented as the next gate before research spend:
 
-- `npm run project:live-batch` runs small GH Archive windows in `dry_run` or explicit `live` mode.
+- `npm run project:live-batch` runs small GH Archive windows in safe `dry_run` mode, or explicit `live` mode only when `allowLiveSpend: true` is also present.
 - `npm run benchmark:project-live-batch` verifies dry-run budget checks, live shortlist quality and too-small-sample blocking.
 - The sampler writes only summary artifacts:
   - `controlled_live_batch_summary.json`,
   - `controlled_live_batch_summary.md`.
 - Key summary metrics are `trendRepoCount`, `sourceRepoCount`, `handoffReadyCount`, `averageHandoffQualityScore` and `blockerCount`.
-- GitHub enrichment for GH Archive repo names is cached, and the sampler never auto-escalates `maxBytesBilled`.
+- GitHub enrichment for GH Archive repo names is cached, the sampler never auto-escalates `maxBytesBilled`, and `live` mode cannot run from a JSON file unless `allowLiveSpend: true` is set after a dry-run review.
 
 ### Phase 3: Extra Signals
 

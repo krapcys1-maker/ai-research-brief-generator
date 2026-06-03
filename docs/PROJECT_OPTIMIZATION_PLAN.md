@@ -195,6 +195,7 @@ For every meaningful system change:
   - `controlled_live_batch_summary.json`,
   - `controlled_live_batch_summary.md`.
 - Done: track `trendRepoCount`, `sourceRepoCount`, `handoffReadyCount`, `averageHandoffQualityScore` and `blockerCount` before research spend.
+- Done: require `allowLiveSpend: true` in addition to `mode: "live"` so a copied JSON file cannot accidentally run a live BigQuery query.
 
 ## Current Recommended Next Step
 
@@ -202,7 +203,7 @@ Run the first real controlled live sample:
 
 - use `npm run project:live-batch -- --input path/to/live-batch.json --out runs/live-batch/<date>`,
 - start in `dry_run` mode and inspect `controlled_live_batch_summary.md`,
-- switch to `live` only for one small date window after the dry-run estimate is under `maxBytesBilled`,
+- switch to `live` only for one small date window after the dry-run estimate is under `maxBytesBilled`, and only with `allowLiveSpend: true`,
 - compare `sourceRepoCount`, `handoffReadyCount`, `averageHandoffQualityScore` and `blockerCount` before spending research/architecture calls.
 
 This closes the next gap between “locally benchmarked pipeline” and controlled live discovery quality.

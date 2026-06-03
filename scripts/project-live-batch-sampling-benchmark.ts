@@ -210,6 +210,7 @@ async function evaluateCase(input: {
     constraints: ["avoid cloning source repositories", "MVP in two weeks"],
     windows: [{ id: input.id, startDate: "2025-01-01" }],
     mode: input.mode,
+    allowLiveSpend: input.mode === "live",
     maxReposPerWindow: 10,
     maxBytesBilledPerWindow: 200_000_000,
     minSourceReposForPass: 5,
