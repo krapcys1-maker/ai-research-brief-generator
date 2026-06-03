@@ -35,6 +35,12 @@ const benchmarkDefinitions: BenchmarkDefinition[] = [
     jsonPath: "benchmark-results/project-idea-discovery-latest.json"
   },
   {
+    id: "project_github_collector",
+    label: "ProjectGithubCollector",
+    npmScript: "benchmark:project-github-collector",
+    jsonPath: "benchmark-results/project-github-collector-latest.json"
+  },
+  {
     id: "research_evidence",
     label: "ProjectResearchEvidence",
     npmScript: "benchmark:project-research-evidence",
@@ -124,6 +130,11 @@ function extractKeyMetrics(report: Record<string, unknown>) {
     "averageGithubSignalStrength",
     "researchReadyCount",
     "pipelineInputValidCount",
+    "returnedRepoCount",
+    "readmeFetchedCount",
+    "issuesFetchedCount",
+    "warningCount",
+    "cacheHitCount",
     "averageBucketCoverage",
     "averageRequiredCoverage",
     "averageArtifactCompleteness",

@@ -5,4 +5,4 @@ export * from "@/lib/project-ideas/ideaGenerator";
 export * from "@/lib/project-ideas/noveltyGuard";
 export * from "@/lib/project-ideas/ranker";
 export * from "@/lib/project-ideas/runner";
-
+export * from "@/lib/project-ideas/githubCollector";

@@ -107,7 +107,30 @@ export const IdeaDiscoveryReportSchema = z.object({
   })
 });
 
+export const GithubIdeaCollectorDiagnosticsSchema = z.object({
+  source: z.literal("github"),
+  query: z.string().trim().min(1),
+  searchUrl: z.string().url(),
+  cached: z.boolean(),
+  fetchedRepoCount: z.number().int().nonnegative(),
+  returnedRepoCount: z.number().int().nonnegative(),
+  readmeFetchedCount: z.number().int().nonnegative(),
+  issuesFetchedCount: z.number().int().nonnegative(),
+  rateLimit: z
+    .object({
+      limit: z.number().int().nonnegative().nullable(),
+      remaining: z.number().int().nonnegative().nullable(),
+      resetAt: z.string().nullable()
+    })
+    .nullable(),
+  warnings: z.array(z.string().trim().min(1)).default([])
+});
+
+export const GithubIdeaCollectorResultSchema = z.object({
+  sourceRepos: z.array(IdeaSourceRepoSchema).default([]),
+  diagnostics: GithubIdeaCollectorDiagnosticsSchema
+});
+
 export function validateIdeaDiscoveryReport(value: unknown) {
   return IdeaDiscoveryReportSchema.parse(value);
 }
-

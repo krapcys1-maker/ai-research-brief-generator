@@ -3,6 +3,8 @@ import type {
   DiscoveredIdeaSchema,
   IdeaDiscoveryInputSchema,
   IdeaDiscoveryReportSchema,
+  GithubIdeaCollectorDiagnosticsSchema,
+  GithubIdeaCollectorResultSchema,
   IdeaScoreSchema,
   IdeaSourceRepoSchema,
   RepoInsightSchema,
@@ -16,4 +18,9 @@ export type DiscoveredIdea = z.infer<typeof DiscoveredIdeaSchema>;
 export type IdeaScore = z.infer<typeof IdeaScoreSchema>;
 export type IdeaDiscoveryInput = z.infer<typeof IdeaDiscoveryInputSchema>;
 export type IdeaDiscoveryReport = z.infer<typeof IdeaDiscoveryReportSchema>;
-
+export type GithubIdeaCollectorDiagnostics = z.infer<
+  typeof GithubIdeaCollectorDiagnosticsSchema
+>;
+export type GithubIdeaCollectorResult = z.infer<
+  typeof GithubIdeaCollectorResultSchema
+>;
