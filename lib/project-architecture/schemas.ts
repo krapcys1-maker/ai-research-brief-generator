@@ -30,6 +30,31 @@ export const ProjectArchitectureRiskSchema = z.object({
   sourcePaperIds: z.array(z.string().trim().min(1)).default([])
 });
 
+export const ProjectArchitectureJudgeVerdictSchema = z.enum([
+  "pass",
+  "needs_review",
+  "fail"
+]);
+
+export const ProjectArchitectureJudgeSchema = z.object({
+  architectureId: z.string().trim().min(1),
+  sourcePrdId: z.string().trim().min(1),
+  sourceBriefId: z.string().trim().min(1),
+  score: z.number().min(0).max(100),
+  verdict: ProjectArchitectureJudgeVerdictSchema,
+  requirementCoverage: z.number().min(0).max(1),
+  componentTraceabilityCoverage: z.number().min(0).max(1),
+  decisionPaperCoverage: z.number().min(0).max(1),
+  componentTypeDiversity: z.number().int().nonnegative(),
+  genericComponentCount: z.number().int().nonnegative(),
+  paperEvidenceCoverage: z.number().min(0).max(1),
+  riskCoverage: z.number().min(0).max(1),
+  specificTermCoverage: z.number().min(0).max(1),
+  strengths: z.array(z.string().trim().min(1)).default([]),
+  weaknesses: z.array(z.string().trim().min(1)).default([]),
+  requiredFixes: z.array(z.string().trim().min(1)).default([])
+});
+
 export const ProjectArchitectureSchema = z
   .object({
     id: z.string().trim().min(1),

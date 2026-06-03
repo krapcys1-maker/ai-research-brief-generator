@@ -107,13 +107,15 @@ Problem: architecture can become generic even when the idea/research is specific
 Current guard:
 
 - Project architecture benchmark checks schema validity, component traceability, paper coverage and component diversity.
+- Architecture judge artifacts compare architecture outputs against PRD and research:
+  - `project_architecture_judge.json`,
+  - `project_architecture_judge.md`.
+- Report metric: `averageJudgeScore`.
 
-Next guard:
+Implemented guard:
 
-- Add an architecture judge comparing `project_architecture.json` against:
-  - `project_research_brief.json`,
-  - `project_prd.json`,
-  - `project_ideas_audit.json` when present.
+- Judge checks requirement coverage, component traceability, decision paper coverage, component diversity, generic component risk, paper evidence coverage, risk coverage and project-specific language.
+- `npm run benchmark:project-architecture` fails schema-valid but generic architectures.
 
 ## Agent Monitoring Checklist
 
@@ -176,8 +178,9 @@ For every meaningful system change:
 
 ### P3: Architecture Judge
 
-- Compare architecture components against research evidence and PRD requirements.
-- Fail architecture benchmark if components are generic or not traceable.
+- Done: compare architecture components against research evidence and PRD requirements.
+- Done: fail architecture benchmark if components are generic, not traceable or below judge score.
+- Done: add architecture judge reports for generated architectures.
 - Add side-by-side architecture comparison reports for AI-generated alternatives.
 
 ### P4: Live Batch Sampling
@@ -191,10 +194,10 @@ For every meaningful system change:
 
 ## Current Recommended Next Step
 
-Implement architecture judge:
+Implement controlled live batch sampling:
 
-- compare `project_architecture.json` against `project_research_brief.json` and `project_prd.json`,
-- score component traceability, generic component risk, requirement coverage and paper-backed decisions,
-- fail `npm run benchmark:project-architecture` when architecture is schema-valid but not evidence-specific.
+- run small GH Archive batches with strict `maxBytesBilled`, `maxDays`, cached GitHub enrichment and no auto-escalation,
+- store summarized quality reports, not large raw runs,
+- compare live shortlist quality against fixture benchmark expectations before research spend.
 
-This closes the next gap between “research-ready idea” and architecture that is genuinely better because it used the research evidence.
+This closes the next gap between “locally benchmarked pipeline” and controlled live discovery quality.

@@ -62,6 +62,7 @@ Project Research Runner
   |
   v
 ProjectResearchBrief -> PRD -> Architecture
+Architecture -> Architecture Judge
 ```
 
 ## Implemented Phases
@@ -306,6 +307,20 @@ Then the existing CLI can run:
 npm run project:research -- --input idea.json --out run-output
 ```
 
+`project:research` also writes an architecture judge report:
+
+```text
+project_architecture_judge.json
+project_architecture_judge.md
+```
+
+The judge compares `project_architecture.json` against the PRD and research
+brief. It scores requirement coverage, component traceability, decision paper
+coverage, component type diversity, generic component risk, paper evidence
+coverage, risk coverage and project-specific language. The architecture
+benchmark fails schema-valid architectures when the judge verdict is not
+`pass`.
+
 ## Implemented Files
 
 ```text
@@ -352,6 +367,8 @@ project_ideas_audit.json
 project_ideas_audit.md
 project_idea_handoff_quality.json
 project_idea_handoff_quality.md
+project_architecture_judge.json
+project_architecture_judge.md
 repo_insights.json
 discovered_ideas.json
 idea_scores.json
@@ -395,6 +412,7 @@ researchReadyCount
 pipelineInputValidCount
 averageHandoffQualityScore
 handoffReadyCount
+averageJudgeScore
 ```
 
 MVP pass criteria:

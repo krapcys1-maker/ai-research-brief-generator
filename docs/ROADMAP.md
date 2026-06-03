@@ -46,8 +46,8 @@ Last updated: 2026-06-02
 - Keep `ProjectIdeaInput` handoff quality scoring in the idea benchmark so
   generic constraints, weak domains, missing non-goals or missing research
   questions fail before research spend.
-- Add architecture judge scoring that compares generated architecture against
-  research evidence, PRD requirements and project idea audit findings.
+- Keep architecture judge scoring in the project architecture benchmark so
+  schema-valid but generic architectures fail before implementation planning.
 - Add controlled live GH Archive batch sampling with strict byte caps and
   cached GitHub enrichment.
 

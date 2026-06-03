@@ -165,6 +165,9 @@ GitHub / GH Archive signals -> trend radar -> adjacent idea discovery -> anti-cl
     spend.
   - `npm run project:research` turns `ProjectIdeaInput` into research brief,
     PRD and architecture artifacts.
+  - Architecture judge artifacts compare generated architecture against PRD and
+    research evidence, then fail generic schema-valid architectures in the
+    project architecture benchmark.
   - `npm run benchmark:project-pipeline` aggregates the project planning
     benchmark suite.
 - Saved topics / research projects:

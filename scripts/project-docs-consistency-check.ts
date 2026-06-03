@@ -43,7 +43,9 @@ const requiredArtifacts = [
   "shortlist.json",
   "project_idea_inputs.json",
   "project_idea_handoff_quality.json",
-  "project_idea_handoff_quality.md"
+  "project_idea_handoff_quality.md",
+  "project_architecture_judge.json",
+  "project_architecture_judge.md"
 ];
 
 const requiredMetrics = [
@@ -53,7 +55,8 @@ const requiredMetrics = [
   "averageNovelty",
   "averageMvpFeasibility",
   "averageHandoffQualityScore",
-  "handoffReadyCount"
+  "handoffReadyCount",
+  "averageJudgeScore"
 ];
 
 async function writeTextFile(path: string, content: string) {

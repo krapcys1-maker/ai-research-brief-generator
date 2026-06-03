@@ -1,4 +1,7 @@
-import { generateProjectArchitecture } from "@/lib/project-architecture";
+import {
+  generateProjectArchitecture,
+  judgeProjectArchitecture
+} from "@/lib/project-architecture";
 import { ProjectArchitectureSchema } from "@/lib/project-architecture/schemas";
 import { generateProjectPrd } from "@/lib/project-prd";
 import {
@@ -31,6 +34,11 @@ type CaseResult = {
   componentTypeDiversity: number;
   blockerCount: number;
   auditScore: number;
+  judgeScore: number;
+  judgeVerdict: "pass" | "needs_review" | "fail";
+  genericComponentCount: number;
+  requirementCoverage: number;
+  specificTermCoverage: number;
 };
 
 const jsonOutputPath =
@@ -43,6 +51,7 @@ const minAverageComponentTraceability = 0.75;
 const minAverageDecisionPaperCoverage = 0.75;
 const minAverageComponentTypeDiversity = 4;
 const minReadyArchitectureAuditScore = 88;
+const minReadyArchitectureJudgeScore = 90;
 
 const ideas: Record<string, ProjectIdeaInput> = {
   trading: {
@@ -169,6 +178,11 @@ function evaluateCase(testCase: BenchmarkCase): CaseResult {
     brief,
     generatedAt: "2026-06-03T16:40:00.000Z"
   });
+  const architectureJudge = judgeProjectArchitecture({
+    architecture,
+    prd,
+    brief
+  });
   const schemaValid = ProjectArchitectureSchema.safeParse(architecture).success;
   const componentTraceabilityCoverage =
     architecture.traceability.componentCount === 0
@@ -200,7 +214,12 @@ function evaluateCase(testCase: BenchmarkCase): CaseResult {
     decisionPaperCoverage,
     componentTypeDiversity,
     blockerCount: architecture.blockers.length,
-    auditScore: architecture.audit.score
+    auditScore: architecture.audit.score,
+    judgeScore: architectureJudge.score,
+    judgeVerdict: architectureJudge.verdict,
+    genericComponentCount: architectureJudge.genericComponentCount,
+    requirementCoverage: architectureJudge.requirementCoverage,
+    specificTermCoverage: architectureJudge.specificTermCoverage
   };
 }
 
@@ -212,6 +231,7 @@ function renderMarkdownReport(input: {
   averageComponentTraceability: number;
   averageDecisionPaperCoverage: number;
   averageComponentTypeDiversity: number;
+  averageJudgeScore: number;
   results: CaseResult[];
 }) {
   const lines = [
@@ -224,7 +244,8 @@ function renderMarkdownReport(input: {
     `Average component traceability: ${pct(input.averageComponentTraceability)}`,
     `Average decision paper coverage: ${pct(input.averageDecisionPaperCoverage)}`,
     `Average component type diversity: ${input.averageComponentTypeDiversity.toFixed(1)}`,
-    `Thresholds: component traceability >= ${pct(minAverageComponentTraceability)}, decision paper coverage >= ${pct(minAverageDecisionPaperCoverage)}, component type diversity >= ${minAverageComponentTypeDiversity.toFixed(1)}, ready audit score >= ${minReadyArchitectureAuditScore}`,
+    `Average judge score: ${input.averageJudgeScore.toFixed(1)}`,
+    `Thresholds: component traceability >= ${pct(minAverageComponentTraceability)}, decision paper coverage >= ${pct(minAverageDecisionPaperCoverage)}, component type diversity >= ${minAverageComponentTypeDiversity.toFixed(1)}, ready audit score >= ${minReadyArchitectureAuditScore}, ready judge score >= ${minReadyArchitectureJudgeScore}`,
     "",
     "## Cases",
     ""
@@ -232,7 +253,12 @@ function renderMarkdownReport(input: {
 
   for (const result of input.results) {
     const passed =
-      result.schemaValid && result.actualStatus === result.expectedStatus;
+      result.schemaValid &&
+      result.actualStatus === result.expectedStatus &&
+      (result.expectedStatus === "blocked" ||
+        (result.judgeVerdict === "pass" &&
+          result.judgeScore >= minReadyArchitectureJudgeScore &&
+          result.genericComponentCount === 0));
     lines.push(`### ${passed ? "PASS" : "FAIL"} ${result.id}`);
     lines.push("");
     lines.push(`- Title: ${result.title}`);
@@ -247,6 +273,11 @@ function renderMarkdownReport(input: {
     lines.push(`- Component type diversity: ${result.componentTypeDiversity}`);
     lines.push(`- Blockers: ${result.blockerCount}`);
     lines.push(`- Audit score: ${result.auditScore}/100`);
+    lines.push(`- Judge score: ${result.judgeScore}/100`);
+    lines.push(`- Judge verdict: ${result.judgeVerdict}`);
+    lines.push(`- Generic components: ${result.genericComponentCount}`);
+    lines.push(`- Requirement coverage: ${pct(result.requirementCoverage)}`);
+    lines.push(`- Specific term coverage: ${pct(result.specificTermCoverage)}`);
     lines.push("");
   }
 
@@ -277,7 +308,13 @@ async function main() {
   ];
   const results = cases.map(evaluateCase);
   const passCount = results.filter(
-    (result) => result.schemaValid && result.actualStatus === result.expectedStatus
+    (result) =>
+      result.schemaValid &&
+      result.actualStatus === result.expectedStatus &&
+      (result.expectedStatus === "blocked" ||
+        (result.judgeVerdict === "pass" &&
+          result.judgeScore >= minReadyArchitectureJudgeScore &&
+          result.genericComponentCount === 0))
   ).length;
   const schemaValidCount = results.filter((result) => result.schemaValid).length;
   const averageComponentTraceability =
@@ -290,6 +327,9 @@ async function main() {
   const averageComponentTypeDiversity =
     readyResults.reduce((sum, result) => sum + result.componentTypeDiversity, 0) /
     readyResults.length;
+  const averageJudgeScore =
+    readyResults.reduce((sum, result) => sum + result.judgeScore, 0) /
+    readyResults.length;
   const report = {
     generatedAt: new Date().toISOString(),
     caseCount: results.length,
@@ -298,10 +338,12 @@ async function main() {
     averageComponentTraceability,
     averageDecisionPaperCoverage,
     averageComponentTypeDiversity,
+    averageJudgeScore,
     minAverageComponentTraceability,
     minAverageDecisionPaperCoverage,
     minAverageComponentTypeDiversity,
     minReadyArchitectureAuditScore,
+    minReadyArchitectureJudgeScore,
     results
   };
 
@@ -317,6 +359,7 @@ async function main() {
       `Average component traceability: ${pct(report.averageComponentTraceability)}`,
       `Average decision paper coverage: ${pct(report.averageDecisionPaperCoverage)}`,
       `Average component type diversity: ${report.averageComponentTypeDiversity.toFixed(1)}`,
+      `Average judge score: ${report.averageJudgeScore.toFixed(1)}`,
       `JSON: ${jsonOutputPath}`,
       `Markdown: ${markdownOutputPath}`
     ].join("\n")
@@ -327,7 +370,10 @@ async function main() {
     report.averageComponentTraceability < minAverageComponentTraceability ||
     report.averageDecisionPaperCoverage < minAverageDecisionPaperCoverage ||
     report.averageComponentTypeDiversity < minAverageComponentTypeDiversity ||
-    readyResults.some((result) => result.auditScore < minReadyArchitectureAuditScore)
+    readyResults.some((result) => result.auditScore < minReadyArchitectureAuditScore) ||
+    readyResults.some((result) => result.judgeScore < minReadyArchitectureJudgeScore) ||
+    readyResults.some((result) => result.judgeVerdict !== "pass") ||
+    readyResults.some((result) => result.genericComponentCount > 0)
   ) {
     process.exitCode = 1;
   }

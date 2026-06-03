@@ -34,6 +34,8 @@ type CliCaseResult = {
   briefReady: boolean;
   prdStatus: "ready" | "blocked";
   architectureStatus: "ready" | "blocked";
+  architectureJudgeScore: number;
+  architectureJudgeVerdict: "pass" | "needs_review" | "fail";
 };
 
 const requiredFiles = [
@@ -50,7 +52,9 @@ const requiredFiles = [
   "project_prd.json",
   "project_prd.md",
   "project_architecture.json",
-  "project_architecture.md"
+  "project_architecture.md",
+  "project_architecture_judge.json",
+  "project_architecture_judge.md"
 ];
 const jsonOutputPath =
   process.env.PROJECT_CLI_BENCHMARK_JSON ??
@@ -192,6 +196,9 @@ async function evaluateCase(
   const architecture = await readOptionalJson(
     join(outputDir, "project_architecture.json")
   );
+  const architectureJudge = (await readOptionalJson(
+    join(outputDir, "project_architecture_judge.json")
+  )) as { score?: number; verdict?: "pass" | "needs_review" | "fail" } | null;
   const parsedBrief = ProjectResearchBriefSchema.safeParse(brief);
   const parsedPrd = ProjectPrdSchema.safeParse(prd);
   const parsedArchitecture = ProjectArchitectureSchema.safeParse(architecture);
@@ -208,7 +215,9 @@ async function evaluateCase(
     prdStatus: parsedPrd.success ? parsedPrd.data.status : "blocked",
     architectureStatus: parsedArchitecture.success
       ? parsedArchitecture.data.status
-      : "blocked"
+      : "blocked",
+    architectureJudgeScore: architectureJudge?.score ?? 0,
+    architectureJudgeVerdict: architectureJudge?.verdict ?? "fail"
   };
 }
 
@@ -241,7 +250,11 @@ function renderMarkdownReport(input: {
       result.architectureSchemaValid &&
       result.briefReady === result.expectedReady &&
       result.prdStatus === expectedStatus &&
-      result.architectureStatus === expectedStatus;
+      result.architectureStatus === expectedStatus &&
+      (result.expectedReady
+        ? result.architectureJudgeVerdict === "pass" &&
+          result.architectureJudgeScore >= 90
+        : result.architectureJudgeVerdict === "needs_review");
 
     lines.push(`### ${passed ? "PASS" : "FAIL"} ${result.id}`);
     lines.push("");
@@ -250,6 +263,8 @@ function renderMarkdownReport(input: {
     lines.push(`- Brief ready: ${result.briefReady ? "yes" : "no"}`);
     lines.push(`- PRD status: ${result.prdStatus}`);
     lines.push(`- Architecture status: ${result.architectureStatus}`);
+    lines.push(`- Architecture judge score: ${result.architectureJudgeScore}/100`);
+    lines.push(`- Architecture judge verdict: ${result.architectureJudgeVerdict}`);
     lines.push(`- Artifact completeness: ${pct(result.artifactCompleteness)}`);
     lines.push(`- Brief schema valid: ${result.briefSchemaValid ? "yes" : "no"}`);
     lines.push(`- PRD schema valid: ${result.prdSchemaValid ? "yes" : "no"}`);
@@ -304,7 +319,11 @@ async function main() {
       result.architectureSchemaValid &&
       result.briefReady === result.expectedReady &&
       result.prdStatus === expectedStatus &&
-      result.architectureStatus === expectedStatus
+      result.architectureStatus === expectedStatus &&
+      (result.expectedReady
+        ? result.architectureJudgeVerdict === "pass" &&
+          result.architectureJudgeScore >= 90
+        : result.architectureJudgeVerdict === "needs_review")
     );
   }).length;
   const averageArtifactCompleteness =

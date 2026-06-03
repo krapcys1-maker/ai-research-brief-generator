@@ -34,7 +34,9 @@ function paperForBucket(bucketId: string, index: number): ReviewedPaper {
     evidenceStrength: "full_text_partial",
     keyMethods: [`method for ${bucketId}`],
     limitations: [`limitation for ${bucketId}`],
-    implementationImplications: [`use ${bucketId} as project evidence`],
+    implementationImplications: [
+      `use ${bucketId} as trading risk and backtest architecture evidence`
+    ],
     riskImplications: [`risk from ${bucketId}`]
   };
 }
@@ -133,11 +135,15 @@ describe("runProjectResearch", () => {
       projectPrdJson: "project_prd.json",
       projectPrdMarkdown: "project_prd.md",
       projectArchitectureJson: "project_architecture.json",
-      projectArchitectureMarkdown: "project_architecture.md"
+      projectArchitectureMarkdown: "project_architecture.md",
+      projectArchitectureJudgeJson: "project_architecture_judge.json",
+      projectArchitectureJudgeMarkdown: "project_architecture_judge.md"
     });
     expect(manifest.requiredCoveredCount).toBe(manifest.requiredBucketCount);
     expect(manifest.prdStatus).toBe("ready");
     expect(manifest.architectureStatus).toBe("ready");
+    expect(manifest.architectureJudgeVerdict).toBe("pass");
+    expect(manifest.architectureJudgeScore).toBeGreaterThanOrEqual(90);
     expect(markdown).toContain("## Research Plan");
     expect(markdown).toContain("## Audit");
 
@@ -145,9 +151,14 @@ describe("runProjectResearch", () => {
     const architecture = await readJson<unknown>(
       join(outputDir, "project_architecture.json")
     );
+    const architectureJudge = await readJson<{ verdict: string; score: number }>(
+      join(outputDir, "project_architecture_judge.json")
+    );
 
     expect(ProjectPrdSchema.parse(prd).status).toBe("ready");
     expect(ProjectArchitectureSchema.parse(architecture).status).toBe("ready");
+    expect(architectureJudge.verdict).toBe("pass");
+    expect(architectureJudge.score).toBeGreaterThanOrEqual(90);
   });
 
   it("writes blocked artifacts when required evidence is missing", async () => {
@@ -172,6 +183,7 @@ describe("runProjectResearch", () => {
     expect(manifest.readyForArchitecture).toBe(false);
     expect(manifest.prdStatus).toBe("blocked");
     expect(manifest.architectureStatus).toBe("blocked");
+    expect(manifest.architectureJudgeVerdict).toBe("needs_review");
     expect(coverage.canSynthesizeProject).toBe(false);
     expect(coverage.missingRequiredBuckets.length).toBeGreaterThan(0);
 

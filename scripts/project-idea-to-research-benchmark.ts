@@ -30,6 +30,8 @@ type CaseResult = {
   architectureSchemaValid: boolean;
   readyForArchitecture: boolean;
   architectureStatus: "ready" | "blocked";
+  architectureJudgeScore: number;
+  architectureJudgeVerdict: "pass" | "needs_review" | "fail";
   passed: boolean;
 };
 
@@ -62,7 +64,9 @@ const researchRequiredFiles = [
   "project_prd.json",
   "project_prd.md",
   "project_architecture.json",
-  "project_architecture.md"
+  "project_architecture.md",
+  "project_architecture_judge.json",
+  "project_architecture_judge.md"
 ];
 const jsonOutputPath =
   process.env.PROJECT_IDEA_TO_RESEARCH_BENCHMARK_JSON ??
@@ -213,6 +217,8 @@ async function evaluateCase(
       architectureSchemaValid: false,
       readyForArchitecture: false,
       architectureStatus: "blocked",
+      architectureJudgeScore: 0,
+      architectureJudgeVerdict: "fail",
       passed: false
     };
   }
@@ -230,6 +236,9 @@ async function evaluateCase(
   const architecture = JSON.parse(
     await readFile(join(researchOutputDir, "project_architecture.json"), "utf8")
   );
+  const architectureJudge = JSON.parse(
+    await readFile(join(researchOutputDir, "project_architecture_judge.json"), "utf8")
+  ) as { score: number; verdict: "pass" | "needs_review" | "fail" };
   const parsedArchitecture = ProjectArchitectureSchema.safeParse(architecture);
   const result = {
     id: testCase.id,
@@ -250,7 +259,9 @@ async function evaluateCase(
     readyForArchitecture: manifest.readyForArchitecture,
     architectureStatus: parsedArchitecture.success
       ? parsedArchitecture.data.status
-      : "blocked"
+      : "blocked",
+    architectureJudgeScore: architectureJudge.score,
+    architectureJudgeVerdict: architectureJudge.verdict
   };
 
   return {
@@ -263,7 +274,9 @@ async function evaluateCase(
       result.prdSchemaValid &&
       result.architectureSchemaValid &&
       result.readyForArchitecture &&
-      result.architectureStatus === "ready"
+      result.architectureStatus === "ready" &&
+      result.architectureJudgeVerdict === "pass" &&
+      result.architectureJudgeScore >= 90
   };
 }
 
@@ -314,6 +327,8 @@ function renderMarkdownReport(input: {
     );
     lines.push(`- Ready for architecture: ${result.readyForArchitecture ? "yes" : "no"}`);
     lines.push(`- Architecture status: ${result.architectureStatus}`);
+    lines.push(`- Architecture judge score: ${result.architectureJudgeScore}/100`);
+    lines.push(`- Architecture judge verdict: ${result.architectureJudgeVerdict}`);
     lines.push("");
   }
 

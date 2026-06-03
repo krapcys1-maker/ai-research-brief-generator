@@ -40,6 +40,8 @@ type CaseResult = {
   manifestMatchesBrief: boolean;
   prdStatus: "ready" | "blocked";
   architectureStatus: "ready" | "blocked";
+  architectureJudgeScore: number;
+  architectureJudgeVerdict: "pass" | "needs_review" | "fail";
   requiredCoveredCount: number;
   requiredBucketCount: number;
   missingRequiredBuckets: string[];
@@ -59,7 +61,9 @@ const requiredFiles = [
   "project_prd.json",
   "project_prd.md",
   "project_architecture.json",
-  "project_architecture.md"
+  "project_architecture.md",
+  "project_architecture_judge.json",
+  "project_architecture_judge.md"
 ];
 const minArtifactCompleteness = 1;
 const jsonOutputPath =
@@ -205,6 +209,9 @@ async function evaluateCase(
   const architecture = JSON.parse(
     await readFile(join(outputDir, "project_architecture.json"), "utf8")
   );
+  const architectureJudge = JSON.parse(
+    await readFile(join(outputDir, "project_architecture_judge.json"), "utf8")
+  ) as { score: number; verdict: "pass" | "needs_review" | "fail" };
   const schemaValid = ProjectResearchBriefSchema.safeParse(brief).success;
   const parsedPrd = ProjectPrdSchema.safeParse(prd);
   const parsedArchitecture = ProjectArchitectureSchema.safeParse(architecture);
@@ -228,6 +235,8 @@ async function evaluateCase(
     architectureStatus: parsedArchitecture.success
       ? parsedArchitecture.data.status
       : "blocked",
+    architectureJudgeScore: architectureJudge.score,
+    architectureJudgeVerdict: architectureJudge.verdict,
     requiredCoveredCount: manifest.requiredCoveredCount,
     requiredBucketCount: manifest.requiredBucketCount,
     missingRequiredBuckets: manifest.missingRequiredBuckets
@@ -273,6 +282,10 @@ function renderMarkdownReport(input: {
       result.actualReady === result.expectedReady &&
       result.prdStatus === (result.expectedReady ? "ready" : "blocked") &&
       result.architectureStatus === (result.expectedReady ? "ready" : "blocked") &&
+      (result.expectedReady
+        ? result.architectureJudgeVerdict === "pass" &&
+          result.architectureJudgeScore >= 90
+        : result.architectureJudgeVerdict === "needs_review") &&
       result.manifestMatchesBrief;
     lines.push(`### ${passed ? "PASS" : "FAIL"} ${result.id}`);
     lines.push("");
@@ -283,6 +296,8 @@ function renderMarkdownReport(input: {
     lines.push(`- Schema valid: ${result.schemaValid ? "yes" : "no"}`);
     lines.push(`- PRD status: ${result.prdStatus}`);
     lines.push(`- Architecture status: ${result.architectureStatus}`);
+    lines.push(`- Architecture judge score: ${result.architectureJudgeScore}/100`);
+    lines.push(`- Architecture judge verdict: ${result.architectureJudgeVerdict}`);
     lines.push(
       `- Manifest matches brief: ${result.manifestMatchesBrief ? "yes" : "no"}`
     );
@@ -351,6 +366,10 @@ async function main() {
       result.actualReady === result.expectedReady &&
       result.prdStatus === (result.expectedReady ? "ready" : "blocked") &&
       result.architectureStatus === (result.expectedReady ? "ready" : "blocked") &&
+      (result.expectedReady
+        ? result.architectureJudgeVerdict === "pass" &&
+          result.architectureJudgeScore >= 90
+        : result.architectureJudgeVerdict === "needs_review") &&
       result.manifestMatchesBrief
   ).length;
   const averageArtifactCompleteness =

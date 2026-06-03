@@ -15,6 +15,7 @@ GitHub / GH Archive signals
 -> research brief
 -> PRD
 -> architecture
+-> architecture judge
 -> benchmarks
 ```
 
@@ -27,6 +28,7 @@ The goal is not to manually invent one good architecture. The goal is to improve
 - Measurable gates: project idea discovery, GitHub collection, GH Archive budget safety, research planning, PRD generation, and architecture generation all have benchmark coverage.
 - Cost control: GH Archive collection uses exact date tables, dry-run estimates, `maxDays`, and `maxBytesBilled`.
 - Handoff quality: shortlisted ideas are converted into `ProjectIdeaInput`, scored for research readiness, then moved into research, PRD, and architecture artifacts only when the handoff is strong enough.
+- Architecture quality: generated architecture is judged against PRD requirements and research evidence, so schema-valid but generic component plans can fail benchmarks.
 
 ## Biggest Weaknesses
 
@@ -89,6 +91,15 @@ The shortlist selector now applies a per-source cap:
 
 This prevents one popular GitHub repository from filling the whole shortlist when larger GH Archive batches are used.
 
+The architecture runner now emits:
+
+- `project_architecture_judge.json`
+- `project_architecture_judge.md`
+
+The judge scores requirement coverage, component traceability, decision paper
+coverage, component type diversity, generic component risk, paper evidence
+coverage, risk coverage and project-specific language.
+
 ## Current Smoke Result
 
 Local smoke run:
@@ -121,8 +132,9 @@ Do not move an idea into expensive research or architecture generation unless:
 - `averageHandoffQualityScore` is at least 82,
 - trend radar has at least one category,
 - the idea has a specific QA/audit/diagnostic/reliability/governance job rather than a broad clone-shaped title.
+- ready architectures receive an architecture judge verdict of `pass`.
 
 ## Next Optimization Targets
 
 - Add live trend batch sampling with strict cost ceilings and cached enrichment.
-- Add architecture judge scoring that compares generated architecture against audit findings and research evidence.
+- Add side-by-side architecture comparison reports for AI-generated alternatives.

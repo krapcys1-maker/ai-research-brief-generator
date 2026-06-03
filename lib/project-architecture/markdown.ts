@@ -1,4 +1,7 @@
-import type { ProjectArchitecture } from "@/lib/project-architecture/types";
+import type {
+  ProjectArchitecture,
+  ProjectArchitectureJudge
+} from "@/lib/project-architecture/types";
 
 function listItems(items: string[]) {
   return items.length ? items.map((item) => `- ${item}`) : ["- none"];
@@ -103,6 +106,45 @@ export function projectArchitectureToMarkdown(architecture: ProjectArchitecture)
   lines.push("### Weaknesses");
   lines.push("");
   lines.push(...listItems(architecture.audit.weaknesses));
+
+  return `${lines.join("\n").trim()}\n`;
+}
+
+export function projectArchitectureJudgeToMarkdown(
+  judge: ProjectArchitectureJudge
+) {
+  const lines = [
+    "# Project Architecture Judge",
+    "",
+    `**Architecture:** ${judge.architectureId}`,
+    `**Source PRD:** ${judge.sourcePrdId}`,
+    `**Source brief:** ${judge.sourceBriefId}`,
+    `**Score:** ${judge.score}/100`,
+    `**Verdict:** ${judge.verdict}`,
+    "",
+    "## Metrics",
+    "",
+    `- Requirement coverage: ${(judge.requirementCoverage * 100).toFixed(1)}%`,
+    `- Component traceability: ${(judge.componentTraceabilityCoverage * 100).toFixed(1)}%`,
+    `- Decision paper coverage: ${(judge.decisionPaperCoverage * 100).toFixed(1)}%`,
+    `- Component type diversity: ${judge.componentTypeDiversity}`,
+    `- Generic component count: ${judge.genericComponentCount}`,
+    `- Paper evidence coverage: ${(judge.paperEvidenceCoverage * 100).toFixed(1)}%`,
+    `- Risk coverage: ${(judge.riskCoverage * 100).toFixed(1)}%`,
+    `- Specific term coverage: ${(judge.specificTermCoverage * 100).toFixed(1)}%`,
+    "",
+    "## Strengths",
+    "",
+    ...listItems(judge.strengths),
+    "",
+    "## Weaknesses",
+    "",
+    ...listItems(judge.weaknesses),
+    "",
+    "## Required Fixes",
+    "",
+    ...listItems(judge.requiredFixes)
+  ];
 
   return `${lines.join("\n").trim()}\n`;
 }

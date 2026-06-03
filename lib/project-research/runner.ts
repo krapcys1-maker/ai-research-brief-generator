@@ -1,5 +1,7 @@
 import {
   generateProjectArchitecture,
+  judgeProjectArchitecture,
+  projectArchitectureJudgeToMarkdown,
   projectArchitectureToMarkdown
 } from "@/lib/project-architecture";
 import {
@@ -92,6 +94,8 @@ export type ProjectResearchRunManifest = {
   readyForArchitecture: boolean;
   prdStatus: "ready" | "blocked";
   architectureStatus: "ready" | "blocked";
+  architectureJudgeScore: number;
+  architectureJudgeVerdict: "pass" | "needs_review" | "fail";
   requiredCoveredCount: number;
   requiredBucketCount: number;
   missingRequiredBuckets: string[];
@@ -112,6 +116,8 @@ export type ProjectResearchRunManifest = {
     projectPrdMarkdown: string;
     projectArchitectureJson: string;
     projectArchitectureMarkdown: string;
+    projectArchitectureJudgeJson: string;
+    projectArchitectureJudgeMarkdown: string;
   };
 };
 
@@ -133,7 +139,9 @@ const artifactFiles = {
   projectPrdJson: "project_prd.json",
   projectPrdMarkdown: "project_prd.md",
   projectArchitectureJson: "project_architecture.json",
-  projectArchitectureMarkdown: "project_architecture.md"
+  projectArchitectureMarkdown: "project_architecture.md",
+  projectArchitectureJudgeJson: "project_architecture_judge.json",
+  projectArchitectureJudgeMarkdown: "project_architecture_judge.md"
 } as const;
 
 function toJson(value: unknown) {
@@ -144,6 +152,8 @@ function createManifest(
   brief: ProjectResearchBrief,
   prdStatus: "ready" | "blocked",
   architectureStatus: "ready" | "blocked",
+  architectureJudgeScore: number,
+  architectureJudgeVerdict: "pass" | "needs_review" | "fail",
   outputDir: string
 ): ProjectResearchRunManifest {
   return {
@@ -156,6 +166,8 @@ function createManifest(
     readyForArchitecture: brief.readyForArchitecture,
     prdStatus,
     architectureStatus,
+    architectureJudgeScore,
+    architectureJudgeVerdict,
     requiredCoveredCount: brief.evidenceCoverage.requiredCoveredCount,
     requiredBucketCount: brief.evidenceCoverage.requiredBucketCount,
     missingRequiredBuckets: brief.evidenceCoverage.missingRequiredBuckets,
@@ -219,10 +231,17 @@ export async function runProjectResearch(
     brief,
     generatedAt: parsed.generatedAt
   });
+  const architectureJudge = judgeProjectArchitecture({
+    architecture,
+    prd,
+    brief
+  });
   const manifest = createManifest(
     brief,
     prd.status,
     architecture.status,
+    architectureJudge.score,
+    architectureJudge.verdict,
     outputDir
   );
 
@@ -286,6 +305,16 @@ export async function runProjectResearch(
     writeFile(
       join(outputDir, artifactFiles.projectArchitectureMarkdown),
       projectArchitectureToMarkdown(architecture),
+      "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.projectArchitectureJudgeJson),
+      toJson(architectureJudge),
+      "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.projectArchitectureJudgeMarkdown),
+      projectArchitectureJudgeToMarkdown(architectureJudge),
       "utf8"
     )
   ]);

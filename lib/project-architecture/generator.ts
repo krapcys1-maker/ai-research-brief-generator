@@ -81,7 +81,7 @@ function seedToComponent(input: {
     componentType: input.seed.componentType,
     inputs: input.seed.inputs,
     outputs: input.seed.outputs,
-    sourceRequirementIds: input.requirementIds.slice(0, 5),
+    sourceRequirementIds: input.requirementIds,
     sourcePaperIds: input.paperIds.slice(0, 8)
   };
 }
@@ -97,7 +97,7 @@ function seedToDecision(input: {
     decision: input.seed.decision,
     rationale: input.seed.rationale,
     tradeoffs: input.seed.tradeoffs,
-    sourceRequirementIds: input.requirementIds.slice(0, 5),
+    sourceRequirementIds: input.requirementIds,
     sourcePaperIds: input.paperIds.slice(0, 8)
   };
 }
@@ -218,6 +218,54 @@ function commonBlueprint(input: {
 
 function architectureBlueprint(input: GenerateProjectArchitectureInput): Blueprint {
   const text = textForArchitecture(input);
+
+  if (
+    text.includes("trading") ||
+    text.includes("backtest") ||
+    text.includes("paper trading") ||
+    text.includes("algorithmic")
+  ) {
+    return commonBlueprint({
+      profile: "trading_strategy_risk_simulator",
+      noun: "trading strategy risk simulation",
+      intake: "Market Strategy And Backtest",
+      evidence: "Trading Risk Scenario",
+      evaluator: "Drawdown And Overfit",
+      report: "Paper Trading Risk"
+    });
+  }
+
+  if (
+    text.includes("technical debt") ||
+    text.includes("refactor") ||
+    text.includes("code review") ||
+    text.includes("repository")
+  ) {
+    return commonBlueprint({
+      profile: "technical_debt_sprint_planner",
+      noun: "technical debt sprint planning",
+      intake: "Repository And Issue",
+      evidence: "Refactor Evidence",
+      evaluator: "Debt Priority And Risk",
+      report: "Sprint Refactor Plan"
+    });
+  }
+
+  if (
+    text.includes("medical") ||
+    text.includes("clinical") ||
+    text.includes("healthcare") ||
+    text.includes("diagnostic")
+  ) {
+    return commonBlueprint({
+      profile: "clinical_documentation_evidence_auditor",
+      noun: "clinical documentation evidence audit",
+      intake: "Clinical Document",
+      evidence: "Clinical Citation",
+      evaluator: "Uncertainty And Claim Support",
+      report: "Clinician Review"
+    });
+  }
 
   if (
     text.includes("document conversion") ||
@@ -388,7 +436,7 @@ function blueprintRisks(input: {
         : index === 1
           ? "Expand benchmark fixtures from real failures and track coverage drift."
           : "Keep human approval, audit logs, and non-goals visible in every release gate.",
-    sourceRequirementIds: input.requirementIds.slice(0, 5),
+    sourceRequirementIds: input.requirementIds,
     sourcePaperIds: input.paperIds.slice(0, 8)
   }));
 }

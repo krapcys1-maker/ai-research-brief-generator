@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   generateProjectArchitecture,
+  judgeProjectArchitecture,
+  ProjectArchitectureJudgeSchema,
   projectArchitectureToMarkdown,
   ProjectArchitectureSchema
 } from "@/lib/project-architecture";
@@ -122,9 +124,49 @@ describe("generateProjectArchitecture", () => {
     expect(componentNames).toContain("Structure And RAG Quality AI Evaluator");
     expect(architecture.testStrategy.join(" ")).toContain("golden fixtures");
     expect(architecture.audit.verdict).toContain("document_conversion_qa");
+    expect(judgeProjectArchitecture({ architecture, prd, brief }).verdict).toBe(
+      "pass"
+    );
     expect(architecture.traceability.decisionsWithPaperSources).toBe(
       architecture.decisions.length
     );
+  });
+
+  it("fails schema-valid but generic architecture mutations", () => {
+    const brief = buildProjectResearchBrief({
+      idea: documentConversionIdea,
+      reviewedPapers: fullEvidenceForIdea(documentConversionIdea),
+      generatedAt: "2026-06-03T16:00:00.000Z"
+    });
+    const prd = generateProjectPrd({ brief });
+    const architecture = generateProjectArchitecture({ prd, brief });
+    const genericArchitecture = ProjectArchitectureSchema.parse({
+      ...architecture,
+      summary:
+        "Generic evidence-backed AI product with broad project readiness components.",
+      components: architecture.components.map((component, index) => ({
+        ...component,
+        name:
+          index < 4
+            ? ["Project Evidence Store", "Evidence Quality AI Evaluator", "Project Readiness Report API", "Generic AI Assistant"][index]
+            : component.name,
+        responsibility:
+          index < 4
+            ? "Generic project evidence processing without domain workflow specificity."
+            : component.responsibility
+      }))
+    });
+
+    const judge = judgeProjectArchitecture({
+      architecture: genericArchitecture,
+      prd,
+      brief
+    });
+
+    expect(ProjectArchitectureJudgeSchema.parse(judge)).toEqual(judge);
+    expect(judge.verdict).toBe("fail");
+    expect(judge.genericComponentCount).toBeGreaterThan(0);
+    expect(judge.requiredFixes.join(" ")).toContain("generic");
   });
 
   it("blocks architecture when PRD is blocked", () => {

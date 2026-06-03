@@ -198,7 +198,8 @@ function extractKeyMetrics(report: Record<string, unknown>) {
     "architectureSchemaValidCount",
     "averageTraceabilityCoverage",
     "averageComponentTraceability",
-    "averageDecisionPaperCoverage"
+    "averageDecisionPaperCoverage",
+    "averageJudgeScore"
   ];
 
   for (const key of metricKeys) {
