@@ -45,6 +45,10 @@ async function main() {
       `Promising: ${manifest.promisingCount}`,
       `Clone rejections: ${manifest.cloneRejectedCount}`,
       `Project idea inputs: ${manifest.projectIdeaInputCount}`,
+      `GitHub mode: ${manifest.githubMode}`,
+      `GH Archive mode: ${manifest.ghArchiveMode}`,
+      `GH Archive trend repos: ${manifest.ghArchiveTrendRepoCount}`,
+      `Warnings: ${manifest.warnings.length}`,
       `Output: ${manifest.outputDir}`
     ].join("\n")
   );
@@ -54,4 +58,3 @@ main().catch((error: unknown) => {
   console.error(error);
   process.exitCode = 1;
 });
-

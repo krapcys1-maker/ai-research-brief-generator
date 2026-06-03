@@ -9,7 +9,7 @@ import type {
   RepoIssueSignal
 } from "@/lib/project-ideas/types";
 
-type FetchLike = (
+export type FetchLike = (
   input: string,
   init?: {
     headers?: Record<string, string>;
@@ -33,6 +33,15 @@ type CollectGithubIdeaSourceReposInput = {
   includeIssues?: boolean;
   fetchFn?: FetchLike;
   cacheTtlMs?: number;
+};
+
+type CollectGithubReposByFullNameInput = {
+  repoFullNames: string[];
+  token?: string;
+  timeoutMs?: number;
+  includeReadme?: boolean;
+  includeIssues?: boolean;
+  fetchFn?: FetchLike;
 };
 
 type GithubRepoSearchItem = {
@@ -113,6 +122,10 @@ function toSearchUrl(query: string, maxRepos: number) {
   url.searchParams.set("order", "desc");
   url.searchParams.set("per_page", String(maxRepos));
   return url.toString();
+}
+
+function toRepoUrl(repoFullName: string) {
+  return `https://api.github.com/repos/${repoFullName}`;
 }
 
 function base64Decode(value: string) {
@@ -414,3 +427,111 @@ export async function collectGithubIdeaSourceRepos(
   return result;
 }
 
+export async function collectGithubIdeaSourceReposByFullName(
+  input: CollectGithubReposByFullNameInput
+): Promise<GithubIdeaCollectorResult> {
+  const repoFullNames = [...new Set(input.repoFullNames)]
+    .filter((repoFullName) => /^[^/\s]+\/[^/\s]+$/.test(repoFullName))
+    .slice(0, 100);
+  const fetchFn = input.fetchFn ?? globalThis.fetch;
+  const warnings: string[] = [];
+  let readmeFetchedCount = 0;
+  let issuesFetchedCount = 0;
+  let rateLimit: GithubIdeaCollectorDiagnostics["rateLimit"] = null;
+
+  const result = await withTimeout(input.timeoutMs ?? defaultTimeoutMs, async (signal) => {
+    const sourceRepos: IdeaSourceRepo[] = [];
+
+    for (const repoFullName of repoFullNames) {
+      const { response, json } = await fetchJson({
+        fetchFn: fetchFn as FetchLike,
+        url: toRepoUrl(repoFullName),
+        token: input.token,
+        signal
+      });
+      rateLimit = rateLimit ?? parseRateLimit(response.headers);
+
+      if (!response.ok || typeof json !== "object" || json === null) {
+        const message =
+          typeof json === "object" && json && "message" in json
+            ? String((json as { message?: unknown }).message)
+            : `GitHub repo fetch failed for ${repoFullName} with HTTP ${response.status}`;
+        warnings.push(message);
+        continue;
+      }
+
+      const repo = json as GithubRepoSearchItem;
+      let readmeText = fallbackReadme(repo);
+      let issueSignals: RepoIssueSignal[] = [];
+
+      if (input.includeReadme ?? true) {
+        try {
+          const readme = await fetchReadme({
+            fetchFn: fetchFn as FetchLike,
+            repo,
+            token: input.token,
+            signal
+          });
+          if (readme) {
+            readmeText = readme;
+            readmeFetchedCount += 1;
+          }
+        } catch (error) {
+          warnings.push(
+            `README fetch failed for ${repo.full_name ?? repo.name}: ${
+              error instanceof Error ? error.message : String(error)
+            }`
+          );
+        }
+      }
+
+      if (input.includeIssues ?? true) {
+        try {
+          issueSignals = await fetchIssues({
+            fetchFn: fetchFn as FetchLike,
+            repo,
+            token: input.token,
+            signal
+          });
+          if (issueSignals.length > 0) {
+            issuesFetchedCount += 1;
+          }
+        } catch (error) {
+          warnings.push(
+            `Issue fetch failed for ${repo.full_name ?? repo.name}: ${
+              error instanceof Error ? error.message : String(error)
+            }`
+          );
+        }
+      }
+
+      const normalized = normalizeRepo(repo, readmeText, issueSignals);
+      if (normalized) {
+        sourceRepos.push(normalized);
+      }
+    }
+
+    const query = repoFullNames.join(", ");
+    const searchUrl = repoFullNames.length
+      ? toRepoUrl(repoFullNames[0])
+      : "https://api.github.com/repos/empty/empty";
+
+    return GithubIdeaCollectorResultSchema.parse({
+      sourceRepos,
+      diagnostics: {
+        source: "github",
+        query: query || "repoFullNames:empty",
+        searchUrl,
+        cached: false,
+        fetchedRepoCount: repoFullNames.length,
+        returnedRepoCount: sourceRepos.length,
+        readmeFetchedCount,
+        issuesFetchedCount,
+        rateLimit,
+        warnings
+      }
+    });
+  });
+
+  return result;
+}

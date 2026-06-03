@@ -3,7 +3,7 @@ import {
   runProjectIdeaDiscovery
 } from "@/lib/project-ideas";
 import { ProjectIdeaInputSchema } from "@/lib/project-research/schemas";
-import type { IdeaSourceRepo } from "@/lib/project-ideas";
+import type { FetchLike, IdeaSourceRepo } from "@/lib/project-ideas";
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -11,7 +11,8 @@ import { dirname, join } from "node:path";
 type BenchmarkCase = {
   id: string;
   domain: string;
-  sourceRepos: IdeaSourceRepo[];
+  sourceRepos?: IdeaSourceRepo[];
+  useGhArchiveTrends?: boolean;
 };
 
 type CaseResult = {
@@ -22,6 +23,8 @@ type CaseResult = {
   projectIdeaInputValidCount: number;
   promisingCount: number;
   cloneRejectedCount: number;
+  ghArchiveMode: string;
+  ghArchiveTrendRepoCount: number;
   passed: boolean;
 };
 
@@ -29,6 +32,7 @@ const requiredFiles = [
   "manifest.json",
   "source_repos.json",
   "github_collection.json",
+  "gh_archive_trends.json",
   "repo_insights.json",
   "discovered_ideas.json",
   "idea_scores.json",
@@ -96,6 +100,86 @@ function repo(input: {
   };
 }
 
+const headers = {
+  get(name: string) {
+    const values: Record<string, string> = {
+      "x-ratelimit-limit": "5000",
+      "x-ratelimit-remaining": "4990",
+      "x-ratelimit-reset": "1790000000"
+    };
+
+    return values[name.toLowerCase()] ?? null;
+  }
+};
+
+const ghArchiveFetch: FetchLike = async (url) => {
+  if (url.endsWith("/repos/huggingface/smolagents")) {
+    return {
+      ok: true,
+      status: 200,
+      headers,
+      async json() {
+        return {
+          id: 2,
+          name: "smolagents",
+          full_name: "huggingface/smolagents",
+          owner: { login: "huggingface" },
+          html_url: "https://github.com/huggingface/smolagents",
+          description: "Small agent framework for tool-using AI workflows.",
+          topics: ["agents", "ai", "developer-tools"],
+          language: "Python",
+          stargazers_count: 4200,
+          forks_count: 330,
+          open_issues_count: 38,
+          created_at: "2024-12-10T12:00:00.000Z",
+          pushed_at: "2025-01-01T12:00:00.000Z"
+        };
+      }
+    };
+  }
+
+  if (url.endsWith("/repos/huggingface/smolagents/readme")) {
+    return {
+      ok: true,
+      status: 200,
+      headers,
+      async json() {
+        return {
+          content: Buffer.from(
+            "AI agent framework that coordinates tools, code execution, and repeatable workflows."
+          ).toString("base64")
+        };
+      }
+    };
+  }
+
+  if (url.includes("/repos/huggingface/smolagents/issues")) {
+    return {
+      ok: true,
+      status: 200,
+      headers,
+      async json() {
+        return [
+          {
+            title: "Need workflow evaluation before production runs",
+            body: "Agent runs need repeatable scoring, failure review, and safe rollout plans.",
+            labels: [{ name: "enhancement" }]
+          }
+        ];
+      }
+    };
+  }
+
+  return {
+    ok: false,
+    status: 404,
+    headers,
+    async json() {
+      return { message: `Unexpected URL ${url}` };
+    }
+  };
+};
+
 async function evaluateCase(testCase: BenchmarkCase, index: number) {
   const outputDir = join(
     tmpdir(),
@@ -105,9 +189,45 @@ async function evaluateCase(testCase: BenchmarkCase, index: number) {
     domain: testCase.domain,
     constraints: ["MVP in 2 weeks"],
     sourceRepos: testCase.sourceRepos,
+    ghArchiveTrends: testCase.useGhArchiveTrends
+      ? {
+          startDate: "2025-01-01",
+          maxRepos: 5,
+          maxBytesBilled: 200_000_000,
+          dryRun: false
+        }
+      : undefined,
     maxIdeas: 3,
     outputLanguage: "pl",
-    outputDir
+    outputDir,
+    bqExecutor: testCase.useGhArchiveTrends
+      ? (args) => {
+          if (args.includes("--dry_run")) {
+            return {
+              status: 0,
+              stdout:
+                "Query successfully validated. Assuming the tables are not modified, running this query will process 155658473 bytes of data.",
+              stderr: ""
+            };
+          }
+
+          return {
+            status: 0,
+            stdout: JSON.stringify([
+              {
+                repoFullName: "huggingface/smolagents",
+                stars: "501",
+                forks: "9",
+                pushes: "12",
+                issues: "4",
+                trendScore: "2544"
+              }
+            ]),
+            stderr: ""
+          };
+        }
+      : undefined,
+    fetchFn: testCase.useGhArchiveTrends ? ghArchiveFetch : undefined
   });
   const existingFileCount = (
     await Promise.all(requiredFiles.map((file) => exists(join(outputDir, file))))
@@ -138,6 +258,8 @@ async function evaluateCase(testCase: BenchmarkCase, index: number) {
     projectIdeaInputValidCount,
     promisingCount: manifest.promisingCount,
     cloneRejectedCount: manifest.cloneRejectedCount,
+    ghArchiveMode: manifest.ghArchiveMode,
+    ghArchiveTrendRepoCount: manifest.ghArchiveTrendRepoCount,
     passed
   } satisfies CaseResult;
 }
@@ -151,6 +273,7 @@ function renderMarkdownReport(input: {
   projectIdeaInputValidCount: number;
   promisingCount: number;
   cloneRejectedCount: number;
+  ghArchiveUsedCount: number;
   results: CaseResult[];
 }) {
   const lines = [
@@ -164,6 +287,7 @@ function renderMarkdownReport(input: {
     `Project idea inputs valid: ${input.projectIdeaInputValidCount}`,
     `Promising ideas: ${input.promisingCount}`,
     `Clone rejections: ${input.cloneRejectedCount}`,
+    `GH Archive used cases: ${input.ghArchiveUsedCount}`,
     "",
     "## Cases",
     ""
@@ -178,6 +302,8 @@ function renderMarkdownReport(input: {
     lines.push(`- Project idea inputs valid: ${result.projectIdeaInputValidCount}`);
     lines.push(`- Promising ideas: ${result.promisingCount}`);
     lines.push(`- Clone rejections: ${result.cloneRejectedCount}`);
+    lines.push(`- GH Archive mode: ${result.ghArchiveMode}`);
+    lines.push(`- GH Archive trend repos: ${result.ghArchiveTrendRepoCount}`);
     lines.push("");
   }
 
@@ -202,6 +328,11 @@ async function main() {
             "Review comments are useful, but we need prioritization and sprint-sized plans."
         })
       ]
+    },
+    {
+      id: "gh_archive_trend_artifacts",
+      domain: "AI agent operations",
+      useGhArchiveTrends: true
     },
     {
       id: "data_agent_artifacts",
@@ -239,6 +370,8 @@ async function main() {
       (sum, result) => sum + result.cloneRejectedCount,
       0
     ),
+    ghArchiveUsedCount: results.filter((result) => result.ghArchiveMode === "used")
+      .length,
     results
   };
 
@@ -253,6 +386,7 @@ async function main() {
       `Project idea inputs valid: ${report.projectIdeaInputValidCount}`,
       `Promising ideas: ${report.promisingCount}`,
       `Clone rejections: ${report.cloneRejectedCount}`,
+      `GH Archive used cases: ${report.ghArchiveUsedCount}`,
       `JSON: ${jsonOutputPath}`,
       `Markdown: ${markdownOutputPath}`
     ].join("\n")
@@ -267,4 +401,3 @@ main().catch((error: unknown) => {
   console.error(error);
   process.exitCode = 1;
 });
-

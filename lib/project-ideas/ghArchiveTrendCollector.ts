@@ -9,7 +9,7 @@ import type {
   GhArchiveTrendResult
 } from "@/lib/project-ideas/types";
 
-type BqExecutor = (args: string[]) => {
+export type BqExecutor = (args: string[]) => {
   status: number | null;
   stdout: string;
   stderr: string;

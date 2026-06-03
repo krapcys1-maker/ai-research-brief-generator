@@ -4,7 +4,7 @@ import {
   runProjectIdeaDiscovery
 } from "@/lib/project-ideas";
 import { ProjectIdeaInputSchema } from "@/lib/project-research/schemas";
-import type { IdeaSourceRepo } from "@/lib/project-ideas";
+import type { FetchLike, IdeaSourceRepo } from "@/lib/project-ideas";
 import { access, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -13,6 +13,7 @@ const requiredFiles = [
   "manifest.json",
   "source_repos.json",
   "github_collection.json",
+  "gh_archive_trends.json",
   "repo_insights.json",
   "discovered_ideas.json",
   "idea_scores.json",
@@ -48,6 +49,86 @@ function sourceRepo(): IdeaSourceRepo {
     ]
   };
 }
+
+const headers = {
+  get(name: string) {
+    const values: Record<string, string> = {
+      "x-ratelimit-limit": "5000",
+      "x-ratelimit-remaining": "4990",
+      "x-ratelimit-reset": "1790000000"
+    };
+
+    return values[name.toLowerCase()] ?? null;
+  }
+};
+
+const ghArchiveFetch: FetchLike = async (url) => {
+  if (url.endsWith("/repos/deepseek-ai/DeepSeek-V3")) {
+    return {
+      ok: true,
+      status: 200,
+      headers,
+      async json() {
+        return {
+          id: 1,
+          name: "DeepSeek-V3",
+          full_name: "deepseek-ai/DeepSeek-V3",
+          owner: { login: "deepseek-ai" },
+          html_url: "https://github.com/deepseek-ai/DeepSeek-V3",
+          description: "Large language model repository with inference and deployment artifacts.",
+          topics: ["ai", "llm", "inference"],
+          language: "Python",
+          stargazers_count: 4800,
+          forks_count: 360,
+          open_issues_count: 42,
+          created_at: "2024-12-01T12:00:00.000Z",
+          pushed_at: "2025-01-01T12:00:00.000Z"
+        };
+      }
+    };
+  }
+
+  if (url.endsWith("/repos/deepseek-ai/DeepSeek-V3/readme")) {
+    return {
+      ok: true,
+      status: 200,
+      headers,
+      async json() {
+        return {
+          content: Buffer.from(
+            "LLM inference project with model serving, benchmark harness, and deployment examples."
+          ).toString("base64")
+        };
+      }
+    };
+  }
+
+  if (url.includes("/repos/deepseek-ai/DeepSeek-V3/issues")) {
+    return {
+      ok: true,
+      status: 200,
+      headers,
+      async json() {
+        return [
+          {
+            title: "Need safer deployment checks before inference release",
+            body: "Teams need regression gates, cost checks, and rollback planning before shipping model changes.",
+            labels: [{ name: "enhancement" }]
+          }
+        ];
+      }
+    };
+  }
+
+  return {
+    ok: false,
+    status: 404,
+    headers,
+    async json() {
+      return { message: `Unexpected URL ${url}` };
+    }
+  };
+};
 
 async function exists(path: string) {
   try {
@@ -89,5 +170,68 @@ describe("runProjectIdeaDiscovery", () => {
       true
     );
   });
-});
 
+  it("connects GH Archive trends to GitHub enrichment and idea artifacts", async () => {
+    const outputDir = join(
+      tmpdir(),
+      `project-idea-runner-gh-archive-test-${Date.now()}`
+    );
+    const manifest = await runProjectIdeaDiscovery({
+      domain: "AI model operations",
+      constraints: ["MVP in 2 weeks", "avoid cloning the source repository"],
+      ghArchiveTrends: {
+        startDate: "2025-01-01",
+        maxRepos: 5,
+        maxBytesBilled: 200_000_000,
+        dryRun: false
+      },
+      maxIdeas: 3,
+      outputLanguage: "pl",
+      outputDir,
+      bqExecutor: (args) => {
+        if (args.includes("--dry_run")) {
+          return {
+            status: 0,
+            stdout:
+              "Query successfully validated. Assuming the tables are not modified, running this query will process 155658473 bytes of data.",
+            stderr: ""
+          };
+        }
+
+        return {
+          status: 0,
+          stdout: JSON.stringify([
+            {
+              repoFullName: "deepseek-ai/DeepSeek-V3",
+              stars: "680",
+              forks: "12",
+              pushes: "8",
+              issues: "3",
+              trendScore: "3434"
+            }
+          ]),
+          stderr: ""
+        };
+      },
+      fetchFn: ghArchiveFetch
+    });
+    const ghArchiveTrends = JSON.parse(
+      await readFile(join(outputDir, "gh_archive_trends.json"), "utf8")
+    );
+    const sourceRepos = JSON.parse(
+      await readFile(join(outputDir, "source_repos.json"), "utf8")
+    ) as unknown[];
+    const projectIdeaInputs = JSON.parse(
+      await readFile(join(outputDir, "project_idea_inputs.json"), "utf8")
+    ) as unknown[];
+
+    expect(manifest.ghArchiveMode).toBe("used");
+    expect(manifest.ghArchiveTrendRepoCount).toBe(1);
+    expect(sourceRepos).toHaveLength(1);
+    expect(ghArchiveTrends.repos[0].repoFullName).toBe("deepseek-ai/DeepSeek-V3");
+    expect(projectIdeaInputs.length).toBeGreaterThanOrEqual(1);
+    expect(projectIdeaInputs.every((idea) => ProjectIdeaInputSchema.safeParse(idea).success)).toBe(
+      true
+    );
+  });
+});
