@@ -3,7 +3,7 @@ import {
   type BriefRequest,
   type ResearchBrief
 } from "@/lib/ai/schemas";
-import { generateQueryVariants } from "@/lib/ai/generateQueryVariants";
+import { buildSearchIntent } from "@/lib/ai/searchIntent";
 import { dedupePapers } from "@/lib/pipeline/dedupe";
 import { getPapersMetadataWarnings } from "@/lib/pipeline/metadataQuality";
 import {
@@ -17,6 +17,7 @@ import { detectQueryLanguage, type OutputLanguage } from "@/lib/utils/language";
 
 export type PreflightBriefDependencies = {
   search?: typeof searchAllSources;
+  buildSearchIntent?: typeof buildSearchIntent;
 };
 
 export type ResearchPreflightResult = {
@@ -100,12 +101,11 @@ export async function preflightBrief(
   dependencies: PreflightBriefDependencies = {}
 ): Promise<ResearchPreflightResult> {
   const search = dependencies.search ?? searchAllSources;
+  const resolveSearchIntent = dependencies.buildSearchIntent ?? buildSearchIntent;
   const request = BriefRequestSchema.parse(rawInput);
-  const outputLanguage = detectQueryLanguage(request.query);
-  const queryVariants = generateQueryVariants({
-    query: request.query,
-    outputLanguage
-  });
+  const searchIntent = await resolveSearchIntent(request.query);
+  const outputLanguage = searchIntent.outputLanguage ?? detectQueryLanguage(request.query);
+  const queryVariants = searchIntent.queryVariants;
 
   const searchResult = await search({
     query: request.query,
@@ -130,7 +130,13 @@ export async function preflightBrief(
   );
   const selectedPapers = selectTopPapers(scoredPapers, request.maxPapers);
   const metadataWarnings = getPapersMetadataWarnings(selectedPapers);
-  const warnings = [...searchResult.warnings, ...metadataWarnings];
+  const warnings = [
+    ...searchResult.warnings,
+    ...(searchIntent.warning
+      ? [`query expansion warning: ${searchIntent.warning}`]
+      : []),
+    ...metadataWarnings
+  ];
   const qualityGate = evaluateResearchQuality({
     request,
     selected: selectedPapers,

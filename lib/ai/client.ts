@@ -12,6 +12,7 @@ export type GenerateStructuredInput = {
   systemPrompt: string;
   userPrompt: string;
   schemaName: string;
+  timeoutMs?: number;
 };
 
 export type AIProvider = {
@@ -156,10 +157,9 @@ function createDeepSeekProvider(config: AIModelConfig): AIProvider {
         );
       }
 
-      const requestTimeoutMs = numberEnv(
-        "AI_REQUEST_TIMEOUT_MS",
-        getDefaultAiRequestTimeoutMs()
-      );
+      const requestTimeoutMs =
+        input.timeoutMs ??
+        numberEnv("AI_REQUEST_TIMEOUT_MS", getDefaultAiRequestTimeoutMs());
       let payload: {
         choices?: { message?: { content?: string } }[];
       };

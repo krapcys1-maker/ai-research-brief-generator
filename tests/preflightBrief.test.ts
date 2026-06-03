@@ -180,4 +180,79 @@ describe("preflightBrief", () => {
     expect(result.qualityGate.livePaperCount).toBe(3);
     expect(result.qualityGate.mockPaperCount).toBe(0);
   });
+
+  it("passes AI-expanded search intent variants into source search", async () => {
+    const result = await preflightBrief(
+      {
+        query: "stworz apke do analizy sentymentu komentarzy",
+        maxPapers: 5,
+        sources: ["openalex"]
+      },
+      {
+        buildSearchIntent: async () => ({
+          outputLanguage: "pl",
+          source: "ai",
+          queryVariants: [
+            "stworz apke do analizy sentymentu komentarzy",
+            "sentiment analysis user comments machine learning",
+            "opinion mining social media comments",
+            "natural language processing sentiment classification"
+          ]
+        }),
+        search: async ({ queryVariants }) => {
+          expect(queryVariants).toContain(
+            "sentiment analysis user comments machine learning"
+          );
+          expect(queryVariants).toContain(
+            "natural language processing sentiment classification"
+          );
+
+          return {
+            papers: [
+              createPaper({
+                id: "openalex:sentiment_analysis",
+                title:
+                  "Sentiment Analysis of User Comments with Machine Learning",
+                abstract:
+                  "Natural language processing and machine learning methods classify sentiment in user comments and social media text.",
+                source: "openalex",
+                openAlexId: "W_sentiment_analysis",
+                relevanceScore: 0.92,
+                semanticScore: 0.88
+              }),
+              createPaper({
+                id: "openalex:comment_sentiment",
+                title:
+                  "Natural Language Processing for Sentiment Classification",
+                abstract:
+                  "Natural language processing supports sentiment classification in comments and reviews.",
+                source: "openalex",
+                openAlexId: "W_comment_sentiment",
+                relevanceScore: 0.88,
+                semanticScore: 0.82
+              }),
+              createPaper({
+                id: "openalex:opinion_mining",
+                title: "Opinion Mining in Social Media Comments",
+                abstract:
+                  "Opinion mining extracts sentiment from social media comments and other user generated content.",
+                source: "openalex",
+                openAlexId: "W_opinion_mining",
+                relevanceScore: 0.84,
+                semanticScore: 0.8
+              })
+            ],
+            sourcesUsed: ["openalex"],
+            warnings: [],
+            sourceDiagnostics: []
+          };
+        }
+      }
+    );
+
+    expect(result.queryVariants).toContain(
+      "sentiment analysis user comments machine learning"
+    );
+    expect(result.outputLanguage).toBe("pl");
+  });
 });
