@@ -77,4 +77,16 @@ describe("generateQueryVariants", () => {
     expect(variants).toContain("transformer neural machine translation");
     expect(variants).toContain("Attention Is All You Need machine translation");
   });
+
+  it("creates academic English variants for Polish stock trading bot questions", () => {
+    const variants = generateQueryVariants({
+      query: "tworzenie bota który gra na giełdzie",
+      outputLanguage: "pl"
+    });
+
+    expect(variants).toContain("algorithmic trading bot stock market");
+    expect(variants).toContain("automated trading systems stock market");
+    expect(variants).toContain("reinforcement learning algorithmic trading");
+    expect(variants).toContain("machine learning stock trading strategies");
+  });
 });

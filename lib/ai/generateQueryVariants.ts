@@ -3,6 +3,8 @@ import type { OutputLanguage } from "@/lib/utils/language";
 const polishToEnglishTerms: Record<string, string> = {
   agentow: "agents",
   ai: "artificial intelligence",
+  bota: "bot",
+  bot: "bot",
   odpowiedzi: "responses",
   raka: "cancer",
   rak: "cancer",
@@ -18,6 +20,11 @@ const polishToEnglishTerms: Record<string, string> = {
   jak: "",
   jakosc: "quality",
   jezykowych: "language",
+  gra: "trading",
+  gieldzie: "stock market",
+  gielda: "stock market",
+  gieldowy: "stock market",
+  gieldowa: "stock market",
   komorek: "cells",
   komorki: "cells",
   lekow: "drug",
@@ -45,6 +52,7 @@ const polishToEnglishTerms: Record<string, string> = {
   transformerach: "transformers",
   transformery: "transformers",
   transformey: "transformers",
+  tworzenie: "building",
   uczenie: "learning",
   uczenia: "learning",
   wplyw: "impact",
@@ -150,6 +158,11 @@ function getPolishAcademicPhraseVariants(query: string) {
   const mentionsTransformers = /\btransformator\w*\b/.test(normalized);
   const mentionsMachineTranslation =
     /\btlumaczen\w*\b/.test(normalized) && /\bmaszynow\w*\b/.test(normalized);
+  const mentionsTradingBot =
+    (/\bbot\w*\b/.test(normalized) || /\bautomaty\w*\b/.test(normalized)) &&
+    (/\bgield\w*\b/.test(normalized) ||
+      /\btrading\b/.test(normalized) ||
+      /\brynk\w*\b/.test(normalized));
 
   if (mentionsInstructionTuning && mentionsLanguageModels) {
     variants.push(
@@ -177,6 +190,15 @@ function getPolishAcademicPhraseVariants(query: string) {
       "transformer neural machine translation",
       "Attention Is All You Need machine translation",
       "transformer architecture sequence transduction"
+    );
+  }
+
+  if (mentionsTradingBot) {
+    variants.push(
+      "algorithmic trading bot stock market",
+      "automated trading systems stock market",
+      "reinforcement learning algorithmic trading",
+      "machine learning stock trading strategies"
     );
   }
 

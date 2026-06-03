@@ -22,6 +22,12 @@ describe("detectQueryLanguage", () => {
     ).toBe("pl");
   });
 
+  it("detects Polish stock trading bot queries", () => {
+    expect(detectQueryLanguage("tworzenie bota który gra na giełdzie")).toBe(
+      "pl"
+    );
+  });
+
   it("detects English queries", () => {
     expect(
       detectQueryLanguage("retrieval augmented generation in medicine")
