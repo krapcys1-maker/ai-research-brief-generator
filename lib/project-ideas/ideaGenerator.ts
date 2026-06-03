@@ -259,7 +259,8 @@ function adjacentBlueprint(
 
   if (
     (focusedText.includes("agent") ||
-      focusedText.includes("tool") ||
+      focusedText.includes("tool calls") ||
+      focusedText.includes("tool use") ||
       focusedText.includes("workflow") ||
       focusedText.includes("orchestration")) &&
     !focusedText.includes("code review") &&

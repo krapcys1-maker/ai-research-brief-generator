@@ -48,8 +48,10 @@ Last updated: 2026-06-02
   questions fail before research spend.
 - Keep architecture judge scoring in the project architecture benchmark so
   schema-valid but generic architectures fail before implementation planning.
-- Add controlled live GH Archive batch sampling with strict byte caps and
-  cached GitHub enrichment.
+- Keep controlled live GH Archive batch sampling in `npm run benchmark:project-live-batch`,
+  with strict byte caps, cached GitHub enrichment, `controlled_live_batch_summary.json`,
+  `controlled_live_batch_summary.md`, and decision metrics such as `trendRepoCount`,
+  `sourceRepoCount`, `handoffReadyCount`, `averageHandoffQualityScore` and `blockerCount`.
 
 ## P2: Product UX
 

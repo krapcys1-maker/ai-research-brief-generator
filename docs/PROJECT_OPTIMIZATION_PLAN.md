@@ -20,6 +20,7 @@ The goal is to eliminate silent failure modes, stale prompts, noisy data interpr
 - Per-run artifacts for inspection: source repos, repo insights, trend radar, shortlist, rejected ideas, project inputs and audit.
 - Cost controls around BigQuery through dry-run estimates, `maxDays`, and `maxBytesBilled`.
 - Source diversity guard through `maxIdeasPerSource`.
+- Controlled live batch sampling through `npm run project:live-batch` and `npm run benchmark:project-live-batch`.
 
 ## Main Weaknesses To Eliminate
 
@@ -185,19 +186,23 @@ For every meaningful system change:
 
 ### P4: Live Batch Sampling
 
-- Run controlled GH Archive batches with:
+- Done: run controlled GH Archive batches with:
   - small date windows,
   - strict byte caps,
   - cached GitHub enrichment,
   - no auto-spend escalation.
-- Store only summarized benchmark artifacts, not raw large runs.
+- Done: store only summarized benchmark artifacts, not raw large runs:
+  - `controlled_live_batch_summary.json`,
+  - `controlled_live_batch_summary.md`.
+- Done: track `trendRepoCount`, `sourceRepoCount`, `handoffReadyCount`, `averageHandoffQualityScore` and `blockerCount` before research spend.
 
 ## Current Recommended Next Step
 
-Implement controlled live batch sampling:
+Run the first real controlled live sample:
 
-- run small GH Archive batches with strict `maxBytesBilled`, `maxDays`, cached GitHub enrichment and no auto-escalation,
-- store summarized quality reports, not large raw runs,
-- compare live shortlist quality against fixture benchmark expectations before research spend.
+- use `npm run project:live-batch -- --input path/to/live-batch.json --out runs/live-batch/<date>`,
+- start in `dry_run` mode and inspect `controlled_live_batch_summary.md`,
+- switch to `live` only for one small date window after the dry-run estimate is under `maxBytesBilled`,
+- compare `sourceRepoCount`, `handoffReadyCount`, `averageHandoffQualityScore` and `blockerCount` before spending research/architecture calls.
 
 This closes the next gap between “locally benchmarked pipeline” and controlled live discovery quality.

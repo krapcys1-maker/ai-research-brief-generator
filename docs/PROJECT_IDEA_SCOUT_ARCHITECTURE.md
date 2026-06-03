@@ -110,6 +110,16 @@ The collector should report rate limits, cache results, and work with or without
 
 Implemented with budget guards. GH Archive / BigQuery collection uses exact date tables, dry-run estimates, `maxDays`, and `maxBytesBilled`.
 
+Controlled live batch sampling is implemented as the next gate before research spend:
+
+- `npm run project:live-batch` runs small GH Archive windows in `dry_run` or explicit `live` mode.
+- `npm run benchmark:project-live-batch` verifies dry-run budget checks, live shortlist quality and too-small-sample blocking.
+- The sampler writes only summary artifacts:
+  - `controlled_live_batch_summary.json`,
+  - `controlled_live_batch_summary.md`.
+- Key summary metrics are `trendRepoCount`, `sourceRepoCount`, `handoffReadyCount`, `averageHandoffQualityScore` and `blockerCount`.
+- GitHub enrichment for GH Archive repo names is cached, and the sampler never auto-escalates `maxBytesBilled`.
+
 ### Phase 3: Extra Signals
 
 Later sources:

@@ -59,6 +59,12 @@ const benchmarkDefinitions: BenchmarkDefinition[] = [
     jsonPath: "benchmark-results/project-gh-archive-trends-latest.json"
   },
   {
+    id: "project_live_batch_sampling",
+    label: "ProjectLiveBatchSampling",
+    npmScript: "benchmark:project-live-batch",
+    jsonPath: "benchmark-results/project-live-batch-sampling-latest.json"
+  },
+  {
     id: "project_ideas_runner",
     label: "ProjectIdeasRunner",
     npmScript: "benchmark:project-ideas-runner",
@@ -179,6 +185,9 @@ function extractKeyMetrics(report: Record<string, unknown>) {
     "warningCount",
     "cacheHitCount",
     "maxBqCallCount",
+    "sourceRepoCount",
+    "trendRepoCount",
+    "blockerCount",
     "averageIdeaArtifactCompleteness",
     "trendRadarCategoryCount",
     "trendRadarTopOpportunityCount",

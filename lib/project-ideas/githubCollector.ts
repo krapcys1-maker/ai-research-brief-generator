@@ -42,6 +42,7 @@ type CollectGithubReposByFullNameInput = {
   includeReadme?: boolean;
   includeIssues?: boolean;
   fetchFn?: FetchLike;
+  cacheTtlMs?: number;
 };
 
 type GithubRepoSearchItem = {
@@ -288,6 +289,17 @@ function cacheKey(input: CollectGithubIdeaSourceReposInput, searchUrl: string) {
   ].join("|");
 }
 
+function repoFullNamesCacheKey(input: CollectGithubReposByFullNameInput) {
+  return [
+    "repoFullNames",
+    [...new Set(input.repoFullNames.map((repoFullName) => repoFullName.toLowerCase()))]
+      .sort()
+      .join(","),
+    input.includeReadme ?? true,
+    input.includeIssues ?? true
+  ].join("|");
+}
+
 export function clearGithubIdeaCollectorCache() {
   cache.clear();
 }
@@ -438,6 +450,20 @@ export async function collectGithubIdeaSourceReposByFullName(
   const repoFullNames = [...new Set(input.repoFullNames)]
     .filter((repoFullName) => /^[^/\s]+\/[^/\s]+$/.test(repoFullName))
     .slice(0, 100);
+  const key = repoFullNamesCacheKey({ ...input, repoFullNames });
+  const ttlMs = input.cacheTtlMs ?? defaultCacheTtlMs;
+  const cached = cache.get(key);
+
+  if (cached && Date.now() - cached.createdAt <= ttlMs) {
+    return GithubIdeaCollectorResultSchema.parse({
+      ...cached.result,
+      diagnostics: {
+        ...cached.result.diagnostics,
+        cached: true
+      }
+    });
+  }
+
   const fetchFn = input.fetchFn ?? globalThis.fetch;
   const warnings: string[] = [];
   let readmeFetchedCount = 0;
@@ -536,6 +562,11 @@ export async function collectGithubIdeaSourceReposByFullName(
         warnings
       }
     });
+  });
+
+  cache.set(key, {
+    createdAt: Date.now(),
+    result
   });
 
   return result;

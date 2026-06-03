@@ -32,6 +32,7 @@ const requiredScripts = [
   "benchmark:project-pipeline",
   "benchmark:project-ideas",
   "benchmark:project-ai-ideas",
+  "benchmark:project-live-batch",
   "benchmark:project-architecture"
 ];
 
@@ -45,7 +46,9 @@ const requiredArtifacts = [
   "project_idea_handoff_quality.json",
   "project_idea_handoff_quality.md",
   "project_architecture_judge.json",
-  "project_architecture_judge.md"
+  "project_architecture_judge.md",
+  "controlled_live_batch_summary.json",
+  "controlled_live_batch_summary.md"
 ];
 
 const requiredMetrics = [
@@ -56,7 +59,10 @@ const requiredMetrics = [
   "averageMvpFeasibility",
   "averageHandoffQualityScore",
   "handoffReadyCount",
-  "averageJudgeScore"
+  "averageJudgeScore",
+  "trendRepoCount",
+  "sourceRepoCount",
+  "blockerCount"
 ];
 
 async function writeTextFile(path: string, content: string) {

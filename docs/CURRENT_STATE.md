@@ -151,6 +151,13 @@ GitHub / GH Archive signals -> trend radar -> adjacent idea discovery -> anti-cl
     token loading from `.env`.
   - GH Archive / BigQuery trend collection uses exact date tables, dry-run
     estimates, `maxDays`, and `maxBytesBilled` to control cost.
+  - `npm run project:live-batch` runs controlled GH Archive live batch
+    sampling in safe `dry_run` mode by default, with explicit `live` mode,
+    cached GitHub enrichment and no auto-spend escalation.
+  - Controlled live sampling stores only `controlled_live_batch_summary.json`
+    and `controlled_live_batch_summary.md`, with `trendRepoCount`,
+    `sourceRepoCount`, `handoffReadyCount`, `averageHandoffQualityScore` and
+    `blockerCount` as the decision metrics before research spend.
   - Trend radar artifacts summarize heat, sexiness, feasibility and opportunity
     angles.
   - AI idea guardrails reject clone-shaped raw AI ideas and keep adjacent
@@ -170,6 +177,8 @@ GitHub / GH Archive signals -> trend radar -> adjacent idea discovery -> anti-cl
     project architecture benchmark.
   - `npm run benchmark:project-pipeline` aggregates the project planning
     benchmark suite.
+  - `npm run benchmark:project-live-batch` checks controlled dry-run budget
+    behavior, live quality gates and too-small live sample blocking.
 - Saved topics / research projects:
   - `ResearchProject` stores title, standing query, optional description,
     preferred sources, and session/user/workspace ownership metadata.
