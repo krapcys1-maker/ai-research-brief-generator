@@ -239,6 +239,69 @@ describe("discoverProjectIdeas", () => {
       })
     },
     {
+      name: "short-video AI generation",
+      expectedTitle: "AI Short-Video Content QA Console",
+      repo: sourceRepo({
+        repoId: "repo_money_printer_turbo",
+        name: "MoneyPrinterTurbo",
+        owner: "harry0703",
+        description:
+          "Generate short videos with one click using AI LLM and MoviePy.",
+        topics: ["ai", "automation", "moviepy", "shortvideo", "tiktok"],
+        readmeText:
+          "MoneyPrinterTurbo uses AI LLM, MoviePy, voiceover, subtitles, and TikTok-style templates to generate short videos.",
+        issueSignals: [
+          {
+            title: "Need review queue before publishing generated videos",
+            body: "Generated scripts can be repetitive or make unsupported claims before upload.",
+            labels: ["enhancement"]
+          }
+        ]
+      })
+    },
+    {
+      name: "analytics engineering",
+      expectedTitle: "AI Data Quality Investigation Agent",
+      repo: sourceRepo({
+        repoId: "repo_dbt_core",
+        name: "dbt-core",
+        owner: "dbt-labs",
+        description:
+          "dbt enables data analysts and engineers to transform warehouse data using software engineering practices.",
+        topics: ["analytics", "business-intelligence", "data-modeling", "elt"],
+        readmeText:
+          "dbt Core helps analytics engineers transform warehouse data and maintain data models.",
+        issueSignals: [
+          {
+            title: "Need clearer model failure investigation",
+            body: "Analysts need faster diagnosis for broken transformations and stale downstream dashboards.",
+            labels: ["enhancement"]
+          }
+        ]
+      })
+    },
+    {
+      name: "web scraping",
+      expectedTitle: "AI Data Quality Investigation Agent",
+      repo: sourceRepo({
+        repoId: "repo_scrapling",
+        name: "Scrapling",
+        owner: "D4Vinci",
+        description:
+          "Adaptive web scraping framework for data extraction, crawlers, and full-scale crawling.",
+        topics: ["ai-scraping", "crawler", "data-extraction", "playwright"],
+        readmeText:
+          "Adaptive web scraping framework that handles single requests and full-scale crawls for data extraction.",
+        issueSignals: [
+          {
+            title: "Extraction drift after site markup changes",
+            body: "Scraped data needs quality checks when selectors stop matching expected fields.",
+            labels: ["bug"]
+          }
+        ]
+      })
+    },
+    {
       name: "context compression",
       expectedTitle: "LLM Context Budget QA Monitor",
       repo: sourceRepo({

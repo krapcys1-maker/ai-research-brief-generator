@@ -118,6 +118,7 @@ Controlled live batch sampling is implemented as the next gate before research s
   - `controlled_live_batch_summary.json`,
   - `controlled_live_batch_summary.md`.
 - Key summary metrics are `trendRepoCount`, `sourceRepoCount`, `handoffReadyCount`, `averageHandoffQualityScore` and `blockerCount`.
+- The summary includes compact `repoEvidence` and `scoredCandidates` sections so reviewers can inspect why repos were or were not promoted without storing raw README/issue dumps.
 - GitHub enrichment for GH Archive repo names is cached, the sampler never auto-escalates `maxBytesBilled`, and `live` mode cannot run from a JSON file unless `allowLiveSpend: true` is set after a dry-run review.
 
 ### Phase 3: Extra Signals

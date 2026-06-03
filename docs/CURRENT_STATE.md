@@ -159,6 +159,9 @@ GitHub / GH Archive signals -> trend radar -> adjacent idea discovery -> anti-cl
     and `controlled_live_batch_summary.md`, with `trendRepoCount`,
     `sourceRepoCount`, `handoffReadyCount`, `averageHandoffQualityScore` and
     `blockerCount` as the decision metrics before research spend.
+  - The live batch summary also includes compact `repoEvidence` and
+    `scoredCandidates` sections so reviewers can audit source relevance and
+    rejected candidates without committing raw large runs.
   - Trend radar artifacts summarize heat, sexiness, feasibility and opportunity
     angles.
   - AI idea guardrails reject clone-shaped raw AI ideas and keep adjacent

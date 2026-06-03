@@ -238,10 +238,17 @@ describe("controlled live idea batch sampling", () => {
     expect(summary.aggregate.handoffReadyCount).toBeGreaterThanOrEqual(3);
     expect(summary.aggregate.averageHandoffQualityScore).toBeGreaterThanOrEqual(82);
     expect(summary.shortlist.length).toBeGreaterThanOrEqual(3);
+    expect(summary.repoEvidence).toHaveLength(5);
+    expect(summary.repoEvidence[0]?.readmeExcerpt.length).toBeGreaterThan(20);
+    expect(summary.scoredCandidates.length).toBeGreaterThanOrEqual(10);
+    expect(summary.scoredCandidates.some((idea) => idea.verdict === "reject")).toBe(
+      true
+    );
     expect(summary.shortlist.map((idea) => idea.title)).toContain(
       "LLM Release Readiness Radar"
     );
     expect(saved.aggregate.auditScore).toBeGreaterThanOrEqual(70);
+    expect(saved.repoEvidence).toHaveLength(5);
   });
 
   it("keeps too-small live samples out of the research pipeline", async () => {

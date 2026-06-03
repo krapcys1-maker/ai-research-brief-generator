@@ -10,7 +10,8 @@ import type {
   GhArchiveTrendRepo,
   GithubIdeaCollectorResult,
   IdeaDiscoveryReport,
-  IdeaScore
+  IdeaScore,
+  IdeaSourceRepo
 } from "@/lib/project-ideas/types";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -112,6 +113,27 @@ export type ProjectIdeaLiveBatchSummary = {
     warnings: string[];
   };
   topTrendRepos: GhArchiveTrendRepo[];
+  repoEvidence: Array<{
+    repoId: string;
+    repoFullName: string;
+    description: string;
+    topics: string[];
+    primaryLanguage: string | null;
+    stars: number;
+    forks: number;
+    openIssues: number | null;
+    readmeExcerpt: string;
+    issueSignalCount: number;
+  }>;
+  scoredCandidates: Array<{
+    ideaId: string;
+    title: string;
+    verdict: string;
+    score: number;
+    sourceRepos: string[];
+    reasons: string[];
+    oneSentence: string;
+  }>;
   shortlist: Array<{
     ideaId: string;
     title: string;
@@ -189,6 +211,55 @@ function summarizeShortlist(report: IdeaDiscoveryReport | null) {
     score: scoreFor(idea, report.ideaScores),
     oneSentence: idea.oneSentence
   }));
+}
+
+function excerpt(value: string, maxLength = 280) {
+  const singleLine = value.replace(/\s+/g, " ").trim();
+  return singleLine.length > maxLength
+    ? `${singleLine.slice(0, maxLength - 3)}...`
+    : singleLine;
+}
+
+function summarizeRepoEvidence(repos: IdeaSourceRepo[]) {
+  return repos.slice(0, 25).map((repo) => ({
+    repoId: repo.repoId,
+    repoFullName: `${repo.owner}/${repo.name}`,
+    description: repo.description,
+    topics: repo.topics.slice(0, 12),
+    primaryLanguage: repo.primaryLanguage,
+    stars: repo.stars,
+    forks: repo.forks,
+    openIssues: repo.openIssues,
+    readmeExcerpt: excerpt(repo.readmeText),
+    issueSignalCount: repo.issueSignals.length
+  }));
+}
+
+function summarizeScoredCandidates(report: IdeaDiscoveryReport | null) {
+  if (!report) {
+    return [];
+  }
+
+  const scoresByIdeaId = new Map(
+    report.ideaScores.map((score) => [score.ideaId, score])
+  );
+
+  return report.discoveredIdeas
+    .map((idea) => {
+      const score = scoresByIdeaId.get(idea.ideaId);
+
+      return {
+        ideaId: idea.ideaId,
+        title: idea.title,
+        verdict: score?.verdict ?? "missing_score",
+        score: score?.total ?? 0,
+        sourceRepos: idea.sourceRepos,
+        reasons: (score?.reasons ?? []).slice(0, 4),
+        oneSentence: idea.oneSentence
+      };
+    })
+    .sort((left, right) => right.score - left.score)
+    .slice(0, 30);
 }
 
 function buildQuality(input: {
@@ -330,6 +401,24 @@ export function projectIdeaLiveBatchSummaryToMarkdown(
   for (const repo of summary.topTrendRepos.slice(0, 10)) {
     lines.push(
       `- ${repo.repoFullName}: score ${repo.trendScore}, stars ${repo.stars}, forks ${repo.forks}`
+    );
+  }
+
+  lines.push("", "## Repo Evidence", "");
+
+  for (const repo of summary.repoEvidence.slice(0, 10)) {
+    lines.push(
+      `- ${repo.repoFullName}: ${repo.description} Topics: ${
+        repo.topics.join(", ") || "none"
+      }. Issues: ${repo.issueSignalCount}. README: ${repo.readmeExcerpt}`
+    );
+  }
+
+  lines.push("", "## Scored Candidates", "");
+
+  for (const candidate of summary.scoredCandidates.slice(0, 15)) {
+    lines.push(
+      `- ${candidate.title} (${candidate.score}, ${candidate.verdict}): ${candidate.oneSentence}`
     );
   }
 
@@ -485,6 +574,8 @@ export async function runControlledLiveBatchSampling(
     },
     quality,
     topTrendRepos: allTrendRepos.slice(0, 20),
+    repoEvidence: summarizeRepoEvidence(report?.sourceRepos ?? []),
+    scoredCandidates: summarizeScoredCandidates(report),
     shortlist: summarizeShortlist(report)
   };
 

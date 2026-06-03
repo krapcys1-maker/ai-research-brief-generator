@@ -78,6 +78,46 @@ function adjacentBlueprint(
   }
 
   if (
+    focusedText.includes("analytics") ||
+    focusedText.includes("dashboard") ||
+    focusedText.includes("warehouse") ||
+    focusedText.includes("business-intelligence") ||
+    focusedText.includes("data-modeling") ||
+    focusedText.includes("data analysts") ||
+    focusedText.includes("data extraction") ||
+    focusedText.includes("data-extraction") ||
+    focusedText.includes("web scraping") ||
+    focusedText.includes("scraping") ||
+    focusedText.includes("crawler")
+  ) {
+    return {
+      title: "AI Data Quality Investigation Agent",
+      problem:
+        "Data teams lose time diagnosing broken datasets, extraction drift, and warehouse quality issues before dashboards and analyses can be trusted.",
+      targetUsers: ["data analysts", "analytics engineers"],
+      mvpScope: [
+        "profile CSV, warehouse, or extracted web data snapshots",
+        "detect quality anomalies, schema drift, and suspicious extraction gaps",
+        "produce an investigation report with likely causes and next checks"
+      ],
+      differentiation: [
+        "focuses on data quality investigation before dashboard generation",
+        "targets operational analysts and analytics engineers instead of generic BI users",
+        "outputs audit-friendly diagnostics rather than only charts"
+      ],
+      domains: ["data quality", "analytics engineering", "AI agents"],
+      researchQuestions: [
+        "Which anomaly explanations are most useful for data quality triage?",
+        "How should agents avoid fabricating causes for data and extraction errors?"
+      ],
+      aiLeverage: [
+        "turns anomaly patterns into investigation hypotheses",
+        "summarizes quality risks in analyst-friendly language"
+      ]
+    };
+  }
+
+  if (
     focusedText.includes("markdown") ||
     focusedText.includes("pdf") ||
     focusedText.includes("csvconverter") ||
@@ -335,6 +375,41 @@ function adjacentBlueprint(
   }
 
   if (
+    focusedText.includes("shortvideo") ||
+    focusedText.includes("short video") ||
+    focusedText.includes("tiktok") ||
+    focusedText.includes("moviepy") ||
+    focusedText.includes("video generation") ||
+    focusedText.includes("generate short videos")
+  ) {
+    return {
+      title: "AI Short-Video Content QA Console",
+      problem:
+        "Teams using AI to generate short videos need to catch low-quality scripts, unsafe claims, weak source grounding, and repetitive output before publishing.",
+      targetUsers: ["content operations teams", "AI media builders"],
+      mvpScope: [
+        "ingest generated scripts, prompts, voiceover text, and rendered video metadata",
+        "score claims, repetition, source grounding, brand fit, and publishing risk",
+        "produce a review queue with concrete fixes before export or upload"
+      ],
+      differentiation: [
+        "audits AI-generated media quality instead of generating another video",
+        "focuses on review, evidence, and publishing risk",
+        "keeps human approval before public release"
+      ],
+      domains: ["AI media", "content operations", "publishing QA"],
+      researchQuestions: [
+        "Which quality signals best predict whether AI-generated short videos are publishable?",
+        "How should automated media generation preserve claim grounding and brand safety?"
+      ],
+      aiLeverage: [
+        "classifies generated video scripts into quality and safety failure modes",
+        "turns prompt, transcript, and metadata evidence into reviewer actions"
+      ]
+    };
+  }
+
+  if (
     focusedText.includes("llm") ||
     focusedText.includes("inference") ||
     focusedText.includes("model serving") ||
@@ -368,7 +443,13 @@ function adjacentBlueprint(
     };
   }
 
-  if (text.includes("trading") || text.includes("market") || text.includes("backtest")) {
+  if (
+    focusedText.includes("trading") ||
+    focusedText.includes("backtest") ||
+    focusedText.includes("portfolio") ||
+    focusedText.includes("stock market") ||
+    text.includes("algorithmic trading")
+  ) {
     return {
       title: "AI Strategy Risk Simulator",
       problem:

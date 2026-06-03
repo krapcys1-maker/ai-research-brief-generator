@@ -195,6 +195,7 @@ For every meaningful system change:
   - `controlled_live_batch_summary.json`,
   - `controlled_live_batch_summary.md`.
 - Done: track `trendRepoCount`, `sourceRepoCount`, `handoffReadyCount`, `averageHandoffQualityScore` and `blockerCount` before research spend.
+- Done: include compact `repoEvidence` and `scoredCandidates` sections so live outputs can be audited without raw large dumps.
 - Done: require `allowLiveSpend: true` in addition to `mode: "live"` so a copied JSON file cannot accidentally run a live BigQuery query.
 
 ## Current Recommended Next Step
