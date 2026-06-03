@@ -5,6 +5,9 @@ import type {
   IdeaDiscoveryReportSchema,
   GithubIdeaCollectorDiagnosticsSchema,
   GithubIdeaCollectorResultSchema,
+  GhArchiveTrendDiagnosticsSchema,
+  GhArchiveTrendRepoSchema,
+  GhArchiveTrendResultSchema,
   IdeaScoreSchema,
   IdeaSourceRepoSchema,
   RepoInsightSchema,
@@ -24,3 +27,8 @@ export type GithubIdeaCollectorDiagnostics = z.infer<
 export type GithubIdeaCollectorResult = z.infer<
   typeof GithubIdeaCollectorResultSchema
 >;
+export type GhArchiveTrendRepo = z.infer<typeof GhArchiveTrendRepoSchema>;
+export type GhArchiveTrendDiagnostics = z.infer<
+  typeof GhArchiveTrendDiagnosticsSchema
+>;
+export type GhArchiveTrendResult = z.infer<typeof GhArchiveTrendResultSchema>;

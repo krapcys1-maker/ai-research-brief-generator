@@ -131,6 +131,33 @@ export const GithubIdeaCollectorResultSchema = z.object({
   diagnostics: GithubIdeaCollectorDiagnosticsSchema
 });
 
+export const GhArchiveTrendRepoSchema = z.object({
+  repoFullName: z.string().trim().min(1),
+  stars: z.number().int().nonnegative(),
+  forks: z.number().int().nonnegative(),
+  pushes: z.number().int().nonnegative(),
+  issues: z.number().int().nonnegative(),
+  trendScore: z.number().nonnegative()
+});
+
+export const GhArchiveTrendDiagnosticsSchema = z.object({
+  source: z.literal("gh_archive_bigquery"),
+  startDate: z.string().trim().min(10),
+  endDate: z.string().trim().min(10),
+  dayCount: z.number().int().min(1),
+  maxRepos: z.number().int().min(1),
+  maxBytesBilled: z.number().int().positive(),
+  dryRun: z.boolean(),
+  estimatedBytesProcessed: z.number().int().nonnegative().nullable(),
+  query: z.string().trim().min(1),
+  warnings: z.array(z.string().trim().min(1)).default([])
+});
+
+export const GhArchiveTrendResultSchema = z.object({
+  repos: z.array(GhArchiveTrendRepoSchema).default([]),
+  diagnostics: GhArchiveTrendDiagnosticsSchema
+});
+
 export function validateIdeaDiscoveryReport(value: unknown) {
   return IdeaDiscoveryReportSchema.parse(value);
 }

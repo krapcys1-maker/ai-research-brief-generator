@@ -41,6 +41,12 @@ const benchmarkDefinitions: BenchmarkDefinition[] = [
     jsonPath: "benchmark-results/project-github-collector-latest.json"
   },
   {
+    id: "project_gh_archive_trends",
+    label: "ProjectGhArchiveTrends",
+    npmScript: "benchmark:project-gh-archive-trends",
+    jsonPath: "benchmark-results/project-gh-archive-trends-latest.json"
+  },
+  {
     id: "project_ideas_runner",
     label: "ProjectIdeasRunner",
     npmScript: "benchmark:project-ideas-runner",
@@ -147,6 +153,7 @@ function extractKeyMetrics(report: Record<string, unknown>) {
     "issuesFetchedCount",
     "warningCount",
     "cacheHitCount",
+    "maxBqCallCount",
     "averageIdeaArtifactCompleteness",
     "averageResearchArtifactCompleteness",
     "ideaInputValidCount",
