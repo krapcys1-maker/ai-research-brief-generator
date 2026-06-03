@@ -29,6 +29,12 @@ const benchmarkDefinitions: BenchmarkDefinition[] = [
     jsonPath: "benchmark-results/project-research-plan-latest.json"
   },
   {
+    id: "project_ideas",
+    label: "ProjectIdeas",
+    npmScript: "benchmark:project-ideas",
+    jsonPath: "benchmark-results/project-idea-discovery-latest.json"
+  },
+  {
     id: "research_evidence",
     label: "ProjectResearchEvidence",
     npmScript: "benchmark:project-research-evidence",
@@ -111,6 +117,13 @@ function extractKeyMetrics(report: Record<string, unknown>) {
   const metricKeys = [
     "averageExpectedBucketRecall",
     "singleQueryFailureCount",
+    "promisingCount",
+    "cloneRejectedCount",
+    "averageNovelty",
+    "averageMvpFeasibility",
+    "averageGithubSignalStrength",
+    "researchReadyCount",
+    "pipelineInputValidCount",
     "averageBucketCoverage",
     "averageRequiredCoverage",
     "averageArtifactCompleteness",

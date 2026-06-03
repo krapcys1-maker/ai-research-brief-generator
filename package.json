@@ -16,6 +16,7 @@
     "benchmark:quality-gate": "tsx scripts/benchmark-quality-gate.ts",
     "benchmark:embedding-comparison": "tsx scripts/embedding-provider-comparison.ts",
     "benchmark:project-pipeline": "tsx scripts/project-pipeline-benchmark.ts",
+    "benchmark:project-ideas": "tsx scripts/project-idea-discovery-benchmark.ts",
     "benchmark:project-cli": "tsx scripts/project-cli-benchmark.ts",
     "benchmark:project-architecture": "tsx scripts/project-architecture-benchmark.ts",
     "benchmark:project-prd": "tsx scripts/project-prd-benchmark.ts",
