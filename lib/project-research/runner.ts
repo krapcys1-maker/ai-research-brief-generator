@@ -1,3 +1,11 @@
+import {
+  generateProjectArchitecture,
+  projectArchitectureToMarkdown
+} from "@/lib/project-architecture";
+import {
+  generateProjectPrd,
+  projectPrdToMarkdown
+} from "@/lib/project-prd";
 import { projectResearchBriefToMarkdown } from "@/lib/project-research/markdown";
 import { buildProjectResearchBrief } from "@/lib/project-research/briefBuilder";
 import {
@@ -82,6 +90,8 @@ export type ProjectResearchRunManifest = {
   outputDir: string;
   readyForPrd: boolean;
   readyForArchitecture: boolean;
+  prdStatus: "ready" | "blocked";
+  architectureStatus: "ready" | "blocked";
   requiredCoveredCount: number;
   requiredBucketCount: number;
   missingRequiredBuckets: string[];
@@ -98,6 +108,10 @@ export type ProjectResearchRunManifest = {
     reviewedPapers: string;
     projectResearchBriefJson: string;
     projectResearchBriefMarkdown: string;
+    projectPrdJson: string;
+    projectPrdMarkdown: string;
+    projectArchitectureJson: string;
+    projectArchitectureMarkdown: string;
   };
 };
 
@@ -115,7 +129,11 @@ const artifactFiles = {
   evidenceCollection: "evidence_collection.json",
   reviewedPapers: "reviewed_papers.json",
   projectResearchBriefJson: "project_research_brief.json",
-  projectResearchBriefMarkdown: "project_research_brief.md"
+  projectResearchBriefMarkdown: "project_research_brief.md",
+  projectPrdJson: "project_prd.json",
+  projectPrdMarkdown: "project_prd.md",
+  projectArchitectureJson: "project_architecture.json",
+  projectArchitectureMarkdown: "project_architecture.md"
 } as const;
 
 function toJson(value: unknown) {
@@ -124,6 +142,8 @@ function toJson(value: unknown) {
 
 function createManifest(
   brief: ProjectResearchBrief,
+  prdStatus: "ready" | "blocked",
+  architectureStatus: "ready" | "blocked",
   outputDir: string
 ): ProjectResearchRunManifest {
   return {
@@ -134,6 +154,8 @@ function createManifest(
     outputDir,
     readyForPrd: brief.readyForPrd,
     readyForArchitecture: brief.readyForArchitecture,
+    prdStatus,
+    architectureStatus,
     requiredCoveredCount: brief.evidenceCoverage.requiredCoveredCount,
     requiredBucketCount: brief.evidenceCoverage.requiredBucketCount,
     missingRequiredBuckets: brief.evidenceCoverage.missingRequiredBuckets,
@@ -188,7 +210,21 @@ export async function runProjectResearch(
     reviewedPapers,
     generatedAt: parsed.generatedAt
   });
-  const manifest = createManifest(brief, outputDir);
+  const prd = generateProjectPrd({
+    brief,
+    generatedAt: parsed.generatedAt
+  });
+  const architecture = generateProjectArchitecture({
+    prd,
+    brief,
+    generatedAt: parsed.generatedAt
+  });
+  const manifest = createManifest(
+    brief,
+    prd.status,
+    architecture.status,
+    outputDir
+  );
 
   await mkdir(outputDir, { recursive: true });
   await Promise.all([
@@ -230,6 +266,26 @@ export async function runProjectResearch(
     writeFile(
       join(outputDir, artifactFiles.projectResearchBriefMarkdown),
       projectResearchBriefToMarkdown(brief),
+      "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.projectPrdJson),
+      toJson(prd),
+      "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.projectPrdMarkdown),
+      projectPrdToMarkdown(prd),
+      "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.projectArchitectureJson),
+      toJson(architecture),
+      "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.projectArchitectureMarkdown),
+      projectArchitectureToMarkdown(architecture),
       "utf8"
     )
   ]);

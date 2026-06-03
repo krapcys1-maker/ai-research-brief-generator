@@ -2,6 +2,8 @@ import {
   buildProjectResearchPlan,
   runProjectResearch
 } from "@/lib/project-research";
+import { ProjectArchitectureSchema } from "@/lib/project-architecture";
+import { ProjectPrdSchema } from "@/lib/project-prd";
 import { ProjectResearchBriefSchema } from "@/lib/project-research/schemas";
 import type {
   EvidenceBucket,
@@ -33,7 +35,11 @@ type CaseResult = {
   actualReady: boolean;
   artifactCompleteness: number;
   schemaValid: boolean;
+  prdSchemaValid: boolean;
+  architectureSchemaValid: boolean;
   manifestMatchesBrief: boolean;
+  prdStatus: "ready" | "blocked";
+  architectureStatus: "ready" | "blocked";
   requiredCoveredCount: number;
   requiredBucketCount: number;
   missingRequiredBuckets: string[];
@@ -49,7 +55,11 @@ const requiredFiles = [
   "evidence_collection.json",
   "reviewed_papers.json",
   "project_research_brief.json",
-  "project_research_brief.md"
+  "project_research_brief.md",
+  "project_prd.json",
+  "project_prd.md",
+  "project_architecture.json",
+  "project_architecture.md"
 ];
 const minArtifactCompleteness = 1;
 const jsonOutputPath =
@@ -191,7 +201,13 @@ async function evaluateCase(
   const brief = JSON.parse(
     await readFile(join(outputDir, "project_research_brief.json"), "utf8")
   );
+  const prd = JSON.parse(await readFile(join(outputDir, "project_prd.json"), "utf8"));
+  const architecture = JSON.parse(
+    await readFile(join(outputDir, "project_architecture.json"), "utf8")
+  );
   const schemaValid = ProjectResearchBriefSchema.safeParse(brief).success;
+  const parsedPrd = ProjectPrdSchema.safeParse(prd);
+  const parsedArchitecture = ProjectArchitectureSchema.safeParse(architecture);
   const manifestFromDisk = JSON.parse(
     await readFile(join(outputDir, "manifest.json"), "utf8")
   ) as ProjectResearchRunManifest;
@@ -203,9 +219,15 @@ async function evaluateCase(
     actualReady: manifest.readyForArchitecture,
     artifactCompleteness,
     schemaValid,
+    prdSchemaValid: parsedPrd.success,
+    architectureSchemaValid: parsedArchitecture.success,
     manifestMatchesBrief:
       manifestFromDisk.runId === brief.id &&
       manifestFromDisk.readyForArchitecture === brief.readyForArchitecture,
+    prdStatus: parsedPrd.success ? parsedPrd.data.status : "blocked",
+    architectureStatus: parsedArchitecture.success
+      ? parsedArchitecture.data.status
+      : "blocked",
     requiredCoveredCount: manifest.requiredCoveredCount,
     requiredBucketCount: manifest.requiredBucketCount,
     missingRequiredBuckets: manifest.missingRequiredBuckets
@@ -218,6 +240,8 @@ function renderMarkdownReport(input: {
   passCount: number;
   averageArtifactCompleteness: number;
   schemaValidCount: number;
+  prdSchemaValidCount: number;
+  architectureSchemaValidCount: number;
   readinessPassCount: number;
   manifestMatchCount: number;
   results: CaseResult[];
@@ -230,6 +254,8 @@ function renderMarkdownReport(input: {
     `Pass count: ${input.passCount}/${input.caseCount}`,
     `Average artifact completeness: ${pct(input.averageArtifactCompleteness)}`,
     `Schema valid: ${input.schemaValidCount}/${input.caseCount}`,
+    `PRD schema valid: ${input.prdSchemaValidCount}/${input.caseCount}`,
+    `Architecture schema valid: ${input.architectureSchemaValidCount}/${input.caseCount}`,
     `Readiness expectation pass: ${input.readinessPassCount}/${input.caseCount}`,
     `Manifest matches brief: ${input.manifestMatchCount}/${input.caseCount}`,
     `Threshold: all checks pass, artifact completeness >= ${pct(minArtifactCompleteness)}`,
@@ -242,7 +268,11 @@ function renderMarkdownReport(input: {
     const passed =
       result.artifactCompleteness === 1 &&
       result.schemaValid &&
+      result.prdSchemaValid &&
+      result.architectureSchemaValid &&
       result.actualReady === result.expectedReady &&
+      result.prdStatus === (result.expectedReady ? "ready" : "blocked") &&
+      result.architectureStatus === (result.expectedReady ? "ready" : "blocked") &&
       result.manifestMatchesBrief;
     lines.push(`### ${passed ? "PASS" : "FAIL"} ${result.id}`);
     lines.push("");
@@ -251,6 +281,8 @@ function renderMarkdownReport(input: {
     lines.push(`- Actual ready: ${result.actualReady ? "yes" : "no"}`);
     lines.push(`- Artifact completeness: ${pct(result.artifactCompleteness)}`);
     lines.push(`- Schema valid: ${result.schemaValid ? "yes" : "no"}`);
+    lines.push(`- PRD status: ${result.prdStatus}`);
+    lines.push(`- Architecture status: ${result.architectureStatus}`);
     lines.push(
       `- Manifest matches brief: ${result.manifestMatchesBrief ? "yes" : "no"}`
     );
@@ -314,13 +346,23 @@ async function main() {
     (result) =>
       result.artifactCompleteness === 1 &&
       result.schemaValid &&
+      result.prdSchemaValid &&
+      result.architectureSchemaValid &&
       result.actualReady === result.expectedReady &&
+      result.prdStatus === (result.expectedReady ? "ready" : "blocked") &&
+      result.architectureStatus === (result.expectedReady ? "ready" : "blocked") &&
       result.manifestMatchesBrief
   ).length;
   const averageArtifactCompleteness =
     results.reduce((sum, result) => sum + result.artifactCompleteness, 0) /
     results.length;
   const schemaValidCount = results.filter((result) => result.schemaValid).length;
+  const prdSchemaValidCount = results.filter(
+    (result) => result.prdSchemaValid
+  ).length;
+  const architectureSchemaValidCount = results.filter(
+    (result) => result.architectureSchemaValid
+  ).length;
   const readinessPassCount = results.filter(
     (result) => result.actualReady === result.expectedReady
   ).length;
@@ -334,6 +376,8 @@ async function main() {
     passCount,
     averageArtifactCompleteness,
     schemaValidCount,
+    prdSchemaValidCount,
+    architectureSchemaValidCount,
     readinessPassCount,
     manifestMatchCount,
     minArtifactCompleteness,
@@ -350,6 +394,8 @@ async function main() {
       `Pass: ${report.passCount}/${report.caseCount}`,
       `Average artifact completeness: ${pct(report.averageArtifactCompleteness)}`,
       `Schema valid: ${report.schemaValidCount}/${report.caseCount}`,
+      `PRD schema valid: ${report.prdSchemaValidCount}/${report.caseCount}`,
+      `Architecture schema valid: ${report.architectureSchemaValidCount}/${report.caseCount}`,
       `Readiness expectation pass: ${report.readinessPassCount}/${report.caseCount}`,
       `Manifest matches brief: ${report.manifestMatchCount}/${report.caseCount}`,
       `JSON: ${jsonOutputPath}`,

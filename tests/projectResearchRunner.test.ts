@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  ProjectArchitectureSchema
+} from "@/lib/project-architecture";
+import {
+  ProjectPrdSchema
+} from "@/lib/project-prd";
+import {
   buildProjectResearchPlan,
   runProjectResearch
 } from "@/lib/project-research";
@@ -123,11 +129,25 @@ describe("runProjectResearch", () => {
       evidenceCollection: "evidence_collection.json",
       reviewedPapers: "reviewed_papers.json",
       projectResearchBriefJson: "project_research_brief.json",
-      projectResearchBriefMarkdown: "project_research_brief.md"
+      projectResearchBriefMarkdown: "project_research_brief.md",
+      projectPrdJson: "project_prd.json",
+      projectPrdMarkdown: "project_prd.md",
+      projectArchitectureJson: "project_architecture.json",
+      projectArchitectureMarkdown: "project_architecture.md"
     });
     expect(manifest.requiredCoveredCount).toBe(manifest.requiredBucketCount);
+    expect(manifest.prdStatus).toBe("ready");
+    expect(manifest.architectureStatus).toBe("ready");
     expect(markdown).toContain("## Research Plan");
     expect(markdown).toContain("## Audit");
+
+    const prd = await readJson<unknown>(join(outputDir, "project_prd.json"));
+    const architecture = await readJson<unknown>(
+      join(outputDir, "project_architecture.json")
+    );
+
+    expect(ProjectPrdSchema.parse(prd).status).toBe("ready");
+    expect(ProjectArchitectureSchema.parse(architecture).status).toBe("ready");
   });
 
   it("writes blocked artifacts when required evidence is missing", async () => {
@@ -150,8 +170,18 @@ describe("runProjectResearch", () => {
     }>(join(outputDir, "coverage.json"));
 
     expect(manifest.readyForArchitecture).toBe(false);
+    expect(manifest.prdStatus).toBe("blocked");
+    expect(manifest.architectureStatus).toBe("blocked");
     expect(coverage.canSynthesizeProject).toBe(false);
     expect(coverage.missingRequiredBuckets.length).toBeGreaterThan(0);
+
+    const prd = await readJson<unknown>(join(outputDir, "project_prd.json"));
+    const architecture = await readJson<unknown>(
+      join(outputDir, "project_architecture.json")
+    );
+
+    expect(ProjectPrdSchema.parse(prd).status).toBe("blocked");
+    expect(ProjectArchitectureSchema.parse(architecture).status).toBe("blocked");
   });
 
   it("collects evidence from normalized papers before writing artifacts", async () => {
