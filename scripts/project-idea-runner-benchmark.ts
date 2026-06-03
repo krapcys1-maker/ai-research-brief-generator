@@ -1,5 +1,6 @@
 import {
   IdeaDiscoveryReportSchema,
+  ProjectIdeaAuditSchema,
   runProjectIdeaDiscovery
 } from "@/lib/project-ideas";
 import { ProjectIdeaInputSchema } from "@/lib/project-research/schemas";
@@ -27,6 +28,8 @@ type CaseResult = {
   ghArchiveTrendRepoCount: number;
   trendRadarCategoryCount: number;
   trendRadarTopOpportunityCount: number;
+  auditScore: number;
+  auditReadyCount: number;
   passed: boolean;
 };
 
@@ -37,6 +40,8 @@ const requiredFiles = [
   "gh_archive_trends.json",
   "trend_radar.json",
   "trend_radar.md",
+  "project_ideas_audit.json",
+  "project_ideas_audit.md",
   "repo_insights.json",
   "discovered_ideas.json",
   "idea_scores.json",
@@ -197,8 +202,12 @@ async function evaluateCase(testCase: BenchmarkCase, index: number) {
       ? {
           startDate: "2025-01-01",
           maxRepos: 5,
+          maxDays: 1,
           maxBytesBilled: 200_000_000,
-          dryRun: false
+          dryRun: false,
+          includeReadme: true,
+          includeIssues: true,
+          timeoutMs: 10_000
         }
       : undefined,
     maxIdeas: 3,
@@ -243,6 +252,9 @@ async function evaluateCase(testCase: BenchmarkCase, index: number) {
   const projectIdeaInputs = JSON.parse(
     await readFile(join(outputDir, "project_idea_inputs.json"), "utf8")
   ) as unknown[];
+  const audit = ProjectIdeaAuditSchema.parse(
+    JSON.parse(await readFile(join(outputDir, "project_ideas_audit.json"), "utf8"))
+  );
   const schemaValid = IdeaDiscoveryReportSchema.safeParse(report).success;
   const projectIdeaInputValidCount = projectIdeaInputs.filter(
     (idea) => ProjectIdeaInputSchema.safeParse(idea).success
@@ -254,6 +266,8 @@ async function evaluateCase(testCase: BenchmarkCase, index: number) {
     manifest.cloneRejectedCount >= 1 &&
     manifest.trendRadarCategoryCount >= 1 &&
     manifest.trendRadarTopOpportunityCount >= 1 &&
+    audit.score >= 70 &&
+    audit.readiness !== "blocked" &&
     projectIdeaInputValidCount === manifest.projectIdeaInputCount;
 
   return {
@@ -268,6 +282,8 @@ async function evaluateCase(testCase: BenchmarkCase, index: number) {
     ghArchiveTrendRepoCount: manifest.ghArchiveTrendRepoCount,
     trendRadarCategoryCount: manifest.trendRadarCategoryCount,
     trendRadarTopOpportunityCount: manifest.trendRadarTopOpportunityCount,
+    auditScore: audit.score,
+    auditReadyCount: audit.readiness === "ready" ? 1 : 0,
     passed
   } satisfies CaseResult;
 }
@@ -284,6 +300,8 @@ function renderMarkdownReport(input: {
   ghArchiveUsedCount: number;
   trendRadarCategoryCount: number;
   trendRadarTopOpportunityCount: number;
+  averageAuditScore: number;
+  auditReadyCount: number;
   results: CaseResult[];
 }) {
   const lines = [
@@ -300,6 +318,8 @@ function renderMarkdownReport(input: {
     `GH Archive used cases: ${input.ghArchiveUsedCount}`,
     `Trend radar categories: ${input.trendRadarCategoryCount}`,
     `Trend radar opportunities: ${input.trendRadarTopOpportunityCount}`,
+    `Average audit score: ${input.averageAuditScore.toFixed(1)}`,
+    `Audit ready cases: ${input.auditReadyCount}/${input.caseCount}`,
     "",
     "## Cases",
     ""
@@ -318,6 +338,8 @@ function renderMarkdownReport(input: {
     lines.push(`- GH Archive trend repos: ${result.ghArchiveTrendRepoCount}`);
     lines.push(`- Trend radar categories: ${result.trendRadarCategoryCount}`);
     lines.push(`- Trend radar opportunities: ${result.trendRadarTopOpportunityCount}`);
+    lines.push(`- Audit score: ${result.auditScore}`);
+    lines.push(`- Audit ready: ${result.auditReadyCount ? "yes" : "no"}`);
     lines.push("");
   }
 
@@ -394,6 +416,9 @@ async function main() {
       (sum, result) => sum + result.trendRadarTopOpportunityCount,
       0
     ),
+    averageAuditScore:
+      results.reduce((sum, result) => sum + result.auditScore, 0) / results.length,
+    auditReadyCount: results.reduce((sum, result) => sum + result.auditReadyCount, 0),
     results
   };
 
@@ -411,6 +436,8 @@ async function main() {
       `GH Archive used cases: ${report.ghArchiveUsedCount}`,
       `Trend radar categories: ${report.trendRadarCategoryCount}`,
       `Trend radar opportunities: ${report.trendRadarTopOpportunityCount}`,
+      `Average audit score: ${report.averageAuditScore.toFixed(1)}`,
+      `Audit ready cases: ${report.auditReadyCount}/${report.caseCount}`,
       `JSON: ${jsonOutputPath}`,
       `Markdown: ${markdownOutputPath}`
     ].join("\n")

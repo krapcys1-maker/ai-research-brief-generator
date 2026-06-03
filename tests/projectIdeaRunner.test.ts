@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   findBareGithubTokenInEnvText,
   IdeaDiscoveryReportSchema,
+  ProjectIdeaAuditSchema,
   runProjectIdeaDiscovery
 } from "@/lib/project-ideas";
 import { ProjectIdeaInputSchema } from "@/lib/project-research/schemas";
@@ -17,6 +18,8 @@ const requiredFiles = [
   "gh_archive_trends.json",
   "trend_radar.json",
   "trend_radar.md",
+  "project_ideas_audit.json",
+  "project_ideas_audit.md",
   "repo_insights.json",
   "discovered_ideas.json",
   "idea_scores.json",
@@ -177,10 +180,15 @@ describe("runProjectIdeaDiscovery", () => {
     const projectIdeaInputs = JSON.parse(
       await readFile(join(outputDir, "project_idea_inputs.json"), "utf8")
     );
+    const audit = JSON.parse(
+      await readFile(join(outputDir, "project_ideas_audit.json"), "utf8")
+    );
 
     expect(existingCount).toBe(requiredFiles.length);
     expect(manifest.promisingCount).toBeGreaterThanOrEqual(1);
     expect(IdeaDiscoveryReportSchema.parse(report)).toEqual(report);
+    expect(ProjectIdeaAuditSchema.parse(audit)).toEqual(audit);
+    expect(audit.score).toBeGreaterThanOrEqual(70);
     expect(projectIdeaInputs.every((idea: unknown) => ProjectIdeaInputSchema.safeParse(idea).success)).toBe(
       true
     );
@@ -197,8 +205,12 @@ describe("runProjectIdeaDiscovery", () => {
       ghArchiveTrends: {
         startDate: "2025-01-01",
         maxRepos: 5,
+        maxDays: 1,
         maxBytesBilled: 200_000_000,
-        dryRun: false
+        dryRun: false,
+        includeReadme: true,
+        includeIssues: true,
+        timeoutMs: 10_000
       },
       maxIdeas: 3,
       outputLanguage: "pl",

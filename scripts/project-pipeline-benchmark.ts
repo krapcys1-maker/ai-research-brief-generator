@@ -157,6 +157,8 @@ function extractKeyMetrics(report: Record<string, unknown>) {
     "averageIdeaArtifactCompleteness",
     "trendRadarCategoryCount",
     "trendRadarTopOpportunityCount",
+    "averageAuditScore",
+    "auditReadyCount",
     "averageResearchArtifactCompleteness",
     "ideaInputValidCount",
     "briefSchemaValidCount",

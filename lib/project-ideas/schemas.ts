@@ -194,6 +194,42 @@ export const TrendRadarReportSchema = z.object({
   topOpportunities: z.array(TrendRadarOpportunitySchema).default([])
 });
 
+export const ProjectIdeaAuditFindingSchema = z.object({
+  severity: z.enum(["info", "warning", "critical"]),
+  area: z.string().trim().min(1),
+  message: z.string().trim().min(1),
+  evidence: z.array(z.string().trim().min(1)).default([]),
+  action: z.string().trim().min(1)
+});
+
+export const ProjectIdeaAuditSchema = z.object({
+  generatedAt: z.string().trim().min(1),
+  reportId: z.string().trim().min(1),
+  score: z.number().min(0).max(100),
+  readiness: z.enum(["ready", "needs_review", "blocked"]),
+  strengths: z.array(z.string().trim().min(1)).default([]),
+  weaknesses: z.array(ProjectIdeaAuditFindingSchema).default([]),
+  promotionMoves: z.array(z.string().trim().min(1)).default([]),
+  mitigationMoves: z.array(z.string().trim().min(1)).default([]),
+  metrics: z.object({
+    sourceRepoCount: z.number().int().nonnegative(),
+    shortlistCount: z.number().int().nonnegative(),
+    rejectedCount: z.number().int().nonnegative(),
+    cloneRejectionRatio: z.number().min(0).max(1),
+    averageShortlistScore: z.number().min(0).max(100),
+    averageNovelty: z.number().min(0).max(1),
+    averageMvpFeasibility: z.number().min(0).max(1),
+    averageGithubSignalStrength: z.number().min(0).max(1),
+    researchReadyRatio: z.number().min(0).max(1),
+    domainDiversity: z.number().int().nonnegative(),
+    targetUserDiversity: z.number().int().nonnegative(),
+    maxSourceDominance: z.number().min(0).max(1),
+    trendRadarCategoryCount: z.number().int().nonnegative(),
+    trendRadarOpportunityCount: z.number().int().nonnegative(),
+    genericTitleCount: z.number().int().nonnegative()
+  })
+});
+
 export function validateIdeaDiscoveryReport(value: unknown) {
   return IdeaDiscoveryReportSchema.parse(value);
 }

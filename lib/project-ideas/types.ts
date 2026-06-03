@@ -10,6 +10,8 @@ import type {
   GhArchiveTrendResultSchema,
   IdeaScoreSchema,
   IdeaSourceRepoSchema,
+  ProjectIdeaAuditFindingSchema,
+  ProjectIdeaAuditSchema,
   RepoInsightSchema,
   RepoIssueSignalSchema,
   TrendRadarCategorySchema,
@@ -40,3 +42,7 @@ export type TrendRadarRepoSignal = z.infer<typeof TrendRadarRepoSignalSchema>;
 export type TrendRadarCategory = z.infer<typeof TrendRadarCategorySchema>;
 export type TrendRadarOpportunity = z.infer<typeof TrendRadarOpportunitySchema>;
 export type TrendRadarReport = z.infer<typeof TrendRadarReportSchema>;
+export type ProjectIdeaAuditFinding = z.infer<
+  typeof ProjectIdeaAuditFindingSchema
+>;
+export type ProjectIdeaAudit = z.infer<typeof ProjectIdeaAuditSchema>;

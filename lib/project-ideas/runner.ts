@@ -20,6 +20,10 @@ import {
   trendRadarToMarkdown
 } from "@/lib/project-ideas/markdown";
 import { buildTrendRadar } from "@/lib/project-ideas/trendRadar";
+import {
+  auditIdeaDiscoveryReport,
+  projectIdeaAuditToMarkdown
+} from "@/lib/project-ideas/audit";
 import type { BqExecutor } from "@/lib/project-ideas/ghArchiveTrendCollector";
 import type { FetchLike } from "@/lib/project-ideas/githubCollector";
 import type {
@@ -114,6 +118,8 @@ const artifactFiles = {
   ghArchiveTrends: "gh_archive_trends.json",
   trendRadarJson: "trend_radar.json",
   trendRadarMarkdown: "trend_radar.md",
+  projectIdeasAuditJson: "project_ideas_audit.json",
+  projectIdeasAuditMarkdown: "project_ideas_audit.md",
   repoInsights: "repo_insights.json",
   discoveredIdeas: "discovered_ideas.json",
   ideaScores: "idea_scores.json",
@@ -411,6 +417,10 @@ export async function runProjectIdeaDiscovery(
     ? GhArchiveTrendResultSchema.parse(ghArchiveTrendResult)
     : { mode: "not_used" };
   const trendRadarArtifact = TrendRadarReportSchema.parse(trendRadar);
+  const projectIdeasAudit = auditIdeaDiscoveryReport({
+    report,
+    trendRadar: trendRadarArtifact
+  });
   const warnings = [
     ...(githubCollection?.diagnostics.warnings ?? []),
     ...(ghArchiveTrendResult?.diagnostics.warnings ?? []),
@@ -448,6 +458,16 @@ export async function runProjectIdeaDiscovery(
     writeFile(
       join(outputDir, artifactFiles.trendRadarMarkdown),
       trendRadarToMarkdown(trendRadarArtifact),
+      "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.projectIdeasAuditJson),
+      toJson(projectIdeasAudit),
+      "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.projectIdeasAuditMarkdown),
+      projectIdeaAuditToMarkdown(projectIdeasAudit),
       "utf8"
     ),
     writeFile(join(outputDir, artifactFiles.repoInsights), toJson(report.repoInsights), "utf8"),
