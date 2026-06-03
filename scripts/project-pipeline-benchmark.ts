@@ -41,6 +41,12 @@ const benchmarkDefinitions: BenchmarkDefinition[] = [
     jsonPath: "benchmark-results/project-github-collector-latest.json"
   },
   {
+    id: "project_ideas_runner",
+    label: "ProjectIdeasRunner",
+    npmScript: "benchmark:project-ideas-runner",
+    jsonPath: "benchmark-results/project-idea-runner-latest.json"
+  },
+  {
     id: "research_evidence",
     label: "ProjectResearchEvidence",
     npmScript: "benchmark:project-research-evidence",
