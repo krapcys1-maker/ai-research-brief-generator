@@ -6,7 +6,6 @@ function textOf(repo: IdeaSourceRepo) {
     repo.name,
     repo.description,
     repo.topics.join(" "),
-    repo.readmeText,
     repo.issueSignals.map((issue) => `${issue.title} ${issue.body}`).join(" ")
   ]
     .join(" ")
@@ -23,12 +22,21 @@ function unique(values: string[]) {
 
 function inferTargetUsers(text: string) {
   const users: string[] = [];
+  const hasSessionReliabilitySignal = includesAny(text, [
+    "desktop sessions",
+    "parent_session",
+    "sidebar",
+    "session continuity"
+  ]);
 
   if (includesAny(text, ["markdown", "pdf", "office documents", "document conversion"])) {
     users.push("RAG builders", "documentation automation teams");
   }
 
-  if (includesAny(text, ["context compression", "context-window", "token-optimization", "rag chunks"])) {
+  if (
+    !hasSessionReliabilitySignal &&
+    includesAny(text, ["context compression", "context-window", "token-optimization", "rag chunks"])
+  ) {
     users.push("AI agent teams", "RAG platform engineers");
   }
 
@@ -72,16 +80,16 @@ function inferWorkflow(text: string) {
     return "converts heterogeneous documents into Markdown for downstream AI and RAG workflows";
   }
 
+  if (includesAny(text, ["desktop sessions", "parent_session", "sidebar", "session continuity"])) {
+    return "manages AI agent sessions, desktop state, and conversation continuity";
+  }
+
   if (includesAny(text, ["context compression", "context-window", "token-optimization", "rag chunks"])) {
     return "compresses LLM and RAG context to reduce token usage before model calls";
   }
 
   if (includesAny(text, ["provider-management", "claude code", "codex", "gemini cli", "opencode"])) {
     return "switches and configures AI coding CLI providers, models, and routing settings";
-  }
-
-  if (includesAny(text, ["desktop sessions", "parent_session", "sidebar", "session continuity"])) {
-    return "manages AI agent sessions, desktop state, and conversation continuity";
   }
 
   if (includesAny(text, ["self-hosted ai workspace", "local-first", "privacy-first", "secrets at rest"])) {
@@ -162,16 +170,16 @@ function inferProblem(repo: IdeaSourceRepo, text: string) {
     return "Document conversion pipelines are useful, but downstream AI teams still need QA for structure loss, unsafe inputs, and broken Markdown.";
   }
 
+  if (includesAny(text, ["desktop sessions", "parent_session", "sidebar", "session continuity"])) {
+    return "AI agent products need reliable conversation and desktop session continuity before users can trust long-running workflows.";
+  }
+
   if (includesAny(text, ["context compression", "context-window", "token-optimization", "rag chunks"])) {
     return "Context compression saves tokens, but teams need evidence that important facts and code intent were not lost.";
   }
 
   if (includesAny(text, ["provider-management", "claude code", "codex", "gemini cli", "opencode"])) {
     return "AI coding CLI users need reliable provider routing and clear diagnosis when auth, capability, or model routing fails.";
-  }
-
-  if (includesAny(text, ["desktop sessions", "parent_session", "sidebar", "session continuity"])) {
-    return "AI agent products need reliable conversation and desktop session continuity before users can trust long-running workflows.";
   }
 
   if (includesAny(text, ["self-hosted ai workspace", "local-first", "privacy-first", "secrets at rest"])) {

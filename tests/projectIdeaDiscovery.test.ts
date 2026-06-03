@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  analyzeIdeaSourceRepo,
   discoverProjectIdeas,
   IdeaDiscoveryReportSchema,
   scoreIdea
@@ -316,6 +317,51 @@ describe("discoverProjectIdeas", () => {
     expect(report.shortlist[0]?.originalInspiration).not.toContain(
       "medical documentation"
     );
+  });
+
+  it("does not let noisy README feature text override repo workflow classification", () => {
+    const insight = analyzeIdeaSourceRepo(
+      sourceRepo({
+        repoId: "repo_noisy_workspace",
+        name: "odysseus",
+        owner: "pewdiepie-archdaemon",
+        description: "Self-hosted AI workspace.",
+        topics: [],
+        readmeText:
+          "A self-hosted AI workspace with chat, agents, local data, tools, memory, email, calendar, documents, Markdown editor, CSV import, and deployment settings.",
+        issueSignals: []
+      })
+    );
+
+    expect(insight.coreWorkflow).toContain("self-hosted AI workspace");
+    expect(insight.coreWorkflow).not.toContain("Markdown");
+    expect(insight.problemSolved).toContain("Self-hosted AI workspaces");
+  });
+
+  it("prioritizes session reliability issues over incidental context compression mentions", () => {
+    const insight = analyzeIdeaSourceRepo(
+      sourceRepo({
+        repoId: "repo_hermes_session_bug",
+        name: "hermes-agent",
+        owner: "NousResearch",
+        description: "AI agent desktop client.",
+        topics: ["ai-agent", "desktop-app"],
+        readmeText: "Agent CLI with memory, tools and sessions.",
+        issueSignals: [
+          {
+            title:
+              "Desktop sessions get spurious parent_session_id, making them invisible from sidebar",
+            body:
+              "A legitimate compression child has context-compression continuation, but this bug is a desktop session parent link failure.",
+            labels: ["bug"]
+          }
+        ]
+      })
+    );
+
+    expect(insight.coreWorkflow).toContain("AI agent sessions");
+    expect(insight.problemSolved).toContain("session continuity");
+    expect(insight.coreWorkflow).not.toContain("compresses LLM");
   });
 
   it("deduplicates repeated shortlist ideas across similar source repos", () => {
