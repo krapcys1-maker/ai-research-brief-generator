@@ -27,7 +27,9 @@ function parseArgs(argv: string[]): CliArgs {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const raw = await readFile(args.inputPath, "utf8");
-  const input = parseProjectResearchRunnerInput(JSON.parse(raw));
+  const input = parseProjectResearchRunnerInput(
+    JSON.parse(raw.replace(/^\uFEFF/, ""))
+  );
   const manifest = await runProjectResearch({
     ...input,
     outputDir: args.outputDir

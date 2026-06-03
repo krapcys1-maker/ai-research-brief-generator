@@ -47,6 +47,12 @@ const benchmarkDefinitions: BenchmarkDefinition[] = [
     jsonPath: "benchmark-results/project-research-runner-latest.json"
   },
   {
+    id: "project_cli",
+    label: "ProjectCLI",
+    npmScript: "benchmark:project-cli",
+    jsonPath: "benchmark-results/project-cli-latest.json"
+  },
+  {
     id: "project_prd",
     label: "ProjectPRD",
     npmScript: "benchmark:project-prd",
