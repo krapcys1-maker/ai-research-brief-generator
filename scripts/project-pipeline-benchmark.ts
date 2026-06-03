@@ -23,6 +23,12 @@ type BenchmarkSummary = {
 
 const benchmarkDefinitions: BenchmarkDefinition[] = [
   {
+    id: "project_docs",
+    label: "ProjectDocs",
+    npmScript: "benchmark:project-docs",
+    jsonPath: "benchmark-results/project-docs-consistency-latest.json"
+  },
+  {
     id: "research_plan",
     label: "ResearchPlan",
     npmScript: "benchmark:project-research-plan",
@@ -146,6 +152,9 @@ function extractKeyMetrics(report: Record<string, unknown>) {
   const metrics: Record<string, number | string | boolean> = {};
   const metricKeys = [
     "averageExpectedBucketRecall",
+    "scriptPassCount",
+    "artifactPassCount",
+    "metricPassCount",
     "singleQueryFailureCount",
     "promisingCount",
     "cloneRejectedCount",

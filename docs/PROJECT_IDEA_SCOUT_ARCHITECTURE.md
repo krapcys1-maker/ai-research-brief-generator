@@ -13,7 +13,10 @@ GitHub repos
 -> adjacent idea generation
 -> novelty guard
 -> scoring
+-> per-source shortlist cap
 -> shortlist
+-> trend radar
+-> idea quality audit
 -> ProjectIdeaInput
 -> project:research
 ```
@@ -40,11 +43,16 @@ Then it should produce an idea with a different user, workflow, scope, integrati
 Project Idea Scout
   |
   +--> GitHub Signal Collector
+  +--> GH Archive / BigQuery Trend Collector
   +--> Repo Analyzer
   +--> Problem Pattern Extractor
   +--> Adjacent Idea Generator
   +--> Novelty Guard
+  +--> AI Idea Guardrail Benchmark
   +--> Idea Ranker
+  +--> Per-Source Shortlist Selector
+  +--> Trend Radar
+  +--> Project Idea System Audit
   +--> Idea Discovery Report
   |
   v
@@ -54,11 +62,11 @@ Project Research Runner
 ProjectResearchBrief -> PRD -> Architecture
 ```
 
-## MVP Phases
+## Implemented Phases
 
 ### Phase 0: Mocked Repositories
 
-Build logic and benchmark first. Do not start by debugging live GitHub rate limits.
+Implemented. The deterministic pipeline can run from mocked or recorded repository signals before touching live APIs.
 
 Mock input:
 
@@ -83,7 +91,7 @@ type IdeaSourceRepo = {
 
 ### Phase 1: GitHub Search API
 
-Use GitHub Search API before scraping GitHub Trending HTML.
+Implemented. GitHub Search API enrichment supports README/issues fetching, cache, timeout diagnostics, and rate-limit diagnostics.
 
 Example queries:
 
@@ -95,7 +103,11 @@ stars:>100 language:typescript topic:agent
 
 The collector should report rate limits, cache results, and work with or without `GITHUB_TOKEN`.
 
-### Phase 2: Extra Signals
+### Phase 2: GH Archive Trend Sampling
+
+Implemented with budget guards. GH Archive / BigQuery collection uses exact date tables, dry-run estimates, `maxDays`, and `maxBytesBilled`.
+
+### Phase 3: Extra Signals
 
 Later sources:
 
@@ -154,6 +166,23 @@ type IdeaScore = {
 };
 ```
 
+Current report metrics also include:
+
+```ts
+type IdeaDiscoveryMetrics = {
+  ideaCount: number;
+  promisingCount: number;
+  cloneRejectedCount: number;
+  averageNovelty: number;
+  averageMvpFeasibility: number;
+  averageGithubSignalStrength: number;
+  shortlistSourceDominance: number;
+  maxIdeasPerSource: number;
+  researchReadyCount: number;
+  pipelineInputValidCount: number;
+};
+```
+
 ## Scoring
 
 Initial weights:
@@ -187,6 +216,39 @@ Reject weak clones:
 - if `cloneRisk = high`, verdict cannot be better than `needs_research`,
 - "chatbot for X" without a workflow is rejected.
 
+## Shortlist Diversity Guard
+
+The shortlist selector caps ideas per source repository.
+
+Default:
+
+```text
+maxIdeasPerSource = 1
+```
+
+This prevents one popular repository from filling the entire shortlist. Larger runs should raise `maxIdeas` before raising `maxIdeasPerSource`.
+
+Measured fields:
+
+```text
+shortlistSourceDominance
+maxIdeasPerSource
+```
+
+## AI Guardrail Benchmark
+
+Script:
+
+```text
+npm run benchmark:project-ai-ideas
+```
+
+Purpose:
+
+- compare raw clone-shaped AI candidates against guarded adjacent candidates,
+- reject converter/compressor/workspace clones,
+- keep QA, audit, diagnostic, readiness and reliability ideas.
+
 ## Integration With Current Pipeline
 
 Top ideas are converted to `ProjectIdeaInput`:
@@ -207,7 +269,7 @@ Then the existing CLI can run:
 npm run project:research -- --input idea.json --out run-output
 ```
 
-## Planned Files
+## Implemented Files
 
 ```text
 lib/project-ideas/schemas.ts
@@ -215,11 +277,22 @@ lib/project-ideas/types.ts
 lib/project-ideas/repoAnalyzer.ts
 lib/project-ideas/ideaGenerator.ts
 lib/project-ideas/noveltyGuard.ts
+lib/project-ideas/aiIdeaPrompt.ts
+lib/project-ideas/aiIdeaBenchmark.ts
+lib/project-ideas/audit.ts
+lib/project-ideas/trendRadar.ts
+lib/project-ideas/githubCollector.ts
+lib/project-ideas/ghArchiveTrendCollector.ts
 lib/project-ideas/ranker.ts
 lib/project-ideas/runner.ts
 lib/project-ideas/index.ts
 scripts/project-idea-discovery-benchmark.ts
+scripts/project-ai-idea-benchmark.ts
+scripts/project-idea-runner-benchmark.ts
 tests/projectIdeaDiscovery.test.ts
+tests/projectAiIdeaPrompt.test.ts
+tests/projectAiIdeaBenchmark.test.ts
+tests/projectIdeaAudit.test.ts
 ```
 
 CLI:
@@ -233,6 +306,12 @@ Artifacts:
 ```text
 manifest.json
 source_repos.json
+github_collection.json
+gh_archive_trends.json
+trend_radar.json
+trend_radar.md
+project_ideas_audit.json
+project_ideas_audit.md
 repo_insights.json
 discovered_ideas.json
 idea_scores.json
@@ -247,6 +326,7 @@ Script:
 
 ```text
 npm run benchmark:project-ideas
+npm run benchmark:project-architecture
 ```
 
 Minimum domains:
@@ -269,6 +349,8 @@ cloneRejectedCount
 averageNovelty
 averageMvpFeasibility
 averageGithubSignalStrength
+shortlistSourceDominance
+maxIdeasPerSource
 researchReadyCount
 pipelineInputValidCount
 ```
@@ -285,14 +367,11 @@ averageMvpFeasibility >= 0.70
 researchReadyCount >= 5
 ```
 
-## Next Implementation Step
+## Current Optimization Loop
 
-Build Phase 0:
-
-1. Add schemas and types.
-2. Add deterministic repo analyzer for mocked repos.
-3. Add adjacent idea generator.
-4. Add novelty guard and ranker.
-5. Add benchmark with at least five domains.
-6. Add conversion from top ideas to `ProjectIdeaInput`.
-
+1. Run `npm run benchmark:project-pipeline`.
+2. Inspect `project_ideas_audit.json` for blocked or weak runs.
+3. If AI output is involved, run `npm run benchmark:project-ai-ideas`.
+4. If a source dominates the shortlist, lower or keep `maxIdeasPerSource=1`.
+5. If research/architecture quality drops, add a fixture before tuning prompts.
+6. Commit only code/docs/benchmarks, not local `runs/` artifacts.

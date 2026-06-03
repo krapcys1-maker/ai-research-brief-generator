@@ -33,6 +33,22 @@ Last updated: 2026-06-02
 - Keep `npm run benchmark:quality-gate` in CI so retrieval, source-quality, and
   claim-check regressions fail before deploy.
 
+## P1: Project Idea And Architecture Quality
+
+- Keep `npm run benchmark:project-pipeline` in CI so idea discovery, AI idea
+  guardrails, GitHub collection, GH Archive cost safety, research, PRD and
+  architecture regressions fail before deploy.
+- Add docs/script consistency checks so project pipeline documentation cannot
+  drift from available commands and artifacts.
+- Expand recorded GitHub fixtures for noisy README text, multilingual issues,
+  session reliability, provider routing, document conversion, context
+  compression and self-hosted AI governance.
+- Add `ProjectIdeaInput` handoff quality scoring before research spend.
+- Add architecture judge scoring that compares generated architecture against
+  research evidence, PRD requirements and project idea audit findings.
+- Add controlled live GH Archive batch sampling with strict byte caps and
+  cached GitHub enrichment.
+
 ## P2: Product UX
 
 - Add user accounts and private saved topics.

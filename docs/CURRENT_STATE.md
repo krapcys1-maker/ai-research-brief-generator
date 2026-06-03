@@ -36,6 +36,12 @@ The third product mode compares user claims with retrieved scientific evidence:
 paste/upload text -> extract candidate claims -> user selects claims -> academic search per claim -> rank papers -> retrieve evidence -> claim-evidence matrix
 ```
 
+The project planning mode turns external software/project signals into research-ready product ideas and architecture artifacts:
+
+```text
+GitHub / GH Archive signals -> trend radar -> adjacent idea discovery -> anti-clone guard -> shortlist audit -> ProjectIdeaInput -> research brief -> PRD -> architecture
+```
+
 ## Implemented Capabilities
 
 - Home page research form with query, source selection, year range, source preflight, and generation progress.
@@ -138,6 +144,25 @@ paste/upload text -> extract candidate claims -> user selects claims -> academic
   - The dashboard includes a simple Getting started checklist that derives
     onboarding progress from actual scoped resources: first brief, document,
     project, collection, paper note, share link, and export.
+- Project Idea Scout and project research pipeline:
+  - `npm run project:ideas` turns source repositories, GitHub Search, or GH
+    Archive trend repos into adjacent non-clone product ideas.
+  - GitHub enrichment can fetch README and issue signals with authenticated
+    token loading from `.env`.
+  - GH Archive / BigQuery trend collection uses exact date tables, dry-run
+    estimates, `maxDays`, and `maxBytesBilled` to control cost.
+  - Trend radar artifacts summarize heat, sexiness, feasibility and opportunity
+    angles.
+  - AI idea guardrails reject clone-shaped raw AI ideas and keep adjacent
+    QA/audit/diagnostic/reliability ideas.
+  - Shortlist selection uses `maxIdeasPerSource` to prevent one repository from
+    dominating larger batches.
+  - Project idea audit artifacts report strengths, weaknesses, readiness,
+    promotion moves and mitigation moves before research/architecture spend.
+  - `npm run project:research` turns `ProjectIdeaInput` into research brief,
+    PRD and architecture artifacts.
+  - `npm run benchmark:project-pipeline` aggregates the project planning
+    benchmark suite.
 - Saved topics / research projects:
   - `ResearchProject` stores title, standing query, optional description,
     preferred sources, and session/user/workspace ownership metadata.
