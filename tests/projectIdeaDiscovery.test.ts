@@ -3,9 +3,10 @@ import {
   analyzeIdeaSourceRepo,
   discoverProjectIdeas,
   IdeaDiscoveryReportSchema,
-  scoreIdea
+  scoreIdea,
+  selectShortlistIdeas
 } from "@/lib/project-ideas";
-import type { IdeaSourceRepo } from "@/lib/project-ideas";
+import type { DiscoveredIdea, IdeaScore, IdeaSourceRepo } from "@/lib/project-ideas";
 import { buildProjectResearchPlan } from "@/lib/project-research";
 
 function sourceRepo(overrides: Partial<IdeaSourceRepo>): IdeaSourceRepo {
@@ -32,6 +33,52 @@ function sourceRepo(overrides: Partial<IdeaSourceRepo>): IdeaSourceRepo {
       }
     ],
     ...overrides
+  };
+}
+
+function discoveredIdea(overrides: Partial<DiscoveredIdea>): DiscoveredIdea {
+  return {
+    ideaId: "idea_a",
+    title: "Document Conversion QA Harness",
+    oneSentence:
+      "Document Conversion QA Harness helps RAG builders test conversion quality.",
+    problem:
+      "RAG builders need to catch broken tables and lost structure before ingestion.",
+    targetUsers: ["RAG builders"],
+    mvpScope: [
+      "ingest converted Markdown",
+      "detect structure regressions",
+      "produce QA reports"
+    ],
+    nonGoals: ["do not clone source repository"],
+    sourceRepos: ["repo_a"],
+    originalInspiration: "repo a",
+    differentiation: ["tests conversion quality instead of doing conversion"],
+    aiLeverage: ["classifies conversion failures"],
+    researchQuestions: [
+      "Which conversion failures hurt retrieval?",
+      "How should conversion quality be scored?"
+    ],
+    risks: [],
+    domains: ["document AI"],
+    ...overrides
+  };
+}
+
+function ideaScore(ideaId: string, total: number): IdeaScore {
+  return {
+    ideaId,
+    total,
+    problemClarity: 0.95,
+    userSpecificity: 0.95,
+    githubSignalStrength: 0.95,
+    novelty: 0.95,
+    mvpFeasibility: 0.95,
+    researchLeverage: 0.95,
+    businessPotential: 0.8,
+    riskPenalty: 0,
+    verdict: "promising",
+    reasons: ["test score"]
   };
 }
 
@@ -387,6 +434,41 @@ describe("discoverProjectIdeas", () => {
 
     expect(titles).toEqual([...new Set(titles)]);
     expect(titles.filter((title) => title === "AI Technical Debt Sprint Planner")).toHaveLength(1);
+  });
+
+  it("caps shortlist ideas per source repo to preserve discovery diversity", () => {
+    const ideas = [
+      discoveredIdea({
+        ideaId: "idea_repo_a_top",
+        title: "Repo A Top QA Monitor",
+        sourceRepos: ["repo_a"]
+      }),
+      discoveredIdea({
+        ideaId: "idea_repo_a_second",
+        title: "Repo A Second QA Monitor",
+        sourceRepos: ["repo_a"]
+      }),
+      discoveredIdea({
+        ideaId: "idea_repo_b_lower",
+        title: "Repo B Lower QA Monitor",
+        sourceRepos: ["repo_b"]
+      })
+    ];
+    const shortlist = selectShortlistIdeas({
+      discoveredIdeas: ideas,
+      ideaScores: [
+        ideaScore("idea_repo_a_top", 99),
+        ideaScore("idea_repo_a_second", 98),
+        ideaScore("idea_repo_b_lower", 80)
+      ],
+      maxIdeas: 3,
+      maxIdeasPerSource: 1
+    });
+
+    expect(shortlist.map((idea) => idea.ideaId)).toEqual([
+      "idea_repo_a_top",
+      "idea_repo_b_lower"
+    ]);
   });
 
   it("keeps strong adjacent ideas from popular repos in the promising shortlist", () => {

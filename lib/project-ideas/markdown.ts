@@ -19,6 +19,8 @@ export function ideaDiscoveryReportToMarkdown(report: IdeaDiscoveryReport) {
     `**Source repos:** ${report.sourceRepos.length}`,
     `**Ideas:** ${report.metrics.ideaCount}`,
     `**Promising:** ${report.metrics.promisingCount}`,
+    `**Max ideas per source:** ${report.metrics.maxIdeasPerSource}`,
+    `**Shortlist source dominance:** ${report.metrics.shortlistSourceDominance}`,
     `**Clone rejections:** ${report.metrics.cloneRejectedCount}`,
     `**Research ready:** ${report.metrics.researchReadyCount}`,
     "",

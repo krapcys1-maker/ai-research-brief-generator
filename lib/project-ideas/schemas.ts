@@ -80,6 +80,7 @@ export const IdeaDiscoveryInputSchema = z.object({
   domain: z.string().trim().min(2),
   constraints: z.array(z.string().trim().min(1)).default([]),
   maxIdeas: z.number().int().min(1).max(25).default(5),
+  maxIdeasPerSource: z.number().int().min(1).max(5).default(1),
   sourceRepos: z.array(IdeaSourceRepoSchema).min(1),
   outputLanguage: z.string().trim().min(2).default("pl")
 });
@@ -102,6 +103,8 @@ export const IdeaDiscoveryReportSchema = z.object({
     averageNovelty: z.number().min(0).max(1),
     averageMvpFeasibility: z.number().min(0).max(1),
     averageGithubSignalStrength: z.number().min(0).max(1),
+    shortlistSourceDominance: z.number().min(0).max(1),
+    maxIdeasPerSource: z.number().int().min(1),
     researchReadyCount: z.number().int().nonnegative(),
     pipelineInputValidCount: z.number().int().nonnegative()
   })

@@ -43,6 +43,7 @@ async function main() {
       `Source repos: ${manifest.sourceRepoCount}`,
       `Ideas: ${manifest.ideaCount}`,
       `Promising: ${manifest.promisingCount}`,
+      `Max ideas per source: ${manifest.maxIdeasPerSource}`,
       `Clone rejections: ${manifest.cloneRejectedCount}`,
       `Project idea inputs: ${manifest.projectIdeaInputCount}`,
       `GitHub mode: ${manifest.githubMode}`,

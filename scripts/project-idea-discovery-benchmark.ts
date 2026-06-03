@@ -24,6 +24,8 @@ type CaseResult = {
   averageNovelty: number;
   averageMvpFeasibility: number;
   averageGithubSignalStrength: number;
+  shortlistSourceDominance: number;
+  maxIdeasPerSource: number;
   researchReadyCount: number;
   pipelineInputValidCount: number;
   passed: boolean;
@@ -190,6 +192,54 @@ const cases: BenchmarkCase[] = [
           "Charts are not useful when data has missing values, duplicates, or broken joins."
       })
     ]
+  },
+  {
+    id: "multi_source_diversity",
+    domain: "AI developer infrastructure",
+    constraints: ["preserve source diversity", "avoid clone-shaped ideas"],
+    sourceRepos: [
+      repo({
+        repoId: "repo_markitdown",
+        name: "markitdown",
+        description: "Tool for converting documents to Markdown.",
+        topics: ["markdown", "pdf", "document-ai"],
+        primaryLanguage: "Python",
+        stars: 18_000,
+        forks: 1200,
+        openIssues: 120,
+        readmeText:
+          "Converts PDF, Office, CSV, and other documents to Markdown for downstream LLM and RAG workflows.",
+        issueTitle: "CsvConverter produces broken Markdown tables",
+        issueBody: "Pipe characters in cells break converted Markdown tables."
+      }),
+      repo({
+        repoId: "repo_headroom",
+        name: "headroom",
+        description: "Context compression for LLM and RAG workflows.",
+        topics: ["context-compression", "rag", "llm"],
+        primaryLanguage: "Rust",
+        stars: 12_000,
+        forks: 800,
+        openIssues: 90,
+        readmeText:
+          "Compresses context windows and RAG chunks to reduce token usage.",
+        issueTitle: "Need factual fidelity checks",
+        issueBody: "Compression can lose facts, code intent, or retrieval evidence."
+      }),
+      repo({
+        repoId: "repo_cc_switch",
+        name: "cc-switch",
+        description: "Switches AI CLI providers and model routing.",
+        topics: ["codex", "claude-code", "provider-management"],
+        stars: 9000,
+        forks: 700,
+        openIssues: 75,
+        readmeText:
+          "Configure provider routing for Codex, Claude Code, OpenCode, and Gemini CLI.",
+        issueTitle: "Third-party provider returns 403 in Codex",
+        issueBody: "The same provider works in one CLI but fails in another."
+      })
+    ]
   }
 ];
 
@@ -205,6 +255,8 @@ function evaluateCase(testCase: BenchmarkCase): CaseResult {
   const pipelineInputValidCount = report.projectIdeaInputs.filter(
     (idea) => ProjectIdeaInputSchema.safeParse(idea).success
   ).length;
+  const sourceDiversityPass =
+    testCase.sourceRepos.length < 2 || report.metrics.shortlistSourceDominance <= 0.5;
   const passed =
     parsed.success &&
     report.metrics.ideaCount >= 2 &&
@@ -212,6 +264,7 @@ function evaluateCase(testCase: BenchmarkCase): CaseResult {
     report.metrics.cloneRejectedCount >= 1 &&
     report.metrics.averageNovelty >= 0.7 &&
     report.metrics.averageMvpFeasibility >= 0.7 &&
+    sourceDiversityPass &&
     report.metrics.researchReadyCount >= 1 &&
     pipelineInputValidCount === report.metrics.promisingCount;
 
@@ -225,6 +278,8 @@ function evaluateCase(testCase: BenchmarkCase): CaseResult {
     averageNovelty: report.metrics.averageNovelty,
     averageMvpFeasibility: report.metrics.averageMvpFeasibility,
     averageGithubSignalStrength: report.metrics.averageGithubSignalStrength,
+    shortlistSourceDominance: report.metrics.shortlistSourceDominance,
+    maxIdeasPerSource: report.metrics.maxIdeasPerSource,
     researchReadyCount: report.metrics.researchReadyCount,
     pipelineInputValidCount,
     passed,
@@ -247,6 +302,8 @@ function renderMarkdownReport(input: {
   averageNovelty: number;
   averageMvpFeasibility: number;
   averageGithubSignalStrength: number;
+  averageShortlistSourceDominance: number;
+  maxIdeasPerSource: number;
   researchReadyCount: number;
   pipelineInputValidCount: number;
   results: CaseResult[];
@@ -264,6 +321,8 @@ function renderMarkdownReport(input: {
     `Average novelty: ${pct(input.averageNovelty)}`,
     `Average MVP feasibility: ${pct(input.averageMvpFeasibility)}`,
     `Average GitHub signal: ${pct(input.averageGithubSignalStrength)}`,
+    `Average shortlist source dominance: ${pct(input.averageShortlistSourceDominance)}`,
+    `Max ideas per source: ${input.maxIdeasPerSource}`,
     `Research-ready ideas: ${input.researchReadyCount}`,
     `Pipeline inputs valid: ${input.pipelineInputValidCount}`,
     "",
@@ -280,6 +339,8 @@ function renderMarkdownReport(input: {
     lines.push(`- Average novelty: ${pct(result.averageNovelty)}`);
     lines.push(`- Average MVP feasibility: ${pct(result.averageMvpFeasibility)}`);
     lines.push(`- Average GitHub signal: ${pct(result.averageGithubSignalStrength)}`);
+    lines.push(`- Shortlist source dominance: ${pct(result.shortlistSourceDominance)}`);
+    lines.push(`- Max ideas per source: ${result.maxIdeasPerSource}`);
     lines.push(`- Research-ready: ${result.researchReadyCount}`);
     lines.push(`- Pipeline inputs valid: ${result.pipelineInputValidCount}`);
     lines.push(`- Top idea: ${result.topIdeaTitle ?? "none"}`);
@@ -315,6 +376,10 @@ async function main() {
     averageGithubSignalStrength: Number(
       average(results.map((result) => result.averageGithubSignalStrength)).toFixed(3)
     ),
+    averageShortlistSourceDominance: Number(
+      average(results.map((result) => result.shortlistSourceDominance)).toFixed(3)
+    ),
+    maxIdeasPerSource: Math.max(...results.map((result) => result.maxIdeasPerSource)),
     researchReadyCount: results.reduce(
       (sum, result) => sum + result.researchReadyCount,
       0
@@ -337,6 +402,8 @@ async function main() {
       `Clone rejections: ${report.cloneRejectedCount}`,
       `Average novelty: ${pct(report.averageNovelty)}`,
       `Average MVP feasibility: ${pct(report.averageMvpFeasibility)}`,
+      `Average shortlist source dominance: ${pct(report.averageShortlistSourceDominance)}`,
+      `Max ideas per source: ${report.maxIdeasPerSource}`,
       `Research-ready ideas: ${report.researchReadyCount}`,
       `JSON: ${jsonOutputPath}`,
       `Markdown: ${markdownOutputPath}`
@@ -352,4 +419,3 @@ main().catch((error: unknown) => {
   console.error(error);
   process.exitCode = 1;
 });
-

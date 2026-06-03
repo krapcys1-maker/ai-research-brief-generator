@@ -67,6 +67,7 @@ export const ProjectIdeaDiscoveryRunnerInputSchema = z
     domain: z.string().trim().min(2),
     constraints: z.array(z.string().trim().min(1)).default([]),
     maxIdeas: z.number().int().min(1).max(25).default(5),
+    maxIdeasPerSource: z.number().int().min(1).max(5).default(1),
     outputLanguage: z.string().trim().min(2).default("pl"),
     sourceRepos: z.array(IdeaSourceRepoSchema).min(1).optional(),
     githubSearch: GithubSearchRunnerSchema.optional(),
@@ -94,6 +95,7 @@ export type ProjectIdeaDiscoveryRunManifest = {
   sourceRepoCount: number;
   ideaCount: number;
   promisingCount: number;
+  maxIdeasPerSource: number;
   cloneRejectedCount: number;
   projectIdeaInputCount: number;
   githubMode: "not_used" | "used";
@@ -247,6 +249,59 @@ function uniqueIdeasByTitle(ideas: DiscoveredIdea[]) {
   return unique;
 }
 
+function sourceDominance(ideas: DiscoveredIdea[]) {
+  if (ideas.length === 0) {
+    return 0;
+  }
+
+  const counts = new Map<string, number>();
+
+  for (const idea of ideas) {
+    const source = idea.sourceRepos[0] ?? "unknown";
+    counts.set(source, (counts.get(source) ?? 0) + 1);
+  }
+
+  return Math.max(...counts.values()) / ideas.length;
+}
+
+export function selectShortlistIdeas(input: {
+  discoveredIdeas: DiscoveredIdea[];
+  ideaScores: IdeaScore[];
+  maxIdeas: number;
+  maxIdeasPerSource: number;
+}) {
+  const perSourceCounts = new Map<string, number>();
+  const candidates = input.discoveredIdeas
+    .filter((idea) => scoreFor(idea, input.ideaScores).verdict === "promising")
+    .sort(
+      (left, right) =>
+        scoreFor(right, input.ideaScores).total -
+        scoreFor(left, input.ideaScores).total
+    )
+    .reduce<DiscoveredIdea[]>(
+      (unique, idea) => uniqueIdeasByTitle([...unique, idea]),
+      []
+    );
+  const selected: DiscoveredIdea[] = [];
+
+  for (const idea of candidates) {
+    const source = idea.sourceRepos[0] ?? "unknown";
+    const sourceCount = perSourceCounts.get(source) ?? 0;
+    if (sourceCount >= input.maxIdeasPerSource) {
+      continue;
+    }
+
+    selected.push(idea);
+    perSourceCounts.set(source, sourceCount + 1);
+
+    if (selected.length >= input.maxIdeas) {
+      break;
+    }
+  }
+
+  return selected;
+}
+
 export function discoverProjectIdeas(value: unknown): IdeaDiscoveryReport {
   const input = IdeaDiscoveryInputSchema.parse(value);
   const repoInsights = analyzeIdeaSourceRepos(input.sourceRepos);
@@ -263,11 +318,12 @@ export function discoverProjectIdeas(value: unknown): IdeaDiscoveryReport {
   const rejectedIdeas = discoveredIdeas.filter(
     (idea) => scoreFor(idea, ideaScores).verdict === "reject"
   );
-  const shortlist = discoveredIdeas
-    .filter((idea) => scoreFor(idea, ideaScores).verdict === "promising")
-    .sort((left, right) => scoreFor(right, ideaScores).total - scoreFor(left, ideaScores).total)
-    .reduce<DiscoveredIdea[]>((unique, idea) => uniqueIdeasByTitle([...unique, idea]), [])
-    .slice(0, input.maxIdeas);
+  const shortlist = selectShortlistIdeas({
+    discoveredIdeas,
+    ideaScores,
+    maxIdeas: input.maxIdeas,
+    maxIdeasPerSource: input.maxIdeasPerSource
+  });
   const projectIdeaInputs = shortlist.map((idea) =>
     toProjectIdeaInput(idea, input.outputLanguage)
   );
@@ -288,6 +344,8 @@ export function discoverProjectIdeas(value: unknown): IdeaDiscoveryReport {
     averageGithubSignalStrength: Number(
       average(shortlistedScores.map((score) => score.githubSignalStrength)).toFixed(3)
     ),
+    shortlistSourceDominance: Number(sourceDominance(shortlist).toFixed(3)),
+    maxIdeasPerSource: input.maxIdeasPerSource,
     researchReadyCount: shortlist.filter((idea) => idea.researchQuestions.length >= 2).length,
     pipelineInputValidCount: projectIdeaInputs.length
   };
@@ -332,6 +390,7 @@ function createManifest(input: {
     sourceRepoCount: input.report.sourceRepos.length,
     ideaCount: input.report.metrics.ideaCount,
     promisingCount: input.report.metrics.promisingCount,
+    maxIdeasPerSource: input.report.metrics.maxIdeasPerSource,
     cloneRejectedCount: input.report.metrics.cloneRejectedCount,
     projectIdeaInputCount: input.report.projectIdeaInputs.length,
     githubMode: input.githubMode,
@@ -401,6 +460,7 @@ export async function runProjectIdeaDiscovery(
     domain: parsed.domain,
     constraints: parsed.constraints,
     maxIdeas: parsed.maxIdeas,
+    maxIdeasPerSource: parsed.maxIdeasPerSource,
     outputLanguage: parsed.outputLanguage,
     sourceRepos
   });

@@ -152,6 +152,8 @@ function extractKeyMetrics(report: Record<string, unknown>) {
     "averageNovelty",
     "averageMvpFeasibility",
     "averageGithubSignalStrength",
+    "averageShortlistSourceDominance",
+    "maxIdeasPerSource",
     "rawRejectCount",
     "guardedUsableCount",
     "guardedStrongCount",

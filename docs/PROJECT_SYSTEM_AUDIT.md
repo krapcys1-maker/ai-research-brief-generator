@@ -48,6 +48,7 @@ The audit scores:
 - source repo count,
 - shortlist count,
 - clone rejection ratio,
+- max ideas per source,
 - average shortlist score,
 - average novelty,
 - MVP feasibility,
@@ -74,6 +75,14 @@ The system also includes a first-class AI idea guardrail benchmark:
 - output: `benchmark-results/project-ai-idea-latest.md`
 
 This benchmark uses controlled raw-vs-guarded AI candidate fixtures. It verifies that clone-like raw AI ideas are rejected, while guarded adjacent QA/audit/diagnostic ideas are kept.
+
+The shortlist selector now applies a per-source cap:
+
+- default: `maxIdeasPerSource = 1`
+- runner manifest field: `maxIdeasPerSource`
+- report metrics: `shortlistSourceDominance`, `maxIdeasPerSource`
+
+This prevents one popular GitHub repository from filling the whole shortlist when larger GH Archive batches are used.
 
 ## Current Smoke Result
 
@@ -108,6 +117,5 @@ Do not move an idea into expensive research or architecture generation unless:
 
 ## Next Optimization Targets
 
-- Add per-source shortlist caps when using larger GH Archive batches.
 - Add live trend batch sampling with strict cost ceilings and cached enrichment.
 - Add architecture judge scoring that compares generated architecture against audit findings and research evidence.
