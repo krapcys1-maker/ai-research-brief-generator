@@ -57,6 +57,7 @@ const requiredMetrics = [
   "cloneRejectedCount",
   "averageNovelty",
   "averageMvpFeasibility",
+  "averagePersonalUtility",
   "averageHandoffQualityScore",
   "handoffReadyCount",
   "averageJudgeScore",

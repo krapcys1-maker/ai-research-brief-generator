@@ -20,6 +20,7 @@ type CaseResult = {
   cloneRejectedCount: number;
   averageNovelty: number;
   averageMvpFeasibility: number;
+  averagePersonalUtility: number;
   averageGithubSignalStrength: number;
   shortlistSourceDominance: number;
   maxIdeasPerSource: number;
@@ -74,6 +75,7 @@ function evaluateCase(testCase: ProjectIdeaBenchmarkCase): CaseResult {
     report.metrics.cloneRejectedCount >= 1 &&
     report.metrics.averageNovelty >= 0.7 &&
     report.metrics.averageMvpFeasibility >= 0.7 &&
+    report.metrics.averagePersonalUtility >= 0.7 &&
     sourceDiversityPass &&
     topIdeaMatchesExpectation &&
     report.metrics.researchReadyCount >= 1 &&
@@ -91,6 +93,7 @@ function evaluateCase(testCase: ProjectIdeaBenchmarkCase): CaseResult {
     cloneRejectedCount: report.metrics.cloneRejectedCount,
     averageNovelty: report.metrics.averageNovelty,
     averageMvpFeasibility: report.metrics.averageMvpFeasibility,
+    averagePersonalUtility: report.metrics.averagePersonalUtility,
     averageGithubSignalStrength: report.metrics.averageGithubSignalStrength,
     shortlistSourceDominance: report.metrics.shortlistSourceDominance,
     maxIdeasPerSource: report.metrics.maxIdeasPerSource,
@@ -119,6 +122,7 @@ function renderMarkdownReport(input: {
   cloneRejectedCount: number;
   averageNovelty: number;
   averageMvpFeasibility: number;
+  averagePersonalUtility: number;
   averageGithubSignalStrength: number;
   averageShortlistSourceDominance: number;
   maxIdeasPerSource: number;
@@ -140,6 +144,7 @@ function renderMarkdownReport(input: {
     `Clone rejections: ${input.cloneRejectedCount}`,
     `Average novelty: ${pct(input.averageNovelty)}`,
     `Average MVP feasibility: ${pct(input.averageMvpFeasibility)}`,
+    `Average personal utility: ${pct(input.averagePersonalUtility)}`,
     `Average GitHub signal: ${pct(input.averageGithubSignalStrength)}`,
     `Average shortlist source dominance: ${pct(input.averageShortlistSourceDominance)}`,
     `Max ideas per source: ${input.maxIdeasPerSource}`,
@@ -160,6 +165,7 @@ function renderMarkdownReport(input: {
     lines.push(`- Clone rejections: ${result.cloneRejectedCount}`);
     lines.push(`- Average novelty: ${pct(result.averageNovelty)}`);
     lines.push(`- Average MVP feasibility: ${pct(result.averageMvpFeasibility)}`);
+    lines.push(`- Average personal utility: ${pct(result.averagePersonalUtility)}`);
     lines.push(`- Average GitHub signal: ${pct(result.averageGithubSignalStrength)}`);
     lines.push(`- Shortlist source dominance: ${pct(result.shortlistSourceDominance)}`);
     lines.push(`- Max ideas per source: ${result.maxIdeasPerSource}`);
@@ -204,6 +210,9 @@ async function main() {
     averageMvpFeasibility: Number(
       average(results.map((result) => result.averageMvpFeasibility)).toFixed(3)
     ),
+    averagePersonalUtility: Number(
+      average(results.map((result) => result.averagePersonalUtility)).toFixed(3)
+    ),
     averageGithubSignalStrength: Number(
       average(results.map((result) => result.averageGithubSignalStrength)).toFixed(3)
     ),
@@ -240,6 +249,7 @@ async function main() {
       `Clone rejections: ${report.cloneRejectedCount}`,
       `Average novelty: ${pct(report.averageNovelty)}`,
       `Average MVP feasibility: ${pct(report.averageMvpFeasibility)}`,
+      `Average personal utility: ${pct(report.averagePersonalUtility)}`,
       `Average shortlist source dominance: ${pct(report.averageShortlistSourceDominance)}`,
       `Max ideas per source: ${report.maxIdeasPerSource}`,
       `Research-ready ideas: ${report.researchReadyCount}`,

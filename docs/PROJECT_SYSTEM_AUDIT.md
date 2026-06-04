@@ -57,6 +57,7 @@ The audit scores:
 - average shortlist score,
 - average novelty,
 - MVP feasibility,
+- personal build utility,
 - GitHub signal strength,
 - research handoff readiness,
 - handoff quality score,
@@ -117,6 +118,7 @@ Result:
 - clone rejections: 5
 - average novelty: 0.98
 - MVP feasibility: 0.95
+- personal build utility: tracked by `averagePersonalUtility`
 - GitHub signal strength: 1.0
 - research ready ratio: 1.0
 - weaknesses: 0
@@ -128,6 +130,7 @@ Do not move an idea into expensive research or architecture generation unless:
 - audit readiness is not `blocked`,
 - clone rejection ratio is non-zero on benchmarked runs,
 - shortlisted ideas are research-ready,
+- shortlisted ideas have enough personal build utility for the user's own workflow,
 - `handoffReadyCount` equals the number of generated `ProjectIdeaInput` records,
 - `averageHandoffQualityScore` is at least 82,
 - trend radar has at least one category,

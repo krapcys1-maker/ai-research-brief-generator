@@ -111,6 +111,7 @@ export function auditIdeaDiscoveryReport(input: {
     ),
     averageNovelty: input.report.metrics.averageNovelty,
     averageMvpFeasibility: input.report.metrics.averageMvpFeasibility,
+    averagePersonalUtility: input.report.metrics.averagePersonalUtility,
     averageGithubSignalStrength: input.report.metrics.averageGithubSignalStrength,
     researchReadyRatio: rounded(researchReadyRatio),
     domainDiversity,
@@ -149,7 +150,7 @@ export function auditIdeaDiscoveryReport(input: {
         area: "source_diversity",
         message: "The run uses too few source repositories for robust trend discovery.",
         evidence: [`sourceRepoCount=${metrics.sourceRepoCount}`],
-        action: "Use GitHub Search plus GH Archive enrichment and target at least 5-20 repos before judging market direction."
+        action: "Use GitHub Search plus GH Archive enrichment and target at least 5-20 repos before judging which directions are worth building."
       })
     );
   }
@@ -174,6 +175,19 @@ export function auditIdeaDiscoveryReport(input: {
         message: "Shortlisted ideas are too close to their source workflows.",
         evidence: [`averageNovelty=${metrics.averageNovelty}`],
         action: "Force adjacent QA, audit, diagnostic, reliability or governance angles and reject direct replacements."
+      })
+    );
+  }
+
+  if (metrics.averagePersonalUtility < 0.7 && metrics.shortlistCount > 0) {
+    weaknesses.push(
+      finding({
+        severity: "warning",
+        area: "personal_fit",
+        message: "Shortlisted ideas may be too weak as personal build projects.",
+        evidence: [`averagePersonalUtility=${metrics.averagePersonalUtility}`],
+        action:
+          "Prefer ideas that improve the user's own coding, research, automation, reliability, local tooling or learning workflow; business potential is optional."
       })
     );
   }
@@ -267,7 +281,7 @@ export function auditIdeaDiscoveryReport(input: {
       finding({
         severity: "warning",
         area: "trend_radar",
-        message: "Trend radar did not produce a category-level market view.",
+        message: "Trend radar did not produce a category-level opportunity view.",
         evidence: ["trendRadarCategoryCount=0"],
         action: "Always build a trend radar artifact when source repos are collected from GitHub or GH Archive."
       })
@@ -287,6 +301,9 @@ export function auditIdeaDiscoveryReport(input: {
     ...(metrics.averageMvpFeasibility >= 0.85
       ? [`MVP feasibility is strong at ${metrics.averageMvpFeasibility}.`]
       : []),
+    ...(metrics.averagePersonalUtility >= 0.85
+      ? [`Personal build utility is strong at ${metrics.averagePersonalUtility}.`]
+      : []),
     ...(metrics.researchReadyRatio === 1 && metrics.shortlistCount > 0
       ? ["Every shortlisted idea is ready for research handoff."]
       : []),
@@ -294,7 +311,7 @@ export function auditIdeaDiscoveryReport(input: {
       ? [`Handoff quality is strong at ${metrics.averageHandoffQualityScore}.`]
       : []),
     ...(metrics.trendRadarCategoryCount > 0
-      ? [`Trend radar found ${metrics.trendRadarCategoryCount} market categories.`]
+      ? [`Trend radar found ${metrics.trendRadarCategoryCount} opportunity categories.`]
       : [])
   ];
   const criticalCount = weaknesses.filter(
@@ -312,7 +329,8 @@ export function auditIdeaDiscoveryReport(input: {
         : "needs_review";
   const promotionMoves = [
     "Keep the strongest pattern: generate adjacent QA, audit, diagnostic, readiness and reliability products, not clones.",
-    "Surface novelty, GitHub signal, MVP feasibility and research readiness next to every shortlist decision.",
+    "Surface novelty, GitHub signal, MVP feasibility, personal utility and research readiness next to every shortlist decision.",
+    "Treat business potential as an optional bonus, not as the main reason to select or reject an idea.",
     "Use trend radar categories to explain why a direction is timely before spending tokens on research and architecture."
   ];
   const mitigationMoves = weaknesses.map((item) => item.action);

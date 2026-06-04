@@ -351,6 +351,9 @@ export function discoverProjectIdeas(value: unknown): IdeaDiscoveryReport {
     averageMvpFeasibility: Number(
       average(shortlistedScores.map((score) => score.mvpFeasibility)).toFixed(3)
     ),
+    averagePersonalUtility: Number(
+      average(shortlistedScores.map((score) => score.personalUtility)).toFixed(3)
+    ),
     averageGithubSignalStrength: Number(
       average(shortlistedScores.map((score) => score.githubSignalStrength)).toFixed(3)
     ),

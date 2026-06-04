@@ -166,6 +166,7 @@ function extractKeyMetrics(report: Record<string, unknown>) {
     "cloneRejectedCount",
     "averageNovelty",
     "averageMvpFeasibility",
+    "averagePersonalUtility",
     "averageGithubSignalStrength",
     "averageShortlistSourceDominance",
     "maxIdeasPerSource",

@@ -75,6 +75,7 @@ function ideaScore(ideaId: string, total: number): IdeaScore {
     novelty: 0.95,
     mvpFeasibility: 0.95,
     researchLeverage: 0.95,
+    personalUtility: 0.95,
     businessPotential: 0.8,
     riskPenalty: 0,
     verdict: "promising",

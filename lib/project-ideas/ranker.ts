@@ -40,6 +40,52 @@ function scoreResearchLeverage(idea: DiscoveredIdea) {
   return clamp01(0.35 + idea.researchQuestions.length * 0.2 + idea.domains.length * 0.05);
 }
 
+function scorePersonalUtility(idea: DiscoveredIdea) {
+  const text = [
+    idea.title,
+    idea.oneSentence,
+    idea.problem,
+    ...idea.targetUsers,
+    ...idea.mvpScope,
+    ...idea.differentiation,
+    ...idea.aiLeverage,
+    ...idea.researchQuestions,
+    ...idea.domains
+  ].join(" ").toLowerCase();
+  const personalBuilderTerms = [
+    "developer",
+    "developers",
+    "builder",
+    "builders",
+    "coding",
+    "code",
+    "repo",
+    "repository",
+    "cursor",
+    "agent",
+    "workflow",
+    "qa",
+    "audit",
+    "diagnostic",
+    "reliability",
+    "readiness",
+    "monitor",
+    "validator",
+    "research",
+    "learning",
+    "local",
+    "self-hosted",
+    "automation",
+    "tool"
+  ];
+  const matches = personalBuilderTerms.filter((term) => text.includes(term)).length;
+  const hasConcreteWorkflow = idea.mvpScope.length >= 3 ? 0.2 : 0.05;
+  const hasLearningOrLeverage =
+    idea.researchQuestions.length >= 2 || idea.aiLeverage.length >= 2 ? 0.2 : 0.05;
+
+  return clamp01(0.3 + Math.min(matches, 5) * 0.08 + hasConcreteWorkflow + hasLearningOrLeverage);
+}
+
 function scoreBusinessPotential(repo: IdeaSourceRepo, idea: DiscoveredIdea) {
   const buyerSignals = idea.targetUsers.some((user) =>
     ["teams", "clinicians", "teachers", "analysts", "traders", "leads"].some(
@@ -96,15 +142,17 @@ export function scoreIdea(input: {
   const novelty = noveltyResult.novelty;
   const mvpFeasibility = scoreMvp(input.idea);
   const researchLeverage = scoreResearchLeverage(input.idea);
+  const personalUtility = scorePersonalUtility(input.idea);
   const businessPotential = scoreBusinessPotential(input.repo, input.idea);
   const riskPenaltyScore = riskPenalty(input.idea, noveltyResult.cloneRejected);
   const rawTotal =
-    problemClarity * 20 +
-    userSpecificity * 15 +
-    githubSignalStrength * 15 +
-    novelty * 20 +
-    mvpFeasibility * 15 +
+    problemClarity * 16 +
+    userSpecificity * 12 +
+    githubSignalStrength * 12 +
+    novelty * 18 +
+    mvpFeasibility * 14 +
     researchLeverage * 10 +
+    personalUtility * 13 +
     businessPotential * 5 -
     riskPenaltyScore * 100;
   const total = Math.max(0, Math.min(100, Number(rawTotal.toFixed(1))));
@@ -129,6 +177,7 @@ export function scoreIdea(input: {
     novelty,
     mvpFeasibility,
     researchLeverage,
+    personalUtility,
     businessPotential,
     riskPenalty: riskPenaltyScore,
     verdict,

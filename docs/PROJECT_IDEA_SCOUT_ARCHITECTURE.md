@@ -183,6 +183,7 @@ type IdeaScore = {
   novelty: number;
   mvpFeasibility: number;
   researchLeverage: number;
+  personalUtility: number;
   businessPotential: number;
   riskPenalty: number;
   verdict: "reject" | "needs_research" | "promising";
@@ -213,6 +214,7 @@ type IdeaDiscoveryMetrics = {
   cloneRejectedCount: number;
   averageNovelty: number;
   averageMvpFeasibility: number;
+  averagePersonalUtility: number;
   averageGithubSignalStrength: number;
   shortlistSourceDominance: number;
   maxIdeasPerSource: number;
@@ -225,18 +227,24 @@ type IdeaDiscoveryMetrics = {
 
 ## Scoring
 
-Initial weights:
+Current weights:
 
 ```text
-problemClarity: 20%
-userSpecificity: 15%
-githubSignalStrength: 15%
-novelty: 20%
-mvpFeasibility: 15%
+problemClarity: 16%
+userSpecificity: 12%
+githubSignalStrength: 12%
+novelty: 18%
+mvpFeasibility: 14%
 researchLeverage: 10%
+personalUtility: 13%
 businessPotential: 5%
 riskPenalty: -0% to -30%
 ```
+
+The system itself is personal: it helps the user decide what is worth building.
+Candidate projects may still be business-oriented, open-source, learning-focused,
+local tools, research tools, automation utilities, or hybrids. `businessPotential`
+is a small optional bonus, not the main selection criterion.
 
 Verdicts:
 
@@ -426,6 +434,7 @@ promisingCount
 cloneRejectedCount
 averageNovelty
 averageMvpFeasibility
+averagePersonalUtility
 averageGithubSignalStrength
 shortlistSourceDominance
 maxIdeasPerSource
@@ -445,6 +454,7 @@ pipelineInputValidCount == promisingCount
 cloneRejectedCount >= 1
 averageNovelty >= 0.70
 averageMvpFeasibility >= 0.70
+averagePersonalUtility >= 0.70
 researchReadyCount >= 5
 handoffReadyCount == promisingCount
 averageHandoffQualityScore >= 82
