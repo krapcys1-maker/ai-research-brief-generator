@@ -32,6 +32,7 @@ const requiredScripts = [
   "benchmark:project-pipeline",
   "benchmark:project-repo-mri-real",
   "benchmark:project-repo-mri-local",
+  "benchmark:project-repo-mri-github",
   "benchmark:project-ideas",
   "benchmark:project-ai-ideas",
   "benchmark:project-live-batch",
@@ -54,7 +55,9 @@ const requiredArtifacts = [
   "project-repo-mri-real-latest.json",
   "project-repo-mri-real-latest.md",
   "project-repo-mri-local-checkout-latest.json",
-  "project-repo-mri-local-checkout-latest.md"
+  "project-repo-mri-local-checkout-latest.md",
+  "project-repo-mri-github-checkout-latest.json",
+  "project-repo-mri-github-checkout-latest.md"
 ];
 
 const requiredMetrics = [

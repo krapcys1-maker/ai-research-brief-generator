@@ -109,6 +109,14 @@ The system also includes a Repo MRI local checkout benchmark:
 
 This benchmark generates the current Repo MRI project pack, indexes the current repository checkout, and tests Bug Path against known real code targets such as `scorePersonalUtility`, `discoverProjectIdeas`, `repoMriStarterCodeFiles`, and `runProjectResearch`. It is a heavier but more honest gate than synthetic fixtures.
 
+The system also includes an optional live GitHub checkout benchmark:
+
+- `npm run benchmark:project-repo-mri-github`
+- output: `benchmark-results/project-repo-mri-github-checkout-latest.json`
+- output: `benchmark-results/project-repo-mri-github-checkout-latest.md`
+
+This benchmark shallow-clones a public GitHub repository, generates the current Repo MRI project pack, indexes the clone, and runs Bug Path cases against the cloned code. It is intentionally not required by `benchmark:project-pipeline` because it depends on network access and remote availability.
+
 The shortlist selector now applies a per-source cap:
 
 - default: `maxIdeasPerSource = 1`

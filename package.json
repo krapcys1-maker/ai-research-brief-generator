@@ -20,6 +20,7 @@
     "benchmark:project-repo-mri-pack": "tsx scripts/project-repo-mri-pack-smoke.ts",
     "benchmark:project-repo-mri-real": "tsx scripts/project-repo-mri-real-benchmark.ts",
     "benchmark:project-repo-mri-local": "tsx scripts/project-repo-mri-local-checkout-benchmark.ts",
+    "benchmark:project-repo-mri-github": "tsx scripts/project-repo-mri-github-checkout-benchmark.ts",
     "benchmark:project-ideas": "tsx scripts/project-idea-discovery-benchmark.ts",
     "benchmark:project-ai-ideas": "tsx scripts/project-ai-idea-benchmark.ts",
     "benchmark:project-ideas-runner": "tsx scripts/project-idea-runner-benchmark.ts",
