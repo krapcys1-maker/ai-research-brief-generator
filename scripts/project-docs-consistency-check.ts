@@ -78,6 +78,7 @@ const requiredMetrics = [
   "indirectRelatedTestAccuracy",
   "ambiguousTop3HonestyRate",
   "minimalNextActionAccuracy",
+  "characterizationTestActionQualityRate",
   "relatedTestsCompleteness",
   "unknownsCompleteness",
   "whyNotCompleteness",

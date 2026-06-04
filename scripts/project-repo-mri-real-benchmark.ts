@@ -20,6 +20,13 @@ type BugPathFixture = {
   expectedSymbol: string;
   expectedTestFile: string | null;
   expectedMinimalTestCommand?: string;
+  expectedCharacterizationTest?: {
+    path: string;
+    name: string;
+    inputIncludes: string[];
+    assertionIncludes: string[];
+    command: string;
+  };
   requiresCallGraph?: boolean;
   requiresIndirectTest?: boolean;
   expectsAmbiguousTop3?: boolean;
@@ -42,6 +49,13 @@ type BugPathCandidate = {
     evidence: string[];
     command: string;
   }>;
+  characterization_test?: {
+    path: string;
+    name: string;
+    command: string;
+    input: string;
+    assertion: string;
+  } | null;
   next_actions: string[];
 };
 
@@ -78,6 +92,7 @@ type CaseResult = {
   requiresIndirectTest: boolean;
   expectsAmbiguousTop3: boolean;
   expectsMinimalNextAction: boolean;
+  expectsCharacterizationTestAction: boolean;
   topCandidatePath: string | null;
   topCandidateSymbol: string | null;
   topCandidateEvidence: string[];
@@ -103,6 +118,13 @@ type CaseResult = {
     command: string;
     evidence: string[];
   }>;
+  topCandidateCharacterizationTest: {
+    path: string;
+    name: string;
+    command: string;
+    input: string;
+    assertion: string;
+  } | null;
   top1FileHit: boolean;
   top1SymbolHit: boolean;
   top3FileHit: boolean;
@@ -114,6 +136,7 @@ type CaseResult = {
   indirectRelatedTestHit: boolean;
   ambiguousTop3Honesty: boolean;
   minimalNextActionHit: boolean;
+  characterizationTestActionQuality: boolean;
   evidenceComplete: boolean;
   lineRangeComplete: boolean;
   relatedTestsComplete: boolean;
@@ -428,6 +451,17 @@ const fixtures: BugPathFixture[] = [
     expectedFile: "feature_flags.py",
     expectedSymbol: "is_feature_enabled",
     expectedTestFile: null,
+    expectedCharacterizationTest: {
+      path: "tests/test_feature_flags.py",
+      name: "test_is_feature_enabled_expired_flag_is_disabled",
+      inputIncludes: [
+        "flag={'accounts':['acct_1'],'expires_at': datetime(2026, 1, 1)}",
+        "account_id='acct_1'",
+        "now=datetime(2026, 1, 2)"
+      ],
+      assertionIncludes: ["assert is_feature_enabled(flag, 'acct_1', now) is False"],
+      command: "pytest tests/test_feature_flags.py::test_is_feature_enabled_expired_flag_is_disabled"
+    },
     searchQuery: "feature flag expires rollout remains enabled",
     issue:
       "Rollout remains enabled after the feature flag expires for an account even though expired flags should be disabled",
@@ -881,6 +915,7 @@ async function evaluateFixture(input: {
   const requiresIndirectTest = input.fixture.requiresIndirectTest === true;
   const expectsAmbiguousTop3 = input.fixture.expectsAmbiguousTop3 === true;
   const expectsMinimalNextAction = input.fixture.expectedMinimalTestCommand !== undefined;
+  const expectsCharacterizationTestAction = input.fixture.expectedCharacterizationTest !== undefined;
   const expectedSourceCandidates = candidates.filter(
     (candidate) =>
       candidate.path === input.fixture.expectedFile &&
@@ -936,6 +971,31 @@ async function evaluateFixture(input: {
       (candidate) =>
         candidate.next_actions.some((action) => action === input.fixture.expectedMinimalTestCommand)
     );
+  const expectedCharacterization = input.fixture.expectedCharacterizationTest;
+  const topCharacterization = top?.characterization_test ?? null;
+  const topActions = top?.next_actions ?? [];
+  const characterizationTestActionQuality =
+    expectedCharacterization === undefined ||
+    (topCharacterization !== null &&
+      topCharacterization.path === expectedCharacterization.path &&
+      topCharacterization.name === expectedCharacterization.name &&
+      topCharacterization.command === expectedCharacterization.command &&
+      expectedCharacterization.inputIncludes.every((part) =>
+        topCharacterization.input.includes(part)
+      ) &&
+      expectedCharacterization.assertionIncludes.every((part) =>
+        topCharacterization.assertion.includes(part)
+      ) &&
+      topActions.some((action) =>
+        action.includes(`${expectedCharacterization.path}::${expectedCharacterization.name}`)
+      ) &&
+      topActions.some((action) => action.includes(expectedCharacterization.command)) &&
+      expectedCharacterization.inputIncludes.every((part) =>
+        topActions.some((action) => action.includes(part))
+      ) &&
+      expectedCharacterization.assertionIncludes.every((part) =>
+        topActions.some((action) => action.includes(part))
+      ));
   const relatedTestFileHit = expectsDirectTest
     ? relatedTestForExpectedCandidateHit
     : noDirectTestHonesty;
@@ -976,6 +1036,7 @@ async function evaluateFixture(input: {
     indirectRelatedTestHit &&
     ambiguousTop3Honesty &&
     minimalNextActionHit &&
+    characterizationTestActionQuality &&
     evidenceComplete &&
     lineRangeComplete &&
     relatedTestsComplete &&
@@ -998,6 +1059,7 @@ async function evaluateFixture(input: {
     requiresIndirectTest,
     expectsAmbiguousTop3,
     expectsMinimalNextAction,
+    expectsCharacterizationTestAction,
     topCandidatePath: top?.path ?? null,
     topCandidateSymbol: top?.symbol ?? null,
     topCandidateEvidence: top?.evidence ?? [],
@@ -1025,6 +1087,7 @@ async function evaluateFixture(input: {
         evidence: test.evidence
       }))
     ),
+    topCandidateCharacterizationTest: topCharacterization,
     top1FileHit,
     top1SymbolHit,
     top3FileHit,
@@ -1036,6 +1099,7 @@ async function evaluateFixture(input: {
     indirectRelatedTestHit,
     ambiguousTop3Honesty,
     minimalNextActionHit,
+    characterizationTestActionQuality,
     evidenceComplete,
     lineRangeComplete,
     relatedTestsComplete,
@@ -1068,6 +1132,7 @@ function renderMarkdownReport(input: {
   indirectRelatedTestAccuracy: number;
   ambiguousTop3HonestyRate: number;
   minimalNextActionAccuracy: number;
+  characterizationTestActionQualityRate: number;
   evidenceCompleteness: number;
   lineRangeCompleteness: number;
   relatedTestsCompleteness: number;
@@ -1094,6 +1159,7 @@ function renderMarkdownReport(input: {
     `Indirect related-test accuracy: ${pct(input.indirectRelatedTestAccuracy)}`,
     `Ambiguous top-3 honesty rate: ${pct(input.ambiguousTop3HonestyRate)}`,
     `Minimal next-action accuracy: ${pct(input.minimalNextActionAccuracy)}`,
+    `Characterization test action quality: ${pct(input.characterizationTestActionQualityRate)}`,
     `Evidence completeness: ${pct(input.evidenceCompleteness)}`,
     `Line range completeness: ${pct(input.lineRangeCompleteness)}`,
     `Related tests completeness: ${pct(input.relatedTestsCompleteness)}`,
@@ -1120,6 +1186,11 @@ function renderMarkdownReport(input: {
     lines.push(`- Requires indirect test: ${result.requiresIndirectTest ? "yes" : "no"}`);
     lines.push(`- Expects ambiguous top-3: ${result.expectsAmbiguousTop3 ? "yes" : "no"}`);
     lines.push(`- Expects minimal next action: ${result.expectsMinimalNextAction ? "yes" : "no"}`);
+    lines.push(
+      `- Expects characterization test action: ${
+        result.expectsCharacterizationTestAction ? "yes" : "no"
+      }`
+    );
     lines.push(`- Top candidate: ${result.topCandidatePath ?? "none"} / ${result.topCandidateSymbol ?? "none"}`);
     lines.push(`- Top candidate evidence: ${result.topCandidateEvidence.join(" | ") || "none"}`);
     lines.push(`- Top candidate next actions: ${result.topCandidateNextActions.join(" | ") || "none"}`);
@@ -1145,6 +1216,13 @@ function renderMarkdownReport(input: {
         result.expectedSourceRelatedTests
           .map((test) => `${test.path} / ${test.symbol ?? "file"} (${test.command})`)
           .join(", ") || "none"
+      }`
+    );
+    lines.push(
+      `- Top candidate characterization test: ${
+        result.topCandidateCharacterizationTest
+          ? `${result.topCandidateCharacterizationTest.path}::${result.topCandidateCharacterizationTest.name} (${result.topCandidateCharacterizationTest.command}) input=${result.topCandidateCharacterizationTest.input} assertion=${result.topCandidateCharacterizationTest.assertion}`
+          : "none"
       }`
     );
     lines.push(`- Top-1 file hit: ${result.top1FileHit ? "yes" : "no"}`);
@@ -1176,6 +1254,15 @@ function renderMarkdownReport(input: {
     lines.push(
       `- Minimal next action hit: ${
         result.expectsMinimalNextAction ? (result.minimalNextActionHit ? "yes" : "no") : "n/a"
+      }`
+    );
+    lines.push(
+      `- Characterization test action quality: ${
+        result.expectsCharacterizationTestAction
+          ? result.characterizationTestActionQuality
+            ? "yes"
+            : "no"
+          : "n/a"
       }`
     );
     lines.push(`- Evidence complete: ${result.evidenceComplete ? "yes" : "no"}`);
@@ -1260,6 +1347,13 @@ async function main() {
           .map((result) => result.minimalNextActionHit)
       ).toFixed(3)
     ),
+    characterizationTestActionQualityRate: Number(
+      averageBooleans(
+        results
+          .filter((result) => result.expectsCharacterizationTestAction)
+          .map((result) => result.characterizationTestActionQuality)
+      ).toFixed(3)
+    ),
     evidenceCompleteness: Number(averageBooleans(results.map((result) => result.evidenceComplete)).toFixed(3)),
     lineRangeCompleteness: Number(averageBooleans(results.map((result) => result.lineRangeComplete)).toFixed(3)),
     relatedTestsCompleteness: Number(averageBooleans(results.map((result) => result.relatedTestsComplete)).toFixed(3)),
@@ -1292,6 +1386,7 @@ async function main() {
       `Indirect related-test accuracy: ${pct(report.indirectRelatedTestAccuracy)}`,
       `Ambiguous top-3 honesty rate: ${pct(report.ambiguousTop3HonestyRate)}`,
       `Minimal next-action accuracy: ${pct(report.minimalNextActionAccuracy)}`,
+      `Characterization test action quality: ${pct(report.characterizationTestActionQualityRate)}`,
       `Evidence completeness: ${pct(report.evidenceCompleteness)}`,
       `Line range completeness: ${pct(report.lineRangeCompleteness)}`,
       `Related tests completeness: ${pct(report.relatedTestsCompleteness)}`,

@@ -191,6 +191,7 @@ function extractKeyMetrics(report: Record<string, unknown>) {
     "indirectRelatedTestAccuracy",
     "ambiguousTop3HonestyRate",
     "minimalNextActionAccuracy",
+    "characterizationTestActionQualityRate",
     "evidenceCompleteness",
     "lineRangeCompleteness",
     "relatedTestsCompleteness",

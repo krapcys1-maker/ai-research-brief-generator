@@ -103,6 +103,7 @@ This benchmark generates the current Repo MRI project pack, runs the generated P
 - `indirectRelatedTestAccuracy`
 - `ambiguousTop3HonestyRate`
 - `minimalNextActionAccuracy`
+- `characterizationTestActionQualityRate`
 - `evidenceCompleteness`
 - `lineRangeCompleteness`
 - `relatedTestsCompleteness`
@@ -110,7 +111,7 @@ This benchmark generates the current Repo MRI project pack, runs the generated P
 - `whyNotCompleteness`
 - `secretIgnoreRate`
 
-This is the main proof that the project pack is not only a plan. It must show that generated starter code can localize issue text to likely files, symbols, related tests when they exist, indirect public-wrapper tests when they are the closest verification path, honest no-direct-test guidance when direct tests do not exist, call-graph root causes when the symptom is in a caller, ambiguous top-3 runner-up truth when top-1 is plausibly wrong, minimal reproducer commands for targeted Python tests, and next actions with evidence, unknowns and why-not explanations for runner-up candidates.
+This is the main proof that the project pack is not only a plan. It must show that generated starter code can localize issue text to likely files, symbols, related tests when they exist, indirect public-wrapper tests when they are the closest verification path, honest no-direct-test guidance when direct tests do not exist, concrete characterization-test actions when no direct test exists, call-graph root causes when the symptom is in a caller, ambiguous top-3 runner-up truth when top-1 is plausibly wrong, minimal reproducer commands for targeted Python tests, and next actions with evidence, unknowns and why-not explanations for runner-up candidates.
 
 The system also includes a Repo MRI local checkout benchmark:
 
