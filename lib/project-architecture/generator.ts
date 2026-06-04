@@ -353,6 +353,25 @@ function architectureBlueprint(input: GenerateProjectArchitectureInput): Bluepri
   }
 
   if (
+    text.includes("approval ux") ||
+    text.includes("agent action approval") ||
+    text.includes("command approval") ||
+    text.includes("command confirmation") ||
+    text.includes("tool call") ||
+    text.includes("tool-use governance") ||
+    text.includes("approval flow")
+  ) {
+    return commonBlueprint({
+      profile: "agent_action_approval_governance",
+      noun: "agent action approval and tool-use governance",
+      intake: "Tool Call Command And Approval Event",
+      evidence: "Approval Risk And Recovery",
+      evaluator: "Command Risk Explanation",
+      report: "Approval UX Governance"
+    });
+  }
+
+  if (
     text.includes("session reliability") ||
     text.includes("desktop sessions") ||
     text.includes("conversation continuity") ||

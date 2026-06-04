@@ -79,6 +79,19 @@ const shortVideoIdea: ProjectIdeaInput = {
   outputLanguage: "pl"
 };
 
+const agentApprovalIdea: ProjectIdeaInput = {
+  title: "Agent Action Approval UX Console",
+  description:
+    "System for AI agent product teams that reviews tool calls, command approval events, blocked automation, recovery paths, risk explanations, command confirmation failures, and tool-use governance before agent releases.",
+  constraints: [
+    "MVP reviews approval flow quality instead of building another agent",
+    "human approval remains mandatory for risky commands",
+    "classify approval failures by risk, UI state and recovery path"
+  ],
+  preferredDomains: ["AI agent safety", "approval UX", "tool-use governance"],
+  outputLanguage: "pl"
+};
+
 describe("generateProjectArchitecture", () => {
   it("generates ready architecture from ready PRD and research brief", () => {
     const brief = buildProjectResearchBrief({
@@ -207,6 +220,36 @@ describe("generateProjectArchitecture", () => {
       "Script Repetition Grounding And Publishing Risk AI Evaluator"
     );
     expect(architecture.audit.verdict).toContain("ai_media_publishing_qa");
+    expect(judge.verdict).toBe("pass");
+    expect(judge.score).toBeGreaterThanOrEqual(90);
+    expect(judge.genericComponentCount).toBe(0);
+  });
+
+  it("generates non-generic architecture for live agent approval ideas", () => {
+    const brief = buildProjectResearchBrief({
+      idea: agentApprovalIdea,
+      reviewedPapers: fullEvidenceForIdea(agentApprovalIdea),
+      generatedAt: "2026-06-03T16:00:00.000Z"
+    });
+    const prd = generateProjectPrd({ brief });
+
+    const architecture = generateProjectArchitecture({
+      prd,
+      brief,
+      generatedAt: "2026-06-03T16:05:00.000Z"
+    });
+    const judge = judgeProjectArchitecture({ architecture, prd, brief });
+    const componentNames = architecture.components
+      .map((component) => component.name)
+      .join(" ");
+
+    expect(componentNames).toContain(
+      "Tool Call Command And Approval Event Intake Adapter"
+    );
+    expect(componentNames).toContain("Command Risk Explanation AI Evaluator");
+    expect(architecture.audit.verdict).toContain(
+      "agent_action_approval_governance"
+    );
     expect(judge.verdict).toBe("pass");
     expect(judge.score).toBeGreaterThanOrEqual(90);
     expect(judge.genericComponentCount).toBe(0);

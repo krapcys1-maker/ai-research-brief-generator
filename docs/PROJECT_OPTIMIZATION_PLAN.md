@@ -204,14 +204,14 @@ For every meaningful system change:
 - Done: run `AI Short-Video Content QA Console` from the live sample through research, PRD, architecture and architecture judge.
 - Done: catch the first weak result: architecture judge `84/fail` due to a generic fallback component.
 - Done: add media/publishing QA architecture blueprint and judge vocabulary; rerun result: `96/pass`, generic components `0`.
-- Done: add `live_short_video_arch_ready` to `npm run benchmark:project-architecture` so the regression is covered by the pipeline.
+- Done: add `live_short_video_arch_ready`, `live_data_quality_arch_ready` and `live_agent_approval_arch_ready` to `npm run benchmark:project-architecture` so live-derived category regressions are covered by the pipeline.
 
 ## Current Recommended Next Step
 
-Promote live-derived smoke tests into a small end-to-end benchmark set:
+Use the live-derived benchmark set to choose one implementation target:
 
-- select 2-3 live-derived ideas from the controlled sample,
-- run each through research, PRD, architecture and architecture judge with controlled evidence fixtures,
-- fail the benchmark if any ready live-derived architecture has judge score below 90 or generic components above 0.
+- compare the three live-derived architecture outputs by judge score, specificity, and implementation risk,
+- pick one idea for the first implementation planning pass,
+- create a step-by-step MVP implementation benchmark before writing product code.
 
-This closes the next gap between a single local live-derived smoke test and repeatable end-to-end live category coverage.
+This closes the next gap between repeatable live category coverage and choosing the first implementation target.

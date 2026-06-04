@@ -132,7 +132,14 @@ function genericComponentCount(architecture: ProjectArchitecture) {
       "anomaly",
       "drift",
       "extraction",
-      "warehouse"
+      "warehouse",
+      "approval",
+      "tool call",
+      "command",
+      "governance",
+      "recovery",
+      "ux",
+      "action"
     ].some((term) => text.includes(term));
 
     return genericPhrases.some((phrase) => text.includes(phrase)) && !hasSpecificQualifier;

@@ -126,6 +126,32 @@ const ideas: Record<string, ProjectIdeaInput> = {
     ],
     preferredDomains: ["AI media", "content operations", "publishing QA"],
     outputLanguage: "pl"
+  },
+  liveDataQualityInvestigation: {
+    title: "AI Data Quality Investigation Agent",
+    description:
+      "System for analytics engineers and data analysts that investigates broken warehouse models, extraction drift, scraping changes, schema mismatches, stale dashboards, anomaly explanations, and data quality risks. This case is derived from the controlled GH Archive live sample where dbt-core and Scrapling appeared as trending source repositories.",
+    constraints: [
+      "MVP investigates data quality and extraction failures before dashboard work",
+      "outputs audit-friendly diagnostics rather than only charts",
+      "requires evidence for every suspected root cause",
+      "avoid cloning source repositories"
+    ],
+    preferredDomains: ["data quality", "analytics engineering", "data extraction"],
+    outputLanguage: "pl"
+  },
+  liveAgentApprovalGovernance: {
+    title: "Agent Action Approval UX Console",
+    description:
+      "System for AI agent product teams that reviews tool calls, command approval events, command confirmation failures, blocked automation, recovery paths, risk explanations, and tool-use governance before agent releases. This case is derived from the controlled GH Archive live sample where Hermes Agent appeared as a trending source repository.",
+    constraints: [
+      "MVP reviews approval flow quality instead of building another agent",
+      "human approval remains mandatory for risky commands",
+      "classify approval failures by risk, UI state and recovery path",
+      "avoid cloning source repositories"
+    ],
+    preferredDomains: ["AI agent safety", "approval UX", "tool-use governance"],
+    outputLanguage: "pl"
   }
 };
 
@@ -320,6 +346,16 @@ async function main() {
     {
       id: "live_short_video_arch_ready",
       idea: ideas.liveShortVideoQa,
+      mode: "ready"
+    },
+    {
+      id: "live_data_quality_arch_ready",
+      idea: ideas.liveDataQualityInvestigation,
+      mode: "ready"
+    },
+    {
+      id: "live_agent_approval_arch_ready",
+      idea: ideas.liveAgentApprovalGovernance,
       mode: "ready"
     },
     { id: "repo_arch_blocked", idea: ideas.repo, mode: "blocked" }
