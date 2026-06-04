@@ -364,12 +364,20 @@ Runs emit:
 ```text
 project_idea_handoff_quality.json
 project_idea_handoff_quality.md
+research_handoff_audit.json
+research_handoff_audit.md
 ```
 
 The project idea benchmark fails when shortlisted ideas are blocked or invalid.
 It allows `needs_review` when the idea input itself is strong but source
 evidence flags require manual verification. This keeps weak evidence visible
 without pretending every generated input is fully research-ready.
+
+`research_handoff_audit.*` follows the next cable: source repository signals ->
+`ProjectIdeaInput` -> generated research query variants. It records source signal
+terms, project idea terms, query terms, source-to-input coverage,
+source-to-query coverage, input-to-query coverage and warnings when research
+queries drift away from the selected idea before paper search begins.
 
 Then the existing CLI can run:
 
@@ -521,6 +529,8 @@ project_ideas_audit.json
 project_ideas_audit.md
 project_idea_handoff_quality.json
 project_idea_handoff_quality.md
+research_handoff_audit.json
+research_handoff_audit.md
 project_architecture_judge.json
 project_architecture_judge.md
 repo_insights.json

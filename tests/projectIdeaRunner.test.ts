@@ -32,6 +32,8 @@ const requiredFiles = [
   "project_idea_inputs.json",
   "project_idea_handoff_quality.json",
   "project_idea_handoff_quality.md",
+  "research_handoff_audit.json",
+  "research_handoff_audit.md",
   "idea_discovery_report.json",
   "idea_discovery_report.md"
 ];
@@ -192,6 +194,9 @@ describe("runProjectIdeaDiscovery", () => {
     const audit = JSON.parse(
       await readFile(join(outputDir, "project_ideas_audit.json"), "utf8")
     );
+    const researchHandoffAudit = JSON.parse(
+      await readFile(join(outputDir, "research_handoff_audit.json"), "utf8")
+    );
     const ideaSelection = JSON.parse(
       await readFile(join(outputDir, "idea_selection_report.json"), "utf8")
     );
@@ -203,9 +208,14 @@ describe("runProjectIdeaDiscovery", () => {
     expect(manifest.promisingCount).toBeGreaterThanOrEqual(1);
     expect(manifest.handoffReadyCount).toBe(manifest.projectIdeaInputCount);
     expect(manifest.averageHandoffQualityScore).toBeGreaterThanOrEqual(82);
+    expect(manifest.researchHandoffAuditPassCount).toBeGreaterThanOrEqual(1);
+    expect(manifest.averageResearchSourceToQueryCoverage).toBeGreaterThanOrEqual(0);
     expect(IdeaDiscoveryReportSchema.parse(report)).toEqual(report);
     expect(ProjectIdeaAuditSchema.parse(audit)).toEqual(audit);
     expect(audit.score).toBeGreaterThanOrEqual(70);
+    expect(researchHandoffAudit.items.length).toBe(projectIdeaInputs.length);
+    expect(researchHandoffAudit.items[0]?.queryVariants.length).toBeGreaterThan(1);
+    expect(researchHandoffAudit.items[0]?.sourceSignalTerms.length).toBeGreaterThan(0);
     expect(selectedDecision.sourceEvidenceQuality).toBeGreaterThanOrEqual(0);
     expect(Array.isArray(selectedDecision.reviewFlags)).toBe(true);
     expect(projectIdeaInputs.every((idea: unknown) => ProjectIdeaInputSchema.safeParse(idea).success)).toBe(

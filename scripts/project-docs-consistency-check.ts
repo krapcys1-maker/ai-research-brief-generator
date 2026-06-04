@@ -54,6 +54,8 @@ const requiredArtifacts = [
   "project_idea_inputs.json",
   "project_idea_handoff_quality.json",
   "project_idea_handoff_quality.md",
+  "research_handoff_audit.json",
+  "research_handoff_audit.md",
   "handoff_context.json",
   "handoff_context.md",
   "handoff_flag_resolution.json",

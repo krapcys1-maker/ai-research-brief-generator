@@ -33,6 +33,8 @@ type CaseResult = {
   trendRadarTopOpportunityCount: number;
   duplicateClusterCount: number;
   selectionDecisionCount: number;
+  researchHandoffAuditPassCount: number;
+  averageResearchSourceToQueryCoverage: number;
   auditScore: number;
   auditReadyCount: number;
   passed: boolean;
@@ -59,6 +61,8 @@ const requiredFiles = [
   "project_idea_inputs.json",
   "project_idea_handoff_quality.json",
   "project_idea_handoff_quality.md",
+  "research_handoff_audit.json",
+  "research_handoff_audit.md",
   "idea_discovery_report.json",
   "idea_discovery_report.md"
 ];
@@ -288,6 +292,7 @@ async function evaluateCase(testCase: BenchmarkCase, index: number) {
     audit.readiness !== "blocked" &&
     (!testCase.requiresDuplicateCuration || duplicateClusterCount >= 1) &&
     manifest.handoffReadyCount === manifest.projectIdeaInputCount &&
+    manifest.researchHandoffAuditPassCount >= 1 &&
     manifest.averageHandoffQualityScore >= 82 &&
     projectIdeaInputValidCount === manifest.projectIdeaInputCount;
 
@@ -307,6 +312,9 @@ async function evaluateCase(testCase: BenchmarkCase, index: number) {
     trendRadarTopOpportunityCount: manifest.trendRadarTopOpportunityCount,
     duplicateClusterCount,
     selectionDecisionCount: ideaSelection.decisions?.length ?? 0,
+    researchHandoffAuditPassCount: manifest.researchHandoffAuditPassCount,
+    averageResearchSourceToQueryCoverage:
+      manifest.averageResearchSourceToQueryCoverage,
     auditScore: audit.score,
     auditReadyCount: audit.readiness === "ready" ? 1 : 0,
     passed
@@ -327,6 +335,8 @@ function renderMarkdownReport(input: {
   ghArchiveUsedCount: number;
   trendRadarCategoryCount: number;
   trendRadarTopOpportunityCount: number;
+  researchHandoffAuditPassCount: number;
+  averageResearchSourceToQueryCoverage: number;
   averageAuditScore: number;
   auditReadyCount: number;
   results: CaseResult[];
@@ -347,6 +357,8 @@ function renderMarkdownReport(input: {
     `GH Archive used cases: ${input.ghArchiveUsedCount}`,
     `Trend radar categories: ${input.trendRadarCategoryCount}`,
     `Trend radar opportunities: ${input.trendRadarTopOpportunityCount}`,
+    `Research handoff audit pass: ${input.researchHandoffAuditPassCount}`,
+    `Average research source-to-query coverage: ${input.averageResearchSourceToQueryCoverage.toFixed(3)}`,
     `Duplicate clusters: ${input.results.reduce((sum, result) => sum + result.duplicateClusterCount, 0)}`,
     `Selection decisions: ${input.results.reduce((sum, result) => sum + result.selectionDecisionCount, 0)}`,
     `Average audit score: ${input.averageAuditScore.toFixed(1)}`,
@@ -371,6 +383,8 @@ function renderMarkdownReport(input: {
     lines.push(`- GH Archive trend repos: ${result.ghArchiveTrendRepoCount}`);
     lines.push(`- Trend radar categories: ${result.trendRadarCategoryCount}`);
     lines.push(`- Trend radar opportunities: ${result.trendRadarTopOpportunityCount}`);
+    lines.push(`- Research handoff audit pass: ${result.researchHandoffAuditPassCount}`);
+    lines.push(`- Research source-to-query coverage: ${result.averageResearchSourceToQueryCoverage}`);
     lines.push(`- Duplicate clusters: ${result.duplicateClusterCount}`);
     lines.push(`- Selection decisions: ${result.selectionDecisionCount}`);
     lines.push(`- Audit score: ${result.auditScore}`);
@@ -489,6 +503,15 @@ async function main() {
       (sum, result) => sum + result.trendRadarTopOpportunityCount,
       0
     ),
+    researchHandoffAuditPassCount: results.reduce(
+      (sum, result) => sum + result.researchHandoffAuditPassCount,
+      0
+    ),
+    averageResearchSourceToQueryCoverage:
+      results.reduce(
+        (sum, result) => sum + result.averageResearchSourceToQueryCoverage,
+        0
+      ) / results.length,
     averageAuditScore:
       results.reduce((sum, result) => sum + result.auditScore, 0) / results.length,
     auditReadyCount: results.reduce((sum, result) => sum + result.auditReadyCount, 0),
@@ -511,6 +534,8 @@ async function main() {
       `GH Archive used cases: ${report.ghArchiveUsedCount}`,
       `Trend radar categories: ${report.trendRadarCategoryCount}`,
       `Trend radar opportunities: ${report.trendRadarTopOpportunityCount}`,
+      `Research handoff audit pass: ${report.researchHandoffAuditPassCount}`,
+      `Average research source-to-query coverage: ${report.averageResearchSourceToQueryCoverage.toFixed(3)}`,
       `Duplicate clusters: ${report.results.reduce((sum, result) => sum + result.duplicateClusterCount, 0)}`,
       `Selection decisions: ${report.results.reduce((sum, result) => sum + result.selectionDecisionCount, 0)}`,
       `Average audit score: ${report.averageAuditScore.toFixed(1)}`,

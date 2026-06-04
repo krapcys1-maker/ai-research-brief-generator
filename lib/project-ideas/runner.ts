@@ -36,6 +36,11 @@ import {
   aiIdeaCurationReportToMarkdown,
   runAiIdeaCuration
 } from "@/lib/project-ideas/aiIdeaCurator";
+import {
+  auditResearchHandoff,
+  researchHandoffAuditToMarkdown,
+  type ResearchHandoffAuditReport
+} from "@/lib/project-ideas/researchHandoffAudit";
 import type { BqExecutor } from "@/lib/project-ideas/ghArchiveTrendCollector";
 import type { FetchLike } from "@/lib/project-ideas/githubCollector";
 import type {
@@ -127,6 +132,8 @@ export type ProjectIdeaDiscoveryRunManifest = {
   ghArchiveTrendRepoCount: number;
   trendRadarCategoryCount: number;
   trendRadarTopOpportunityCount: number;
+  researchHandoffAuditPassCount: number;
+  averageResearchSourceToQueryCoverage: number;
   warnings: string[];
   files: typeof artifactFiles;
 };
@@ -160,6 +167,8 @@ const artifactFiles = {
   projectIdeaInputs: "project_idea_inputs.json",
   projectIdeaHandoffQualityJson: "project_idea_handoff_quality.json",
   projectIdeaHandoffQualityMarkdown: "project_idea_handoff_quality.md",
+  researchHandoffAuditJson: "research_handoff_audit.json",
+  researchHandoffAuditMarkdown: "research_handoff_audit.md",
   ideaDiscoveryReportJson: "idea_discovery_report.json",
   ideaDiscoveryReportMarkdown: "idea_discovery_report.md"
 } as const;
@@ -463,6 +472,7 @@ function createManifest(input: {
   ghArchiveTrendRepoCount: number;
   trendRadarCategoryCount: number;
   trendRadarTopOpportunityCount: number;
+  researchHandoffAudit: ResearchHandoffAuditReport;
   warnings: string[];
 }): ProjectIdeaDiscoveryRunManifest {
   return {
@@ -485,6 +495,9 @@ function createManifest(input: {
     ghArchiveTrendRepoCount: input.ghArchiveTrendRepoCount,
     trendRadarCategoryCount: input.trendRadarCategoryCount,
     trendRadarTopOpportunityCount: input.trendRadarTopOpportunityCount,
+    researchHandoffAuditPassCount: input.researchHandoffAudit.passCount,
+    averageResearchSourceToQueryCoverage:
+      input.researchHandoffAudit.averageSourceToQueryCoverage,
     warnings: input.warnings,
     files: artifactFiles
   };
@@ -635,6 +648,11 @@ export async function runProjectIdeaDiscovery(
     report: curatedReport,
     trendRadar: trendRadarArtifact
   });
+  const researchHandoffAudit = auditResearchHandoff({
+    ideas: curatedReport.shortlist,
+    projectIdeaInputs: curatedReport.projectIdeaInputs,
+    sourceRepos: curatedReport.sourceRepos
+  });
   if (parsed.aiCuration?.enabled) {
     ensureEnvLoaded();
   }
@@ -668,6 +686,7 @@ export async function runProjectIdeaDiscovery(
     ghArchiveTrendRepoCount: ghArchiveTrendResult?.repos.length ?? 0,
     trendRadarCategoryCount: trendRadar.categories.length,
     trendRadarTopOpportunityCount: trendRadar.topOpportunities.length,
+    researchHandoffAudit,
     warnings
   });
 
@@ -760,6 +779,16 @@ export async function runProjectIdeaDiscovery(
     writeFile(
       join(outputDir, artifactFiles.projectIdeaHandoffQualityMarkdown),
       projectIdeaHandoffQualityToMarkdown(curatedReport.projectIdeaHandoffQuality),
+      "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.researchHandoffAuditJson),
+      toJson(researchHandoffAudit),
+      "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.researchHandoffAuditMarkdown),
+      researchHandoffAuditToMarkdown(researchHandoffAudit),
       "utf8"
     ),
     writeFile(

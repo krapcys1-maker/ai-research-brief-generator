@@ -14,6 +14,7 @@ export * from "@/lib/project-ideas/selectionCurator";
 export * from "@/lib/project-ideas/fullPassSelection";
 export * from "@/lib/project-ideas/githubCollector";
 export * from "@/lib/project-ideas/markdown";
+export * from "@/lib/project-ideas/researchHandoffAudit";
 export * from "@/lib/project-ideas/ghArchiveTrendCollector";
 export * from "@/lib/project-ideas/liveBatchSampler";
 export * from "@/lib/project-ideas/trendRadar";

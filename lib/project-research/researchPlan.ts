@@ -750,6 +750,9 @@ function buildResearchGoals(idea: NormalizedProjectIdea, buckets: EvidenceBucket
 function buildQueryVariants(idea: NormalizedProjectIdea, buckets: EvidenceBucket[]) {
   return Array.from(
     new Set([
+      `${idea.title} ${idea.problem}`,
+      `${idea.title} ${idea.domains.join(" ")}`,
+      `${idea.title} ${idea.assumptions.join(" ")}`,
       ...buckets.map((bucketItem) => bucketItem.query),
       ...buckets.flatMap((bucketItem) =>
         bucketItem.targetQuestions.map(

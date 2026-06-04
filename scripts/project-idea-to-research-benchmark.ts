@@ -47,6 +47,8 @@ const ideaRequiredFiles = [
   "project_idea_inputs.json",
   "project_idea_handoff_quality.json",
   "project_idea_handoff_quality.md",
+  "research_handoff_audit.json",
+  "research_handoff_audit.md",
   "idea_discovery_report.json",
   "idea_discovery_report.md"
 ];
