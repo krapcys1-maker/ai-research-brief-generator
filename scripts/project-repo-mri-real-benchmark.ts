@@ -19,6 +19,7 @@ type BugPathFixture = {
   expectedFile: string;
   expectedSymbol: string;
   expectedTestFile: string | null;
+  expectedMinimalTestCommand?: string;
   requiresCallGraph?: boolean;
   requiresIndirectTest?: boolean;
   expectsAmbiguousTop3?: boolean;
@@ -35,6 +36,7 @@ type BugPathCandidate = {
   evidence: string[];
   related_tests?: Array<{
     path: string;
+    symbol?: string | null;
     score: number;
     line_range: [number, number] | null;
     evidence: string[];
@@ -75,6 +77,7 @@ type CaseResult = {
   requiresCallGraph: boolean;
   requiresIndirectTest: boolean;
   expectsAmbiguousTop3: boolean;
+  expectsMinimalNextAction: boolean;
   topCandidatePath: string | null;
   topCandidateSymbol: string | null;
   topCandidateEvidence: string[];
@@ -90,11 +93,13 @@ type CaseResult = {
   }>;
   topCandidateRelatedTests: Array<{
     path: string;
+    symbol?: string | null;
     command: string;
     evidence: string[];
   }>;
   expectedSourceRelatedTests: Array<{
     path: string;
+    symbol?: string | null;
     command: string;
     evidence: string[];
   }>;
@@ -108,6 +113,7 @@ type CaseResult = {
   callGraphRootCauseHit: boolean;
   indirectRelatedTestHit: boolean;
   ambiguousTop3Honesty: boolean;
+  minimalNextActionHit: boolean;
   evidenceComplete: boolean;
   lineRangeComplete: boolean;
   relatedTestsComplete: boolean;
@@ -632,6 +638,74 @@ const fixtures: BugPathFixture[] = [
         content: "SUPER_SECRET_TOKEN=do-not-index\n"
       }
     ]
+  },
+  {
+    id: "python_payment_retry_minimal_next_action",
+    repoName: "payment_worker",
+    expectedFile: "payments/retry.py",
+    expectedSymbol: "retry_failed_payment",
+    expectedTestFile: "tests/test_payments.py",
+    expectedMinimalTestCommand:
+      "pytest tests/test_payments.py::test_retry_failed_payment_retries_declined_charge_once",
+    searchQuery: "retry_failed_payment declined charge retried once",
+    issue:
+      "retry_failed_payment retries declined charges twice; it should retry a declined charge only once before returning failed",
+    files: [
+      {
+        path: "payments/retry.py",
+        content: [
+          "def retry_failed_payment(charge: dict, gateway) -> dict:",
+          "    attempts = 0",
+          "    while attempts <= 1:",
+          "        attempts += 1",
+          "        result = gateway.retry(charge['id'])",
+          "        if result['status'] == 'paid':",
+          "            return result",
+          "    return {'status': 'failed', 'attempts': attempts}",
+          "",
+          "",
+          "def retry_refund(refund: dict, gateway) -> dict:",
+          "    return gateway.retry_refund(refund['id'])"
+        ].join("\n")
+      },
+      {
+        path: "payments/gateway.py",
+        content: [
+          "class FakeGateway:",
+          "    def __init__(self, responses):",
+          "        self.responses = list(responses)",
+          "        self.calls = 0",
+          "",
+          "    def retry(self, charge_id: str) -> dict:",
+          "        self.calls += 1",
+          "        return self.responses.pop(0)"
+        ].join("\n")
+      },
+      {
+        path: "tests/test_payments.py",
+        content: [
+          "from payments.gateway import FakeGateway",
+          "from payments.retry import retry_failed_payment, retry_refund",
+          "",
+          "",
+          "def test_retry_failed_payment_retries_declined_charge_once():",
+          "    gateway = FakeGateway([{'status': 'failed'}, {'status': 'failed'}])",
+          "    result = retry_failed_payment({'id': 'ch_1'}, gateway)",
+          "    assert result['status'] == 'failed'",
+          "    assert gateway.calls == 1",
+          "",
+          "",
+          "def test_retry_refund_uses_refund_gateway_path():",
+          "    gateway = FakeGateway([{'status': 'refunded'}])",
+          "    result = retry_refund({'id': 'rf_1'}, gateway)",
+          "    assert result['status'] == 'refunded'"
+        ].join("\n")
+      },
+      {
+        path: ".env",
+        content: "SUPER_SECRET_TOKEN=do-not-index\n"
+      }
+    ]
   }
 ];
 
@@ -806,6 +880,7 @@ async function evaluateFixture(input: {
   const requiresCallGraph = input.fixture.requiresCallGraph === true;
   const requiresIndirectTest = input.fixture.requiresIndirectTest === true;
   const expectsAmbiguousTop3 = input.fixture.expectsAmbiguousTop3 === true;
+  const expectsMinimalNextAction = input.fixture.expectedMinimalTestCommand !== undefined;
   const expectedSourceCandidates = candidates.filter(
     (candidate) =>
       candidate.path === input.fixture.expectedFile &&
@@ -855,6 +930,12 @@ async function evaluateFixture(input: {
           decision.path === input.fixture.expectedFile &&
           decision.symbol === input.fixture.expectedSymbol
       ));
+  const minimalNextActionHit =
+    input.fixture.expectedMinimalTestCommand === undefined ||
+    expectedSourceCandidates.some(
+      (candidate) =>
+        candidate.next_actions.some((action) => action === input.fixture.expectedMinimalTestCommand)
+    );
   const relatedTestFileHit = expectsDirectTest
     ? relatedTestForExpectedCandidateHit
     : noDirectTestHonesty;
@@ -894,6 +975,7 @@ async function evaluateFixture(input: {
     callGraphRootCauseHit &&
     indirectRelatedTestHit &&
     ambiguousTop3Honesty &&
+    minimalNextActionHit &&
     evidenceComplete &&
     lineRangeComplete &&
     relatedTestsComplete &&
@@ -915,6 +997,7 @@ async function evaluateFixture(input: {
     requiresCallGraph,
     requiresIndirectTest,
     expectsAmbiguousTop3,
+    expectsMinimalNextAction,
     topCandidatePath: top?.path ?? null,
     topCandidateSymbol: top?.symbol ?? null,
     topCandidateEvidence: top?.evidence ?? [],
@@ -930,12 +1013,14 @@ async function evaluateFixture(input: {
     })),
     topCandidateRelatedTests: (top?.related_tests ?? []).map((test) => ({
       path: test.path,
+      symbol: test.symbol,
       command: test.command,
       evidence: test.evidence
     })),
     expectedSourceRelatedTests: expectedSourceCandidates.flatMap((candidate) =>
       (candidate.related_tests ?? []).map((test) => ({
         path: test.path,
+        symbol: test.symbol,
         command: test.command,
         evidence: test.evidence
       }))
@@ -950,6 +1035,7 @@ async function evaluateFixture(input: {
     callGraphRootCauseHit,
     indirectRelatedTestHit,
     ambiguousTop3Honesty,
+    minimalNextActionHit,
     evidenceComplete,
     lineRangeComplete,
     relatedTestsComplete,
@@ -981,6 +1067,7 @@ function renderMarkdownReport(input: {
   callGraphRootCauseAccuracy: number;
   indirectRelatedTestAccuracy: number;
   ambiguousTop3HonestyRate: number;
+  minimalNextActionAccuracy: number;
   evidenceCompleteness: number;
   lineRangeCompleteness: number;
   relatedTestsCompleteness: number;
@@ -1006,6 +1093,7 @@ function renderMarkdownReport(input: {
     `Call graph root-cause accuracy: ${pct(input.callGraphRootCauseAccuracy)}`,
     `Indirect related-test accuracy: ${pct(input.indirectRelatedTestAccuracy)}`,
     `Ambiguous top-3 honesty rate: ${pct(input.ambiguousTop3HonestyRate)}`,
+    `Minimal next-action accuracy: ${pct(input.minimalNextActionAccuracy)}`,
     `Evidence completeness: ${pct(input.evidenceCompleteness)}`,
     `Line range completeness: ${pct(input.lineRangeCompleteness)}`,
     `Related tests completeness: ${pct(input.relatedTestsCompleteness)}`,
@@ -1031,6 +1119,7 @@ function renderMarkdownReport(input: {
     lines.push(`- Requires call graph: ${result.requiresCallGraph ? "yes" : "no"}`);
     lines.push(`- Requires indirect test: ${result.requiresIndirectTest ? "yes" : "no"}`);
     lines.push(`- Expects ambiguous top-3: ${result.expectsAmbiguousTop3 ? "yes" : "no"}`);
+    lines.push(`- Expects minimal next action: ${result.expectsMinimalNextAction ? "yes" : "no"}`);
     lines.push(`- Top candidate: ${result.topCandidatePath ?? "none"} / ${result.topCandidateSymbol ?? "none"}`);
     lines.push(`- Top candidate evidence: ${result.topCandidateEvidence.join(" | ") || "none"}`);
     lines.push(`- Top candidate next actions: ${result.topCandidateNextActions.join(" | ") || "none"}`);
@@ -1046,12 +1135,16 @@ function renderMarkdownReport(input: {
     );
     lines.push(
       `- Top candidate related tests: ${
-        result.topCandidateRelatedTests.map((test) => `${test.path} (${test.command})`).join(", ") || "none"
+        result.topCandidateRelatedTests
+          .map((test) => `${test.path} / ${test.symbol ?? "file"} (${test.command})`)
+          .join(", ") || "none"
       }`
     );
     lines.push(
       `- Expected source related tests: ${
-        result.expectedSourceRelatedTests.map((test) => `${test.path} (${test.command})`).join(", ") || "none"
+        result.expectedSourceRelatedTests
+          .map((test) => `${test.path} / ${test.symbol ?? "file"} (${test.command})`)
+          .join(", ") || "none"
       }`
     );
     lines.push(`- Top-1 file hit: ${result.top1FileHit ? "yes" : "no"}`);
@@ -1078,6 +1171,11 @@ function renderMarkdownReport(input: {
     lines.push(
       `- Ambiguous top-3 honesty: ${
         result.expectsAmbiguousTop3 ? (result.ambiguousTop3Honesty ? "yes" : "no") : "n/a"
+      }`
+    );
+    lines.push(
+      `- Minimal next action hit: ${
+        result.expectsMinimalNextAction ? (result.minimalNextActionHit ? "yes" : "no") : "n/a"
       }`
     );
     lines.push(`- Evidence complete: ${result.evidenceComplete ? "yes" : "no"}`);
@@ -1155,6 +1253,13 @@ async function main() {
           .map((result) => result.ambiguousTop3Honesty)
       ).toFixed(3)
     ),
+    minimalNextActionAccuracy: Number(
+      averageBooleans(
+        results
+          .filter((result) => result.expectsMinimalNextAction)
+          .map((result) => result.minimalNextActionHit)
+      ).toFixed(3)
+    ),
     evidenceCompleteness: Number(averageBooleans(results.map((result) => result.evidenceComplete)).toFixed(3)),
     lineRangeCompleteness: Number(averageBooleans(results.map((result) => result.lineRangeComplete)).toFixed(3)),
     relatedTestsCompleteness: Number(averageBooleans(results.map((result) => result.relatedTestsComplete)).toFixed(3)),
@@ -1186,6 +1291,7 @@ async function main() {
       `Call graph root-cause accuracy: ${pct(report.callGraphRootCauseAccuracy)}`,
       `Indirect related-test accuracy: ${pct(report.indirectRelatedTestAccuracy)}`,
       `Ambiguous top-3 honesty rate: ${pct(report.ambiguousTop3HonestyRate)}`,
+      `Minimal next-action accuracy: ${pct(report.minimalNextActionAccuracy)}`,
       `Evidence completeness: ${pct(report.evidenceCompleteness)}`,
       `Line range completeness: ${pct(report.lineRangeCompleteness)}`,
       `Related tests completeness: ${pct(report.relatedTestsCompleteness)}`,

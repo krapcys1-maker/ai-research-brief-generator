@@ -190,6 +190,7 @@ function extractKeyMetrics(report: Record<string, unknown>) {
     "callGraphRootCauseAccuracy",
     "indirectRelatedTestAccuracy",
     "ambiguousTop3HonestyRate",
+    "minimalNextActionAccuracy",
     "evidenceCompleteness",
     "lineRangeCompleteness",
     "relatedTestsCompleteness",
