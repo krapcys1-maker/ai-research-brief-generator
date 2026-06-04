@@ -10,7 +10,10 @@ import {
   buildProjectResearchPlan,
   handoffFlagResolutionProposalToMarkdown,
   proposeHandoffFlagResolutions,
-  runProjectResearch
+  runProjectResearch,
+  auditSearchFlow,
+  rankCandidatePapersForFullText,
+  searchFlowAuditToMarkdown
 } from "@/lib/project-research";
 import type {
   HandoffFlagResolution,
@@ -57,6 +60,9 @@ type ResearchIteration = {
   requiredBucketsWithoutParsedFullText: string[];
   handoffResolvedProposalCount: number;
   handoffUnresolvedProposalCount: number;
+  searchFlowVerdict: string;
+  successfulQueryCount: number;
+  candidateWithFullTextCandidateCount: number;
   architectureJudgeScore: number;
   architectureJudgeVerdict: string;
   notes: string[];
@@ -208,7 +214,10 @@ async function searchAndIngestIteration(input: {
   const candidateIds = new Set(
     preEvidence.bucketMetrics.flatMap((bucket) => bucket.topPaperIds)
   );
-  const candidatePapers = dedupedPapers.filter((paper) => candidateIds.has(paper.id));
+  const candidatePapers = rankCandidatePapersForFullText({
+    papers: dedupedPapers.filter((paper) => candidateIds.has(paper.id)),
+    bucketMetrics: preEvidence.bucketMetrics
+  });
   const savedPdfFiles = new Map<string, string>();
   const ingestion = await ingestFullTextForPapers(candidatePapers, {
     limit: input.fullTextLimit,
@@ -299,6 +308,15 @@ async function searchAndIngestIteration(input: {
       papersForResearch.map((paper) => [paper.id, paperText(paper)])
     )
   });
+  const searchFlowAudit = auditSearchFlow({
+    queryVariants: input.queryVariants,
+    sourceDiagnostics: sourceSearch.sourceDiagnostics,
+    rawPapers: sourceSearch.papers,
+    dedupedPapers,
+    candidatePapers,
+    evidenceCollection: preEvidence,
+    fullTextAttempts: ingestion.results
+  });
 
   await Promise.all([
     writeJson(
@@ -308,6 +326,12 @@ async function searchAndIngestIteration(input: {
     writeFile(
       join(iterationDir, "07_handoff_flag_resolution_proposal.md"),
       handoffFlagResolutionProposalToMarkdown(handoffFlagResolutionProposal),
+      "utf8"
+    ),
+    writeJson(join(iterationDir, "08_search_flow_audit.json"), searchFlowAudit),
+    writeFile(
+      join(iterationDir, "08_search_flow_audit.md"),
+      searchFlowAuditToMarkdown(searchFlowAudit),
       "utf8"
     )
   ]);
@@ -322,6 +346,7 @@ async function searchAndIngestIteration(input: {
     dedupedPaperCount: dedupedPapers.length,
     candidatePaperCount: candidatePapers.length,
     attemptedFullTextCount: ingestion.results.length,
+    searchFlowAudit,
     requiredBucketsWithoutParsedFullText,
     handoffFlagResolutionProposal
   };
@@ -381,6 +406,9 @@ function renderStart(input: {
       `- Raw papers: ${iteration.rawPaperCount}`,
       `- Deduped papers: ${iteration.dedupedPaperCount}`,
       `- Candidate papers: ${iteration.candidatePaperCount}`,
+      `- Search flow: ${iteration.searchFlowVerdict}`,
+      `- Successful queries: ${iteration.successfulQueryCount}`,
+      `- Candidates with full-text/PDF: ${iteration.candidateWithFullTextCandidateCount}`,
       `- Attempted full-text: ${iteration.attemptedFullTextCount}`,
       `- Parsed full-text: ${iteration.parsedFullTextCount}`,
       `- Saved PDFs: ${iteration.savedPdfCount}`,
@@ -574,6 +602,10 @@ async function main() {
       handoffUnresolvedProposalCount: countUnresolvedProposal(
         result.handoffFlagResolutionProposal
       ),
+      searchFlowVerdict: result.searchFlowAudit.verdict,
+      successfulQueryCount: result.searchFlowAudit.successfulQueryCount,
+      candidateWithFullTextCandidateCount:
+        result.searchFlowAudit.candidateWithFullTextCandidateCount,
       architectureJudgeScore: result.manifest.architectureJudgeScore,
       architectureJudgeVerdict: result.manifest.architectureJudgeVerdict,
       notes

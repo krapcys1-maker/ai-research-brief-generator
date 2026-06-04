@@ -6,5 +6,6 @@ export * from "@/lib/project-research/paperRelevanceJudge";
 export * from "@/lib/project-research/ideaNormalizer";
 export * from "@/lib/project-research/researchPlan";
 export * from "@/lib/project-research/runner";
+export * from "@/lib/project-research/searchFlowAudit";
 export * from "@/lib/project-research/schemas";
 export * from "@/lib/project-research/types";

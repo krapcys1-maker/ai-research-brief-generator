@@ -406,12 +406,22 @@ The full-pass runner also writes per-iteration audit proposals:
 ```text
 07_handoff_flag_resolution_proposal.json
 07_handoff_flag_resolution_proposal.md
+08_search_flow_audit.json
+08_search_flow_audit.md
 ```
 
 These proposals are generated from coverage, parsed full-text count, required
 buckets without parsed full-text and reviewed papers. They are intentionally not
 silently applied to the pack; they are audit artifacts that can be inspected
 before being passed as `handoffFlagResolutions`.
+
+`08_search_flow_audit.*` follows the next cable: research query variants ->
+source diagnostics -> raw papers -> deduped papers -> bucket candidates ->
+full-text ingestion. Candidate papers are ranked for ingestion by legal
+full-text/PDF availability first, then evidence-bucket rank, citation count and
+recency. The audit flags runs where too few query variants returned papers,
+candidate papers lack open full text, full-text ingestion parsed nothing, or
+required evidence buckets did not produce candidates.
 
 The full-pass runner supports explicit idea selection modes:
 
