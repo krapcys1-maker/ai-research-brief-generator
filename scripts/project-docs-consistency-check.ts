@@ -73,6 +73,7 @@ const requiredMetrics = [
   "top3SymbolAccuracy",
   "top5TestFileAccuracy",
   "relatedTestAccuracy",
+  "noDirectTestHonestyRate",
   "relatedTestsCompleteness",
   "unknownsCompleteness",
   "whyNotCompleteness",

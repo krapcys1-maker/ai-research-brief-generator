@@ -186,6 +186,7 @@ function extractKeyMetrics(report: Record<string, unknown>) {
     "top3SymbolAccuracy",
     "top5TestFileAccuracy",
     "relatedTestAccuracy",
+    "noDirectTestHonestyRate",
     "evidenceCompleteness",
     "lineRangeCompleteness",
     "relatedTestsCompleteness",

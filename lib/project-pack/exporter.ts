@@ -1959,7 +1959,7 @@ function repoMriStarterCodeFiles(shape: ProductShape): ProjectPackArtifact[] {
         "    for item in ranked:",
         "        file_name = item['path'].split('/')[-1]",
         "        item['related_tests'] = related_tests_for(item)",
-        "        test_action = item['related_tests'][0]['command'] if item['related_tests'] else f\"search tests for {item['symbol'] or file_name}\"",
+        "        test_action = item['related_tests'][0]['command'] if item['related_tests'] else f\"add characterization test for {item['symbol'] or file_name} before editing\"",
         "        item['next_actions'] = [",
         "            f\"open {item['path']}\" + (f\":{item['line_range'][0]}\" if item.get('line_range') else ''),",
         "            test_action,",

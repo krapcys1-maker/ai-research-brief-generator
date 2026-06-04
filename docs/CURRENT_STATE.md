@@ -187,7 +187,8 @@ GitHub / GH Archive signals -> trend radar -> adjacent idea discovery -> anti-cl
     related tests with runnable test commands, plus unknowns and why-not
     explanations for runner-up candidates.
   - Repo MRI realistic Bug Path fixtures include direct file hints, no-file-hint
-    localization, similar symbol disambiguation and related test selection.
+    localization, similar symbol disambiguation, related test selection and
+    honest no-direct-test guidance.
   - `npm run benchmark:project-pipeline` aggregates the project planning
     benchmark suite.
   - `npm run benchmark:project-live-batch` checks controlled dry-run budget

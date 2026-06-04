@@ -18,7 +18,7 @@ type BugPathFixture = {
   searchQuery: string;
   expectedFile: string;
   expectedSymbol: string;
-  expectedTestFile: string;
+  expectedTestFile: string | null;
 };
 
 type BugPathCandidate = {
@@ -59,8 +59,10 @@ type CaseResult = {
   indexedEdges: number;
   searchHitCount: number;
   secretSearchHitCount: number;
+  expectsDirectTest: boolean;
   topCandidatePath: string | null;
   topCandidateSymbol: string | null;
+  topCandidateNextActions: string[];
   unknowns: string[];
   whyNotOtherCandidates: Array<{
     path: string;
@@ -83,6 +85,7 @@ type CaseResult = {
   top3SymbolHit: boolean;
   top5TestFileHit: boolean;
   relatedTestFileHit: boolean;
+  noDirectTestHonesty: boolean;
   evidenceComplete: boolean;
   lineRangeComplete: boolean;
   relatedTestsComplete: boolean;
@@ -390,6 +393,48 @@ const fixtures: BugPathFixture[] = [
         content: "SUPER_SECRET_TOKEN=do-not-index\n"
       }
     ]
+  },
+  {
+    id: "python_feature_flag_no_direct_test",
+    repoName: "feature_flags",
+    expectedFile: "feature_flags.py",
+    expectedSymbol: "is_feature_enabled",
+    expectedTestFile: null,
+    searchQuery: "feature flag expires rollout remains enabled",
+    issue:
+      "Rollout remains enabled after the feature flag expires for an account even though expired flags should be disabled",
+    files: [
+      {
+        path: "feature_flags.py",
+        content: [
+          "from datetime import datetime",
+          "",
+          "",
+          "def is_feature_enabled(flag: dict, account_id: str, now: datetime) -> bool:",
+          "    if account_id not in flag.get('accounts', []):",
+          "        return False",
+          "    expires_at = flag.get('expires_at')",
+          "    if expires_at is None:",
+          "        return True",
+          "    return now <= expires_at",
+          "",
+          "",
+          "def list_enabled_flags(flags: list[dict], account_id: str, now: datetime) -> list[str]:",
+          "    return [flag['name'] for flag in flags if is_feature_enabled(flag, account_id, now)]"
+        ].join("\n")
+      },
+      {
+        path: "accounts.py",
+        content: [
+          "def account_key(account_id: str) -> str:",
+          "    return account_id.strip().lower()"
+        ].join("\n")
+      },
+      {
+        path: ".env",
+        content: "SUPER_SECRET_TOKEN=do-not-index\n"
+      }
+    ]
   }
 ];
 
@@ -558,32 +603,44 @@ async function evaluateFixture(input: {
       candidate.path === input.fixture.expectedFile &&
       candidate.symbol === input.fixture.expectedSymbol
   );
-  const top5TestFileHit = top5.some(
-    (candidate) => candidate.path === input.fixture.expectedTestFile
-  );
+  const expectsDirectTest = input.fixture.expectedTestFile !== null;
+  const top5TestFileHit = expectsDirectTest
+    ? top5.some((candidate) => candidate.path === input.fixture.expectedTestFile)
+    : top5.every(
+        (candidate) => !candidate.path.includes("test") && !candidate.path.includes("spec")
+      );
   const expectedSourceCandidates = candidates.filter(
     (candidate) =>
       candidate.path === input.fixture.expectedFile &&
       candidate.symbol === input.fixture.expectedSymbol
   );
-  const relatedTestFileHit = expectedSourceCandidates.some((candidate) =>
-    (candidate.related_tests ?? []).some(
-      (relatedTest) => relatedTest.path === input.fixture.expectedTestFile
-    )
-  );
+  const topCandidateHasNoRelatedTests = (top?.related_tests ?? []).length === 0;
+  const noDirectTestHonesty =
+    expectsDirectTest ||
+    (topCandidateHasNoRelatedTests &&
+      unknowns.some((unknown) => unknown.includes("no directly matched related test")) &&
+      (top?.next_actions ?? []).some((action) => action.includes("characterization test")));
+  const relatedTestFileHit = expectsDirectTest
+    ? expectedSourceCandidates.some((candidate) =>
+        (candidate.related_tests ?? []).some(
+          (relatedTest) => relatedTest.path === input.fixture.expectedTestFile
+        )
+      )
+    : noDirectTestHonesty;
   const evidenceComplete =
     candidates.length > 0 &&
     candidates.every((candidate) => candidate.evidence.length > 0);
   const lineRangeComplete =
     candidates.length > 0 &&
     candidates.every((candidate) => Array.isArray(candidate.line_range));
-  const relatedTestsComplete =
-    candidates.length > 0 &&
-    candidates.every((candidate) =>
-      candidate.path.includes("test") ||
-      candidate.path.includes("spec") ||
-      (candidate.related_tests?.length ?? 0) > 0
-    );
+  const relatedTestsComplete = expectsDirectTest
+    ? candidates.length > 0 &&
+      candidates.every((candidate) =>
+        candidate.path.includes("test") ||
+        candidate.path.includes("spec") ||
+        (candidate.related_tests?.length ?? 0) > 0
+      )
+    : candidates.length > 0 && topCandidateHasNoRelatedTests;
   const unknownsComplete = unknowns.length >= 2 && unknowns.every((unknown) => unknown.length >= 20);
   const whyNotComplete =
     candidates.length <= 1 ||
@@ -602,6 +659,7 @@ async function evaluateFixture(input: {
     top3SymbolHit &&
     top5TestFileHit &&
     relatedTestFileHit &&
+    noDirectTestHonesty &&
     evidenceComplete &&
     lineRangeComplete &&
     relatedTestsComplete &&
@@ -619,8 +677,10 @@ async function evaluateFixture(input: {
     indexedEdges: indexStats.edges ?? 0,
     searchHitCount: searchResults.length,
     secretSearchHitCount: secretSearchResults.length,
+    expectsDirectTest,
     topCandidatePath: top?.path ?? null,
     topCandidateSymbol: top?.symbol ?? null,
+    topCandidateNextActions: top?.next_actions ?? [],
     unknowns,
     whyNotOtherCandidates: whyNotOtherCandidates.map((decision) => ({
       path: decision.path,
@@ -645,6 +705,7 @@ async function evaluateFixture(input: {
     top3SymbolHit,
     top5TestFileHit,
     relatedTestFileHit,
+    noDirectTestHonesty,
     evidenceComplete,
     lineRangeComplete,
     relatedTestsComplete,
@@ -672,6 +733,7 @@ function renderMarkdownReport(input: {
   top3SymbolAccuracy: number;
   top5TestFileAccuracy: number;
   relatedTestAccuracy: number;
+  noDirectTestHonestyRate: number;
   evidenceCompleteness: number;
   lineRangeCompleteness: number;
   relatedTestsCompleteness: number;
@@ -693,6 +755,7 @@ function renderMarkdownReport(input: {
     `Top-3 symbol accuracy: ${pct(input.top3SymbolAccuracy)}`,
     `Top-5 test file accuracy: ${pct(input.top5TestFileAccuracy)}`,
     `Related test accuracy: ${pct(input.relatedTestAccuracy)}`,
+    `No-direct-test honesty rate: ${pct(input.noDirectTestHonestyRate)}`,
     `Evidence completeness: ${pct(input.evidenceCompleteness)}`,
     `Line range completeness: ${pct(input.lineRangeCompleteness)}`,
     `Related tests completeness: ${pct(input.relatedTestsCompleteness)}`,
@@ -714,7 +777,9 @@ function renderMarkdownReport(input: {
     lines.push(`- Indexed edges: ${result.indexedEdges}`);
     lines.push(`- Search hits: ${result.searchHitCount}`);
     lines.push(`- Secret search hits: ${result.secretSearchHitCount}`);
+    lines.push(`- Expects direct test: ${result.expectsDirectTest ? "yes" : "no"}`);
     lines.push(`- Top candidate: ${result.topCandidatePath ?? "none"} / ${result.topCandidateSymbol ?? "none"}`);
+    lines.push(`- Top candidate next actions: ${result.topCandidateNextActions.join(" | ") || "none"}`);
     lines.push(`- Unknowns: ${result.unknowns.join(" | ") || "none"}`);
     lines.push(
       `- Why not other candidates: ${
@@ -739,6 +804,11 @@ function renderMarkdownReport(input: {
     lines.push(`- Top-3 symbol hit: ${result.top3SymbolHit ? "yes" : "no"}`);
     lines.push(`- Top-5 test file hit: ${result.top5TestFileHit ? "yes" : "no"}`);
     lines.push(`- Related test file hit: ${result.relatedTestFileHit ? "yes" : "no"}`);
+    lines.push(
+      `- No-direct-test honesty: ${
+        result.expectsDirectTest ? "n/a" : result.noDirectTestHonesty ? "yes" : "no"
+      }`
+    );
     lines.push(`- Evidence complete: ${result.evidenceComplete ? "yes" : "no"}`);
     lines.push(`- Line ranges complete: ${result.lineRangeComplete ? "yes" : "no"}`);
     lines.push(`- Related tests complete: ${result.relatedTestsComplete ? "yes" : "no"}`);
@@ -786,6 +856,13 @@ async function main() {
     top3SymbolAccuracy: Number(averageBooleans(results.map((result) => result.top3SymbolHit)).toFixed(3)),
     top5TestFileAccuracy: Number(averageBooleans(results.map((result) => result.top5TestFileHit)).toFixed(3)),
     relatedTestAccuracy: Number(averageBooleans(results.map((result) => result.relatedTestFileHit)).toFixed(3)),
+    noDirectTestHonestyRate: Number(
+      averageBooleans(
+        results
+          .filter((result) => !result.expectsDirectTest)
+          .map((result) => result.noDirectTestHonesty)
+      ).toFixed(3)
+    ),
     evidenceCompleteness: Number(averageBooleans(results.map((result) => result.evidenceComplete)).toFixed(3)),
     lineRangeCompleteness: Number(averageBooleans(results.map((result) => result.lineRangeComplete)).toFixed(3)),
     relatedTestsCompleteness: Number(averageBooleans(results.map((result) => result.relatedTestsComplete)).toFixed(3)),
@@ -813,6 +890,7 @@ async function main() {
       `Top-3 symbol accuracy: ${pct(report.top3SymbolAccuracy)}`,
       `Top-5 test file accuracy: ${pct(report.top5TestFileAccuracy)}`,
       `Related test accuracy: ${pct(report.relatedTestAccuracy)}`,
+      `No-direct-test honesty rate: ${pct(report.noDirectTestHonestyRate)}`,
       `Evidence completeness: ${pct(report.evidenceCompleteness)}`,
       `Line range completeness: ${pct(report.lineRangeCompleteness)}`,
       `Related tests completeness: ${pct(report.relatedTestsCompleteness)}`,

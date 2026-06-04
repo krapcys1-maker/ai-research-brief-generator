@@ -98,6 +98,7 @@ This benchmark generates the current Repo MRI project pack, runs the generated P
 - `top3SymbolAccuracy`
 - `top5TestFileAccuracy`
 - `relatedTestAccuracy`
+- `noDirectTestHonestyRate`
 - `evidenceCompleteness`
 - `lineRangeCompleteness`
 - `relatedTestsCompleteness`
@@ -105,7 +106,7 @@ This benchmark generates the current Repo MRI project pack, runs the generated P
 - `whyNotCompleteness`
 - `secretIgnoreRate`
 
-This is the main proof that the project pack is not only a plan. It must show that generated starter code can localize issue text to likely files, symbols, related tests and next actions with evidence, unknowns and why-not explanations for runner-up candidates.
+This is the main proof that the project pack is not only a plan. It must show that generated starter code can localize issue text to likely files, symbols, related tests when they exist, honest no-direct-test guidance when they do not, and next actions with evidence, unknowns and why-not explanations for runner-up candidates.
 
 The system also includes a Repo MRI local checkout benchmark:
 
