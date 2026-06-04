@@ -55,6 +55,34 @@ const tradingIdea: ProjectIdeaInput = {
   outputLanguage: "pl"
 };
 
+function candidatePaper(input: {
+  id: string;
+  title: string;
+  abstract: string;
+  arxivId?: string | null;
+  source?: NormalizedPaper["source"];
+}): NormalizedPaper {
+  return {
+    id: input.id,
+    title: input.title,
+    abstract: input.abstract,
+    authors: ["Benchmark Author"],
+    year: 2026,
+    publishedAt: "2026-01-01",
+    doi: null,
+    arxivId: input.arxivId ?? null,
+    semanticScholarId: null,
+    openAlexId: null,
+    sourceUrls: [`https://example.com/${input.id}`],
+    pdfUrl: `https://example.com/${input.id}.pdf`,
+    venue: "Benchmark Venue",
+    citationCount: 0,
+    influentialCitationCount: 0,
+    source: input.source ?? "arxiv",
+    fullTextStatus: "parsed"
+  };
+}
+
 describe("collectProjectEvidenceFromPapers", () => {
   it("maps normalized papers to reviewed papers with complete bucket coverage", () => {
     const { researchPlan } = buildProjectResearchPlan(tradingIdea);
@@ -320,5 +348,119 @@ describe("collectProjectEvidenceFromPapers", () => {
     expect(result.reviewedPapers.map((paper) => paper.paperId)).not.toContain(
       "remote_patient_monitoring"
     );
+  });
+
+  it("rejects generic infrastructure monitoring when researching agent sandbox runtime observability", () => {
+    const { researchPlan } = buildProjectResearchPlan({
+      title: "Agent Sandbox Health Monitor",
+      description:
+        "Preflight and observe AI agent sandbox runtime failures, network misconfiguration and unsafe policy drift.",
+      constraints: ["MVP must be evidence-backed"],
+      preferredDomains: ["AI agents", "sandbox reliability", "agent safety"],
+      outputLanguage: "pl"
+    });
+    const bucket = researchPlan.evidenceBuckets.find(
+      (item) => item.id === "runtime_observability"
+    );
+
+    expect(bucket).toBeDefined();
+
+    const result = collectProjectEvidenceFromPapers({
+      researchPlan: { ...researchPlan, evidenceBuckets: [bucket!] },
+      papers: [
+        candidatePaper({
+          id: "fog_cloud_monitoring",
+          title: "A Survey on Intrusion Detection Systems for Fog and Cloud Computing",
+          abstract:
+            "Network configuration monitoring and failure diagnosis are used for cloud infrastructure security and anomaly detection."
+        }),
+        candidatePaper({
+          id: "agent_container_runtime_logs",
+          title: "Runtime Observability for Containerized AI Agents",
+          abstract:
+            "AI agent sandboxes need runtime observability, container logs, telemetry, network configuration checks and failure diagnosis for tool execution."
+        })
+      ]
+    });
+
+    const paperIds = result.reviewedPapers.map((paper) => paper.paperId);
+    expect(paperIds).toContain("agent_container_runtime_logs");
+    expect(paperIds).not.toContain("fog_cloud_monitoring");
+  });
+
+  it("rejects generic security papers when researching self-hosted AI controls", () => {
+    const { researchPlan } = buildProjectResearchPlan({
+      title: "Self-Hosted AI Workspace Policy Auditor",
+      description:
+        "Audit self-hosted AI workspace readiness, local data boundaries, secrets and deployment security.",
+      constraints: ["MVP must be evidence-backed"],
+      preferredDomains: ["self-hosted AI", "workspace governance", "security audit"],
+      outputLanguage: "pl"
+    });
+    const bucket = researchPlan.evidenceBuckets.find(
+      (item) => item.id === "self_hosted_security_controls"
+    );
+
+    expect(bucket).toBeDefined();
+
+    const result = collectProjectEvidenceFromPapers({
+      researchPlan: { ...researchPlan, evidenceBuckets: [bucket!] },
+      papers: [
+        candidatePaper({
+          id: "transport_blockchain_security",
+          title: "Blockchain Technology for Intelligent Transportation Systems",
+          abstract:
+            "This survey covers security controls, privacy, governance and risk management for transportation data sharing."
+        }),
+        candidatePaper({
+          id: "self_hosted_workspace_secrets",
+          title: "Security Controls for Self-Hosted AI Workspaces",
+          abstract:
+            "Self-hosted AI deployments require secrets management, local data controls, workspace policy boundaries and deployment audit checks."
+        })
+      ]
+    });
+
+    const paperIds = result.reviewedPapers.map((paper) => paper.paperId);
+    expect(paperIds).toContain("self_hosted_workspace_secrets");
+    expect(paperIds).not.toContain("transport_blockchain_security");
+  });
+
+  it("rejects non-document conversion papers when researching Markdown conversion quality", () => {
+    const { researchPlan } = buildProjectResearchPlan({
+      title: "Document Conversion QA for RAG",
+      description:
+        "Check PDF and Office document conversion to Markdown for table preservation and RAG ingestion quality.",
+      constraints: ["MVP must be evidence-backed"],
+      preferredDomains: ["document AI", "RAG ingestion", "conversion quality"],
+      outputLanguage: "pl"
+    });
+    const bucket = researchPlan.evidenceBuckets.find(
+      (item) => item.id === "document_structure_preservation"
+    );
+
+    expect(bucket).toBeDefined();
+
+    const result = collectProjectEvidenceFromPapers({
+      researchPlan: { ...researchPlan, evidenceBuckets: [bucket!] },
+      papers: [
+        candidatePaper({
+          id: "chemical_conversion_tables",
+          title: "Conversion Tables for Chemical Reaction Structure Preservation",
+          abstract:
+            "The method preserves table structure during chemical conversion and evaluates downstream accuracy."
+        }),
+        candidatePaper({
+          id: "pdf_markdown_structure",
+          title: "Document Conversion to Markdown with PDF Table Structure Preservation",
+          abstract:
+            "Document conversion pipelines for PDF and Office files need Markdown tables, section ordering and structure preservation for RAG ingestion."
+        })
+      ]
+    });
+
+    const paperIds = result.reviewedPapers.map((paper) => paper.paperId);
+    expect(paperIds).toContain("pdf_markdown_structure");
+    expect(paperIds).not.toContain("chemical_conversion_tables");
   });
 });

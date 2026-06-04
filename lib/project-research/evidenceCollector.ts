@@ -66,6 +66,101 @@ const REQUIRED_ANCHOR_TERMS_BY_BUCKET: Record<string, string[]> = {
     "software",
     "terminal",
     "command"
+  ],
+  sandbox_preflight_checks: [
+    "agent",
+    "llm agent",
+    "sandbox",
+    "sandboxed",
+    "runtime",
+    "tool call",
+    "execution gate"
+  ],
+  tool_policy_safety: [
+    "agent",
+    "tool",
+    "tool use",
+    "sandbox",
+    "permission",
+    "capability",
+    "policy"
+  ],
+  runtime_observability: [
+    "agent",
+    "container",
+    "sandbox",
+    "runtime",
+    "tool",
+    "logs",
+    "telemetry"
+  ],
+  release_gate_replay: [
+    "agent",
+    "sandbox",
+    "replay",
+    "fixture",
+    "release gate",
+    "runtime"
+  ],
+  self_hosted_security_controls: [
+    "self-hosted",
+    "self hosted",
+    "secrets",
+    "workspace",
+    "local data"
+  ],
+  ai_workspace_governance: [
+    "workspace",
+    "tool approval",
+    "policy readiness",
+    "privacy",
+    "ai workspace",
+    "governance"
+  ],
+  local_first_privacy: [
+    "local-first",
+    "local first",
+    "self-hosted",
+    "self hosted",
+    "local data",
+    "data boundary"
+  ],
+  deployment_readiness_audit: [
+    "deployment readiness",
+    "configuration audit",
+    "remediation",
+    "self-hosted",
+    "workspace",
+    "security"
+  ],
+  document_structure_preservation: [
+    "document",
+    "pdf",
+    "markdown",
+    "ocr"
+  ],
+  rag_ingestion_quality: [
+    "rag",
+    "retrieval augmented generation",
+    "ingestion",
+    "document ingestion",
+    "grounding"
+  ],
+  conversion_regression_fixtures: [
+    "document",
+    "pdf",
+    "ocr",
+    "fixture",
+    "regression test",
+    "table"
+  ],
+  unsafe_document_inputs: [
+    "document",
+    "untrusted",
+    "prompt injection",
+    "rag",
+    "ingestion",
+    "llm"
   ]
 };
 const STOP_TERMS = new Set([
