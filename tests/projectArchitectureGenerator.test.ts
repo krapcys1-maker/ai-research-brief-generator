@@ -92,6 +92,20 @@ const agentApprovalIdea: ProjectIdeaInput = {
   outputLanguage: "pl"
 };
 
+const providerCompatibilityIdea: ProjectIdeaInput = {
+  title: "AI CLI Provider Compatibility Monitor",
+  description:
+    "Teams switching between AI coding CLIs and third-party providers hit confusing auth, capability, proxy behavior, and model-routing failures that are hard to diagnose.",
+  constraints: [
+    "do not clone the source repository",
+    "MVP: ingest provider configs, CLI health checks, and failed conversation logs",
+    "MVP: classify failures by auth, capability mismatch, proxy behavior, and model routing",
+    "MVP: produce provider compatibility reports and suggested fallback routes"
+  ],
+  preferredDomains: ["AI developer tools", "provider routing", "CLI reliability"],
+  outputLanguage: "pl"
+};
+
 describe("generateProjectArchitecture", () => {
   it("generates ready architecture from ready PRD and research brief", () => {
     const brief = buildProjectResearchBrief({
@@ -156,6 +170,37 @@ describe("generateProjectArchitecture", () => {
     expect(architecture.traceability.decisionsWithPaperSources).toBe(
       architecture.decisions.length
     );
+  });
+
+  it("keeps document conversion blueprint when anti-clone constraints mention source repositories", () => {
+    const noisyDocumentConversionIdea: ProjectIdeaInput = {
+      ...documentConversionIdea,
+      constraints: [
+        "do not clone the source repository",
+        "do not automate irreversible actions in MVP",
+        ...documentConversionIdea.constraints
+      ]
+    };
+    const brief = buildProjectResearchBrief({
+      idea: noisyDocumentConversionIdea,
+      reviewedPapers: fullEvidenceForIdea(noisyDocumentConversionIdea),
+      generatedAt: "2026-06-03T16:00:00.000Z"
+    });
+    const prd = generateProjectPrd({ brief });
+
+    const architecture = generateProjectArchitecture({
+      prd,
+      brief,
+      generatedAt: "2026-06-03T16:05:00.000Z"
+    });
+    const componentNames = architecture.components
+      .map((component) => component.name)
+      .join(" ");
+
+    expect(componentNames).toContain("Document Fixture Intake Adapter");
+    expect(componentNames).toContain("Structure And RAG Quality AI Evaluator");
+    expect(componentNames).not.toContain("Repository And Issue Intake Adapter");
+    expect(architecture.audit.verdict).toContain("document_conversion_qa");
   });
 
   it("fails schema-valid but generic architecture mutations", () => {
@@ -252,6 +297,32 @@ describe("generateProjectArchitecture", () => {
     );
     expect(judge.verdict).toBe("pass");
     expect(judge.score).toBeGreaterThanOrEqual(90);
+    expect(judge.genericComponentCount).toBe(0);
+  });
+
+  it("keeps provider compatibility blueprint when anti-clone constraints mention source repositories", () => {
+    const brief = buildProjectResearchBrief({
+      idea: providerCompatibilityIdea,
+      reviewedPapers: fullEvidenceForIdea(providerCompatibilityIdea),
+      generatedAt: "2026-06-03T16:00:00.000Z"
+    });
+    const prd = generateProjectPrd({ brief });
+
+    const architecture = generateProjectArchitecture({
+      prd,
+      brief,
+      generatedAt: "2026-06-03T16:05:00.000Z"
+    });
+    const judge = judgeProjectArchitecture({ architecture, prd, brief });
+    const componentNames = architecture.components
+      .map((component) => component.name)
+      .join(" ");
+
+    expect(componentNames).toContain("Provider Config And Log Intake Adapter");
+    expect(componentNames).toContain("Failure Classification AI Evaluator");
+    expect(componentNames).not.toContain("Repository And Issue Intake Adapter");
+    expect(architecture.audit.verdict).toContain("ai_cli_provider_reliability");
+    expect(judge.verdict).toBe("pass");
     expect(judge.genericComponentCount).toBe(0);
   });
 

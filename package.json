@@ -34,6 +34,7 @@
     "project:ideas": "tsx scripts/project-idea-discovery-runner.ts",
     "project:live-batch": "tsx scripts/project-live-batch-sampling.ts",
     "project:research": "tsx scripts/project-research-runner.ts",
+    "project:full-pass": "tsx scripts/project-full-pass-run.ts",
     "worker:briefs": "tsx scripts/brief-job-worker.ts",
     "worker:fulltext": "tsx scripts/fulltext-ingestion-worker.ts",
     "smoke:deploy": "node scripts/deployment-smoke.mjs",

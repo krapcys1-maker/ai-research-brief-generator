@@ -236,22 +236,6 @@ function architectureBlueprint(input: GenerateProjectArchitectureInput): Bluepri
   }
 
   if (
-    text.includes("technical debt") ||
-    text.includes("refactor") ||
-    text.includes("code review") ||
-    text.includes("repository")
-  ) {
-    return commonBlueprint({
-      profile: "technical_debt_sprint_planner",
-      noun: "technical debt sprint planning",
-      intake: "Repository And Issue",
-      evidence: "Refactor Evidence",
-      evaluator: "Debt Priority And Risk",
-      report: "Sprint Refactor Plan"
-    });
-  }
-
-  if (
     text.includes("medical") ||
     text.includes("clinical") ||
     text.includes("healthcare") ||
@@ -280,6 +264,26 @@ function architectureBlueprint(input: GenerateProjectArchitectureInput): Bluepri
       evidence: "Conversion QA",
       evaluator: "Structure And RAG Quality",
       report: "Conversion Regression"
+    });
+  }
+
+  if (
+    text.includes("technical debt") ||
+    text.includes("refactor") ||
+    text.includes("code review") ||
+    (text.includes("repository") &&
+      (text.includes("static analysis") ||
+        text.includes("maintainability") ||
+        text.includes("technical debt") ||
+        text.includes("refactor")))
+  ) {
+    return commonBlueprint({
+      profile: "technical_debt_sprint_planner",
+      noun: "technical debt sprint planning",
+      intake: "Repository And Issue",
+      evidence: "Refactor Evidence",
+      evaluator: "Debt Priority And Risk",
+      report: "Sprint Refactor Plan"
     });
   }
 

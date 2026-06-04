@@ -3,10 +3,16 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { chunkPaperText } from "@/lib/fulltext/chunkText";
 import { fetchPdf } from "@/lib/fulltext/fetchPdf";
+import { ingestFullTextForPapers } from "@/lib/fulltext/ingest";
 import {
   createPdfParseDiagnostics,
   parseExtractedPdfText
 } from "@/lib/fulltext/parsePdf";
+import type {
+  FullTextRepository,
+  SavePaperFullTextInput
+} from "@/lib/fulltext/types";
+import type { NormalizedPaper } from "@/lib/sources/types";
 
 function pdfFixtureText(filename: string) {
   return readFileSync(
@@ -139,5 +145,69 @@ describe("full-text fetch, parse, and chunking", () => {
       evidenceLevel: "full_text_supported"
     });
     expect(chunks[1].chunkIndex).toBe(1);
+  });
+
+  it("exposes fetched PDF bytes before parser failures so runners can archive PDFs", async () => {
+    const saved: SavePaperFullTextInput[] = [];
+    const repository: FullTextRepository = {
+      async save(input) {
+        saved.push(input);
+        return input.fullText;
+      },
+      async getByPaperId() {
+        return null;
+      },
+      async getChunksByPaperIds() {
+        return [];
+      },
+      async clear() {
+        saved.length = 0;
+      }
+    };
+    const paper: NormalizedPaper = {
+      id: "paper_pdf_callback",
+      title: "PDF callback paper",
+      abstract: "A paper with a downloadable PDF.",
+      authors: [],
+      year: 2026,
+      publishedAt: null,
+      doi: null,
+      arxivId: null,
+      semanticScholarId: null,
+      openAlexId: null,
+      sourceUrls: ["https://example.org/paper"],
+      pdfUrl: "https://example.org/paper.pdf",
+      venue: null,
+      citationCount: null,
+      influentialCitationCount: null,
+      source: "openalex"
+    };
+    let archived:
+      | {
+          paper: NormalizedPaper;
+          bytes: Uint8Array;
+        }
+      | null = null;
+
+    await ingestFullTextForPapers([paper], {
+      repository,
+      fetchImpl: async () =>
+        new Response(new Uint8Array([37, 80, 68, 70, 45, 49, 46, 52]), {
+          status: 200,
+          headers: {
+            "content-type": "application/pdf"
+          }
+        }),
+      onPdfFetched: ({ paper: fetchedPaper, fetched }) => {
+        archived = {
+          paper: fetchedPaper,
+          bytes: fetched.bytes
+        };
+      }
+    });
+
+    expect(archived?.paper.id).toBe("paper_pdf_callback");
+    expect(archived?.bytes.length).toBeGreaterThan(0);
+    expect(saved[0]?.fullText.status).toBe("failed");
   });
 });
