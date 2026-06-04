@@ -76,6 +76,7 @@ const requiredMetrics = [
   "noDirectTestHonestyRate",
   "callGraphRootCauseAccuracy",
   "indirectRelatedTestAccuracy",
+  "ambiguousTop3HonestyRate",
   "relatedTestsCompleteness",
   "unknownsCompleteness",
   "whyNotCompleteness",

@@ -21,6 +21,7 @@ type BugPathFixture = {
   expectedTestFile: string | null;
   requiresCallGraph?: boolean;
   requiresIndirectTest?: boolean;
+  expectsAmbiguousTop3?: boolean;
   expectedRootCauseFile?: string;
   expectedRootCauseSymbol?: string;
 };
@@ -72,6 +73,8 @@ type CaseResult = {
   secretSearchHitCount: number;
   expectsDirectTest: boolean;
   requiresCallGraph: boolean;
+  requiresIndirectTest: boolean;
+  expectsAmbiguousTop3: boolean;
   topCandidatePath: string | null;
   topCandidateSymbol: string | null;
   topCandidateEvidence: string[];
@@ -104,6 +107,7 @@ type CaseResult = {
   noDirectTestHonesty: boolean;
   callGraphRootCauseHit: boolean;
   indirectRelatedTestHit: boolean;
+  ambiguousTop3Honesty: boolean;
   evidenceComplete: boolean;
   lineRangeComplete: boolean;
   relatedTestsComplete: boolean;
@@ -568,6 +572,66 @@ const fixtures: BugPathFixture[] = [
         content: "SUPER_SECRET_TOKEN=do-not-index\n"
       }
     ]
+  },
+  {
+    id: "python_report_export_ambiguous_top3",
+    repoName: "report_exporter",
+    expectedFile: "cache/export_cache.py",
+    expectedSymbol: "refresh_export_cache",
+    expectedTestFile: "tests/test_report_export.py",
+    expectsAmbiguousTop3: true,
+    searchQuery: "report export stale cache download csv",
+    issue:
+      "Report export download still serves stale cached CSV while cache refresh should invalidate stale data before returning the file",
+    files: [
+      {
+        path: "reports/export_controller.py",
+        content: [
+          "from cache.export_cache import refresh_export_cache",
+          "",
+          "",
+          "def download_report_export(report_id: str, cache: dict) -> str:",
+          "    cached_csv = refresh_export_cache(report_id, cache)",
+          "    return cached_csv"
+        ].join("\n")
+      },
+      {
+        path: "cache/export_cache.py",
+        content: [
+          "def refresh_export_cache(report_id: str, cache: dict) -> str:",
+          "    if cache.get('stale'):",
+          "        return cache['csv']",
+          "    return build_export_csv(report_id)",
+          "",
+          "",
+          "def build_export_csv(report_id: str) -> str:",
+          "    return f'id,{report_id}'"
+        ].join("\n")
+      },
+      {
+        path: "reports/audit_log.py",
+        content: [
+          "def log_report_export(report_id: str, user_id: str) -> None:",
+          "    message = f'report export downloaded by {user_id}: {report_id}'",
+          "    print(message)"
+        ].join("\n")
+      },
+      {
+        path: "tests/test_report_export.py",
+        content: [
+          "from reports.export_controller import download_report_export",
+          "",
+          "",
+          "def test_report_export_refreshes_stale_cache_before_download():",
+          "    cache = {'stale': True, 'csv': 'old'}",
+          "    assert download_report_export('rpt_1', cache) != 'old'"
+        ].join("\n")
+      },
+      {
+        path: ".env",
+        content: "SUPER_SECRET_TOKEN=do-not-index\n"
+      }
+    ]
   }
 ];
 
@@ -741,6 +805,7 @@ async function evaluateFixture(input: {
   const expectsDirectTest = input.fixture.expectedTestFile !== null;
   const requiresCallGraph = input.fixture.requiresCallGraph === true;
   const requiresIndirectTest = input.fixture.requiresIndirectTest === true;
+  const expectsAmbiguousTop3 = input.fixture.expectsAmbiguousTop3 === true;
   const expectedSourceCandidates = candidates.filter(
     (candidate) =>
       candidate.path === input.fixture.expectedFile &&
@@ -780,6 +845,16 @@ async function evaluateFixture(input: {
           )
       )
     );
+  const ambiguousTop3Honesty =
+    !expectsAmbiguousTop3 ||
+    (!top1SymbolHit &&
+      top3SymbolHit &&
+      unknowns.some((unknown) => unknown.includes("Top candidates are close in score")) &&
+      whyNotOtherCandidates.some(
+        (decision) =>
+          decision.path === input.fixture.expectedFile &&
+          decision.symbol === input.fixture.expectedSymbol
+      ));
   const relatedTestFileHit = expectsDirectTest
     ? relatedTestForExpectedCandidateHit
     : noDirectTestHonesty;
@@ -809,8 +884,8 @@ async function evaluateFixture(input: {
     candidates.every((candidate) => candidate.next_actions.length >= 2);
   const secretIgnored = secretSearchResults.length === 0 && indexStats.files < input.fixture.files.length;
   const passed =
-    top1FileHit &&
-    top1SymbolHit &&
+    (expectsAmbiguousTop3 || top1FileHit) &&
+    (expectsAmbiguousTop3 || top1SymbolHit) &&
     top3FileHit &&
     top3SymbolHit &&
     top5TestFileHit &&
@@ -818,6 +893,7 @@ async function evaluateFixture(input: {
     noDirectTestHonesty &&
     callGraphRootCauseHit &&
     indirectRelatedTestHit &&
+    ambiguousTop3Honesty &&
     evidenceComplete &&
     lineRangeComplete &&
     relatedTestsComplete &&
@@ -838,6 +914,7 @@ async function evaluateFixture(input: {
     expectsDirectTest,
     requiresCallGraph,
     requiresIndirectTest,
+    expectsAmbiguousTop3,
     topCandidatePath: top?.path ?? null,
     topCandidateSymbol: top?.symbol ?? null,
     topCandidateEvidence: top?.evidence ?? [],
@@ -872,6 +949,7 @@ async function evaluateFixture(input: {
     noDirectTestHonesty,
     callGraphRootCauseHit,
     indirectRelatedTestHit,
+    ambiguousTop3Honesty,
     evidenceComplete,
     lineRangeComplete,
     relatedTestsComplete,
@@ -902,6 +980,7 @@ function renderMarkdownReport(input: {
   noDirectTestHonestyRate: number;
   callGraphRootCauseAccuracy: number;
   indirectRelatedTestAccuracy: number;
+  ambiguousTop3HonestyRate: number;
   evidenceCompleteness: number;
   lineRangeCompleteness: number;
   relatedTestsCompleteness: number;
@@ -926,6 +1005,7 @@ function renderMarkdownReport(input: {
     `No-direct-test honesty rate: ${pct(input.noDirectTestHonestyRate)}`,
     `Call graph root-cause accuracy: ${pct(input.callGraphRootCauseAccuracy)}`,
     `Indirect related-test accuracy: ${pct(input.indirectRelatedTestAccuracy)}`,
+    `Ambiguous top-3 honesty rate: ${pct(input.ambiguousTop3HonestyRate)}`,
     `Evidence completeness: ${pct(input.evidenceCompleteness)}`,
     `Line range completeness: ${pct(input.lineRangeCompleteness)}`,
     `Related tests completeness: ${pct(input.relatedTestsCompleteness)}`,
@@ -950,6 +1030,7 @@ function renderMarkdownReport(input: {
     lines.push(`- Expects direct test: ${result.expectsDirectTest ? "yes" : "no"}`);
     lines.push(`- Requires call graph: ${result.requiresCallGraph ? "yes" : "no"}`);
     lines.push(`- Requires indirect test: ${result.requiresIndirectTest ? "yes" : "no"}`);
+    lines.push(`- Expects ambiguous top-3: ${result.expectsAmbiguousTop3 ? "yes" : "no"}`);
     lines.push(`- Top candidate: ${result.topCandidatePath ?? "none"} / ${result.topCandidateSymbol ?? "none"}`);
     lines.push(`- Top candidate evidence: ${result.topCandidateEvidence.join(" | ") || "none"}`);
     lines.push(`- Top candidate next actions: ${result.topCandidateNextActions.join(" | ") || "none"}`);
@@ -992,6 +1073,11 @@ function renderMarkdownReport(input: {
     lines.push(
       `- Indirect related test hit: ${
         result.requiresIndirectTest ? (result.indirectRelatedTestHit ? "yes" : "no") : "n/a"
+      }`
+    );
+    lines.push(
+      `- Ambiguous top-3 honesty: ${
+        result.expectsAmbiguousTop3 ? (result.ambiguousTop3Honesty ? "yes" : "no") : "n/a"
       }`
     );
     lines.push(`- Evidence complete: ${result.evidenceComplete ? "yes" : "no"}`);
@@ -1062,6 +1148,13 @@ async function main() {
           .map((result) => result.indirectRelatedTestHit)
       ).toFixed(3)
     ),
+    ambiguousTop3HonestyRate: Number(
+      averageBooleans(
+        results
+          .filter((result) => result.expectsAmbiguousTop3)
+          .map((result) => result.ambiguousTop3Honesty)
+      ).toFixed(3)
+    ),
     evidenceCompleteness: Number(averageBooleans(results.map((result) => result.evidenceComplete)).toFixed(3)),
     lineRangeCompleteness: Number(averageBooleans(results.map((result) => result.lineRangeComplete)).toFixed(3)),
     relatedTestsCompleteness: Number(averageBooleans(results.map((result) => result.relatedTestsComplete)).toFixed(3)),
@@ -1092,6 +1185,7 @@ async function main() {
       `No-direct-test honesty rate: ${pct(report.noDirectTestHonestyRate)}`,
       `Call graph root-cause accuracy: ${pct(report.callGraphRootCauseAccuracy)}`,
       `Indirect related-test accuracy: ${pct(report.indirectRelatedTestAccuracy)}`,
+      `Ambiguous top-3 honesty rate: ${pct(report.ambiguousTop3HonestyRate)}`,
       `Evidence completeness: ${pct(report.evidenceCompleteness)}`,
       `Line range completeness: ${pct(report.lineRangeCompleteness)}`,
       `Related tests completeness: ${pct(report.relatedTestsCompleteness)}`,
