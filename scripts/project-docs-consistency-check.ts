@@ -74,6 +74,7 @@ const requiredMetrics = [
   "top5TestFileAccuracy",
   "relatedTestAccuracy",
   "noDirectTestHonestyRate",
+  "callGraphRootCauseAccuracy",
   "relatedTestsCompleteness",
   "unknownsCompleteness",
   "whyNotCompleteness",

@@ -19,6 +19,9 @@ type BugPathFixture = {
   expectedFile: string;
   expectedSymbol: string;
   expectedTestFile: string | null;
+  requiresCallGraph?: boolean;
+  expectedRootCauseFile?: string;
+  expectedRootCauseSymbol?: string;
 };
 
 type BugPathCandidate = {
@@ -47,6 +50,13 @@ type BugPathOutput = {
     reason: string;
     evidence_excerpt: string[];
   }>;
+  root_cause_candidates?: Array<{
+    path: string;
+    symbol: string | null;
+    score: number;
+    line_range: [number, number] | null;
+    evidence: string[];
+  }>;
   candidates: BugPathCandidate[];
 };
 
@@ -60,9 +70,14 @@ type CaseResult = {
   searchHitCount: number;
   secretSearchHitCount: number;
   expectsDirectTest: boolean;
+  requiresCallGraph: boolean;
   topCandidatePath: string | null;
   topCandidateSymbol: string | null;
+  topCandidateEvidence: string[];
   topCandidateNextActions: string[];
+  topRootCausePath: string | null;
+  topRootCauseSymbol: string | null;
+  topRootCauseEvidence: string[];
   unknowns: string[];
   whyNotOtherCandidates: Array<{
     path: string;
@@ -86,6 +101,7 @@ type CaseResult = {
   top5TestFileHit: boolean;
   relatedTestFileHit: boolean;
   noDirectTestHonesty: boolean;
+  callGraphRootCauseHit: boolean;
   evidenceComplete: boolean;
   lineRangeComplete: boolean;
   relatedTestsComplete: boolean;
@@ -435,6 +451,64 @@ const fixtures: BugPathFixture[] = [
         content: "SUPER_SECRET_TOKEN=do-not-index\n"
       }
     ]
+  },
+  {
+    id: "python_checkout_call_graph_root_cause",
+    repoName: "checkout_backend",
+    expectedFile: "checkout.py",
+    expectedSymbol: "build_checkout_summary",
+    expectedTestFile: "tests/test_checkout.py",
+    requiresCallGraph: true,
+    expectedRootCauseFile: "pricing/tax.py",
+    expectedRootCauseSymbol: "calculate_tax",
+    searchQuery: "checkout exempt customer still charged tax build checkout summary",
+    issue:
+      "Order total is wrong in checkout.py:5 when build_checkout_summary handles a tax exempt customer; checkout still charges tax",
+    files: [
+      {
+        path: "checkout.py",
+        content: [
+          "from pricing.tax import calculate_tax",
+          "",
+          "",
+          "def build_checkout_summary(cart: dict, customer: dict) -> dict:",
+          "    subtotal = cart['subtotal']",
+          "    tax = calculate_tax(subtotal, customer)",
+          "    return {'subtotal': subtotal, 'tax': tax, 'total': subtotal + tax}"
+        ].join("\n")
+      },
+      {
+        path: "pricing/tax.py",
+        content: [
+          "def calculate_tax(subtotal: float, customer: dict) -> float:",
+          "    if customer.get('tax_exempt'):",
+          "        return subtotal * 0.23",
+          "    return subtotal * 0.23",
+          "",
+          "",
+          "def format_tax_label(rate: float) -> str:",
+          "    return f'Tax {rate:.0%}'"
+        ].join("\n")
+      },
+      {
+        path: "tests/test_checkout.py",
+        content: [
+          "from checkout import build_checkout_summary",
+          "from pricing.tax import calculate_tax",
+          "",
+          "",
+          "def test_tax_exempt_customer_is_not_charged_tax_in_checkout():",
+          "    customer = {'tax_exempt': True}",
+          "    cart = {'subtotal': 100.0}",
+          "    assert calculate_tax(cart['subtotal'], customer) == 0.0",
+          "    assert build_checkout_summary(cart, customer)['tax'] == 0.0"
+        ].join("\n")
+      },
+      {
+        path: ".env",
+        content: "SUPER_SECRET_TOKEN=do-not-index\n"
+      }
+    ]
   }
 ];
 
@@ -590,7 +664,9 @@ async function evaluateFixture(input: {
   const candidates = bugPath.candidates ?? [];
   const unknowns = bugPath.unknowns ?? [];
   const whyNotOtherCandidates = bugPath.why_not_other_candidates ?? [];
+  const rootCauseCandidates = bugPath.root_cause_candidates ?? [];
   const top = candidates[0] ?? null;
+  const topRootCause = rootCauseCandidates[0] ?? null;
   const top3 = candidates.slice(0, 3);
   const top5 = candidates.slice(0, 5);
   const top1FileHit = top?.path === input.fixture.expectedFile;
@@ -604,6 +680,7 @@ async function evaluateFixture(input: {
       candidate.symbol === input.fixture.expectedSymbol
   );
   const expectsDirectTest = input.fixture.expectedTestFile !== null;
+  const requiresCallGraph = input.fixture.requiresCallGraph === true;
   const top5TestFileHit = expectsDirectTest
     ? top5.some((candidate) => candidate.path === input.fixture.expectedTestFile)
     : top5.every(
@@ -620,6 +697,12 @@ async function evaluateFixture(input: {
     (topCandidateHasNoRelatedTests &&
       unknowns.some((unknown) => unknown.includes("no directly matched related test")) &&
       (top?.next_actions ?? []).some((action) => action.includes("characterization test")));
+  const callGraphRootCauseHit =
+    !requiresCallGraph ||
+    (topRootCause !== null &&
+      topRootCause.path === input.fixture.expectedRootCauseFile &&
+      topRootCause.symbol === input.fixture.expectedRootCauseSymbol &&
+      topRootCause.evidence.some((evidence) => evidence.includes("call graph:")));
   const relatedTestFileHit = expectsDirectTest
     ? expectedSourceCandidates.some((candidate) =>
         (candidate.related_tests ?? []).some(
@@ -660,6 +743,7 @@ async function evaluateFixture(input: {
     top5TestFileHit &&
     relatedTestFileHit &&
     noDirectTestHonesty &&
+    callGraphRootCauseHit &&
     evidenceComplete &&
     lineRangeComplete &&
     relatedTestsComplete &&
@@ -678,9 +762,14 @@ async function evaluateFixture(input: {
     searchHitCount: searchResults.length,
     secretSearchHitCount: secretSearchResults.length,
     expectsDirectTest,
+    requiresCallGraph,
     topCandidatePath: top?.path ?? null,
     topCandidateSymbol: top?.symbol ?? null,
+    topCandidateEvidence: top?.evidence ?? [],
     topCandidateNextActions: top?.next_actions ?? [],
+    topRootCausePath: topRootCause?.path ?? null,
+    topRootCauseSymbol: topRootCause?.symbol ?? null,
+    topRootCauseEvidence: topRootCause?.evidence ?? [],
     unknowns,
     whyNotOtherCandidates: whyNotOtherCandidates.map((decision) => ({
       path: decision.path,
@@ -706,6 +795,7 @@ async function evaluateFixture(input: {
     top5TestFileHit,
     relatedTestFileHit,
     noDirectTestHonesty,
+    callGraphRootCauseHit,
     evidenceComplete,
     lineRangeComplete,
     relatedTestsComplete,
@@ -734,6 +824,7 @@ function renderMarkdownReport(input: {
   top5TestFileAccuracy: number;
   relatedTestAccuracy: number;
   noDirectTestHonestyRate: number;
+  callGraphRootCauseAccuracy: number;
   evidenceCompleteness: number;
   lineRangeCompleteness: number;
   relatedTestsCompleteness: number;
@@ -756,6 +847,7 @@ function renderMarkdownReport(input: {
     `Top-5 test file accuracy: ${pct(input.top5TestFileAccuracy)}`,
     `Related test accuracy: ${pct(input.relatedTestAccuracy)}`,
     `No-direct-test honesty rate: ${pct(input.noDirectTestHonestyRate)}`,
+    `Call graph root-cause accuracy: ${pct(input.callGraphRootCauseAccuracy)}`,
     `Evidence completeness: ${pct(input.evidenceCompleteness)}`,
     `Line range completeness: ${pct(input.lineRangeCompleteness)}`,
     `Related tests completeness: ${pct(input.relatedTestsCompleteness)}`,
@@ -778,8 +870,12 @@ function renderMarkdownReport(input: {
     lines.push(`- Search hits: ${result.searchHitCount}`);
     lines.push(`- Secret search hits: ${result.secretSearchHitCount}`);
     lines.push(`- Expects direct test: ${result.expectsDirectTest ? "yes" : "no"}`);
+    lines.push(`- Requires call graph: ${result.requiresCallGraph ? "yes" : "no"}`);
     lines.push(`- Top candidate: ${result.topCandidatePath ?? "none"} / ${result.topCandidateSymbol ?? "none"}`);
+    lines.push(`- Top candidate evidence: ${result.topCandidateEvidence.join(" | ") || "none"}`);
     lines.push(`- Top candidate next actions: ${result.topCandidateNextActions.join(" | ") || "none"}`);
+    lines.push(`- Top root cause: ${result.topRootCausePath ?? "none"} / ${result.topRootCauseSymbol ?? "none"}`);
+    lines.push(`- Top root cause evidence: ${result.topRootCauseEvidence.join(" | ") || "none"}`);
     lines.push(`- Unknowns: ${result.unknowns.join(" | ") || "none"}`);
     lines.push(
       `- Why not other candidates: ${
@@ -807,6 +903,11 @@ function renderMarkdownReport(input: {
     lines.push(
       `- No-direct-test honesty: ${
         result.expectsDirectTest ? "n/a" : result.noDirectTestHonesty ? "yes" : "no"
+      }`
+    );
+    lines.push(
+      `- Call graph root cause hit: ${
+        result.requiresCallGraph ? (result.callGraphRootCauseHit ? "yes" : "no") : "n/a"
       }`
     );
     lines.push(`- Evidence complete: ${result.evidenceComplete ? "yes" : "no"}`);
@@ -863,6 +964,13 @@ async function main() {
           .map((result) => result.noDirectTestHonesty)
       ).toFixed(3)
     ),
+    callGraphRootCauseAccuracy: Number(
+      averageBooleans(
+        results
+          .filter((result) => result.requiresCallGraph)
+          .map((result) => result.callGraphRootCauseHit)
+      ).toFixed(3)
+    ),
     evidenceCompleteness: Number(averageBooleans(results.map((result) => result.evidenceComplete)).toFixed(3)),
     lineRangeCompleteness: Number(averageBooleans(results.map((result) => result.lineRangeComplete)).toFixed(3)),
     relatedTestsCompleteness: Number(averageBooleans(results.map((result) => result.relatedTestsComplete)).toFixed(3)),
@@ -891,6 +999,7 @@ async function main() {
       `Top-5 test file accuracy: ${pct(report.top5TestFileAccuracy)}`,
       `Related test accuracy: ${pct(report.relatedTestAccuracy)}`,
       `No-direct-test honesty rate: ${pct(report.noDirectTestHonestyRate)}`,
+      `Call graph root-cause accuracy: ${pct(report.callGraphRootCauseAccuracy)}`,
       `Evidence completeness: ${pct(report.evidenceCompleteness)}`,
       `Line range completeness: ${pct(report.lineRangeCompleteness)}`,
       `Related tests completeness: ${pct(report.relatedTestsCompleteness)}`,

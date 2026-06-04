@@ -187,6 +187,7 @@ function extractKeyMetrics(report: Record<string, unknown>) {
     "top5TestFileAccuracy",
     "relatedTestAccuracy",
     "noDirectTestHonestyRate",
+    "callGraphRootCauseAccuracy",
     "evidenceCompleteness",
     "lineRangeCompleteness",
     "relatedTestsCompleteness",

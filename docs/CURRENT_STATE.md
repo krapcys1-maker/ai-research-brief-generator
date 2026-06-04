@@ -189,6 +189,9 @@ GitHub / GH Archive signals -> trend radar -> adjacent idea discovery -> anti-cl
   - Repo MRI realistic Bug Path fixtures include direct file hints, no-file-hint
     localization, similar symbol disambiguation, related test selection and
     honest no-direct-test guidance.
+  - Bug Path now keeps symptom localization separate from call-graph
+    `root_cause_candidates`, so heuristic CALLS evidence can suggest a called
+    function without destabilizing the primary candidate ranking.
   - `npm run benchmark:project-pipeline` aggregates the project planning
     benchmark suite.
   - `npm run benchmark:project-live-batch` checks controlled dry-run budget
