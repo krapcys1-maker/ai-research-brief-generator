@@ -93,7 +93,9 @@ const requiredMetrics = [
   "averageJudgeScore",
   "trendRepoCount",
   "sourceRepoCount",
-  "blockerCount"
+  "blockerCount",
+  "sourceEvidenceQuality",
+  "reviewFlags"
 ];
 
 async function writeTextFile(path: string, content: string) {

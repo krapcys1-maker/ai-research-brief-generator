@@ -18,6 +18,10 @@ const requiredFiles = [
   "gh_archive_trends.json",
   "trend_radar.json",
   "trend_radar.md",
+  "source_curation_report.json",
+  "source_curation_report.md",
+  "idea_selection_report.json",
+  "idea_selection_report.md",
   "project_ideas_audit.json",
   "project_ideas_audit.md",
   "repo_insights.json",
@@ -188,6 +192,12 @@ describe("runProjectIdeaDiscovery", () => {
     const audit = JSON.parse(
       await readFile(join(outputDir, "project_ideas_audit.json"), "utf8")
     );
+    const ideaSelection = JSON.parse(
+      await readFile(join(outputDir, "idea_selection_report.json"), "utf8")
+    );
+    const selectedDecision = ideaSelection.decisions.find(
+      (decision: { selected?: boolean }) => decision.selected
+    );
 
     expect(existingCount).toBe(requiredFiles.length);
     expect(manifest.promisingCount).toBeGreaterThanOrEqual(1);
@@ -196,11 +206,56 @@ describe("runProjectIdeaDiscovery", () => {
     expect(IdeaDiscoveryReportSchema.parse(report)).toEqual(report);
     expect(ProjectIdeaAuditSchema.parse(audit)).toEqual(audit);
     expect(audit.score).toBeGreaterThanOrEqual(70);
+    expect(selectedDecision.sourceEvidenceQuality).toBeGreaterThanOrEqual(0);
+    expect(Array.isArray(selectedDecision.reviewFlags)).toBe(true);
     expect(projectIdeaInputs.every((idea: unknown) => ProjectIdeaInputSchema.safeParse(idea).success)).toBe(
       true
     );
     expect(handoffQuality.every((quality: { readiness?: string }) => quality.readiness === "ready")).toBe(
       true
+    );
+  });
+
+  it("flags single-source ideas with weak issue-level evidence for manual review", async () => {
+    const outputDir = join(
+      tmpdir(),
+      `project-idea-runner-review-flags-test-${Date.now()}`
+    );
+
+    await runProjectIdeaDiscovery({
+      domain: "self-hosted AI security",
+      constraints: ["do not clone workspace UI"],
+      sourceRepos: [
+        {
+          ...sourceRepo(),
+          repoId: "repo_single_source_workspace",
+          name: "odysseus",
+          owner: "example",
+          description: "Self-hosted AI workspace.",
+          topics: ["ai", "workspace", "self-hosted"],
+          stars: 40_000,
+          forks: 4000,
+          issueSignals: [],
+          readmeText:
+            "A self-hosted AI workspace, local-first and privacy-first, with deployment settings, model providers, memory and secrets."
+        }
+      ],
+      maxIdeas: 2,
+      outputLanguage: "pl",
+      outputDir
+    });
+
+    const ideaSelection = JSON.parse(
+      await readFile(join(outputDir, "idea_selection_report.json"), "utf8")
+    );
+    const selectedDecision = ideaSelection.decisions.find(
+      (decision: { selected?: boolean }) => decision.selected
+    );
+
+    expect(selectedDecision.title).toBe("Self-Hosted AI Workspace Policy Auditor");
+    expect(selectedDecision.sourceEvidenceQuality).toBeLessThan(0.55);
+    expect(selectedDecision.reviewFlags).toContain(
+      "Manual review: single-source idea has weak issue-level evidence."
     );
   });
 

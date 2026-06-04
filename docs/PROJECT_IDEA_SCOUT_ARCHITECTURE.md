@@ -268,6 +268,30 @@ Reject weak clones:
 
 The shortlist selector caps ideas per source repository.
 
+## Idea Selection Audit
+
+The runner writes `idea_selection_report.json` and `idea_selection_report.md`
+to explain why each concept cluster was selected or rejected. Selection decisions
+include:
+
+```ts
+type IdeaSelectionDecision = {
+  score: number;
+  alignmentScore: number;
+  sourceEvidenceQuality: number;
+  primarySource: string;
+  supportingSources: string[];
+  warnings: string[];
+  reviewFlags: string[];
+};
+```
+
+`sourceEvidenceQuality` separates README/topic alignment from issue-level proof.
+This catches cases where a repo looks relevant, but the issues do not actually
+support the proposed product. `reviewFlags` do not block selection automatically;
+they mark ideas that should be checked by a human, especially single-source ideas
+with weak issue evidence or low source curation scores.
+
 Default:
 
 ```text
@@ -452,6 +476,8 @@ pipelineInputValidCount
 averageHandoffQualityScore
 handoffReadyCount
 averageJudgeScore
+sourceEvidenceQuality
+reviewFlags
 ```
 
 MVP pass criteria:

@@ -26,11 +26,13 @@ type IdeaSelection = {
   selected: boolean;
   score: number;
   alignmentScore: number;
+  sourceEvidenceQuality: number;
   clusterKey: string;
   primarySource: string;
   supportingSources: string[];
   reasons: string[];
   warnings: string[];
+  reviewFlags: string[];
 };
 
 type IdeaCluster = {
@@ -41,6 +43,7 @@ type IdeaCluster = {
   selectedIdeaId: string | null;
   rejectedIdeaIds: string[];
   alignmentScore: number;
+  sourceEvidenceQuality: number;
   reasons: string[];
 };
 
@@ -640,6 +643,82 @@ function ideaSourceAlignment(input: {
   };
 }
 
+function issueText(repo: IdeaSourceRepo | undefined) {
+  return (
+    repo?.issueSignals
+      .map((issue) => `${issue.title} ${issue.body}`)
+      .join(" ")
+      .toLowerCase() ?? ""
+  );
+}
+
+function issueEvidenceQuality(input: {
+  idea: DiscoveredIdea;
+  repo: IdeaSourceRepo | undefined;
+}) {
+  if (!input.repo || input.repo.issueSignals.length === 0) {
+    return 0;
+  }
+
+  const profile = evidenceProfile(input.idea.title);
+  const text = issueText(input.repo);
+  const primaryHits = countHits(text, profile.primary);
+  const secondaryHits = countHits(text, profile.secondary);
+  const issueCountScore = clamp01(input.repo.issueSignals.length / 3);
+  const primaryScore = clamp01(primaryHits / Math.max(1, profile.minPrimaryHits));
+  const secondaryRequirement = profile.minSecondaryHits ?? 1;
+  const secondaryScore = clamp01(secondaryHits / Math.max(1, secondaryRequirement));
+
+  return Number(
+    (primaryScore * 0.55 + secondaryScore * 0.35 + issueCountScore * 0.1).toFixed(3)
+  );
+}
+
+function sourceEvidenceQuality(input: {
+  idea: DiscoveredIdea;
+  reposById: Map<string, IdeaSourceRepo>;
+  alignedSupportCount: number;
+}) {
+  const primaryRepo = input.reposById.get(input.idea.sourceRepos[0]);
+  const issueQuality = issueEvidenceQuality({
+    idea: input.idea,
+    repo: primaryRepo
+  });
+  const alignment = ideaSourceAlignment({
+    idea: input.idea,
+    repo: primaryRepo
+  }).score;
+  const sourceDiversityScore = clamp01((input.alignedSupportCount - 1) / 2);
+
+  return Number(
+    (issueQuality * 0.5 + alignment * 0.35 + sourceDiversityScore * 0.15).toFixed(3)
+  );
+}
+
+function ideaReviewFlags(input: {
+  idea: DiscoveredIdea;
+  sourceEvidenceQuality: number;
+  alignmentScore: number;
+  alignedSupportCount: number;
+  sourceScore: number;
+}) {
+  const flags: string[] = [];
+
+  if (input.alignedSupportCount <= 1 && input.sourceEvidenceQuality < 0.55) {
+    flags.push("Manual review: single-source idea has weak issue-level evidence.");
+  }
+
+  if (input.alignmentScore < 0.7) {
+    flags.push("Manual review: source alignment is acceptable but borderline.");
+  }
+
+  if (input.sourceScore < 45 && input.alignedSupportCount <= 1) {
+    flags.push("Manual review: source curation score is low for a single-source idea.");
+  }
+
+  return flags;
+}
+
 function scoreFor(scores: IdeaScore[], ideaId: string) {
   const score = scores.find((candidate) => candidate.ideaId === ideaId);
   if (!score) {
@@ -726,10 +805,16 @@ export function curateShortlistIdeas(input: {
           );
         }
       ).length;
+      const evidenceQuality = sourceEvidenceQuality({
+        idea: representative,
+        reposById,
+        alignedSupportCount
+      });
       const clusterScore =
         representativeScore.total +
         bestSourceScore * 0.08 +
         representativeAlignment.score * 18 +
+        evidenceQuality * 6 +
         Math.min(alignedSupportCount - 1, 4) * 1.5;
 
       return {
@@ -739,6 +824,7 @@ export function curateShortlistIdeas(input: {
         supportingSources,
         alignedSupportCount,
         alignmentScore: representativeAlignment.score,
+        sourceEvidenceQuality: evidenceQuality,
         clusterScore
       };
     })
@@ -760,6 +846,19 @@ export function curateShortlistIdeas(input: {
     const alignment = ideaSourceAlignment({
       idea: representative,
       repo: reposById.get(primarySource)
+    });
+    const primarySourceScore = sourceScoreById.get(primarySource)?.score ?? 0;
+    const evidenceQuality = sourceEvidenceQuality({
+      idea: representative,
+      reposById,
+      alignedSupportCount: cluster.alignedSupportCount
+    });
+    const reviewFlags = ideaReviewFlags({
+      idea: representative,
+      sourceEvidenceQuality: evidenceQuality,
+      alignmentScore: alignment.score,
+      alignedSupportCount: cluster.alignedSupportCount,
+      sourceScore: primarySourceScore
     });
     warnings.push(...alignment.warnings);
     const canSelect =
@@ -800,6 +899,7 @@ export function curateShortlistIdeas(input: {
       `Base idea score ${scoreFor(input.ideaScores, representative.ideaId).total}.`,
       `Source curation score ${sourceScoreById.get(primarySource)?.score ?? "n/a"}.`,
       `Idea-source alignment ${alignment.score}.`,
+      `Source evidence quality ${evidenceQuality}.`,
       supportReason,
       alignedSupportReason,
       ...(canSelect
@@ -817,11 +917,13 @@ export function curateShortlistIdeas(input: {
       selected: Boolean(selectedIdea),
       score: Number(cluster.clusterScore.toFixed(1)),
       alignmentScore: alignment.score,
+      sourceEvidenceQuality: evidenceQuality,
       clusterKey: cluster.key,
       primarySource,
       supportingSources: cluster.supportingSources,
       reasons: decisionReasons,
-      warnings
+      warnings,
+      reviewFlags
     });
     clusters.push({
       key: cluster.key,
@@ -831,6 +933,7 @@ export function curateShortlistIdeas(input: {
       selectedIdeaId: selectedIdea?.ideaId ?? null,
       rejectedIdeaIds,
       alignmentScore: alignment.score,
+      sourceEvidenceQuality: evidenceQuality,
       reasons: decisionReasons
     });
   }
@@ -922,6 +1025,7 @@ export function ideaSelectionReportToMarkdown(report: IdeaSelectionReport) {
     lines.push(`- Idea ID: ${decision.ideaId}`);
     lines.push(`- Score: ${decision.score}`);
     lines.push(`- Alignment score: ${decision.alignmentScore}`);
+    lines.push(`- Source evidence quality: ${decision.sourceEvidenceQuality}`);
     lines.push(`- Cluster: ${decision.clusterKey}`);
     lines.push(`- Primary source: ${decision.primarySource}`);
     lines.push(`- Supporting sources: ${decision.supportingSources.join(", ")}`);
@@ -931,6 +1035,9 @@ export function ideaSelectionReportToMarkdown(report: IdeaSelectionReport) {
     lines.push("");
     lines.push("Warnings:");
     lines.push(...(decision.warnings.length ? decision.warnings : ["none"]).map((item) => `- ${item}`));
+    lines.push("");
+    lines.push("Review flags:");
+    lines.push(...(decision.reviewFlags.length ? decision.reviewFlags : ["none"]).map((item) => `- ${item}`));
     lines.push("");
   }
 
@@ -943,6 +1050,7 @@ export function ideaSelectionReportToMarkdown(report: IdeaSelectionReport) {
     lines.push(`- Key: ${cluster.key}`);
     lines.push(`- Candidates: ${cluster.candidateCount}`);
     lines.push(`- Alignment score: ${cluster.alignmentScore}`);
+    lines.push(`- Source evidence quality: ${cluster.sourceEvidenceQuality}`);
     lines.push(`- Selected idea: ${cluster.selectedIdeaId ?? "none"}`);
     lines.push(`- Rejected ideas: ${cluster.rejectedIdeaIds.join(", ") || "none"}`);
     lines.push(`- Supporting sources: ${cluster.supportingSources.join(", ")}`);
