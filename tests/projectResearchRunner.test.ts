@@ -476,16 +476,30 @@ describe("runProjectResearch", () => {
       canBuildReadyBrief: boolean;
       bucketMetrics: unknown[];
     }>(join(outputDir, "evidence_collection.json"));
+    const sourceSearch = await readJson<{
+      mode: string;
+      totalFound: number;
+      sourcesUsed: string[];
+    }>(join(outputDir, "source_search.json"));
+    const sourcePapers = await readJson<NormalizedPaper[]>(
+      join(outputDir, "source_papers.json")
+    );
     const reviewedPapers = await readJson<ReviewedPaper[]>(
       join(outputDir, "reviewed_papers.json")
     );
 
     expect(manifest.readyForArchitecture).toBe(true);
+    expect(sourceSearch.mode).toBe("provided_papers");
+    expect(sourceSearch.totalFound).toBe(sourcePapers.length);
+    expect(sourceSearch.sourcesUsed).toContain("semantic_scholar");
+    expect(sourcePapers.length).toBeGreaterThan(0);
     expect(evidenceCollection.mode).toBe("collected_from_papers");
     expect(evidenceCollection.canBuildReadyBrief).toBe(true);
     expect(evidenceCollection.bucketMetrics.length).toBe(
       manifest.requiredBucketCount
     );
+    expect(manifest.paperRelevanceKeptCount).toBeGreaterThan(0);
+    expect(manifest.paperRelevanceRejectedAssignmentCount).toBeGreaterThanOrEqual(0);
     expect(reviewedPapers.length).toBeGreaterThanOrEqual(
       manifest.requiredBucketCount
     );

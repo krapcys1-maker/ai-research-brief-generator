@@ -17,7 +17,8 @@ import {
 } from "@/lib/project-research/evidenceCollector";
 import {
   judgePaperRelevance,
-  paperRelevanceJudgmentToMarkdown
+  paperRelevanceJudgmentToMarkdown,
+  type PaperRelevanceJudgeResult
 } from "@/lib/project-research/paperRelevanceJudge";
 import { buildProjectResearchPlan } from "@/lib/project-research/researchPlan";
 import {
@@ -114,6 +115,9 @@ export type ProjectResearchRunManifest = {
   requiredBucketCount: number;
   missingRequiredBuckets: string[];
   reviewedPaperCount: number;
+  paperRelevanceKeptCount: number;
+  paperRelevanceRejectedAssignmentCount: number;
+  paperRelevanceMaybeAssignmentCount: number;
   auditScore: number;
   files: {
     manifest: string;
@@ -294,7 +298,8 @@ function createManifest(
   architectureJudgeVerdict: "pass" | "needs_review" | "fail",
   outputDir: string,
   handoffContext: ProjectResearchRunnerInput["handoffContext"] | undefined,
-  handoffFlagResolutions: ReturnType<typeof normalizeHandoffFlagResolutions>
+  handoffFlagResolutions: ReturnType<typeof normalizeHandoffFlagResolutions>,
+  paperRelevanceJudgement: PaperRelevanceJudgeResult
 ): ProjectResearchRunManifest {
   const resolvedStatuses = new Set([
     "confirmed",
@@ -327,9 +332,43 @@ function createManifest(
     requiredBucketCount: brief.evidenceCoverage.requiredBucketCount,
     missingRequiredBuckets: brief.evidenceCoverage.missingRequiredBuckets,
     reviewedPaperCount: brief.reviewedPapers.length,
+    paperRelevanceKeptCount: paperRelevanceJudgement.keptPaperCount,
+    paperRelevanceRejectedAssignmentCount:
+      paperRelevanceJudgement.rejectedAssignmentCount,
+    paperRelevanceMaybeAssignmentCount: paperRelevanceJudgement.maybeAssignmentCount,
     auditScore: brief.audit.score,
     files: artifactFiles
   };
+}
+
+function sourceSearchArtifact(input: {
+  sourceSearchResult: Awaited<ReturnType<typeof searchAllSources>> | null;
+  providedPapers: NormalizedPaper[] | undefined;
+  queryVariants: string[];
+}) {
+  if (input.sourceSearchResult) {
+    return {
+      mode: "source_search",
+      sourcesUsed: input.sourceSearchResult.sourcesUsed,
+      warnings: input.sourceSearchResult.warnings,
+      sourceDiagnostics: input.sourceSearchResult.sourceDiagnostics,
+      queryVariants: input.queryVariants,
+      totalFound: input.sourceSearchResult.papers.length
+    };
+  }
+
+  if (input.providedPapers?.length) {
+    return {
+      mode: "provided_papers",
+      sourcesUsed: Array.from(new Set(input.providedPapers.map((paper) => paper.source))),
+      warnings: [],
+      sourceDiagnostics: [],
+      queryVariants: input.queryVariants,
+      totalFound: input.providedPapers.length
+    };
+  }
+
+  return { mode: "not_used" };
 }
 
 function projectPackReadinessToMarkdown(readiness: ReturnType<typeof generateProjectPack>["readiness"]) {
@@ -440,6 +479,7 @@ export async function runProjectResearch(
       })
     : null;
   const sourcePapers = sourceSearchResult?.papers ?? null;
+  const inputPapers = parsed.papers ?? sourcePapers ?? [];
   const evidenceCollection = parsed.reviewedPapers
     ? {
         mode: "manual_reviewed_papers" as const,
@@ -449,7 +489,7 @@ export async function runProjectResearch(
         mode: sourcePapers ? "collected_from_source_search" as const : "collected_from_papers" as const,
         ...collectProjectEvidenceFromPapers({
           researchPlan: planResult.researchPlan,
-          papers: (parsed.papers ?? sourcePapers) as NormalizedPaper[]
+          papers: inputPapers
         })
       };
   const rawReviewedPapers = parsed.reviewedPapers ?? (
@@ -458,7 +498,7 @@ export async function runProjectResearch(
     }
   ).reviewedPapers;
   const sourcePaperTextsById = Object.fromEntries(
-    (parsed.papers ?? sourcePapers ?? []).map((paper) => [
+    inputPapers.map((paper) => [
       paper.id,
       normalizedPaperText(paper)
     ])
@@ -511,7 +551,8 @@ export async function runProjectResearch(
     architectureJudge.verdict,
     outputDir,
     parsed.handoffContext,
-    handoffFlagResolutions
+    handoffFlagResolutions,
+    paperRelevanceJudgement
   );
 
   await mkdir(outputDir, { recursive: true });
@@ -522,16 +563,11 @@ export async function runProjectResearch(
     writeFile(
       join(outputDir, artifactFiles.sourceSearch),
       toJson(
-        sourceSearchResult
-          ? {
-              mode: "source_search",
-              sourcesUsed: sourceSearchResult.sourcesUsed,
-              warnings: sourceSearchResult.warnings,
-              sourceDiagnostics: sourceSearchResult.sourceDiagnostics,
-              queryVariants: planResult.researchPlan.queryVariants,
-              totalFound: sourceSearchResult.papers.length
-            }
-          : { mode: "not_used" }
+        sourceSearchArtifact({
+          sourceSearchResult,
+          providedPapers: parsed.papers,
+          queryVariants: planResult.researchPlan.queryVariants
+        })
       ),
       "utf8"
     ),
@@ -557,7 +593,7 @@ export async function runProjectResearch(
     ),
     writeFile(
       join(outputDir, artifactFiles.sourcePapers),
-      toJson(sourcePapers ?? []),
+      toJson(inputPapers),
       "utf8"
     ),
     writeFile(

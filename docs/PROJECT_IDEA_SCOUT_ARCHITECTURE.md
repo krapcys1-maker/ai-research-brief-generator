@@ -425,15 +425,25 @@ contains multiple flagged candidates.
 Research runs also write paper-level relevance judgements:
 
 ```text
+source_search.json
+source_papers.json
 paper_relevance_judgement.json
 paper_relevance_judgement.md
 ```
+
+`source_search.json` records whether papers came from an internal source search,
+from directly provided upstream papers, or were not used. `source_papers.json`
+must keep the actual source-paper inputs visible in either case, so downstream
+research, PRD and architecture artifacts can be audited back to their source
+metadata.
 
 The judgement runs before PRD and architecture synthesis. It scores every
 paper-to-bucket assignment as `keep`, `maybe`, or `reject`, and rejected
 assignments no longer count as useful bucket evidence. This keeps broad surveys,
 generic LLM technical reports, and accidental keyword matches visible in the
-audit without silently inflating coverage.
+audit without silently inflating coverage. The manifest also records kept,
+maybe and rejected relevance counts, so coverage changes can be traced without
+opening every detailed judgement file.
 
 The exported project pack also writes:
 
