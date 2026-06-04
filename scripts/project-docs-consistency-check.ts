@@ -71,6 +71,8 @@ const requiredMetrics = [
   "top3FileAccuracy",
   "top3SymbolAccuracy",
   "top5TestFileAccuracy",
+  "relatedTestAccuracy",
+  "relatedTestsCompleteness",
   "averageHandoffQualityScore",
   "handoffReadyCount",
   "averageJudgeScore",

@@ -28,6 +28,13 @@ type BugPathCandidate = {
   confidence: number;
   line_range: [number, number] | null;
   evidence: string[];
+  related_tests?: Array<{
+    path: string;
+    score: number;
+    line_range: [number, number] | null;
+    evidence: string[];
+    command: string;
+  }>;
   next_actions: string[];
 };
 
@@ -46,12 +53,24 @@ type CaseResult = {
   secretSearchHitCount: number;
   topCandidatePath: string | null;
   topCandidateSymbol: string | null;
+  topCandidateRelatedTests: Array<{
+    path: string;
+    command: string;
+    evidence: string[];
+  }>;
+  expectedSourceRelatedTests: Array<{
+    path: string;
+    command: string;
+    evidence: string[];
+  }>;
   top1FileHit: boolean;
   top3FileHit: boolean;
   top3SymbolHit: boolean;
   top5TestFileHit: boolean;
+  relatedTestFileHit: boolean;
   evidenceComplete: boolean;
   lineRangeComplete: boolean;
+  relatedTestsComplete: boolean;
   nextActionsComplete: boolean;
   secretIgnored: boolean;
   passed: boolean;
@@ -409,12 +428,29 @@ async function evaluateFixture(input: {
   const top5TestFileHit = top5.some(
     (candidate) => candidate.path === input.fixture.expectedTestFile
   );
+  const expectedSourceCandidates = candidates.filter(
+    (candidate) =>
+      candidate.path === input.fixture.expectedFile &&
+      candidate.symbol === input.fixture.expectedSymbol
+  );
+  const relatedTestFileHit = expectedSourceCandidates.some((candidate) =>
+    (candidate.related_tests ?? []).some(
+      (relatedTest) => relatedTest.path === input.fixture.expectedTestFile
+    )
+  );
   const evidenceComplete =
     candidates.length > 0 &&
     candidates.every((candidate) => candidate.evidence.length > 0);
   const lineRangeComplete =
     candidates.length > 0 &&
     candidates.every((candidate) => Array.isArray(candidate.line_range));
+  const relatedTestsComplete =
+    candidates.length > 0 &&
+    candidates.every((candidate) =>
+      candidate.path.includes("test") ||
+      candidate.path.includes("spec") ||
+      (candidate.related_tests?.length ?? 0) > 0
+    );
   const nextActionsComplete =
     candidates.length > 0 &&
     candidates.every((candidate) => candidate.next_actions.length >= 2);
@@ -424,8 +460,10 @@ async function evaluateFixture(input: {
     top3FileHit &&
     top3SymbolHit &&
     top5TestFileHit &&
+    relatedTestFileHit &&
     evidenceComplete &&
     lineRangeComplete &&
+    relatedTestsComplete &&
     nextActionsComplete &&
     secretIgnored;
 
@@ -440,12 +478,26 @@ async function evaluateFixture(input: {
     secretSearchHitCount: secretSearchResults.length,
     topCandidatePath: top?.path ?? null,
     topCandidateSymbol: top?.symbol ?? null,
+    topCandidateRelatedTests: (top?.related_tests ?? []).map((test) => ({
+      path: test.path,
+      command: test.command,
+      evidence: test.evidence
+    })),
+    expectedSourceRelatedTests: expectedSourceCandidates.flatMap((candidate) =>
+      (candidate.related_tests ?? []).map((test) => ({
+        path: test.path,
+        command: test.command,
+        evidence: test.evidence
+      }))
+    ),
     top1FileHit,
     top3FileHit,
     top3SymbolHit,
     top5TestFileHit,
+    relatedTestFileHit,
     evidenceComplete,
     lineRangeComplete,
+    relatedTestsComplete,
     nextActionsComplete,
     secretIgnored,
     passed
@@ -466,8 +518,10 @@ function renderMarkdownReport(input: {
   top3FileAccuracy: number;
   top3SymbolAccuracy: number;
   top5TestFileAccuracy: number;
+  relatedTestAccuracy: number;
   evidenceCompleteness: number;
   lineRangeCompleteness: number;
+  relatedTestsCompleteness: number;
   secretIgnoreRate: number;
   results: CaseResult[];
 }) {
@@ -482,8 +536,10 @@ function renderMarkdownReport(input: {
     `Top-3 file accuracy: ${pct(input.top3FileAccuracy)}`,
     `Top-3 symbol accuracy: ${pct(input.top3SymbolAccuracy)}`,
     `Top-5 test file accuracy: ${pct(input.top5TestFileAccuracy)}`,
+    `Related test accuracy: ${pct(input.relatedTestAccuracy)}`,
     `Evidence completeness: ${pct(input.evidenceCompleteness)}`,
     `Line range completeness: ${pct(input.lineRangeCompleteness)}`,
+    `Related tests completeness: ${pct(input.relatedTestsCompleteness)}`,
     `Secret ignore rate: ${pct(input.secretIgnoreRate)}`,
     "",
     "## Cases",
@@ -501,12 +557,24 @@ function renderMarkdownReport(input: {
     lines.push(`- Search hits: ${result.searchHitCount}`);
     lines.push(`- Secret search hits: ${result.secretSearchHitCount}`);
     lines.push(`- Top candidate: ${result.topCandidatePath ?? "none"} / ${result.topCandidateSymbol ?? "none"}`);
+    lines.push(
+      `- Top candidate related tests: ${
+        result.topCandidateRelatedTests.map((test) => `${test.path} (${test.command})`).join(", ") || "none"
+      }`
+    );
+    lines.push(
+      `- Expected source related tests: ${
+        result.expectedSourceRelatedTests.map((test) => `${test.path} (${test.command})`).join(", ") || "none"
+      }`
+    );
     lines.push(`- Top-1 file hit: ${result.top1FileHit ? "yes" : "no"}`);
     lines.push(`- Top-3 file hit: ${result.top3FileHit ? "yes" : "no"}`);
     lines.push(`- Top-3 symbol hit: ${result.top3SymbolHit ? "yes" : "no"}`);
     lines.push(`- Top-5 test file hit: ${result.top5TestFileHit ? "yes" : "no"}`);
+    lines.push(`- Related test file hit: ${result.relatedTestFileHit ? "yes" : "no"}`);
     lines.push(`- Evidence complete: ${result.evidenceComplete ? "yes" : "no"}`);
     lines.push(`- Line ranges complete: ${result.lineRangeComplete ? "yes" : "no"}`);
+    lines.push(`- Related tests complete: ${result.relatedTestsComplete ? "yes" : "no"}`);
     lines.push(`- Next actions complete: ${result.nextActionsComplete ? "yes" : "no"}`);
     lines.push(`- Secret ignored: ${result.secretIgnored ? "yes" : "no"}`);
     lines.push("");
@@ -547,8 +615,10 @@ async function main() {
     top3FileAccuracy: Number(averageBooleans(results.map((result) => result.top3FileHit)).toFixed(3)),
     top3SymbolAccuracy: Number(averageBooleans(results.map((result) => result.top3SymbolHit)).toFixed(3)),
     top5TestFileAccuracy: Number(averageBooleans(results.map((result) => result.top5TestFileHit)).toFixed(3)),
+    relatedTestAccuracy: Number(averageBooleans(results.map((result) => result.relatedTestFileHit)).toFixed(3)),
     evidenceCompleteness: Number(averageBooleans(results.map((result) => result.evidenceComplete)).toFixed(3)),
     lineRangeCompleteness: Number(averageBooleans(results.map((result) => result.lineRangeComplete)).toFixed(3)),
+    relatedTestsCompleteness: Number(averageBooleans(results.map((result) => result.relatedTestsComplete)).toFixed(3)),
     secretIgnoreRate: Number(averageBooleans(results.map((result) => result.secretIgnored)).toFixed(3)),
     results,
     pytestOutput: {
@@ -569,8 +639,10 @@ async function main() {
       `Top-3 file accuracy: ${pct(report.top3FileAccuracy)}`,
       `Top-3 symbol accuracy: ${pct(report.top3SymbolAccuracy)}`,
       `Top-5 test file accuracy: ${pct(report.top5TestFileAccuracy)}`,
+      `Related test accuracy: ${pct(report.relatedTestAccuracy)}`,
       `Evidence completeness: ${pct(report.evidenceCompleteness)}`,
       `Line range completeness: ${pct(report.lineRangeCompleteness)}`,
+      `Related tests completeness: ${pct(report.relatedTestsCompleteness)}`,
       `Secret ignore rate: ${pct(report.secretIgnoreRate)}`,
       `JSON: ${jsonOutputPath}`,
       `Markdown: ${markdownOutputPath}`

@@ -182,6 +182,9 @@ GitHub / GH Archive signals -> trend radar -> adjacent idea discovery -> anti-cl
   - The project architecture benchmark includes live-derived categories for
     short-video content QA, data quality investigation, and agent approval
     governance so new trend categories must stay non-generic.
+  - Repo MRI project packs generate runnable Bug Path starter code that returns
+    likely source files, symbols, evidence, line ranges, next actions and
+    related tests with runnable test commands.
   - `npm run benchmark:project-pipeline` aggregates the project planning
     benchmark suite.
   - `npm run benchmark:project-live-batch` checks controlled dry-run budget
