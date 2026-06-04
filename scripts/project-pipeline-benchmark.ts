@@ -35,6 +35,12 @@ const benchmarkDefinitions: BenchmarkDefinition[] = [
     jsonPath: "benchmark-results/project-repo-mri-real-latest.json"
   },
   {
+    id: "project_repo_mri_local_checkout",
+    label: "ProjectRepoMriLocalCheckout",
+    npmScript: "benchmark:project-repo-mri-local",
+    jsonPath: "benchmark-results/project-repo-mri-local-checkout-latest.json"
+  },
+  {
     id: "research_plan",
     label: "ResearchPlan",
     npmScript: "benchmark:project-research-plan",

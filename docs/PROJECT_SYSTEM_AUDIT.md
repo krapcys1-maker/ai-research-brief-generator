@@ -101,6 +101,14 @@ This benchmark generates the current Repo MRI project pack, runs the generated P
 
 This is the main proof that the project pack is not only a plan. It must show that generated starter code can localize issue text to likely files, symbols and next actions with evidence.
 
+The system also includes a Repo MRI local checkout benchmark:
+
+- `npm run benchmark:project-repo-mri-local`
+- output: `benchmark-results/project-repo-mri-local-checkout-latest.json`
+- output: `benchmark-results/project-repo-mri-local-checkout-latest.md`
+
+This benchmark generates the current Repo MRI project pack, indexes the current repository checkout, and tests Bug Path against known real code targets such as `scorePersonalUtility`, `discoverProjectIdeas`, `repoMriStarterCodeFiles`, and `runProjectResearch`. It is a heavier but more honest gate than synthetic fixtures.
+
 The shortlist selector now applies a per-source cap:
 
 - default: `maxIdeasPerSource = 1`
