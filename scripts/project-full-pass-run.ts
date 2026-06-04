@@ -13,7 +13,9 @@ import {
   runProjectResearch,
   auditSearchFlow,
   rankCandidatePapersForFullText,
-  searchFlowAuditToMarkdown
+  searchFlowAuditToMarkdown,
+  buildAgentReflection,
+  agentReflectionToMarkdown
 } from "@/lib/project-research";
 import type {
   HandoffFlagResolution,
@@ -65,6 +67,8 @@ type ResearchIteration = {
   candidateWithFullTextCandidateCount: number;
   architectureJudgeScore: number;
   architectureJudgeVerdict: string;
+  agentReflectionVerdict: string;
+  agentInterventionCount: number;
   notes: string[];
 };
 
@@ -317,6 +321,23 @@ async function searchAndIngestIteration(input: {
     evidenceCollection: preEvidence,
     fullTextAttempts: ingestion.results
   });
+  const handoffUnresolvedProposalCount = countUnresolvedProposal(
+    handoffFlagResolutionProposal
+  );
+  const agentReflection = buildAgentReflection({
+    iteration: input.iteration,
+    ideaTitle: input.idea.title,
+    searchFlowAudit,
+    parsedFullTextCount,
+    minParsedPapers: input.minParsedPapers,
+    requiredCoveredCount: manifest.requiredCoveredCount,
+    requiredBucketCount: manifest.requiredBucketCount,
+    missingRequiredBuckets: manifest.missingRequiredBuckets,
+    requiredBucketsWithoutParsedFullText,
+    handoffUnresolvedProposalCount,
+    architectureJudgeScore: manifest.architectureJudgeScore,
+    architectureJudgeVerdict: manifest.architectureJudgeVerdict
+  });
 
   await Promise.all([
     writeJson(
@@ -333,6 +354,12 @@ async function searchAndIngestIteration(input: {
       join(iterationDir, "08_search_flow_audit.md"),
       searchFlowAuditToMarkdown(searchFlowAudit),
       "utf8"
+    ),
+    writeJson(join(iterationDir, "09_agent_reflection.json"), agentReflection),
+    writeFile(
+      join(iterationDir, "09_agent_reflection.md"),
+      agentReflectionToMarkdown(agentReflection),
+      "utf8"
     )
   ]);
 
@@ -347,6 +374,7 @@ async function searchAndIngestIteration(input: {
     candidatePaperCount: candidatePapers.length,
     attemptedFullTextCount: ingestion.results.length,
     searchFlowAudit,
+    agentReflection,
     requiredBucketsWithoutParsedFullText,
     handoffFlagResolutionProposal
   };
@@ -375,6 +403,7 @@ function renderStart(input: {
     "- szuka publikacji w arXiv, Semantic Scholar i OpenAlex",
     "- probuje pobrac i sparsowac PDF/full-text dla kandydatow evidence",
     "- uruchamia research -> PRD -> architektura -> judge",
+    "- zatrzymuje sie na agent reflection i sprawdza, co agent zrobilby recznie dalej",
     "- robi iteracje zapytan, jesli sa braki coverage",
     "",
     "## Czego ten test nie udaje",
@@ -382,6 +411,7 @@ function renderStart(input: {
     "- nie twierdzi, ze kazdy znaleziony rekord to pelna publikacja, jesli PDF nie zostal sparsowany",
     "- nie twierdzi, ze architekture wygenerowal kreatywny LLM; obecny modul uzywa deterministycznego generatora blueprintow i judge'a",
     "- nie omija kosztow: live GH Archive dziala tylko po dry-run i z hard capem bytes billed",
+    "- nie powtarza identycznej iteracji, jesli nie ma nowych focused queries do sprawdzenia",
     "",
     "## Wynik ostatniej iteracji",
     "",
@@ -392,7 +422,8 @@ function renderStart(input: {
           `- Coverage: ${best.requiredCoveredCount}/${best.requiredBucketCount}`,
           `- Required buckets without parsed full-text: ${best.requiredBucketsWithoutParsedFullText.join(", ") || "none"}`,
           `- Handoff proposal resolved/unresolved: ${best.handoffResolvedProposalCount}/${best.handoffUnresolvedProposalCount}`,
-          `- Architecture judge: ${best.architectureJudgeScore}/${best.architectureJudgeVerdict}`,
+      `- Architecture judge: ${best.architectureJudgeScore}/${best.architectureJudgeVerdict}`,
+          `- Agent reflection: ${best.agentReflectionVerdict} (${best.agentInterventionCount} interventions)`,
           `- Missing buckets: ${best.missingRequiredBuckets.join(", ") || "none"}`
         ].join("\n")
       : "- No iteration result.",
@@ -416,6 +447,7 @@ function renderStart(input: {
       `- Required buckets without parsed full-text: ${iteration.requiredBucketsWithoutParsedFullText.join(", ") || "none"}`,
       `- Handoff proposal resolved/unresolved: ${iteration.handoffResolvedProposalCount}/${iteration.handoffUnresolvedProposalCount}`,
       `- Architecture judge: ${iteration.architectureJudgeScore}/${iteration.architectureJudgeVerdict}`,
+      `- Agent reflection: ${iteration.agentReflectionVerdict} (${iteration.agentInterventionCount} interventions)`,
       `- Missing buckets: ${iteration.missingRequiredBuckets.join(", ") || "none"}`,
       `- Notes: ${iteration.notes.join(" | ") || "none"}`,
       ""
@@ -565,6 +597,17 @@ async function main() {
       minParsedPapers: args.minParsedPapers,
       generatedAt
     });
+    const nextQueryVariants = addFocusedQueries({
+      baseQueries: queryVariants,
+      idea: selected.projectIdeaInput,
+      missingBuckets: [
+        ...result.manifest.missingRequiredBuckets,
+        ...result.requiredBucketsWithoutParsedFullText
+      ]
+    });
+    const queryPlanChanged =
+      nextQueryVariants.length !== queryVariants.length ||
+      nextQueryVariants.some((query, index) => query !== queryVariants[index]);
     const notes = [
       result.parsedFullTextCount < args.minParsedPapers
         ? `parsed full-text below target ${args.minParsedPapers}`
@@ -578,6 +621,13 @@ async function main() {
       result.manifest.architectureJudgeVerdict === "pass"
         ? "architecture judge passed"
         : "architecture judge needs improvement",
+      result.searchFlowAudit.verdict === "pass"
+        ? "search flow passed"
+        : `search flow needs review: ${result.searchFlowAudit.warnings.join(" | ")}`,
+      `agent reflection verdict: ${result.agentReflection.verdict}`,
+      queryPlanChanged
+        ? "focused query plan changed for next iteration"
+        : "no new focused queries; stop instead of repeating the same search",
       countUnresolvedProposal(result.handoffFlagResolutionProposal) > 0
         ? `handoff proposal still unresolved: ${countUnresolvedProposal(result.handoffFlagResolutionProposal)}`
         : "handoff proposal has no unresolved flags"
@@ -608,6 +658,8 @@ async function main() {
         result.searchFlowAudit.candidateWithFullTextCandidateCount,
       architectureJudgeScore: result.manifest.architectureJudgeScore,
       architectureJudgeVerdict: result.manifest.architectureJudgeVerdict,
+      agentReflectionVerdict: result.agentReflection.verdict,
+      agentInterventionCount: result.agentReflection.interventions.length,
       notes
     };
     iterations.push(iterationSummary);
@@ -616,20 +668,18 @@ async function main() {
       result.parsedFullTextCount >= args.minParsedPapers &&
       result.requiredBucketsWithoutParsedFullText.length === 0 &&
       result.manifest.requiredCoveredCount === result.manifest.requiredBucketCount &&
+      result.searchFlowAudit.verdict === "pass" &&
       result.manifest.architectureJudgeVerdict === "pass" &&
       countUnresolvedProposal(result.handoffFlagResolutionProposal) === 0
     ) {
       break;
     }
 
-    queryVariants = addFocusedQueries({
-      baseQueries: queryVariants,
-      idea: selected.projectIdeaInput,
-      missingBuckets: [
-        ...result.manifest.missingRequiredBuckets,
-        ...result.requiredBucketsWithoutParsedFullText
-      ]
-    });
+    if (!queryPlanChanged) {
+      break;
+    }
+
+    queryVariants = nextQueryVariants;
   }
 
   const finalIteration = iterations.at(-1);
@@ -638,10 +688,11 @@ async function main() {
     finalIteration.parsedFullTextCount >= args.minParsedPapers &&
     finalIteration.requiredBucketsWithoutParsedFullText.length === 0 &&
     finalIteration.requiredCoveredCount === finalIteration.requiredBucketCount &&
+    finalIteration.searchFlowVerdict === "pass" &&
     finalIteration.architectureJudgeVerdict === "pass" &&
     finalIteration.handoffUnresolvedProposalCount === 0
       ? "PASS - pelny przelot ma trend GitHub, realne source search, PDF/full-text gate i architekture do porownania"
-      : "NEEDS_REVIEW - system wygenerowal artefakty, ale nie spelnil wszystkich bramek full-text/coverage/judge";
+      : "NEEDS_REVIEW - system wygenerowal artefakty, ale nie spelnil wszystkich bramek search-flow/full-text/coverage/judge/agent-reflection";
 
   await Promise.all([
     writeJson(join(args.outputDir, "09_full_pass_metrics.json"), {
