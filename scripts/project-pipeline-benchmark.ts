@@ -189,6 +189,8 @@ function extractKeyMetrics(report: Record<string, unknown>) {
     "evidenceCompleteness",
     "lineRangeCompleteness",
     "relatedTestsCompleteness",
+    "unknownsCompleteness",
+    "whyNotCompleteness",
     "secretIgnoreRate",
     "averageShortlistSourceDominance",
     "maxIdeasPerSource",

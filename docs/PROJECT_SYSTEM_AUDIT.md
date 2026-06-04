@@ -101,9 +101,11 @@ This benchmark generates the current Repo MRI project pack, runs the generated P
 - `evidenceCompleteness`
 - `lineRangeCompleteness`
 - `relatedTestsCompleteness`
+- `unknownsCompleteness`
+- `whyNotCompleteness`
 - `secretIgnoreRate`
 
-This is the main proof that the project pack is not only a plan. It must show that generated starter code can localize issue text to likely files, symbols, related tests and next actions with evidence.
+This is the main proof that the project pack is not only a plan. It must show that generated starter code can localize issue text to likely files, symbols, related tests and next actions with evidence, unknowns and why-not explanations for runner-up candidates.
 
 The system also includes a Repo MRI local checkout benchmark:
 

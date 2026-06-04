@@ -39,6 +39,14 @@ type BugPathCandidate = {
 };
 
 type BugPathOutput = {
+  unknowns?: string[];
+  why_not_other_candidates?: Array<{
+    path: string;
+    symbol: string | null;
+    score: number;
+    reason: string;
+    evidence_excerpt: string[];
+  }>;
   candidates: BugPathCandidate[];
 };
 
@@ -53,6 +61,12 @@ type CaseResult = {
   secretSearchHitCount: number;
   topCandidatePath: string | null;
   topCandidateSymbol: string | null;
+  unknowns: string[];
+  whyNotOtherCandidates: Array<{
+    path: string;
+    symbol: string | null;
+    reason: string;
+  }>;
   topCandidateRelatedTests: Array<{
     path: string;
     command: string;
@@ -72,6 +86,8 @@ type CaseResult = {
   evidenceComplete: boolean;
   lineRangeComplete: boolean;
   relatedTestsComplete: boolean;
+  unknownsComplete: boolean;
+  whyNotComplete: boolean;
   nextActionsComplete: boolean;
   secretIgnored: boolean;
   passed: boolean;
@@ -527,6 +543,8 @@ async function evaluateFixture(input: {
     ]
   });
   const candidates = bugPath.candidates ?? [];
+  const unknowns = bugPath.unknowns ?? [];
+  const whyNotOtherCandidates = bugPath.why_not_other_candidates ?? [];
   const top = candidates[0] ?? null;
   const top3 = candidates.slice(0, 3);
   const top5 = candidates.slice(0, 5);
@@ -566,6 +584,13 @@ async function evaluateFixture(input: {
       candidate.path.includes("spec") ||
       (candidate.related_tests?.length ?? 0) > 0
     );
+  const unknownsComplete = unknowns.length >= 2 && unknowns.every((unknown) => unknown.length >= 20);
+  const whyNotComplete =
+    candidates.length <= 1 ||
+    (whyNotOtherCandidates.length >= Math.min(2, candidates.length - 1) &&
+      whyNotOtherCandidates.every(
+        (decision) => decision.path.length > 0 && decision.reason.length >= 20
+      ));
   const nextActionsComplete =
     candidates.length > 0 &&
     candidates.every((candidate) => candidate.next_actions.length >= 2);
@@ -580,6 +605,8 @@ async function evaluateFixture(input: {
     evidenceComplete &&
     lineRangeComplete &&
     relatedTestsComplete &&
+    unknownsComplete &&
+    whyNotComplete &&
     nextActionsComplete &&
     secretIgnored;
 
@@ -594,6 +621,12 @@ async function evaluateFixture(input: {
     secretSearchHitCount: secretSearchResults.length,
     topCandidatePath: top?.path ?? null,
     topCandidateSymbol: top?.symbol ?? null,
+    unknowns,
+    whyNotOtherCandidates: whyNotOtherCandidates.map((decision) => ({
+      path: decision.path,
+      symbol: decision.symbol,
+      reason: decision.reason
+    })),
     topCandidateRelatedTests: (top?.related_tests ?? []).map((test) => ({
       path: test.path,
       command: test.command,
@@ -615,6 +648,8 @@ async function evaluateFixture(input: {
     evidenceComplete,
     lineRangeComplete,
     relatedTestsComplete,
+    unknownsComplete,
+    whyNotComplete,
     nextActionsComplete,
     secretIgnored,
     passed
@@ -640,6 +675,8 @@ function renderMarkdownReport(input: {
   evidenceCompleteness: number;
   lineRangeCompleteness: number;
   relatedTestsCompleteness: number;
+  unknownsCompleteness: number;
+  whyNotCompleteness: number;
   secretIgnoreRate: number;
   results: CaseResult[];
 }) {
@@ -659,6 +696,8 @@ function renderMarkdownReport(input: {
     `Evidence completeness: ${pct(input.evidenceCompleteness)}`,
     `Line range completeness: ${pct(input.lineRangeCompleteness)}`,
     `Related tests completeness: ${pct(input.relatedTestsCompleteness)}`,
+    `Unknowns completeness: ${pct(input.unknownsCompleteness)}`,
+    `Why-not completeness: ${pct(input.whyNotCompleteness)}`,
     `Secret ignore rate: ${pct(input.secretIgnoreRate)}`,
     "",
     "## Cases",
@@ -676,6 +715,14 @@ function renderMarkdownReport(input: {
     lines.push(`- Search hits: ${result.searchHitCount}`);
     lines.push(`- Secret search hits: ${result.secretSearchHitCount}`);
     lines.push(`- Top candidate: ${result.topCandidatePath ?? "none"} / ${result.topCandidateSymbol ?? "none"}`);
+    lines.push(`- Unknowns: ${result.unknowns.join(" | ") || "none"}`);
+    lines.push(
+      `- Why not other candidates: ${
+        result.whyNotOtherCandidates
+          .map((decision) => `${decision.path} / ${decision.symbol ?? "none"}: ${decision.reason}`)
+          .join(" | ") || "none"
+      }`
+    );
     lines.push(
       `- Top candidate related tests: ${
         result.topCandidateRelatedTests.map((test) => `${test.path} (${test.command})`).join(", ") || "none"
@@ -695,6 +742,8 @@ function renderMarkdownReport(input: {
     lines.push(`- Evidence complete: ${result.evidenceComplete ? "yes" : "no"}`);
     lines.push(`- Line ranges complete: ${result.lineRangeComplete ? "yes" : "no"}`);
     lines.push(`- Related tests complete: ${result.relatedTestsComplete ? "yes" : "no"}`);
+    lines.push(`- Unknowns complete: ${result.unknownsComplete ? "yes" : "no"}`);
+    lines.push(`- Why-not complete: ${result.whyNotComplete ? "yes" : "no"}`);
     lines.push(`- Next actions complete: ${result.nextActionsComplete ? "yes" : "no"}`);
     lines.push(`- Secret ignored: ${result.secretIgnored ? "yes" : "no"}`);
     lines.push("");
@@ -740,6 +789,8 @@ async function main() {
     evidenceCompleteness: Number(averageBooleans(results.map((result) => result.evidenceComplete)).toFixed(3)),
     lineRangeCompleteness: Number(averageBooleans(results.map((result) => result.lineRangeComplete)).toFixed(3)),
     relatedTestsCompleteness: Number(averageBooleans(results.map((result) => result.relatedTestsComplete)).toFixed(3)),
+    unknownsCompleteness: Number(averageBooleans(results.map((result) => result.unknownsComplete)).toFixed(3)),
+    whyNotCompleteness: Number(averageBooleans(results.map((result) => result.whyNotComplete)).toFixed(3)),
     secretIgnoreRate: Number(averageBooleans(results.map((result) => result.secretIgnored)).toFixed(3)),
     results,
     pytestOutput: {
@@ -765,6 +816,8 @@ async function main() {
       `Evidence completeness: ${pct(report.evidenceCompleteness)}`,
       `Line range completeness: ${pct(report.lineRangeCompleteness)}`,
       `Related tests completeness: ${pct(report.relatedTestsCompleteness)}`,
+      `Unknowns completeness: ${pct(report.unknownsCompleteness)}`,
+      `Why-not completeness: ${pct(report.whyNotCompleteness)}`,
       `Secret ignore rate: ${pct(report.secretIgnoreRate)}`,
       `JSON: ${jsonOutputPath}`,
       `Markdown: ${markdownOutputPath}`
