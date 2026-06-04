@@ -30,6 +30,7 @@ const requiredScripts = [
   "project:ideas",
   "project:research",
   "benchmark:project-pipeline",
+  "benchmark:project-repo-mri-real",
   "benchmark:project-ideas",
   "benchmark:project-ai-ideas",
   "benchmark:project-live-batch",
@@ -48,7 +49,9 @@ const requiredArtifacts = [
   "project_architecture_judge.json",
   "project_architecture_judge.md",
   "controlled_live_batch_summary.json",
-  "controlled_live_batch_summary.md"
+  "controlled_live_batch_summary.md",
+  "project-repo-mri-real-latest.json",
+  "project-repo-mri-real-latest.md"
 ];
 
 const requiredMetrics = [
@@ -58,6 +61,9 @@ const requiredMetrics = [
   "averageNovelty",
   "averageMvpFeasibility",
   "averagePersonalUtility",
+  "top1FileAccuracy",
+  "top3FileAccuracy",
+  "top3SymbolAccuracy",
   "averageHandoffQualityScore",
   "handoffReadyCount",
   "averageJudgeScore",

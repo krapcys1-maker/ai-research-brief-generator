@@ -436,6 +436,9 @@ averageNovelty
 averageMvpFeasibility
 averagePersonalUtility
 averageGithubSignalStrength
+top1FileAccuracy
+top3FileAccuracy
+top3SymbolAccuracy
 shortlistSourceDominance
 maxIdeasPerSource
 researchReadyCount

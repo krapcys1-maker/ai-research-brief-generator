@@ -29,6 +29,12 @@ const benchmarkDefinitions: BenchmarkDefinition[] = [
     jsonPath: "benchmark-results/project-docs-consistency-latest.json"
   },
   {
+    id: "project_repo_mri_real",
+    label: "ProjectRepoMriReal",
+    npmScript: "benchmark:project-repo-mri-real",
+    jsonPath: "benchmark-results/project-repo-mri-real-latest.json"
+  },
+  {
     id: "research_plan",
     label: "ResearchPlan",
     npmScript: "benchmark:project-research-plan",
@@ -168,6 +174,12 @@ function extractKeyMetrics(report: Record<string, unknown>) {
     "averageMvpFeasibility",
     "averagePersonalUtility",
     "averageGithubSignalStrength",
+    "top1FileAccuracy",
+    "top3FileAccuracy",
+    "top3SymbolAccuracy",
+    "evidenceCompleteness",
+    "lineRangeCompleteness",
+    "secretIgnoreRate",
     "averageShortlistSourceDominance",
     "maxIdeasPerSource",
     "rawRejectCount",
