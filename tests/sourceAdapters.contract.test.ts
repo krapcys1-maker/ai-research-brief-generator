@@ -90,6 +90,23 @@ describe("source adapter contracts", () => {
     });
   });
 
+  it("does not send placeholder Semantic Scholar API keys", async () => {
+    vi.stubEnv("SEMANTIC_SCHOLAR_API_KEY", "...");
+    const fetchMock = mockFetchWithResponse(
+      fixtureText("semantic-scholar-citation-faithfulness.json"),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+
+    await semanticScholarSourceAdapter.searchPapers({
+      query: "citation faithfulness",
+      maxResults: 1
+    });
+
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
+      headers: {}
+    });
+  });
+
   it("normalizes OpenAlex works, reconstructed abstracts, and DOI URLs", async () => {
     const fetchMock = mockFetchWithResponse(
       fixtureText("openalex-clinical-rag.json"),

@@ -162,4 +162,68 @@ describe("search flow audit", () => {
     expect(audit.parsedFullTextCount).toBe(1);
     expect(audit.warnings).toEqual([]);
   });
+
+  it("flags source fragility when multiple configured sources yield one contributor", () => {
+    const candidate = paper({
+      id: "pdf_candidate",
+      title: "PDF Candidate",
+      pdfUrl: "https://example.com/pdf-candidate.pdf",
+      source: "openalex"
+    });
+    const audit = auditSearchFlow({
+      candidatePapers: [candidate],
+      dedupedPapers: [candidate],
+      evidenceCollection: evidenceResult({
+        bucketMetrics: [
+          {
+            bucketId: "agent_reliability",
+            candidateCount: 1,
+            reviewedCount: 1,
+            usefulReviewedCount: 1,
+            parsedCount: 1,
+            topPaperIds: ["pdf_candidate"],
+            coverageReady: true
+          }
+        ]
+      }),
+      fullTextAttempts: [
+        {
+          paper: candidate,
+          fullText: {
+            status: "parsed"
+          }
+        }
+      ],
+      queryVariants: ["agent sandbox"],
+      rawPapers: [candidate],
+      sourceDiagnostics: [
+        {
+          cached: false,
+          query: "agent sandbox",
+          resultCount: 0,
+          source: "arxiv",
+          status: "failed",
+          message: "rate limited"
+        },
+        {
+          cached: false,
+          query: "agent sandbox",
+          resultCount: 0,
+          source: "semantic_scholar",
+          status: "failed",
+          message: "rate limited"
+        },
+        {
+          cached: false,
+          query: "agent sandbox",
+          resultCount: 3,
+          source: "openalex",
+          status: "success"
+        }
+      ]
+    });
+
+    expect(audit.verdict).toBe("needs_review");
+    expect(audit.warnings).toContain("Search relies on a single contributing source.");
+  });
 });

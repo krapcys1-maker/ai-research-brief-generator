@@ -132,6 +132,7 @@ function warningsFor(input: {
   attemptedFullTextCount: number;
   parsedFullTextCount: number;
   requiredBucketCandidateCoverage: number;
+  sourceResultCounts: Record<string, number>;
 }) {
   const warnings: string[] = [];
 
@@ -164,6 +165,14 @@ function warningsFor(input: {
     warnings.push("Not every required bucket produced candidate papers.");
   }
 
+  const configuredSourceCount = Object.keys(input.sourceResultCounts).length;
+  const contributingSourceCount = Object.values(input.sourceResultCounts).filter(
+    (count) => count > 0
+  ).length;
+  if (configuredSourceCount > 1 && contributingSourceCount < 2) {
+    warnings.push("Search relies on a single contributing source.");
+  }
+
   return warnings;
 }
 
@@ -192,6 +201,7 @@ export function auditSearchFlow(input: {
   const bucketCandidateCoverage = requiredBucketCandidateCoverage(
     input.evidenceCollection
   );
+  const resultCounts = sourceResultCounts(input.sourceDiagnostics);
   const warnings = warningsFor({
     queryVariantCount: input.queryVariants.length,
     successfulQueryCount: statusCounts.successfulQueryCount,
@@ -199,7 +209,8 @@ export function auditSearchFlow(input: {
     candidateWithFullTextCandidateCount,
     attemptedFullTextCount: input.fullTextAttempts.length,
     parsedFullTextCount,
-    requiredBucketCandidateCoverage: bucketCandidateCoverage
+    requiredBucketCandidateCoverage: bucketCandidateCoverage,
+    sourceResultCounts: resultCounts
   });
 
   return {
@@ -214,7 +225,7 @@ export function auditSearchFlow(input: {
     unavailableFullTextCount,
     failedFullTextCount,
     requiredBucketCandidateCoverage: bucketCandidateCoverage,
-    sourceResultCounts: sourceResultCounts(input.sourceDiagnostics),
+    sourceResultCounts: resultCounts,
     topCandidateIds: input.candidatePapers.slice(0, 12).map((paper) => paper.id),
     verdict: warnings.length === 0 ? "pass" : "needs_review",
     warnings
