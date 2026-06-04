@@ -4,6 +4,15 @@
 
 The project already has useful architecture docs and implemented modules, but the target system is broader than the current project idea and research runners.
 
+Final output quality must also meet the baseline described in:
+
+```text
+docs/GPT_BASELINE_QUALITY_FLOOR.md
+```
+
+That baseline comes from `testy/GPT` and should be treated as the minimum
+acceptable floor for Cursor-ready project-pack output.
+
 Existing docs cover:
 
 - academic research brief generation,
