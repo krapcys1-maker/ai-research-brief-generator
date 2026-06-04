@@ -138,6 +138,8 @@ describe("runProjectResearch", () => {
       projectArchitectureMarkdown: "project_architecture.md",
       projectArchitectureJudgeJson: "project_architecture_judge.json",
       projectArchitectureJudgeMarkdown: "project_architecture_judge.md",
+      projectPlanJudgeJson: "project_plan_judge.json",
+      projectPlanJudgeMarkdown: "project_plan_judge.md",
       projectPackReadinessJson: "project_pack_readiness.json",
       projectPackReadinessMarkdown: "project_pack_readiness.md"
     });
@@ -167,7 +169,18 @@ describe("runProjectResearch", () => {
       score: number;
       cursorReady: boolean;
       requiredArtifactCoverage: number;
+      planJudge: {
+        verdict: string;
+        score: number;
+        gptBaselineComparison: {
+          status: string;
+        };
+      };
     }>(join(outputDir, "project_pack_readiness.json"));
+    const projectPlanJudge = await readJson<{
+      verdict: string;
+      score: number;
+    }>(join(outputDir, "project_plan_judge.json"));
     const projectPackReadme = await readFile(
       join(outputDir, "project_pack", "README.md"),
       "utf8"
@@ -187,6 +200,12 @@ describe("runProjectResearch", () => {
     expect(projectPackReadiness.score).toBeGreaterThanOrEqual(90);
     expect(projectPackReadiness.cursorReady).toBe(true);
     expect(projectPackReadiness.requiredArtifactCoverage).toBe(1);
+    expect(projectPackReadiness.planJudge.verdict).toBe("pass");
+    expect(projectPackReadiness.planJudge.score).toBeGreaterThanOrEqual(90);
+    expect(projectPackReadiness.planJudge.gptBaselineComparison.status).toBe(
+      "beats_plan_floor"
+    );
+    expect(projectPlanJudge.verdict).toBe("pass");
     expect(projectPackReadme).toContain("Cursor-ready");
     expect(cursorRule).toContain("Non-negotiables");
   });

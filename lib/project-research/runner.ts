@@ -119,6 +119,8 @@ export type ProjectResearchRunManifest = {
     projectArchitectureMarkdown: string;
     projectArchitectureJudgeJson: string;
     projectArchitectureJudgeMarkdown: string;
+    projectPlanJudgeJson: string;
+    projectPlanJudgeMarkdown: string;
     projectPackReadinessJson: string;
     projectPackReadinessMarkdown: string;
   };
@@ -145,6 +147,8 @@ const artifactFiles = {
   projectArchitectureMarkdown: "project_architecture.md",
   projectArchitectureJudgeJson: "project_architecture_judge.json",
   projectArchitectureJudgeMarkdown: "project_architecture_judge.md",
+  projectPlanJudgeJson: "project_plan_judge.json",
+  projectPlanJudgeMarkdown: "project_plan_judge.md",
   projectPackReadinessJson: "project_pack_readiness.json",
   projectPackReadinessMarkdown: "project_pack_readiness.md"
 } as const;
@@ -188,6 +192,8 @@ function projectPackReadinessToMarkdown(readiness: ReturnType<typeof generatePro
     "",
     `Score: ${readiness.score}/100`,
     `Verdict: ${readiness.verdict}`,
+    `Project Plan Judge: ${readiness.planJudge.score}/100 (${readiness.planJudge.verdict})`,
+    `GPT baseline status: ${readiness.planJudge.gptBaselineComparison.status}`,
     `Artifacts: ${readiness.artifactCount}`,
     `Required artifact coverage: ${(readiness.requiredArtifactCoverage * 100).toFixed(1)}%`,
     `Cursor ready: ${readiness.cursorReady ? "yes" : "no"}`,
@@ -208,6 +214,46 @@ function projectPackReadinessToMarkdown(readiness: ReturnType<typeof generatePro
     ...(readiness.requiredFixes.length
       ? readiness.requiredFixes.map((fix) => `- ${fix}`)
       : ["- none"])
+  ].join("\n");
+}
+
+function projectPlanJudgeToMarkdown(readiness: ReturnType<typeof generateProjectPack>["readiness"]) {
+  const judge = readiness.planJudge;
+
+  return [
+    "# Project Plan Judge",
+    "",
+    `Score: ${judge.score}/100`,
+    `Verdict: ${judge.verdict}`,
+    `GPT baseline status: ${judge.gptBaselineComparison.status}`,
+    "",
+    "## Dimension Scores",
+    "",
+    ...Object.entries(judge.dimensionScores).map(
+      ([name, score]) => `- ${name}: ${score}/100`
+    ),
+    "",
+    "## Strengths",
+    "",
+    ...(judge.strengths.length ? judge.strengths.map((item) => `- ${item}`) : ["- none"]),
+    "",
+    "## Weaknesses",
+    "",
+    ...(judge.weaknesses.length ? judge.weaknesses.map((item) => `- ${item}`) : ["- none"]),
+    "",
+    "## Required Fixes",
+    "",
+    ...(judge.requiredFixes.length
+      ? judge.requiredFixes.map((item) => `- ${item}`)
+      : ["- none"]),
+    "",
+    "## Better Than GPT Baseline",
+    "",
+    ...judge.gptBaselineComparison.betterThanGpt.map((item) => `- ${item}`),
+    "",
+    "## Still Behind GPT Baseline",
+    "",
+    ...judge.gptBaselineComparison.stillBehindGpt.map((item) => `- ${item}`)
   ].join("\n");
 }
 
@@ -369,6 +415,16 @@ export async function runProjectResearch(
     writeFile(
       join(outputDir, artifactFiles.projectArchitectureJudgeMarkdown),
       projectArchitectureJudgeToMarkdown(architectureJudge),
+      "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.projectPlanJudgeJson),
+      toJson(projectPack.readiness.planJudge),
+      "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.projectPlanJudgeMarkdown),
+      projectPlanJudgeToMarkdown(projectPack.readiness),
       "utf8"
     ),
     writeFile(
