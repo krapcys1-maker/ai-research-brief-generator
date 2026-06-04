@@ -43,6 +43,103 @@ const STRICT_KEYWORD_BUCKETS = new Set([
   "rag_evidence_loss"
 ]);
 const REQUIRED_ANCHOR_TERMS_BY_BUCKET: Record<string, string[]> = {
+  model_experiments: [
+    "trading",
+    "market",
+    "financial",
+    "portfolio",
+    "stock",
+    "asset",
+    "returns"
+  ],
+  backtest_validation: [
+    "backtest",
+    "trading",
+    "strategy",
+    "portfolio",
+    "market",
+    "sharpe"
+  ],
+  data_correctness: [
+    "financial",
+    "market",
+    "trading",
+    "time series",
+    "price",
+    "returns",
+    "asset"
+  ],
+  execution_market_impact: [
+    "execution",
+    "market",
+    "trading",
+    "slippage",
+    "transaction costs",
+    "order"
+  ],
+  risk_governance: [
+    "trading",
+    "pre-trade",
+    "portfolio",
+    "market",
+    "strategy",
+    "financial"
+  ],
+  clinical_evidence: [
+    "clinical",
+    "diagnostic",
+    "patient",
+    "medical",
+    "healthcare"
+  ],
+  safety_validation: [
+    "medical",
+    "clinical",
+    "patient",
+    "healthcare",
+    "uncertainty",
+    "human oversight"
+  ],
+  privacy_compliance: [
+    "healthcare",
+    "patient",
+    "medical",
+    "clinical"
+  ],
+  workflow_integration: [
+    "clinical workflow",
+    "clinician",
+    "doctor",
+    "patient",
+    "healthcare"
+  ],
+  legal_retrieval: [
+    "legal",
+    "law",
+    "court",
+    "case law",
+    "statute"
+  ],
+  contract_analysis: [
+    "clause",
+    "obligation",
+    "legal",
+    "law"
+  ],
+  compliance_risk: [
+    "compliance",
+    "legal",
+    "regulation",
+    "regulatory",
+    "auditability"
+  ],
+  human_review: [
+    "legal",
+    "law",
+    "contract",
+    "document review",
+    "legal workflow"
+  ],
   cli_observability: [
     "cli",
     "command line",
@@ -161,6 +258,38 @@ const REQUIRED_ANCHOR_TERMS_BY_BUCKET: Record<string, string[]> = {
     "rag",
     "ingestion",
     "llm"
+  ],
+  domain_methods: [
+    "artificial intelligence",
+    "machine learning",
+    "ai system",
+    "ml system"
+  ],
+  data_requirements: [
+    "machine learning",
+    "ai system",
+    "training data",
+    "dataset",
+    "data quality"
+  ],
+  evaluation_validation: [
+    "artificial intelligence",
+    "machine learning",
+    "ai system",
+    "model evaluation"
+  ],
+  risk_safety: [
+    "artificial intelligence",
+    "machine learning",
+    "ai system",
+    "model risk"
+  ],
+  implementation_operations: [
+    "production ai",
+    "ai system",
+    "machine learning",
+    "mlops",
+    "model monitoring"
   ]
 };
 const STOP_TERMS = new Set([

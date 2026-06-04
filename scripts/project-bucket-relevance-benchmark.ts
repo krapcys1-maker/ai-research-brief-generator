@@ -220,6 +220,38 @@ async function main() {
     preferredDomains: ["LLM context engineering", "RAG evaluation", "agent reliability"],
     outputLanguage: "pl"
   };
+  const tradingIdea: ProjectIdeaInput = {
+    title: "AI Trading Bot",
+    description:
+      "Bot tradingowy na gieldzie uzywajacy AI, backtestow i kontroli ryzyka.",
+    constraints: ["najpierw paper trading"],
+    preferredDomains: ["algorithmic trading"],
+    outputLanguage: "pl"
+  };
+  const legalIdea: ProjectIdeaInput = {
+    title: "Contract Compliance Reviewer",
+    description:
+      "Legal AI system for contract analysis, compliance review, document review and grounded citations.",
+    constraints: ["czlowiek zatwierdza decyzje"],
+    preferredDomains: [],
+    outputLanguage: "pl"
+  };
+  const healthcareIdea: ProjectIdeaInput = {
+    title: "Medical RAG Assistant",
+    description:
+      "Clinical AI assistant for healthcare evidence retrieval, diagnostic support limits, safety validation and patient data governance.",
+    constraints: ["human clinician review required"],
+    preferredDomains: ["clinical AI", "healthcare safety", "medical validation"],
+    outputLanguage: "pl"
+  };
+  const genericAiIdea: ProjectIdeaInput = {
+    title: "Applied AI System Reliability Monitor",
+    description:
+      "Applied AI system design monitor for evaluation, data quality, operational reliability, risk and safety gates.",
+    constraints: ["evidence-backed MVP"],
+    preferredDomains: [],
+    outputLanguage: "pl"
+  };
 
   const cases: BenchmarkCase[] = [
     {
@@ -335,6 +367,101 @@ async function main() {
         title: "Information Preservation in Prompt Compression for LLMs",
         domainText:
           "LLM context compression must preserve facts, faithfulness and information needed for downstream answers"
+      })
+    },
+    {
+      id: "trading_data_correctness_rejects_generic_data_leakage",
+      idea: tradingIdea,
+      bucketId: "data_correctness",
+      falsePositive: {
+        id: "wireless_sensor_data_leakage",
+        title: "Data Leakage Detection in Wireless Sensor Networks",
+        abstract:
+          "The method studies data leakage, validation splits and embargo policies for private sensor telemetry."
+      },
+      truePositive: truePositiveForBucket({
+        idea: tradingIdea,
+        bucketId: "data_correctness",
+        id: "financial_ml_leakage",
+        title: "Financial Machine Learning Data Leakage and Purged Cross Validation",
+        domainText:
+          "Financial machine learning for market time series, trading returns, prices and assets needs leakage control"
+      })
+    },
+    {
+      id: "legal_retrieval_rejects_biomedical_citation_qa",
+      idea: legalIdea,
+      bucketId: "legal_retrieval",
+      falsePositive: {
+        id: "biomedical_citation_qa",
+        title: "Citation Grounding for Biomedical Question Answering",
+        abstract:
+          "The system improves citation grounding, document question answering and evaluation for biomedical articles."
+      },
+      truePositive: truePositiveForBucket({
+        idea: legalIdea,
+        bucketId: "legal_retrieval",
+        id: "legal_case_citation_retrieval",
+        title: "Legal Information Retrieval with Grounded Case Law Citations",
+        domainText:
+          "Legal question answering over court cases, statutes and case law requires citation grounding"
+      })
+    },
+    {
+      id: "contract_analysis_rejects_software_contract_testing",
+      idea: legalIdea,
+      bucketId: "contract_analysis",
+      falsePositive: {
+        id: "microservice_contract_testing",
+        title: "Contract Analysis and Validation for Microservice APIs",
+        abstract:
+          "API contract analysis extracts interface clauses and validates obligations between distributed services."
+      },
+      truePositive: truePositiveForBucket({
+        idea: legalIdea,
+        bucketId: "contract_analysis",
+        id: "legal_clause_extraction",
+        title: "Legal Contract Clause Extraction and Obligation Risk Classification",
+        domainText:
+          "Legal NLP for contract clauses extracts obligations, rights and risk categories from agreements"
+      })
+    },
+    {
+      id: "healthcare_privacy_rejects_smart_city_privacy",
+      idea: healthcareIdea,
+      bucketId: "privacy_compliance",
+      falsePositive: {
+        id: "smart_city_privacy_governance",
+        title: "Privacy and Data Governance for Smart City Sensor Platforms",
+        abstract:
+          "The framework covers privacy, data governance, compliance and de-identification for municipal sensor data."
+      },
+      truePositive: truePositiveForBucket({
+        idea: healthcareIdea,
+        bucketId: "privacy_compliance",
+        id: "patient_data_governance",
+        title: "Healthcare AI Privacy and Patient Data Governance",
+        domainText:
+          "Healthcare AI systems require patient data de-identification, clinical privacy controls and medical data governance"
+      })
+    },
+    {
+      id: "generic_ai_risk_rejects_industrial_safety",
+      idea: genericAiIdea,
+      bucketId: "risk_safety",
+      falsePositive: {
+        id: "industrial_safety_governance",
+        title: "Risk Safety and Human Oversight in Industrial Operations",
+        abstract:
+          "The safety governance framework analyzes failure modes, human oversight and risk controls for factories."
+      },
+      truePositive: truePositiveForBucket({
+        idea: genericAiIdea,
+        bucketId: "risk_safety",
+        id: "ai_system_model_risk",
+        title: "AI System Risk, Safety and Failure Mode Governance",
+        domainText:
+          "Artificial intelligence systems need model risk controls, safety evaluation and human oversight gates"
       })
     }
   ];
