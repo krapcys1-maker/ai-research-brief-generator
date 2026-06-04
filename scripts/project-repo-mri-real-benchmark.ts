@@ -18,6 +18,7 @@ type BugPathFixture = {
   searchQuery: string;
   expectedFile: string;
   expectedSymbol: string;
+  expectedTestFile: string;
 };
 
 type BugPathCandidate = {
@@ -48,6 +49,7 @@ type CaseResult = {
   top1FileHit: boolean;
   top3FileHit: boolean;
   top3SymbolHit: boolean;
+  top5TestFileHit: boolean;
   evidenceComplete: boolean;
   lineRangeComplete: boolean;
   nextActionsComplete: boolean;
@@ -105,6 +107,7 @@ const fixtures: BugPathFixture[] = [
     repoName: "auth_service",
     expectedFile: "auth.py",
     expectedSymbol: "login_user",
+    expectedTestFile: "tests/test_auth.py",
     searchQuery: "login_user empty password",
     issue: "ValueError in auth.py:8 when login_user gets empty password",
     files: [
@@ -150,6 +153,7 @@ const fixtures: BugPathFixture[] = [
     repoName: "checkout_ui",
     expectedFile: "src/cart.ts",
     expectedSymbol: "applyCoupon",
+    expectedTestFile: "tests/cart.test.ts",
     searchQuery: "applyCoupon invalid coupon checkout total",
     issue: "Error in src/cart.ts:6 when applyCoupon receives an expired coupon during checkout",
     files: [
@@ -201,6 +205,7 @@ const fixtures: BugPathFixture[] = [
     repoName: "event_pipeline",
     expectedFile: "pipeline.py",
     expectedSymbol: "normalize_event",
+    expectedTestFile: "tests/test_pipeline.py",
     searchQuery: "normalize_event invalid timestamp",
     issue: "ValueError in pipeline.py:8 when normalize_event parses malformed timestamp",
     files: [
@@ -393,12 +398,16 @@ async function evaluateFixture(input: {
   const candidates = bugPath.candidates ?? [];
   const top = candidates[0] ?? null;
   const top3 = candidates.slice(0, 3);
+  const top5 = candidates.slice(0, 5);
   const top1FileHit = top?.path === input.fixture.expectedFile;
   const top3FileHit = top3.some((candidate) => candidate.path === input.fixture.expectedFile);
   const top3SymbolHit = top3.some(
     (candidate) =>
       candidate.path === input.fixture.expectedFile &&
       candidate.symbol === input.fixture.expectedSymbol
+  );
+  const top5TestFileHit = top5.some(
+    (candidate) => candidate.path === input.fixture.expectedTestFile
   );
   const evidenceComplete =
     candidates.length > 0 &&
@@ -414,6 +423,7 @@ async function evaluateFixture(input: {
     top1FileHit &&
     top3FileHit &&
     top3SymbolHit &&
+    top5TestFileHit &&
     evidenceComplete &&
     lineRangeComplete &&
     nextActionsComplete &&
@@ -433,6 +443,7 @@ async function evaluateFixture(input: {
     top1FileHit,
     top3FileHit,
     top3SymbolHit,
+    top5TestFileHit,
     evidenceComplete,
     lineRangeComplete,
     nextActionsComplete,
@@ -454,6 +465,7 @@ function renderMarkdownReport(input: {
   top1FileAccuracy: number;
   top3FileAccuracy: number;
   top3SymbolAccuracy: number;
+  top5TestFileAccuracy: number;
   evidenceCompleteness: number;
   lineRangeCompleteness: number;
   secretIgnoreRate: number;
@@ -469,6 +481,7 @@ function renderMarkdownReport(input: {
     `Top-1 file accuracy: ${pct(input.top1FileAccuracy)}`,
     `Top-3 file accuracy: ${pct(input.top3FileAccuracy)}`,
     `Top-3 symbol accuracy: ${pct(input.top3SymbolAccuracy)}`,
+    `Top-5 test file accuracy: ${pct(input.top5TestFileAccuracy)}`,
     `Evidence completeness: ${pct(input.evidenceCompleteness)}`,
     `Line range completeness: ${pct(input.lineRangeCompleteness)}`,
     `Secret ignore rate: ${pct(input.secretIgnoreRate)}`,
@@ -491,6 +504,7 @@ function renderMarkdownReport(input: {
     lines.push(`- Top-1 file hit: ${result.top1FileHit ? "yes" : "no"}`);
     lines.push(`- Top-3 file hit: ${result.top3FileHit ? "yes" : "no"}`);
     lines.push(`- Top-3 symbol hit: ${result.top3SymbolHit ? "yes" : "no"}`);
+    lines.push(`- Top-5 test file hit: ${result.top5TestFileHit ? "yes" : "no"}`);
     lines.push(`- Evidence complete: ${result.evidenceComplete ? "yes" : "no"}`);
     lines.push(`- Line ranges complete: ${result.lineRangeComplete ? "yes" : "no"}`);
     lines.push(`- Next actions complete: ${result.nextActionsComplete ? "yes" : "no"}`);
@@ -532,6 +546,7 @@ async function main() {
     top1FileAccuracy: Number(averageBooleans(results.map((result) => result.top1FileHit)).toFixed(3)),
     top3FileAccuracy: Number(averageBooleans(results.map((result) => result.top3FileHit)).toFixed(3)),
     top3SymbolAccuracy: Number(averageBooleans(results.map((result) => result.top3SymbolHit)).toFixed(3)),
+    top5TestFileAccuracy: Number(averageBooleans(results.map((result) => result.top5TestFileHit)).toFixed(3)),
     evidenceCompleteness: Number(averageBooleans(results.map((result) => result.evidenceComplete)).toFixed(3)),
     lineRangeCompleteness: Number(averageBooleans(results.map((result) => result.lineRangeComplete)).toFixed(3)),
     secretIgnoreRate: Number(averageBooleans(results.map((result) => result.secretIgnored)).toFixed(3)),
@@ -553,6 +568,7 @@ async function main() {
       `Top-1 file accuracy: ${pct(report.top1FileAccuracy)}`,
       `Top-3 file accuracy: ${pct(report.top3FileAccuracy)}`,
       `Top-3 symbol accuracy: ${pct(report.top3SymbolAccuracy)}`,
+      `Top-5 test file accuracy: ${pct(report.top5TestFileAccuracy)}`,
       `Evidence completeness: ${pct(report.evidenceCompleteness)}`,
       `Line range completeness: ${pct(report.lineRangeCompleteness)}`,
       `Secret ignore rate: ${pct(report.secretIgnoreRate)}`,

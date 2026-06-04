@@ -183,6 +183,7 @@ function extractKeyMetrics(report: Record<string, unknown>) {
     "top1FileAccuracy",
     "top3FileAccuracy",
     "top3SymbolAccuracy",
+    "top5TestFileAccuracy",
     "evidenceCompleteness",
     "lineRangeCompleteness",
     "secretIgnoreRate",

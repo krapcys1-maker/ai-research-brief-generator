@@ -95,6 +95,7 @@ This benchmark generates the current Repo MRI project pack, runs the generated P
 - `top1FileAccuracy`
 - `top3FileAccuracy`
 - `top3SymbolAccuracy`
+- `top5TestFileAccuracy`
 - `evidenceCompleteness`
 - `lineRangeCompleteness`
 - `secretIgnoreRate`
