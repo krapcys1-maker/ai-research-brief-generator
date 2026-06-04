@@ -1,6 +1,6 @@
 import { buildProjectResearchPlan, runProjectResearch } from "@/lib/project-research";
 import type { ProjectIdeaInput, ReviewedPaper } from "@/lib/project-research";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 const DEFAULT_OUTPUT_DIR = join(
@@ -137,6 +137,14 @@ async function main() {
     generatedAt: "2026-06-04T08:00:00.000Z",
     outputDir
   });
+  const packReadiness = JSON.parse(
+    await readFile(join(outputDir, "project_pack_readiness.json"), "utf8")
+  ) as {
+    score: number;
+    verdict: string;
+    starterCodeReady: boolean;
+    planJudge: { score: number; verdict: string };
+  };
 
   console.log(
     JSON.stringify(
@@ -146,6 +154,11 @@ async function main() {
         architectureJudgeScore: manifest.architectureJudgeScore,
         architectureJudgeVerdict: manifest.architectureJudgeVerdict,
         coverage: `${manifest.requiredCoveredCount}/${manifest.requiredBucketCount}`,
+        projectPackScore: packReadiness.score,
+        projectPackVerdict: packReadiness.verdict,
+        starterCodeReady: packReadiness.starterCodeReady,
+        projectPlanJudgeScore: packReadiness.planJudge.score,
+        projectPlanJudgeVerdict: packReadiness.planJudge.verdict,
         projectPack: manifest.files.projectPackReadinessMarkdown
       },
       null,

@@ -95,6 +95,19 @@ const tradingIdea: ProjectIdeaInput = {
   outputLanguage: "pl"
 };
 
+const repoMriIdea: ProjectIdeaInput = {
+  title: "Repo MRI",
+  description:
+    "Developer tool that turns a repository into an explainable code map with files, symbols, imports, calls, tests and a Bug Path mode from issue or stacktrace to likely files, symbols, tests and hypotheses.",
+  constraints: [
+    "do not build a generic chat with repo",
+    "deterministic index and code knowledge graph before LLM summaries",
+    "MVP must show evidence, line ranges, confidence and unknowns"
+  ],
+  preferredDomains: ["software engineering", "static analysis", "code intelligence"],
+  outputLanguage: "pl"
+};
+
 describe("runProjectResearch", () => {
   it("writes a complete ready project research artifact set", async () => {
     const outputDir = await mkdtemp(join(tmpdir(), "project-research-ready-"));
@@ -208,6 +221,64 @@ describe("runProjectResearch", () => {
     expect(projectPlanJudge.verdict).toBe("pass");
     expect(projectPackReadme).toContain("Cursor-ready");
     expect(cursorRule).toContain("Non-negotiables");
+  });
+
+  it("generates runnable Repo MRI starter code artifacts", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "project-research-repo-mri-"));
+
+    await runProjectResearch({
+      idea: repoMriIdea,
+      reviewedPapers: papersForRequiredBuckets(repoMriIdea),
+      generatedAt: "2026-06-03T13:00:00.000Z",
+      outputDir
+    });
+
+    const projectPackReadiness = await readJson<{
+      verdict: string;
+      score: number;
+      starterCodeReady: boolean;
+      planJudge: {
+        verdict: string;
+        score: number;
+      };
+    }>(join(outputDir, "project_pack_readiness.json"));
+    const makefile = await readFile(
+      join(outputDir, "project_pack", "Makefile"),
+      "utf8"
+    );
+    const indexerTest = await readFile(
+      join(
+        outputDir,
+        "project_pack",
+        "services",
+        "indexer",
+        "tests",
+        "test_indexer.py"
+      ),
+      "utf8"
+    );
+    const bugPath = await readFile(
+      join(
+        outputDir,
+        "project_pack",
+        "services",
+        "indexer",
+        "repo_mri_indexer",
+        "bug_path.py"
+      ),
+      "utf8"
+    );
+
+    expect(projectPackReadiness.verdict).toBe("pass");
+    expect(projectPackReadiness.score).toBe(100);
+    expect(projectPackReadiness.starterCodeReady).toBe(true);
+    expect(projectPackReadiness.planJudge.verdict).toBe("pass");
+    expect(projectPackReadiness.planJudge.score).toBe(100);
+    expect(makefile).toContain("bug-path-fixture");
+    expect(indexerTest).toContain("test_index_search_and_bug_path");
+    expect(indexerTest).toContain("test_scanner_ignores_secret_files");
+    expect(bugPath).toContain("confidence");
+    expect(bugPath).toContain("next_actions");
   });
 
   it("writes blocked artifacts when required evidence is missing", async () => {
