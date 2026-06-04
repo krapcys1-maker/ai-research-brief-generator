@@ -14,6 +14,7 @@ type BenchmarkCase = {
   domain: string;
   sourceRepos?: IdeaSourceRepo[];
   useGhArchiveTrends?: boolean;
+  requiresDuplicateCuration?: boolean;
 };
 
 type CaseResult = {
@@ -30,6 +31,8 @@ type CaseResult = {
   ghArchiveTrendRepoCount: number;
   trendRadarCategoryCount: number;
   trendRadarTopOpportunityCount: number;
+  duplicateClusterCount: number;
+  selectionDecisionCount: number;
   auditScore: number;
   auditReadyCount: number;
   passed: boolean;
@@ -42,6 +45,10 @@ const requiredFiles = [
   "gh_archive_trends.json",
   "trend_radar.json",
   "trend_radar.md",
+  "source_curation_report.json",
+  "source_curation_report.md",
+  "idea_selection_report.json",
+  "idea_selection_report.md",
   "project_ideas_audit.json",
   "project_ideas_audit.md",
   "repo_insights.json",
@@ -259,10 +266,17 @@ async function evaluateCase(testCase: BenchmarkCase, index: number) {
   const audit = ProjectIdeaAuditSchema.parse(
     JSON.parse(await readFile(join(outputDir, "project_ideas_audit.json"), "utf8"))
   );
+  const ideaSelection = JSON.parse(
+    await readFile(join(outputDir, "idea_selection_report.json"), "utf8")
+  ) as {
+    duplicateClusterCount?: number;
+    decisions?: unknown[];
+  };
   const schemaValid = IdeaDiscoveryReportSchema.safeParse(report).success;
   const projectIdeaInputValidCount = projectIdeaInputs.filter(
     (idea) => ProjectIdeaInputSchema.safeParse(idea).success
   ).length;
+  const duplicateClusterCount = ideaSelection.duplicateClusterCount ?? 0;
   const passed =
     artifactCompleteness === 1 &&
     schemaValid &&
@@ -272,6 +286,7 @@ async function evaluateCase(testCase: BenchmarkCase, index: number) {
     manifest.trendRadarTopOpportunityCount >= 1 &&
     audit.score >= 70 &&
     audit.readiness !== "blocked" &&
+    (!testCase.requiresDuplicateCuration || duplicateClusterCount >= 1) &&
     manifest.handoffReadyCount === manifest.projectIdeaInputCount &&
     manifest.averageHandoffQualityScore >= 82 &&
     projectIdeaInputValidCount === manifest.projectIdeaInputCount;
@@ -290,6 +305,8 @@ async function evaluateCase(testCase: BenchmarkCase, index: number) {
     ghArchiveTrendRepoCount: manifest.ghArchiveTrendRepoCount,
     trendRadarCategoryCount: manifest.trendRadarCategoryCount,
     trendRadarTopOpportunityCount: manifest.trendRadarTopOpportunityCount,
+    duplicateClusterCount,
+    selectionDecisionCount: ideaSelection.decisions?.length ?? 0,
     auditScore: audit.score,
     auditReadyCount: audit.readiness === "ready" ? 1 : 0,
     passed
@@ -330,6 +347,8 @@ function renderMarkdownReport(input: {
     `GH Archive used cases: ${input.ghArchiveUsedCount}`,
     `Trend radar categories: ${input.trendRadarCategoryCount}`,
     `Trend radar opportunities: ${input.trendRadarTopOpportunityCount}`,
+    `Duplicate clusters: ${input.results.reduce((sum, result) => sum + result.duplicateClusterCount, 0)}`,
+    `Selection decisions: ${input.results.reduce((sum, result) => sum + result.selectionDecisionCount, 0)}`,
     `Average audit score: ${input.averageAuditScore.toFixed(1)}`,
     `Audit ready cases: ${input.auditReadyCount}/${input.caseCount}`,
     "",
@@ -352,6 +371,8 @@ function renderMarkdownReport(input: {
     lines.push(`- GH Archive trend repos: ${result.ghArchiveTrendRepoCount}`);
     lines.push(`- Trend radar categories: ${result.trendRadarCategoryCount}`);
     lines.push(`- Trend radar opportunities: ${result.trendRadarTopOpportunityCount}`);
+    lines.push(`- Duplicate clusters: ${result.duplicateClusterCount}`);
+    lines.push(`- Selection decisions: ${result.selectionDecisionCount}`);
     lines.push(`- Audit score: ${result.auditScore}`);
     lines.push(`- Audit ready: ${result.auditReadyCount ? "yes" : "no"}`);
     lines.push("");
@@ -398,6 +419,37 @@ async function main() {
           issueTitle: "Need data quality investigation before charts",
           issueBody:
             "Charts are not useful when data has missing values, duplicates, or broken joins."
+        })
+      ]
+    },
+    {
+      id: "duplicate_concept_curation",
+      domain: "AI coding CLI provider reliability",
+      requiresDuplicateCuration: true,
+      sourceRepos: [
+        repo({
+          repoId: "repo_cc_switch",
+          name: "cc-switch",
+          description:
+            "Cross-platform desktop assistant for Claude Code, Codex, OpenCode and provider management.",
+          topics: ["ai-tools", "claude-code", "codex", "opencode", "provider-management"],
+          readmeText:
+            "Provider-management for Claude Code, Codex, OpenCode and Gemini CLI. Includes model routing, auth setup, provider switching, desktop client and compatibility workflows.",
+          issueTitle: "Provider auth and model routing failures are hard to debug",
+          issueBody:
+            "Users need clear diagnostics when provider auth, proxy routing, tool capabilities or model availability break."
+        }),
+        repo({
+          repoId: "repo_codex_plus_plus",
+          name: "CodexPlusPlus",
+          description:
+            "Enhanced CodexApp tooling with provider routing, desktop workflow and AI CLI compatibility.",
+          topics: ["codex", "claude-code", "developer-tools", "provider-routing"],
+          readmeText:
+            "Developer tool for Codex and Claude Code provider routing, AI CLI compatibility, model switching, auth checks and better command workflows.",
+          issueTitle: "Need compatibility report for providers",
+          issueBody:
+            "Failures across auth, proxy, model routing and missing tool capabilities should be classified before users switch providers."
         })
       ]
     }
@@ -459,6 +511,8 @@ async function main() {
       `GH Archive used cases: ${report.ghArchiveUsedCount}`,
       `Trend radar categories: ${report.trendRadarCategoryCount}`,
       `Trend radar opportunities: ${report.trendRadarTopOpportunityCount}`,
+      `Duplicate clusters: ${report.results.reduce((sum, result) => sum + result.duplicateClusterCount, 0)}`,
+      `Selection decisions: ${report.results.reduce((sum, result) => sum + result.selectionDecisionCount, 0)}`,
       `Average audit score: ${report.averageAuditScore.toFixed(1)}`,
       `Audit ready cases: ${report.auditReadyCount}/${report.caseCount}`,
       `JSON: ${jsonOutputPath}`,

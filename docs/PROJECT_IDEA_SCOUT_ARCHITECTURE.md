@@ -392,6 +392,10 @@ github_collection.json
 gh_archive_trends.json
 trend_radar.json
 trend_radar.md
+source_curation_report.json
+source_curation_report.md
+idea_selection_report.json
+idea_selection_report.md
 project_ideas_audit.json
 project_ideas_audit.md
 project_idea_handoff_quality.json

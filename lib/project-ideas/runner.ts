@@ -26,6 +26,12 @@ import {
   auditIdeaDiscoveryReport,
   projectIdeaAuditToMarkdown
 } from "@/lib/project-ideas/audit";
+import {
+  buildSourceCurationReport,
+  curateShortlistIdeas,
+  ideaSelectionReportToMarkdown,
+  sourceCurationReportToMarkdown
+} from "@/lib/project-ideas/selectionCurator";
 import type { BqExecutor } from "@/lib/project-ideas/ghArchiveTrendCollector";
 import type { FetchLike } from "@/lib/project-ideas/githubCollector";
 import type {
@@ -124,6 +130,10 @@ const artifactFiles = {
   ghArchiveTrends: "gh_archive_trends.json",
   trendRadarJson: "trend_radar.json",
   trendRadarMarkdown: "trend_radar.md",
+  sourceCurationJson: "source_curation_report.json",
+  sourceCurationMarkdown: "source_curation_report.md",
+  ideaSelectionJson: "idea_selection_report.json",
+  ideaSelectionMarkdown: "idea_selection_report.md",
   projectIdeasAuditJson: "project_ideas_audit.json",
   projectIdeasAuditMarkdown: "project_ideas_audit.md",
   repoInsights: "repo_insights.json",
@@ -324,12 +334,22 @@ export function discoverProjectIdeas(value: unknown): IdeaDiscoveryReport {
   const rejectedIdeas = discoveredIdeas.filter(
     (idea) => scoreFor(idea, ideaScores).verdict === "reject"
   );
-  const shortlist = selectShortlistIdeas({
+  const sourceCuration = buildSourceCurationReport({
+    sourceRepos: input.sourceRepos,
+    repoInsights,
+    domain: input.domain,
+    generatedAt: new Date().toISOString()
+  });
+  const curated = curateShortlistIdeas({
     discoveredIdeas,
     ideaScores,
+    sourceRepos: input.sourceRepos,
+    sourceCuration,
     maxIdeas: input.maxIdeas,
-    maxIdeasPerSource: input.maxIdeasPerSource
+    maxIdeasPerSource: input.maxIdeasPerSource,
+    generatedAt: sourceCuration.generatedAt
   });
+  const shortlist = curated.shortlist;
   const projectIdeaInputs = shortlist.map((idea) =>
     toProjectIdeaInput(idea, input.outputLanguage)
   );
@@ -370,7 +390,7 @@ export function discoverProjectIdeas(value: unknown): IdeaDiscoveryReport {
   };
   const report: IdeaDiscoveryReport = {
     id: `idea_discovery_${slug(input.domain)}`,
-    generatedAt: new Date().toISOString(),
+    generatedAt: sourceCuration.generatedAt,
     input,
     sourceRepos: input.sourceRepos,
     repoInsights,
@@ -486,11 +506,68 @@ export async function runProjectIdeaDiscovery(
     outputLanguage: parsed.outputLanguage,
     sourceRepos
   });
-  const trendRadar = buildTrendRadar({
+  const sourceCuration = buildSourceCurationReport({
     sourceRepos: report.sourceRepos,
     repoInsights: report.repoInsights,
     ghArchiveTrendRepos: ghArchiveTrendResult?.repos,
+    domain: report.input.domain,
     generatedAt: report.generatedAt
+  });
+  const curatedSelection = curateShortlistIdeas({
+    discoveredIdeas: report.discoveredIdeas,
+    ideaScores: report.ideaScores,
+    sourceRepos: report.sourceRepos,
+    sourceCuration,
+    maxIdeas: parsed.maxIdeas,
+    maxIdeasPerSource: parsed.maxIdeasPerSource,
+    generatedAt: report.generatedAt
+  });
+  const curatedProjectIdeaInputs = curatedSelection.shortlist.map((idea) =>
+    toProjectIdeaInput(idea, parsed.outputLanguage)
+  );
+  const curatedProjectIdeaHandoffQuality = scoreProjectIdeaHandoffs({
+    ideas: curatedSelection.shortlist,
+    projectIdeaInputs: curatedProjectIdeaInputs
+  });
+  const curatedScores = curatedSelection.shortlist.map((idea) =>
+    scoreFor(idea, report.ideaScores)
+  );
+  const curatedReport: IdeaDiscoveryReport = IdeaDiscoveryReportSchema.parse({
+    ...report,
+    shortlist: curatedSelection.shortlist,
+    projectIdeaInputs: curatedProjectIdeaInputs,
+    projectIdeaHandoffQuality: curatedProjectIdeaHandoffQuality,
+    metrics: {
+      ...report.metrics,
+      promisingCount: curatedSelection.shortlist.length,
+      averageNovelty: Number(average(curatedScores.map((score) => score.novelty)).toFixed(3)),
+      averageMvpFeasibility: Number(
+        average(curatedScores.map((score) => score.mvpFeasibility)).toFixed(3)
+      ),
+      averagePersonalUtility: Number(
+        average(curatedScores.map((score) => score.personalUtility)).toFixed(3)
+      ),
+      averageGithubSignalStrength: Number(
+        average(curatedScores.map((score) => score.githubSignalStrength)).toFixed(3)
+      ),
+      shortlistSourceDominance: Number(sourceDominance(curatedSelection.shortlist).toFixed(3)),
+      researchReadyCount: curatedSelection.shortlist.filter(
+        (idea) => idea.researchQuestions.length >= 2
+      ).length,
+      pipelineInputValidCount: curatedProjectIdeaInputs.length,
+      averageHandoffQualityScore: Number(
+        average(curatedProjectIdeaHandoffQuality.map((quality) => quality.score)).toFixed(1)
+      ),
+      handoffReadyCount: curatedProjectIdeaHandoffQuality.filter(
+        (quality) => quality.readiness === "ready"
+      ).length
+    }
+  });
+  const trendRadar = buildTrendRadar({
+    sourceRepos: curatedReport.sourceRepos,
+    repoInsights: curatedReport.repoInsights,
+    ghArchiveTrendRepos: ghArchiveTrendResult?.repos,
+    generatedAt: curatedReport.generatedAt
   });
   const githubCollectionArtifact = githubCollection
     ? GithubIdeaCollectorResultSchema.parse(githubCollection)
@@ -500,7 +577,7 @@ export async function runProjectIdeaDiscovery(
     : { mode: "not_used" };
   const trendRadarArtifact = TrendRadarReportSchema.parse(trendRadar);
   const projectIdeasAudit = auditIdeaDiscoveryReport({
-    report,
+    report: curatedReport,
     trendRadar: trendRadarArtifact
   });
   const warnings = [
@@ -509,7 +586,7 @@ export async function runProjectIdeaDiscovery(
     ...(ghArchiveGithubCollection?.diagnostics.warnings ?? [])
   ];
   const manifest = createManifest({
-    report,
+    report: curatedReport,
     outputDir,
     githubMode: githubCollection ? "used" : "not_used",
     ghArchiveMode: ghArchiveTrendResult
@@ -543,6 +620,26 @@ export async function runProjectIdeaDiscovery(
       "utf8"
     ),
     writeFile(
+      join(outputDir, artifactFiles.sourceCurationJson),
+      toJson(sourceCuration),
+      "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.sourceCurationMarkdown),
+      sourceCurationReportToMarkdown(sourceCuration),
+      "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.ideaSelectionJson),
+      toJson(curatedSelection.report),
+      "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.ideaSelectionMarkdown),
+      ideaSelectionReportToMarkdown(curatedSelection.report),
+      "utf8"
+    ),
+    writeFile(
       join(outputDir, artifactFiles.projectIdeasAuditJson),
       toJson(projectIdeasAudit),
       "utf8"
@@ -552,42 +649,42 @@ export async function runProjectIdeaDiscovery(
       projectIdeaAuditToMarkdown(projectIdeasAudit),
       "utf8"
     ),
-    writeFile(join(outputDir, artifactFiles.repoInsights), toJson(report.repoInsights), "utf8"),
+    writeFile(join(outputDir, artifactFiles.repoInsights), toJson(curatedReport.repoInsights), "utf8"),
     writeFile(
       join(outputDir, artifactFiles.discoveredIdeas),
-      toJson(report.discoveredIdeas),
+      toJson(curatedReport.discoveredIdeas),
       "utf8"
     ),
-    writeFile(join(outputDir, artifactFiles.ideaScores), toJson(report.ideaScores), "utf8"),
+    writeFile(join(outputDir, artifactFiles.ideaScores), toJson(curatedReport.ideaScores), "utf8"),
     writeFile(
       join(outputDir, artifactFiles.rejectedIdeas),
-      toJson(report.rejectedIdeas),
+      toJson(curatedReport.rejectedIdeas),
       "utf8"
     ),
-    writeFile(join(outputDir, artifactFiles.shortlist), toJson(report.shortlist), "utf8"),
+    writeFile(join(outputDir, artifactFiles.shortlist), toJson(curatedReport.shortlist), "utf8"),
     writeFile(
       join(outputDir, artifactFiles.projectIdeaInputs),
-      toJson(report.projectIdeaInputs),
+      toJson(curatedReport.projectIdeaInputs),
       "utf8"
     ),
     writeFile(
       join(outputDir, artifactFiles.projectIdeaHandoffQualityJson),
-      toJson(report.projectIdeaHandoffQuality),
+      toJson(curatedReport.projectIdeaHandoffQuality),
       "utf8"
     ),
     writeFile(
       join(outputDir, artifactFiles.projectIdeaHandoffQualityMarkdown),
-      projectIdeaHandoffQualityToMarkdown(report.projectIdeaHandoffQuality),
+      projectIdeaHandoffQualityToMarkdown(curatedReport.projectIdeaHandoffQuality),
       "utf8"
     ),
     writeFile(
       join(outputDir, artifactFiles.ideaDiscoveryReportJson),
-      toJson(report),
+      toJson(curatedReport),
       "utf8"
     ),
     writeFile(
       join(outputDir, artifactFiles.ideaDiscoveryReportMarkdown),
-      ideaDiscoveryReportToMarkdown(report),
+      ideaDiscoveryReportToMarkdown(curatedReport),
       "utf8"
     )
   ]);
