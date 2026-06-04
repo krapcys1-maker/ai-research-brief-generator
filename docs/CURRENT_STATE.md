@@ -185,10 +185,13 @@ GitHub / GH Archive signals -> trend radar -> adjacent idea discovery -> anti-cl
     `falsePositiveRejectRate` and `truePositiveAcceptRate`.
   - `npm run benchmark:project-paper-relevance` checks the
     `paper_relevance_judgement` layer with hard cross-domain false positives
-    before reviewed papers can remain useful evidence. It writes
+    and real-run collector-to-judge fixtures before reviewed papers can remain
+    useful evidence. It writes
     `project-paper-relevance-judge-latest.json` and
     `project-paper-relevance-judge-latest.md`, including
-    `paperJudgeFalsePositiveRejectRate` and `paperJudgeTruePositiveKeepRate`.
+    `paperJudgeFalsePositiveRejectRate`, `paperJudgeTruePositiveKeepRate`,
+    `realRunCoveragePreservationRate`, `realRunSupportRetentionRate` and
+    `realRunDistractorLeakCount`.
   - Architecture judge artifacts compare generated architecture against PRD and
     research evidence, then fail generic schema-valid architectures in the
     project architecture benchmark.

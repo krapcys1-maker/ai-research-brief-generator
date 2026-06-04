@@ -119,7 +119,10 @@ const requiredMetrics = [
   "falsePositiveRejectRate",
   "truePositiveAcceptRate",
   "paperJudgeFalsePositiveRejectRate",
-  "paperJudgeTruePositiveKeepRate"
+  "paperJudgeTruePositiveKeepRate",
+  "realRunCoveragePreservationRate",
+  "realRunSupportRetentionRate",
+  "realRunDistractorLeakCount"
 ];
 
 async function writeTextFile(path: string, content: string) {

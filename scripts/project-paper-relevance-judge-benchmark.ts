@@ -1,11 +1,15 @@
 import {
+  buildProjectResearchBrief,
   buildProjectResearchPlan,
+  collectProjectEvidenceFromPapers,
   judgePaperRelevance
 } from "@/lib/project-research";
 import type {
+  EvidenceBucket,
   ProjectIdeaInput,
   ReviewedPaper
 } from "@/lib/project-research/types";
+import type { NormalizedPaper } from "@/lib/sources/types";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
 
@@ -36,6 +40,31 @@ type CaseResult = {
   passed: boolean;
   falsePositiveRationale: string;
   truePositiveRationale: string;
+};
+
+type RealRunCase = {
+  id: string;
+  idea: ProjectIdeaInput;
+  supportPapers: NormalizedPaper[];
+  distractorPapers: NormalizedPaper[];
+};
+
+type RealRunResult = {
+  id: string;
+  title: string;
+  requiredBucketCount: number;
+  collectorReady: boolean;
+  judgeReady: boolean;
+  collectorRequiredCoverage: number;
+  judgeRequiredCoverage: number;
+  reviewedPaperCount: number;
+  judgeUsefulPaperCount: number;
+  reviewedSupportPaperCount: number;
+  retainedUsefulSupportPaperCount: number;
+  collectorAcceptedDistractorCount: number;
+  judgeUsefulDistractorCount: number;
+  supportRetentionRate: number;
+  passed: boolean;
 };
 
 const jsonOutputPath =
@@ -77,6 +106,71 @@ function reviewedPaper(input: {
       "A false positive here can contaminate PRD, architecture and roadmap evidence."
     ]
   };
+}
+
+function normalizedPaper(input: {
+  id: string;
+  title: string;
+  abstract: string;
+  source?: NormalizedPaper["source"];
+}): NormalizedPaper {
+  return {
+    id: input.id,
+    title: input.title,
+    abstract: input.abstract,
+    authors: ["Paper Relevance Real Run Benchmark"],
+    year: 2026,
+    publishedAt: "2026-01-01",
+    doi: null,
+    arxivId: null,
+    semanticScholarId: `paper-relevance-${input.id}`,
+    openAlexId: null,
+    sourceUrls: [`https://example.com/${input.id}`],
+    pdfUrl: `https://example.com/${input.id}.pdf`,
+    venue: "Paper Relevance Real Run Benchmark Venue",
+    citationCount: 10,
+    influentialCitationCount: 1,
+    source: input.source ?? "semantic_scholar",
+    fullTextStatus: "parsed"
+  };
+}
+
+function supportPaperForBucket(bucket: EvidenceBucket, index: number) {
+  return normalizedPaper({
+    id: `support_${bucket.id}_${index}`,
+    title: `${bucket.label} project-domain evidence ${index}`,
+    abstract: [
+      bucket.query,
+      bucket.keywords.join(" "),
+      bucket.targetQuestions.join(" ")
+    ].join(". ")
+  });
+}
+
+function supportPapersForIdea(idea: ProjectIdeaInput) {
+  const { researchPlan } = buildProjectResearchPlan(idea);
+  return researchPlan.evidenceBuckets.flatMap((bucket) => [
+    supportPaperForBucket(bucket, 1),
+    supportPaperForBucket(bucket, 2)
+  ]);
+}
+
+function coverageRatio(input: {
+  requiredCoveredCount: number;
+  requiredBucketCount: number;
+}) {
+  return input.requiredBucketCount === 0
+    ? 0
+    : input.requiredCoveredCount / input.requiredBucketCount;
+}
+
+function textByPaperId(papers: NormalizedPaper[]) {
+  return Object.fromEntries(
+    papers.map((paper) => [
+      paper.id,
+      [paper.title, paper.abstract, paper.venue].filter(Boolean).join(" ")
+    ])
+  );
 }
 
 function evaluateCase(testCase: BenchmarkCase): CaseResult {
@@ -129,6 +223,82 @@ function evaluateCase(testCase: BenchmarkCase): CaseResult {
   };
 }
 
+function evaluateRealRunCase(testCase: RealRunCase): RealRunResult {
+  const { researchPlan } = buildProjectResearchPlan(testCase.idea);
+  const allPapers = [...testCase.supportPapers, ...testCase.distractorPapers];
+  const supportPaperIds = new Set(testCase.supportPapers.map((paper) => paper.id));
+  const distractorPaperIds = new Set(
+    testCase.distractorPapers.map((paper) => paper.id)
+  );
+  const collection = collectProjectEvidenceFromPapers({
+    researchPlan,
+    papers: allPapers,
+    maxPapersPerBucket: 4
+  });
+  const judge = judgePaperRelevance({
+    idea: testCase.idea,
+    researchPlan,
+    reviewedPapers: collection.reviewedPapers,
+    paperTextsById: textByPaperId(allPapers)
+  });
+  const collectorBrief = buildProjectResearchBrief({
+    idea: testCase.idea,
+    reviewedPapers: collection.reviewedPapers,
+    generatedAt: "2026-06-04T19:00:00.000Z"
+  });
+  const judgeBrief = buildProjectResearchBrief({
+    idea: testCase.idea,
+    reviewedPapers: judge.filteredReviewedPapers,
+    generatedAt: "2026-06-04T19:00:00.000Z"
+  });
+  const reviewedSupportPaperIds = new Set(
+    collection.reviewedPapers
+      .filter((paper) => supportPaperIds.has(paper.paperId))
+      .map((paper) => paper.paperId)
+  );
+  const retainedUsefulSupportPaperCount = judge.filteredReviewedPapers.filter(
+    (paper) => supportPaperIds.has(paper.paperId) && paper.usefulForProject
+  ).length;
+  const collectorAcceptedDistractorCount = collection.reviewedPapers.filter(
+    (paper) => distractorPaperIds.has(paper.paperId) && paper.usefulForProject
+  ).length;
+  const judgeUsefulDistractorCount = judge.filteredReviewedPapers.filter(
+    (paper) => distractorPaperIds.has(paper.paperId) && paper.usefulForProject
+  ).length;
+  const supportRetentionRate =
+    reviewedSupportPaperIds.size === 0
+      ? 0
+      : retainedUsefulSupportPaperCount / reviewedSupportPaperIds.size;
+  const collectorRequiredCoverage = coverageRatio(collectorBrief.evidenceCoverage);
+  const judgeRequiredCoverage = coverageRatio(judgeBrief.evidenceCoverage);
+  const passed =
+    collectorBrief.readyForArchitecture &&
+    judgeBrief.readyForArchitecture &&
+    supportRetentionRate >= 1 &&
+    judgeUsefulDistractorCount === 0 &&
+    judgeRequiredCoverage >= collectorRequiredCoverage;
+
+  return {
+    id: testCase.id,
+    title: testCase.idea.title,
+    requiredBucketCount: collectorBrief.evidenceCoverage.requiredBucketCount,
+    collectorReady: collectorBrief.readyForArchitecture,
+    judgeReady: judgeBrief.readyForArchitecture,
+    collectorRequiredCoverage,
+    judgeRequiredCoverage,
+    reviewedPaperCount: collection.reviewedPapers.length,
+    judgeUsefulPaperCount: judge.filteredReviewedPapers.filter(
+      (paper) => paper.usefulForProject
+    ).length,
+    reviewedSupportPaperCount: reviewedSupportPaperIds.size,
+    retainedUsefulSupportPaperCount,
+    collectorAcceptedDistractorCount,
+    judgeUsefulDistractorCount,
+    supportRetentionRate,
+    passed
+  };
+}
+
 function renderMarkdownReport(input: {
   generatedAt: string;
   caseCount: number;
@@ -138,6 +308,12 @@ function renderMarkdownReport(input: {
   paperJudgeFalsePositiveRejectRate: number;
   paperJudgeTruePositiveKeepRate: number;
   results: CaseResult[];
+  realRunCaseCount: number;
+  realRunPassCount: number;
+  realRunCoveragePreservationRate: number;
+  realRunSupportRetentionRate: number;
+  realRunDistractorLeakCount: number;
+  realRunResults: RealRunResult[];
 }) {
   const lines = [
     "# Project Paper Relevance Judge Benchmark",
@@ -149,8 +325,12 @@ function renderMarkdownReport(input: {
     `True-positive accept rate: ${pct(input.truePositiveAcceptRate)}`,
     `Paper judge false-positive reject rate: ${pct(input.paperJudgeFalsePositiveRejectRate)}`,
     `Paper judge true-positive keep rate: ${pct(input.paperJudgeTruePositiveKeepRate)}`,
+    `Real-run pass count: ${input.realRunPassCount}/${input.realRunCaseCount}`,
+    `Real-run coverage preservation rate: ${pct(input.realRunCoveragePreservationRate)}`,
+    `Real-run support retention rate: ${pct(input.realRunSupportRetentionRate)}`,
+    `Real-run distractor leak count: ${input.realRunDistractorLeakCount}`,
     "",
-    "## Cases",
+    "## Synthetic Assignment Cases",
     ""
   ];
 
@@ -165,6 +345,30 @@ function renderMarkdownReport(input: {
     lines.push(`- True positive: ${result.truePositiveId}`);
     lines.push(`- True positive decision: ${result.truePositiveDecision}`);
     lines.push(`- True positive rationale: ${result.truePositiveRationale}`);
+    lines.push("");
+  }
+
+  lines.push("## Real-Run Collector To Judge Cases");
+  lines.push("");
+
+  for (const result of input.realRunResults) {
+    lines.push(`### ${result.passed ? "PASS" : "FAIL"} ${result.id}`);
+    lines.push("");
+    lines.push(`- Title: ${result.title}`);
+    lines.push(`- Required buckets: ${result.requiredBucketCount}`);
+    lines.push(`- Collector ready: ${result.collectorReady ? "yes" : "no"}`);
+    lines.push(`- Judge ready: ${result.judgeReady ? "yes" : "no"}`);
+    lines.push(`- Collector coverage: ${pct(result.collectorRequiredCoverage)}`);
+    lines.push(`- Judge coverage: ${pct(result.judgeRequiredCoverage)}`);
+    lines.push(`- Reviewed papers: ${result.reviewedPaperCount}`);
+    lines.push(`- Judge useful papers: ${result.judgeUsefulPaperCount}`);
+    lines.push(
+      `- Support retained: ${result.retainedUsefulSupportPaperCount}/${result.reviewedSupportPaperCount}`
+    );
+    lines.push(
+      `- Collector accepted distractors: ${result.collectorAcceptedDistractorCount}`
+    );
+    lines.push(`- Judge useful distractors: ${result.judgeUsefulDistractorCount}`);
     lines.push("");
   }
 
@@ -292,21 +496,84 @@ async function main() {
       }
     }
   ];
+  const realRunCases: RealRunCase[] = [
+    {
+      id: "trading_real_run_preserves_support_and_rejects_ad_market_distractor",
+      idea: tradingIdea,
+      supportPapers: supportPapersForIdea(tradingIdea),
+      distractorPapers: [
+        normalizedPaper({
+          id: "distractor_ad_market_impact",
+          title:
+            "Market Impact and Transaction Costs in Digital Advertising Order Allocation",
+          abstract:
+            "Market impact transaction costs slippage order execution evaluation for advertising auctions and retail inventory allocation."
+        })
+      ]
+    },
+    {
+      id: "legal_real_run_preserves_support_and_rejects_software_contract_distractor",
+      idea: legalIdea,
+      supportPapers: supportPapersForIdea(legalIdea),
+      distractorPapers: [
+        normalizedPaper({
+          id: "distractor_microservice_contract_testing",
+          title: "Contract Analysis and Validation for Microservice APIs",
+          abstract:
+            "API contract analysis clause extraction obligation validation risk classification and evaluation for distributed software services."
+        })
+      ]
+    },
+    {
+      id: "healthcare_real_run_preserves_support_and_rejects_smart_city_privacy_distractor",
+      idea: healthcareIdea,
+      supportPapers: supportPapersForIdea(healthcareIdea),
+      distractorPapers: [
+        normalizedPaper({
+          id: "distractor_smart_city_privacy",
+          title: "Privacy and Data Governance for Smart City Sensor Platforms",
+          abstract:
+            "Privacy data governance compliance de-identification workflow integration and usability evaluation for municipal sensor platforms."
+        })
+      ]
+    }
+  ];
   const results = cases.map(evaluateCase);
+  const realRunResults = realRunCases.map(evaluateRealRunCase);
   const passCount = results.filter((result) => result.passed).length;
+  const realRunPassCount = realRunResults.filter((result) => result.passed).length;
   const falsePositiveRejectRate =
     results.filter((result) => result.falsePositiveRejected).length / results.length;
   const truePositiveAcceptRate =
     results.filter((result) => result.truePositiveKept).length / results.length;
+  const realRunCoveragePreservationRate =
+    realRunResults.filter(
+      (result) => result.judgeRequiredCoverage >= result.collectorRequiredCoverage
+    ).length / realRunResults.length;
+  const realRunSupportRetentionRate =
+    realRunResults.reduce((sum, result) => sum + result.supportRetentionRate, 0) /
+    realRunResults.length;
+  const realRunDistractorLeakCount = realRunResults.reduce(
+    (sum, result) => sum + result.judgeUsefulDistractorCount,
+    0
+  );
   const report = {
     generatedAt: new Date().toISOString(),
-    caseCount: results.length,
-    passCount,
+    caseCount: results.length + realRunResults.length,
+    passCount: passCount + realRunPassCount,
+    syntheticCaseCount: results.length,
+    syntheticPassCount: passCount,
     falsePositiveRejectRate,
     truePositiveAcceptRate,
     paperJudgeFalsePositiveRejectRate: falsePositiveRejectRate,
     paperJudgeTruePositiveKeepRate: truePositiveAcceptRate,
-    results
+    realRunCaseCount: realRunResults.length,
+    realRunPassCount,
+    realRunCoveragePreservationRate,
+    realRunSupportRetentionRate,
+    realRunDistractorLeakCount,
+    results,
+    realRunResults
   };
 
   await writeTextFile(jsonOutputPath, JSON.stringify(report, null, 2));
@@ -319,6 +586,10 @@ async function main() {
       `Pass: ${report.passCount}/${report.caseCount}`,
       `False-positive reject rate: ${pct(report.falsePositiveRejectRate)}`,
       `True-positive accept rate: ${pct(report.truePositiveAcceptRate)}`,
+      `Real-run pass: ${report.realRunPassCount}/${report.realRunCaseCount}`,
+      `Real-run coverage preservation: ${pct(report.realRunCoveragePreservationRate)}`,
+      `Real-run support retention: ${pct(report.realRunSupportRetentionRate)}`,
+      `Real-run distractor leaks: ${report.realRunDistractorLeakCount}`,
       `JSON: ${jsonOutputPath}`,
       `Markdown: ${markdownOutputPath}`
     ].join("\n")
@@ -327,7 +598,11 @@ async function main() {
   if (
     report.passCount !== report.caseCount ||
     report.falsePositiveRejectRate < 1 ||
-    report.truePositiveAcceptRate < 1
+    report.truePositiveAcceptRate < 1 ||
+    report.realRunPassCount !== report.realRunCaseCount ||
+    report.realRunCoveragePreservationRate < 1 ||
+    report.realRunSupportRetentionRate < 1 ||
+    report.realRunDistractorLeakCount > 0
   ) {
     process.exitCode = 1;
   }

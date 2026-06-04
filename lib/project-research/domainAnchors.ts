@@ -3,7 +3,7 @@ import type { EvidenceBucket } from "@/lib/project-research/types";
 const REQUIRED_ANCHOR_TERMS_BY_BUCKET: Record<string, string[]> = {
   model_experiments: [
     "trading",
-    "market",
+    "algorithmic trading",
     "financial",
     "portfolio",
     "stock",
@@ -28,12 +28,13 @@ const REQUIRED_ANCHOR_TERMS_BY_BUCKET: Record<string, string[]> = {
     "asset"
   ],
   execution_market_impact: [
-    "execution",
-    "market",
     "trading",
-    "slippage",
-    "transaction costs",
-    "order"
+    "algorithmic trading",
+    "financial",
+    "portfolio",
+    "stock",
+    "asset",
+    "market microstructure"
   ],
   risk_governance: [
     "trading",
@@ -79,8 +80,6 @@ const REQUIRED_ANCHOR_TERMS_BY_BUCKET: Record<string, string[]> = {
     "statute"
   ],
   contract_analysis: [
-    "clause",
-    "obligation",
     "legal",
     "law"
   ],

@@ -55,10 +55,13 @@ Last updated: 2026-06-02
   `truePositiveAcceptRate` as hard relevance regression signals.
 - Keep `npm run benchmark:project-paper-relevance` in the project pipeline so
   the final `paper_relevance_judgement` layer rejects cross-domain papers that
-  happen to share generic bucket wording. Track
+  happen to share generic bucket wording, while real-run collector-to-judge
+  fixtures prove it does not destroy required-bucket coverage. Track
   `project-paper-relevance-judge-latest.json`,
   `project-paper-relevance-judge-latest.md`,
-  `paperJudgeFalsePositiveRejectRate` and `paperJudgeTruePositiveKeepRate`.
+  `paperJudgeFalsePositiveRejectRate`, `paperJudgeTruePositiveKeepRate`,
+  `realRunCoveragePreservationRate`, `realRunSupportRetentionRate` and
+  `realRunDistractorLeakCount`.
 - Keep controlled live GH Archive batch sampling in `npm run benchmark:project-live-batch`,
   with strict byte caps, cached GitHub enrichment, `controlled_live_batch_summary.json`,
   `controlled_live_batch_summary.md`, and decision metrics such as `trendRepoCount`,
