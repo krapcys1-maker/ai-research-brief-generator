@@ -16,6 +16,25 @@ const arxivFixture = `<?xml version="1.0" encoding="UTF-8"?>
   </entry>
 </feed>`;
 
+const openAlexFixture = {
+  results: [
+    {
+      id: "https://openalex.org/W260100001",
+      display_name: "Agent Sandbox Evidence",
+      publication_year: 2026,
+      publication_date: "2026-01-01",
+      cited_by_count: 4,
+      primary_location: {
+        landing_page_url: "https://example.org/agent-sandbox",
+        pdf_url: "https://example.org/agent-sandbox.pdf",
+        source: {
+          display_name: "OpenAlex Test Venue"
+        }
+      }
+    }
+  ]
+};
+
 describe("filterWarningsForSuccessfulSources", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -96,5 +115,54 @@ describe("filterWarningsForSuccessfulSources", () => {
 
     expect(result.papers).toHaveLength(3);
     expect(maxActiveArxivRequests).toBe(1);
+  });
+
+  it("opens a source circuit breaker after repeated rate-limit failures", async () => {
+    let arxivFetchCount = 0;
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string | URL | Request) => {
+        const href = url.toString();
+
+        if (href.includes("export.arxiv.org")) {
+          arxivFetchCount += 1;
+          return new Response("Rate exceeded.", {
+            status: 429,
+            statusText: "Too Many Requests"
+          });
+        }
+
+        return new Response(JSON.stringify(openAlexFixture), {
+          status: 200,
+          headers: { "Content-Type": "application/json" }
+        });
+      })
+    );
+
+    const result = await searchAllSources({
+      query: "agent sandbox",
+      queryVariants: [
+        "agent sandbox",
+        "tool agents",
+        "runtime evaluation",
+        "release gate"
+      ],
+      maxResults: 1,
+      sources: ["arxiv", "openalex"]
+    });
+
+    const arxivDiagnostics = result.sourceDiagnostics.filter(
+      (diagnostic) => diagnostic.source === "arxiv"
+    );
+
+    expect(result.papers.length).toBeGreaterThan(0);
+    expect(arxivFetchCount).toBe(2);
+    expect(arxivDiagnostics).toHaveLength(4);
+    expect(
+      arxivDiagnostics.filter((diagnostic) =>
+        diagnostic.message?.includes("skipped after 2 consecutive")
+      )
+    ).toHaveLength(2);
   });
 });

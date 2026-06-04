@@ -24,11 +24,15 @@ const adapters: Record<ResearchSource, SourceAdapter> = {
 
 const sourceSearchLimits: Record<
   ResearchSource,
-  { concurrency: number; minDelayMs: number }
+  { concurrency: number; minDelayMs: number; breakerAfterConsecutiveFailures?: number }
 > = {
   mock: { concurrency: 8, minDelayMs: 0 },
-  arxiv: { concurrency: 1, minDelayMs: 3000 },
-  semantic_scholar: { concurrency: 1, minDelayMs: 1100 },
+  arxiv: { concurrency: 1, minDelayMs: 3000, breakerAfterConsecutiveFailures: 2 },
+  semantic_scholar: {
+    concurrency: 1,
+    minDelayMs: 1100,
+    breakerAfterConsecutiveFailures: 2
+  },
   openalex: { concurrency: 4, minDelayMs: 0 }
 };
 
@@ -53,6 +57,46 @@ function sourceDelayMs(source: ResearchSource) {
   }
 
   return sourceSearchLimits[source].minDelayMs;
+}
+
+function isCircuitBreakerFailure(message: string | undefined) {
+  const text = message?.toLowerCase() ?? "";
+  return (
+    text.includes("429") ||
+    text.includes("too many requests") ||
+    text.includes("rate exceeded") ||
+    text.includes("403") ||
+    text.includes("forbidden")
+  );
+}
+
+function sourceFailureMessage(result: SearchAllSourcesResult) {
+  return result.sourceDiagnostics.find((diagnostic) => diagnostic.status === "failed")
+    ?.message;
+}
+
+function skippedByCircuitBreaker(input: {
+  source: ResearchSource;
+  query: string;
+  failureCount: number;
+}) {
+  const message = `${input.source} skipped after ${input.failureCount} consecutive rate-limit/auth failures.`;
+
+  return {
+    papers: [],
+    sourcesUsed: [],
+    warnings: [message],
+    sourceDiagnostics: [
+      {
+        source: input.source,
+        query: input.query,
+        status: "failed" as const,
+        resultCount: 0,
+        cached: false,
+        message
+      }
+    ]
+  };
 }
 
 async function mapWithConcurrency<T, R>(
@@ -186,12 +230,22 @@ async function searchOneSourceAcrossQueries(input: SearchPapersInput & {
   const adapter = adapters[input.source];
   const limits = sourceSearchLimits[input.source];
   const delayMs = sourceDelayMs(input.source);
+  const breakerAfter = limits.breakerAfterConsecutiveFailures;
   let previousRequestStartedAt = 0;
+  let consecutiveBreakerFailures = 0;
 
   const results = await mapWithConcurrency(
     input.queryVariants,
     limits.concurrency,
     async (query) => {
+      if (breakerAfter && consecutiveBreakerFailures >= breakerAfter) {
+        return skippedByCircuitBreaker({
+          source: input.source,
+          query,
+          failureCount: consecutiveBreakerFailures
+        });
+      }
+
       if (delayMs > 0 && previousRequestStartedAt > 0) {
         const elapsed = Date.now() - previousRequestStartedAt;
         if (elapsed < delayMs) {
@@ -200,12 +254,19 @@ async function searchOneSourceAcrossQueries(input: SearchPapersInput & {
       }
       previousRequestStartedAt = Date.now();
 
-      return searchOneSourceForOneQuery(adapter, {
+      const result = await searchOneSourceForOneQuery(adapter, {
         query,
         maxResults: input.maxResults,
         fromYear: input.fromYear,
         toYear: input.toYear
       });
+
+      const failureMessage = sourceFailureMessage(result);
+      consecutiveBreakerFailures = isCircuitBreakerFailure(failureMessage)
+        ? consecutiveBreakerFailures + 1
+        : 0;
+
+      return result;
     }
   );
 
