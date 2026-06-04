@@ -393,6 +393,18 @@ risk behind in the idea-discovery report. `handoff_flag_resolution.*` records
 the research decision for each review flag: `confirmed`, `rejected`,
 `replaced_by_stronger_evidence`, or `unresolved`.
 
+The full-pass runner also writes per-iteration audit proposals:
+
+```text
+07_handoff_flag_resolution_proposal.json
+07_handoff_flag_resolution_proposal.md
+```
+
+These proposals are generated from coverage, parsed full-text count, required
+buckets without parsed full-text and reviewed papers. They are intentionally not
+silently applied to the pack; they are audit artifacts that can be inspected
+before being passed as `handoffFlagResolutions`.
+
 The exported project pack also writes:
 
 ```text

@@ -4,8 +4,18 @@ import {
 } from "@/lib/project-ideas";
 import { runProjectIdeaDiscovery } from "@/lib/project-ideas/runner";
 import type { IdeaDiscoveryReport } from "@/lib/project-ideas/types";
-import { buildProjectResearchPlan, runProjectResearch } from "@/lib/project-research";
-import type { ProjectIdeaHandoffContext, ProjectIdeaInput } from "@/lib/project-research";
+import {
+  buildProjectResearchPlan,
+  handoffFlagResolutionProposalToMarkdown,
+  proposeHandoffFlagResolutions,
+  runProjectResearch
+} from "@/lib/project-research";
+import type {
+  HandoffFlagResolution,
+  ProjectIdeaHandoffContext,
+  ProjectIdeaInput,
+  ReviewedPaper
+} from "@/lib/project-research";
 import { collectProjectEvidenceFromPapers } from "@/lib/project-research/evidenceCollector";
 import { ingestFullTextForPapers } from "@/lib/fulltext/ingest";
 import { dedupePapers } from "@/lib/pipeline/dedupe";
@@ -41,10 +51,20 @@ type ResearchIteration = {
   requiredBucketCount: number;
   missingRequiredBuckets: string[];
   requiredBucketsWithoutParsedFullText: string[];
+  handoffResolvedProposalCount: number;
+  handoffUnresolvedProposalCount: number;
   architectureJudgeScore: number;
   architectureJudgeVerdict: string;
   notes: string[];
 };
+
+function countResolvedProposal(resolutions: HandoffFlagResolution[]) {
+  return resolutions.filter((resolution) => resolution.status !== "unresolved").length;
+}
+
+function countUnresolvedProposal(resolutions: HandoffFlagResolution[]) {
+  return resolutions.filter((resolution) => resolution.status === "unresolved").length;
+}
 
 type CoverageArtifact = {
   buckets: Array<{
@@ -181,6 +201,7 @@ async function searchAndIngestIteration(input: {
   queryVariants: string[];
   maxPapers: number;
   fullTextLimit: number;
+  minParsedPapers: number;
   generatedAt: string;
 }) {
   const iterationDir = join(input.outputDir, `04_research_iteration_${input.iteration}`);
@@ -271,9 +292,36 @@ async function searchAndIngestIteration(input: {
     outputDir: researchDir
   });
   const coverage = await readJson<CoverageArtifact>(join(researchDir, "coverage.json"));
+  const reviewedPapers = await readJson<ReviewedPaper[]>(
+    join(researchDir, "reviewed_papers.json")
+  );
   const parsedFullTextCount = ingestion.results.filter(
     (result) => result.fullText.status === "parsed"
   ).length;
+  const requiredBucketsWithoutParsedFullText = coverage.buckets
+    .filter((bucket) => bucket.status === "covered" && bucket.parsedCount === 0)
+    .map((bucket) => bucket.bucketId);
+  const handoffFlagResolutionProposal = proposeHandoffFlagResolutions({
+    handoffContext: input.handoffContext,
+    requiredCoveredCount: manifest.requiredCoveredCount,
+    requiredBucketCount: manifest.requiredBucketCount,
+    requiredBucketsWithoutParsedFullText,
+    parsedFullTextCount,
+    minParsedPapers: input.minParsedPapers,
+    reviewedPapers
+  });
+
+  await Promise.all([
+    writeJson(
+      join(iterationDir, "07_handoff_flag_resolution_proposal.json"),
+      handoffFlagResolutionProposal
+    ),
+    writeFile(
+      join(iterationDir, "07_handoff_flag_resolution_proposal.md"),
+      handoffFlagResolutionProposalToMarkdown(handoffFlagResolutionProposal),
+      "utf8"
+    )
+  ]);
 
   return {
     iterationDir,
@@ -285,9 +333,8 @@ async function searchAndIngestIteration(input: {
     dedupedPaperCount: dedupedPapers.length,
     candidatePaperCount: candidatePapers.length,
     attemptedFullTextCount: ingestion.results.length,
-    requiredBucketsWithoutParsedFullText: coverage.buckets
-      .filter((bucket) => bucket.status === "covered" && bucket.parsedCount === 0)
-      .map((bucket) => bucket.bucketId)
+    requiredBucketsWithoutParsedFullText,
+    handoffFlagResolutionProposal
   };
 }
 
@@ -330,6 +377,7 @@ function renderStart(input: {
           `- Full-text parsed/saved PDFs: ${best.parsedFullTextCount}/${best.savedPdfCount}`,
           `- Coverage: ${best.requiredCoveredCount}/${best.requiredBucketCount}`,
           `- Required buckets without parsed full-text: ${best.requiredBucketsWithoutParsedFullText.join(", ") || "none"}`,
+          `- Handoff proposal resolved/unresolved: ${best.handoffResolvedProposalCount}/${best.handoffUnresolvedProposalCount}`,
           `- Architecture judge: ${best.architectureJudgeScore}/${best.architectureJudgeVerdict}`,
           `- Missing buckets: ${best.missingRequiredBuckets.join(", ") || "none"}`
         ].join("\n")
@@ -349,6 +397,7 @@ function renderStart(input: {
       `- Saved PDFs: ${iteration.savedPdfCount}`,
       `- Coverage: ${iteration.requiredCoveredCount}/${iteration.requiredBucketCount}`,
       `- Required buckets without parsed full-text: ${iteration.requiredBucketsWithoutParsedFullText.join(", ") || "none"}`,
+      `- Handoff proposal resolved/unresolved: ${iteration.handoffResolvedProposalCount}/${iteration.handoffUnresolvedProposalCount}`,
       `- Architecture judge: ${iteration.architectureJudgeScore}/${iteration.architectureJudgeVerdict}`,
       `- Missing buckets: ${iteration.missingRequiredBuckets.join(", ") || "none"}`,
       `- Notes: ${iteration.notes.join(" | ") || "none"}`,
@@ -494,6 +543,7 @@ async function main() {
       queryVariants,
       maxPapers: args.maxPapers,
       fullTextLimit: args.fullTextLimit,
+      minParsedPapers: args.minParsedPapers,
       generatedAt
     });
     const notes = [
@@ -524,6 +574,12 @@ async function main() {
       missingRequiredBuckets: result.manifest.missingRequiredBuckets,
       requiredBucketsWithoutParsedFullText:
         result.requiredBucketsWithoutParsedFullText,
+      handoffResolvedProposalCount: countResolvedProposal(
+        result.handoffFlagResolutionProposal
+      ),
+      handoffUnresolvedProposalCount: countUnresolvedProposal(
+        result.handoffFlagResolutionProposal
+      ),
       architectureJudgeScore: result.manifest.architectureJudgeScore,
       architectureJudgeVerdict: result.manifest.architectureJudgeVerdict,
       notes
