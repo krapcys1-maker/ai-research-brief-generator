@@ -5,6 +5,7 @@ import type {
   NormalizedProjectIdeaSchema,
   ProjectEvidenceRefSchema,
   ProjectEvidenceStrengthSchema,
+  ProjectIdeaHandoffContextSchema,
   ProjectIdeaInputSchema,
   ProjectReadinessStatusSchema,
   ProjectResearchAuditSchema,
@@ -26,6 +27,10 @@ export type ProjectReadinessStatus = z.infer<
 >;
 
 export type ProjectIdeaInput = z.infer<typeof ProjectIdeaInputSchema>;
+
+export type ProjectIdeaHandoffContext = z.infer<
+  typeof ProjectIdeaHandoffContextSchema
+>;
 
 export type NormalizedProjectIdea = z.infer<
   typeof NormalizedProjectIdeaSchema

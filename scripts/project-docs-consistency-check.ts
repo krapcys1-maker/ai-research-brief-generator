@@ -54,6 +54,8 @@ const requiredArtifacts = [
   "project_idea_inputs.json",
   "project_idea_handoff_quality.json",
   "project_idea_handoff_quality.md",
+  "handoff_context.json",
+  "handoff_context.md",
   "project_architecture_judge.json",
   "project_architecture_judge.md",
   "controlled_live_batch_summary.json",

@@ -140,6 +140,8 @@ describe("runProjectResearch", () => {
       researchPlan: "research_plan.json",
       coverage: "coverage.json",
       sourceSearch: "source_search.json",
+      handoffContextJson: "handoff_context.json",
+      handoffContextMarkdown: "handoff_context.md",
       sourcePapers: "source_papers.json",
       evidenceCollection: "evidence_collection.json",
       reviewedPapers: "reviewed_papers.json",
@@ -221,6 +223,54 @@ describe("runProjectResearch", () => {
     expect(projectPlanJudge.verdict).toBe("pass");
     expect(projectPackReadme).toContain("Cursor-ready");
     expect(cursorRule).toContain("Non-negotiables");
+  });
+
+  it("writes idea handoff review context into research artifacts", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "project-research-handoff-"));
+
+    const manifest = await runProjectResearch({
+      idea: repoMriIdea,
+      handoffContext: {
+        ideaId: "idea_repo_mri",
+        title: repoMriIdea.title,
+        readiness: "needs_review",
+        score: 93,
+        sourceEvidenceQuality: 0.48,
+        reviewFlags: [
+          "Manual review: single-source idea has weak issue-level evidence."
+        ],
+        strengths: ["ProjectIdeaInput schema is valid."],
+        weaknesses: ["Source evidence quality is weak; verify source fit before research."],
+        requiredFixes: []
+      },
+      reviewedPapers: papersForRequiredBuckets(repoMriIdea),
+      generatedAt: "2026-06-03T13:30:00.000Z",
+      outputDir
+    });
+
+    const handoffJson = await readJson<{
+      readiness: string;
+      reviewFlags: string[];
+      sourceEvidenceQuality: number;
+    }>(join(outputDir, "handoff_context.json"));
+    const handoffMarkdown = await readFile(
+      join(outputDir, "handoff_context.md"),
+      "utf8"
+    );
+    const manifestFromDisk = await readJson<ProjectResearchRunManifest>(
+      join(outputDir, "manifest.json")
+    );
+
+    expect(manifest.handoffReadiness).toBe("needs_review");
+    expect(manifest.handoffReviewFlagCount).toBe(1);
+    expect(manifest.handoffSourceEvidenceQuality).toBe(0.48);
+    expect(manifestFromDisk).toEqual(manifest);
+    expect(handoffJson.readiness).toBe("needs_review");
+    expect(handoffJson.reviewFlags).toContain(
+      "Manual review: single-source idea has weak issue-level evidence."
+    );
+    expect(handoffMarkdown).toContain("Treat the review flags as explicit hypotheses");
+    expect(handoffMarkdown).toContain("Source evidence quality: 0.48");
   });
 
   it("generates runnable Repo MRI starter code artifacts", async () => {

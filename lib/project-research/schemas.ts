@@ -22,6 +22,18 @@ export const ProjectIdeaInputSchema = z.object({
   outputLanguage: z.string().trim().min(2).default("pl")
 });
 
+export const ProjectIdeaHandoffContextSchema = z.object({
+  ideaId: z.string().trim().min(1),
+  title: z.string().trim().min(3),
+  readiness: z.enum(["ready", "needs_review", "blocked"]),
+  score: z.number().min(0).max(100),
+  sourceEvidenceQuality: z.number().min(0).max(1).nullable().default(null),
+  reviewFlags: z.array(z.string().trim().min(1)).default([]),
+  strengths: z.array(z.string().trim().min(1)).default([]),
+  weaknesses: z.array(z.string().trim().min(1)).default([]),
+  requiredFixes: z.array(z.string().trim().min(1)).default([])
+});
+
 export const NormalizedProjectIdeaSchema = z.object({
   ideaId: z.string().trim().min(1),
   title: z.string().trim().min(3),

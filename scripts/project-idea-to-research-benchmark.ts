@@ -56,6 +56,8 @@ const researchRequiredFiles = [
   "research_plan.json",
   "coverage.json",
   "source_search.json",
+  "handoff_context.json",
+  "handoff_context.md",
   "source_papers.json",
   "evidence_collection.json",
   "reviewed_papers.json",

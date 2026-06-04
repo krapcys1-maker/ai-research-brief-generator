@@ -18,6 +18,7 @@ import {
 import { buildProjectResearchPlan } from "@/lib/project-research/researchPlan";
 import {
   ProjectIdeaInputSchema,
+  ProjectIdeaHandoffContextSchema,
   ReviewedPaperSchema
 } from "@/lib/project-research/schemas";
 import { searchAllSources } from "@/lib/sources";
@@ -66,6 +67,7 @@ const SourceSearchRunnerSchema = z.object({
 export const ProjectResearchRunnerInputSchema = z
   .object({
     idea: ProjectIdeaInputSchema,
+    handoffContext: ProjectIdeaHandoffContextSchema.optional(),
     reviewedPapers: z.array(ReviewedPaperSchema).min(1).optional(),
     papers: z.array(NormalizedPaperRunnerSchema).min(1).optional(),
     sourceSearch: SourceSearchRunnerSchema.optional(),
@@ -97,6 +99,9 @@ export type ProjectResearchRunManifest = {
   architectureStatus: "ready" | "blocked";
   architectureJudgeScore: number;
   architectureJudgeVerdict: "pass" | "needs_review" | "fail";
+  handoffReadiness: "ready" | "needs_review" | "blocked" | null;
+  handoffReviewFlagCount: number;
+  handoffSourceEvidenceQuality: number | null;
   requiredCoveredCount: number;
   requiredBucketCount: number;
   missingRequiredBuckets: string[];
@@ -108,6 +113,8 @@ export type ProjectResearchRunManifest = {
     researchPlan: string;
     coverage: string;
     sourceSearch: string;
+    handoffContextJson: string;
+    handoffContextMarkdown: string;
     sourcePapers: string;
     evidenceCollection: string;
     reviewedPapers: string;
@@ -136,6 +143,8 @@ const artifactFiles = {
   researchPlan: "research_plan.json",
   coverage: "coverage.json",
   sourceSearch: "source_search.json",
+  handoffContextJson: "handoff_context.json",
+  handoffContextMarkdown: "handoff_context.md",
   sourcePapers: "source_papers.json",
   evidenceCollection: "evidence_collection.json",
   reviewedPapers: "reviewed_papers.json",
@@ -157,13 +166,67 @@ function toJson(value: unknown) {
   return `${JSON.stringify(value, null, 2)}\n`;
 }
 
+function handoffContextToMarkdown(
+  handoffContext: ProjectResearchRunnerInput["handoffContext"] | undefined
+) {
+  if (!handoffContext) {
+    return [
+      "# Idea Handoff Context",
+      "",
+      "No idea handoff context was provided for this research run."
+    ].join("\n");
+  }
+
+  return [
+    "# Idea Handoff Context",
+    "",
+    `Idea: ${handoffContext.title}`,
+    `Readiness: ${handoffContext.readiness}`,
+    `Score: ${handoffContext.score}`,
+    `Source evidence quality: ${handoffContext.sourceEvidenceQuality ?? "n/a"}`,
+    "",
+    "## Review Flags",
+    "",
+    ...(handoffContext.reviewFlags.length
+      ? handoffContext.reviewFlags.map((flag) => `- ${flag}`)
+      : ["- none"]),
+    "",
+    "## Strengths",
+    "",
+    ...(handoffContext.strengths.length
+      ? handoffContext.strengths.map((item) => `- ${item}`)
+      : ["- none"]),
+    "",
+    "## Weaknesses",
+    "",
+    ...(handoffContext.weaknesses.length
+      ? handoffContext.weaknesses.map((item) => `- ${item}`)
+      : ["- none"]),
+    "",
+    "## Required Fixes",
+    "",
+    ...(handoffContext.requiredFixes.length
+      ? handoffContext.requiredFixes.map((item) => `- ${item}`)
+      : ["- none"]),
+    "",
+    "## Research Instruction",
+    "",
+    handoffContext.readiness === "needs_review"
+      ? "Treat the review flags as explicit hypotheses to confirm or reject before relying on this idea in PRD or architecture."
+      : handoffContext.readiness === "blocked"
+        ? "Do not continue to expensive research until the required fixes are resolved."
+        : "Use the context as provenance for why this idea was allowed into research."
+  ].join("\n");
+}
+
 function createManifest(
   brief: ProjectResearchBrief,
   prdStatus: "ready" | "blocked",
   architectureStatus: "ready" | "blocked",
   architectureJudgeScore: number,
   architectureJudgeVerdict: "pass" | "needs_review" | "fail",
-  outputDir: string
+  outputDir: string,
+  handoffContext: ProjectResearchRunnerInput["handoffContext"] | undefined
 ): ProjectResearchRunManifest {
   return {
     runId: brief.id,
@@ -177,6 +240,9 @@ function createManifest(
     architectureStatus,
     architectureJudgeScore,
     architectureJudgeVerdict,
+    handoffReadiness: handoffContext?.readiness ?? null,
+    handoffReviewFlagCount: handoffContext?.reviewFlags.length ?? 0,
+    handoffSourceEvidenceQuality: handoffContext?.sourceEvidenceQuality ?? null,
     requiredCoveredCount: brief.evidenceCoverage.requiredCoveredCount,
     requiredBucketCount: brief.evidenceCoverage.requiredBucketCount,
     missingRequiredBuckets: brief.evidenceCoverage.missingRequiredBuckets,
@@ -342,7 +408,8 @@ export async function runProjectResearch(
     architecture.status,
     architectureJudge.score,
     architectureJudge.verdict,
-    outputDir
+    outputDir,
+    parsed.handoffContext
   );
 
   await mkdir(outputDir, { recursive: true });
@@ -364,6 +431,16 @@ export async function runProjectResearch(
             }
           : { mode: "not_used" }
       ),
+      "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.handoffContextJson),
+      toJson(parsed.handoffContext ?? null),
+      "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.handoffContextMarkdown),
+      handoffContextToMarkdown(parsed.handoffContext),
       "utf8"
     ),
     writeFile(

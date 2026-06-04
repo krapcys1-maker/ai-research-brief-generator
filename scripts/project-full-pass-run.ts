@@ -5,7 +5,7 @@ import {
 import { runProjectIdeaDiscovery } from "@/lib/project-ideas/runner";
 import type { IdeaDiscoveryReport } from "@/lib/project-ideas/types";
 import { buildProjectResearchPlan, runProjectResearch } from "@/lib/project-research";
-import type { ProjectIdeaInput } from "@/lib/project-research";
+import type { ProjectIdeaHandoffContext, ProjectIdeaInput } from "@/lib/project-research";
 import { collectProjectEvidenceFromPapers } from "@/lib/project-research/evidenceCollector";
 import { ingestFullTextForPapers } from "@/lib/fulltext/ingest";
 import { dedupePapers } from "@/lib/pipeline/dedupe";
@@ -175,6 +175,7 @@ function chooseIdea(report: IdeaDiscoveryReport) {
 
 async function searchAndIngestIteration(input: {
   idea: ProjectIdeaInput;
+  handoffContext?: ProjectIdeaHandoffContext;
   outputDir: string;
   iteration: number;
   queryVariants: string[];
@@ -264,6 +265,7 @@ async function searchAndIngestIteration(input: {
   const researchDir = join(iterationDir, "06_project_research");
   const manifest = await runProjectResearch({
     idea: input.idea,
+    handoffContext: input.handoffContext,
     papers: papersForResearch,
     generatedAt: input.generatedAt,
     outputDir: researchDir
@@ -444,6 +446,7 @@ async function main() {
   await Promise.all([
     writeJson(join(selectedIdeaDir, "selected_idea.json"), selected.idea),
     writeJson(join(selectedIdeaDir, "selected_project_idea_input.json"), selected.projectIdeaInput),
+    writeJson(join(selectedIdeaDir, "selected_handoff_context.json"), selected.handoff ?? null),
     writeFile(
       join(selectedIdeaDir, "selected_idea.md"),
       [
@@ -452,7 +455,9 @@ async function main() {
         `Title: ${selected.idea.title}`,
         `Score: ${selected.score?.total ?? "n/a"}`,
         `Handoff: ${selected.handoff?.score ?? "n/a"} / ${selected.handoff?.readiness ?? "n/a"}`,
+        `Source evidence quality: ${selected.handoff?.sourceEvidenceQuality ?? "n/a"}`,
         `Source repos: ${selected.idea.sourceRepos.join(", ")}`,
+        `Review flags: ${selected.handoff?.reviewFlags.join(" | ") || "none"}`,
         "",
         "## Dlaczego ten",
         "",
@@ -483,6 +488,7 @@ async function main() {
   for (let iteration = 1; iteration <= args.iterations; iteration += 1) {
     const result = await searchAndIngestIteration({
       idea: selected.projectIdeaInput,
+      handoffContext: selected.handoff,
       outputDir: args.outputDir,
       iteration,
       queryVariants,

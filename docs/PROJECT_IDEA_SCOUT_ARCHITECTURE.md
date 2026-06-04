@@ -377,6 +377,18 @@ Then the existing CLI can run:
 npm run project:research -- --input idea.json --out run-output
 ```
 
+When idea discovery provides handoff context, `project:research` keeps it
+visible in:
+
+```text
+handoff_context.json
+handoff_context.md
+```
+
+These files carry `sourceEvidenceQuality`, `reviewFlags` and readiness into
+research, PRD and architecture review instead of leaving source risk behind in
+the idea-discovery report.
+
 `project:research` also writes an architecture judge report:
 
 ```text
