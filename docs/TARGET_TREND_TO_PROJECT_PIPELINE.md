@@ -241,3 +241,12 @@ GH Archive / BigQuery
 ```
 
 This should be implemented before tuning the LLM curator. Without a strong top-50 input set, the LLM will only make weak input sound better.
+
+Parallel quality-track work has started with:
+
+```text
+npm run benchmark:project-repo-mri-pack
+```
+
+This validates the final architecture-and-plan pack against the GPT baseline
+idea before full starter-code generation is added.

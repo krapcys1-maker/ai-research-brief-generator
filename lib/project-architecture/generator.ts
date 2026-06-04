@@ -220,6 +220,141 @@ function architectureBlueprint(input: GenerateProjectArchitectureInput): Bluepri
   const text = textForArchitecture(input);
 
   if (
+    text.includes("repo mri") ||
+    text.includes("bug path") ||
+    text.includes("code knowledge graph") ||
+    text.includes("code graph") ||
+    text.includes("repository map") ||
+    text.includes("code intelligence")
+  ) {
+    return {
+      profile: "repo_mri_code_intelligence",
+      summary:
+        "System architecture centers on an evidence-first code intelligence workflow: safe repository indexing, deterministic graph construction, hybrid retrieval, Bug Path localization, and LLM summaries only after bounded evidence retrieval.",
+      components: [
+        {
+          id: "safe_repo_scanner",
+          name: "Safe Repository Scanner",
+          responsibility:
+            "Scan a local repository, apply ignore and secret-deny policies, fingerprint files, and reject generated, binary, dependency and private inputs before parsing.",
+          componentType: "integration",
+          inputs: ["repository path", "ignore policy", "file size limits"],
+          outputs: ["scan manifest", "safe source files", "rejected input report"]
+        },
+        {
+          id: "deterministic_parser",
+          name: "Deterministic Parser And Symbol Extractor",
+          responsibility:
+            "Extract files, symbols, imports, calls, tests and line ranges through deterministic parser logic instead of LLM-generated facts.",
+          componentType: "backend",
+          inputs: ["safe source files", "language detection"],
+          outputs: ["symbols", "imports", "call edges", "test links", "parser confidence"]
+        },
+        {
+          id: "code_knowledge_graph",
+          name: "Code Knowledge Graph Store",
+          responsibility:
+            "Persist repository entities, graph edges, chunks, confidence and provenance so every retrieval result can cite concrete evidence.",
+          componentType: "data",
+          inputs: ["parsed symbols", "edges", "chunks", "file fingerprints"],
+          outputs: ["queryable graph", "FTS index", "traceable evidence records"]
+        },
+        {
+          id: "hybrid_retriever",
+          name: "Hybrid Code Retriever",
+          responsibility:
+            "Combine exact path matching, symbol search, FTS, optional vector search and bounded graph expansion to return ranked evidence.",
+          componentType: "backend",
+          inputs: ["natural language query", "symbol/path hints", "graph neighbors"],
+          outputs: ["ranked candidates", "score sources", "evidence snippets"]
+        },
+        {
+          id: "bug_path_engine",
+          name: "Bug Path Engine",
+          responsibility:
+            "Parse issue text or stacktraces, map file and line hints to symbols, expand to callers/callees/tests, and rank likely debugging paths with unknowns.",
+          componentType: "ai",
+          inputs: ["issue text", "stacktrace", "retrieval candidates", "graph evidence"],
+          outputs: ["candidate paths", "confidence", "likely tests", "next actions", "unknowns"]
+        },
+        {
+          id: "evidence_ui_api",
+          name: "Evidence UI And API",
+          responsibility:
+            "Expose search, stats and Bug Path outputs as structured JSON and UI views that show evidence, confidence, line ranges and next actions.",
+          componentType: "frontend",
+          inputs: ["ranked candidates", "graph records", "review actions"],
+          outputs: ["evidence-first UI", "API payloads", "demo-ready reports"]
+        },
+        {
+          id: "evaluation_harness",
+          name: "Golden Query And Bug Fixture Harness",
+          responsibility:
+            "Run retrieval and bug localization fixtures, track Recall@k, top candidate hit rate, evidence completeness and false-confidence failures.",
+          componentType: "ops",
+          inputs: ["fixture repos", "golden queries", "bug fixtures"],
+          outputs: ["quality report", "regression gates", "release blockers"]
+        }
+      ],
+      decisions: [
+        {
+          id: "graph_first",
+          decision: "Use a Code Knowledge Graph as the canonical source of repository truth.",
+          rationale:
+            "Bug localization and repository understanding require relationships between files, symbols, imports, calls and tests; chunk-only RAG cannot defend those facts.",
+          tradeoffs: [
+            "harder parser and schema work",
+            "much stronger explainability and evaluation surface"
+          ]
+        },
+        {
+          id: "deterministic_before_llm",
+          decision: "Build scanner, parser, graph, retrieval and Bug Path without depending on LLM-generated repository facts.",
+          rationale:
+            "LLMs may summarize retrieved evidence, but they must not create canonical code edges or source facts.",
+          tradeoffs: [
+            "slower MVP than a chat demo",
+            "less hallucination risk and a stronger portfolio proof"
+          ]
+        },
+        {
+          id: "sqlite_first",
+          decision: "Use SQLite with FTS5 for the first local vertical slice.",
+          rationale:
+            "The first proof needs zero infrastructure and fast local tests before adding Postgres, pgvector or graph databases.",
+          tradeoffs: [
+            "limited multi-user production scaling",
+            "fast demo setup and repeatable fixture tests"
+          ]
+        },
+        {
+          id: "mcp_later",
+          decision: "Add MCP or agent integrations only after stable local search and Bug Path APIs exist.",
+          rationale:
+            "The product value is code intelligence, not an early protocol wrapper with extra security and permission complexity.",
+          tradeoffs: [
+            "less trendy first milestone",
+            "safer and clearer core product boundary"
+          ]
+        }
+      ],
+      testStrategy: [
+        "Run scanner tests for ignore policy, secret-deny files, binaries and dependency folders.",
+        "Run parser fixture tests for Python and TypeScript symbols, imports, calls and line ranges.",
+        "Run golden query tests for file and symbol Recall@5.",
+        "Run Bug Path fixtures for top-1 file hit, top-3 symbol hit, likely test detection and unknown reporting.",
+        "Block release if any answer lacks path, line range, evidence, confidence and source snippet."
+      ],
+      risks: [
+        "LLM summaries may invent repository facts if evidence boundaries are not enforced.",
+        "Weak parsers can create false graph edges and destroy trust.",
+        "Large graph visualizations can become unreadable without bounded neighborhoods and filters.",
+        "Scanner mistakes can leak secrets or index private dependency artifacts."
+      ]
+    };
+  }
+
+  if (
     text.includes("trading") ||
     text.includes("backtest") ||
     text.includes("paper trading") ||

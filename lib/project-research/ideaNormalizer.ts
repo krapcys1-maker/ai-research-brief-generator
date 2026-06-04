@@ -228,6 +228,16 @@ function firstSentence(description: string) {
   return sentence && sentence.length >= 10 ? sentence : description.trim();
 }
 
+function problemFromInput(input: ProjectIdeaInput, primaryProfile?: DomainProfile) {
+  const concreteProblem = firstSentence(input.description);
+
+  if (primaryProfile) {
+    return `${concreteProblem} Decyzje architektoniczne dla ${input.title} musza wynikac z evidence w domenie ${primaryProfile.labels[0]}, a nie z ogolnych zalozen.`;
+  }
+
+  return `${concreteProblem} Research musi doprecyzowac problem, dane, ryzyka i wymagania architektoniczne.`;
+}
+
 function detectProfiles(input: ProjectIdeaInput) {
   const preferredDomains = input.preferredDomains.map(normalizeText).join(" ");
   const text = normalizeText(
@@ -280,9 +290,7 @@ export function normalizeProjectIdea(value: unknown): NormalizedProjectIdea {
     ideaId: `idea_${slugify(input.title) || "untitled"}`,
     title: input.title,
     oneSentence: firstSentence(input.description),
-    problem: primaryProfile
-      ? `Trzeba zaprojektowac ${input.title} w domenie ${primaryProfile.labels[0]} tak, zeby decyzje architektoniczne wynikaly z evidence, a nie z ogolnych zalozen.`
-      : `Trzeba doprecyzowac ${input.title} przez research problemu, danych, ryzyk i wymagan architektonicznych.`,
+    problem: problemFromInput(input, primaryProfile),
     targetUsers,
     domains,
     assumptions,

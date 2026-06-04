@@ -10,6 +10,7 @@ import {
 } from "@/lib/project-prd";
 import { projectResearchBriefToMarkdown } from "@/lib/project-research/markdown";
 import { buildProjectResearchBrief } from "@/lib/project-research/briefBuilder";
+import { generateProjectPack } from "@/lib/project-pack";
 import {
   collectProjectEvidenceFromPapers,
   type EvidenceCollectionResult
@@ -23,7 +24,7 @@ import { searchAllSources } from "@/lib/sources";
 import type { ProjectResearchBrief } from "@/lib/project-research/types";
 import type { NormalizedPaper, ResearchSource } from "@/lib/sources/types";
 import { mkdir, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { z } from "zod";
 
 const NormalizedPaperRunnerSchema = z.object({
@@ -118,6 +119,8 @@ export type ProjectResearchRunManifest = {
     projectArchitectureMarkdown: string;
     projectArchitectureJudgeJson: string;
     projectArchitectureJudgeMarkdown: string;
+    projectPackReadinessJson: string;
+    projectPackReadinessMarkdown: string;
   };
 };
 
@@ -141,7 +144,9 @@ const artifactFiles = {
   projectArchitectureJson: "project_architecture.json",
   projectArchitectureMarkdown: "project_architecture.md",
   projectArchitectureJudgeJson: "project_architecture_judge.json",
-  projectArchitectureJudgeMarkdown: "project_architecture_judge.md"
+  projectArchitectureJudgeMarkdown: "project_architecture_judge.md",
+  projectPackReadinessJson: "project_pack_readiness.json",
+  projectPackReadinessMarkdown: "project_pack_readiness.md"
 } as const;
 
 function toJson(value: unknown) {
@@ -175,6 +180,49 @@ function createManifest(
     auditScore: brief.audit.score,
     files: artifactFiles
   };
+}
+
+function projectPackReadinessToMarkdown(readiness: ReturnType<typeof generateProjectPack>["readiness"]) {
+  return [
+    "# Project Pack Readiness",
+    "",
+    `Score: ${readiness.score}/100`,
+    `Verdict: ${readiness.verdict}`,
+    `Artifacts: ${readiness.artifactCount}`,
+    `Required artifact coverage: ${(readiness.requiredArtifactCoverage * 100).toFixed(1)}%`,
+    `Cursor ready: ${readiness.cursorReady ? "yes" : "no"}`,
+    `Starter code ready: ${readiness.starterCodeReady ? "yes" : "no"}`,
+    "",
+    "## Strengths",
+    "",
+    ...readiness.strengths.map((strength) => `- ${strength}`),
+    "",
+    "## Weaknesses",
+    "",
+    ...(readiness.weaknesses.length
+      ? readiness.weaknesses.map((weakness) => `- ${weakness}`)
+      : ["- none"]),
+    "",
+    "## Required Fixes",
+    "",
+    ...(readiness.requiredFixes.length
+      ? readiness.requiredFixes.map((fix) => `- ${fix}`)
+      : ["- none"])
+  ].join("\n");
+}
+
+async function writeProjectPackArtifacts(
+  outputDir: string,
+  pack: ReturnType<typeof generateProjectPack>
+) {
+  const packDir = join(outputDir, "project_pack");
+  await Promise.all(
+    pack.artifacts.map(async (artifact) => {
+      const artifactPath = join(packDir, artifact.path);
+      await mkdir(dirname(artifactPath), { recursive: true });
+      await writeFile(artifactPath, artifact.content, "utf8");
+    })
+  );
 }
 
 export function parseProjectResearchRunnerInput(
@@ -235,6 +283,12 @@ export async function runProjectResearch(
     architecture,
     prd,
     brief
+  });
+  const projectPack = generateProjectPack({
+    brief,
+    prd,
+    architecture,
+    architectureJudge
   });
   const manifest = createManifest(
     brief,
@@ -316,8 +370,19 @@ export async function runProjectResearch(
       join(outputDir, artifactFiles.projectArchitectureJudgeMarkdown),
       projectArchitectureJudgeToMarkdown(architectureJudge),
       "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.projectPackReadinessJson),
+      toJson(projectPack.readiness),
+      "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.projectPackReadinessMarkdown),
+      projectPackReadinessToMarkdown(projectPack.readiness),
+      "utf8"
     )
   ]);
+  await writeProjectPackArtifacts(outputDir, projectPack);
   await writeFile(join(outputDir, artifactFiles.manifest), toJson(manifest), "utf8");
 
   return manifest;

@@ -138,3 +138,17 @@ Cursor Pack Exporter
 This closes the biggest gap between the current pipeline and the GPT baseline.
 
 The later trend-discovery improvements still matter, especially top-50 rising repos and LLM top-10 curation, but the immediate missing piece is final packaging quality.
+
+## Implemented First Slice
+
+Implemented:
+
+```text
+npm run benchmark:project-repo-mri-pack
+```
+
+This forces the GPT-baseline idea `Repo MRI`, generates the research -> PRD ->
+architecture -> project pack chain, and writes a Cursor-oriented architecture
+and planning pack. The current slice is intentionally honest: it can pass
+architecture and planning quality while still reporting `needs_review` for full
+baseline readiness until runnable starter code generation exists.

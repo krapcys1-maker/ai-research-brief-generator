@@ -106,6 +106,19 @@ const providerCompatibilityIdea: ProjectIdeaInput = {
   outputLanguage: "pl"
 };
 
+const repoMriIdea: ProjectIdeaInput = {
+  title: "Repo MRI",
+  description:
+    "Developer tool that turns a repository into an explainable code map with files, symbols, imports, calls, tests and a Bug Path mode from issue or stacktrace to likely files, symbols, tests and hypotheses.",
+  constraints: [
+    "do not build a generic chat with repo",
+    "deterministic index and code knowledge graph before LLM summaries",
+    "MVP must show evidence, line ranges, confidence and unknowns"
+  ],
+  preferredDomains: ["software engineering", "static analysis", "code intelligence"],
+  outputLanguage: "pl"
+};
+
 describe("generateProjectArchitecture", () => {
   it("generates ready architecture from ready PRD and research brief", () => {
     const brief = buildProjectResearchBrief({
@@ -295,6 +308,38 @@ describe("generateProjectArchitecture", () => {
     expect(architecture.audit.verdict).toContain(
       "agent_action_approval_governance"
     );
+    expect(judge.verdict).toBe("pass");
+    expect(judge.score).toBeGreaterThanOrEqual(90);
+    expect(judge.genericComponentCount).toBe(0);
+  });
+
+  it("generates Repo MRI code-intelligence architecture for the GPT baseline idea", () => {
+    const brief = buildProjectResearchBrief({
+      idea: repoMriIdea,
+      reviewedPapers: fullEvidenceForIdea(repoMriIdea),
+      generatedAt: "2026-06-03T16:00:00.000Z"
+    });
+    const prd = generateProjectPrd({ brief });
+
+    const architecture = generateProjectArchitecture({
+      prd,
+      brief,
+      generatedAt: "2026-06-03T16:05:00.000Z"
+    });
+    const judge = judgeProjectArchitecture({ architecture, prd, brief });
+    const componentNames = architecture.components
+      .map((component) => component.name)
+      .join(" ");
+    const decisions = architecture.decisions
+      .map((decision) => decision.decision)
+      .join(" ");
+
+    expect(componentNames).toContain("Safe Repository Scanner");
+    expect(componentNames).toContain("Code Knowledge Graph Store");
+    expect(componentNames).toContain("Bug Path Engine");
+    expect(decisions).toContain("Code Knowledge Graph");
+    expect(architecture.audit.verdict).toContain("repo_mri_code_intelligence");
+    expect(architecture.summary).toContain("Bug Path");
     expect(judge.verdict).toBe("pass");
     expect(judge.score).toBeGreaterThanOrEqual(90);
     expect(judge.genericComponentCount).toBe(0);

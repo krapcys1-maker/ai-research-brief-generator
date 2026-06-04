@@ -137,7 +137,9 @@ describe("runProjectResearch", () => {
       projectArchitectureJson: "project_architecture.json",
       projectArchitectureMarkdown: "project_architecture.md",
       projectArchitectureJudgeJson: "project_architecture_judge.json",
-      projectArchitectureJudgeMarkdown: "project_architecture_judge.md"
+      projectArchitectureJudgeMarkdown: "project_architecture_judge.md",
+      projectPackReadinessJson: "project_pack_readiness.json",
+      projectPackReadinessMarkdown: "project_pack_readiness.md"
     });
     expect(manifest.requiredCoveredCount).toBe(manifest.requiredBucketCount);
     expect(manifest.prdStatus).toBe("ready");
@@ -159,6 +161,34 @@ describe("runProjectResearch", () => {
     expect(ProjectArchitectureSchema.parse(architecture).status).toBe("ready");
     expect(architectureJudge.verdict).toBe("pass");
     expect(architectureJudge.score).toBeGreaterThanOrEqual(90);
+
+    const projectPackReadiness = await readJson<{
+      verdict: string;
+      score: number;
+      cursorReady: boolean;
+      requiredArtifactCoverage: number;
+    }>(join(outputDir, "project_pack_readiness.json"));
+    const projectPackReadme = await readFile(
+      join(outputDir, "project_pack", "README.md"),
+      "utf8"
+    );
+    const cursorRule = await readFile(
+      join(
+        outputDir,
+        "project_pack",
+        ".cursor",
+        "rules",
+        "000-project-core.mdc"
+      ),
+      "utf8"
+    );
+
+    expect(projectPackReadiness.verdict).toBe("needs_review");
+    expect(projectPackReadiness.score).toBeGreaterThanOrEqual(90);
+    expect(projectPackReadiness.cursorReady).toBe(true);
+    expect(projectPackReadiness.requiredArtifactCoverage).toBe(1);
+    expect(projectPackReadme).toContain("Cursor-ready");
+    expect(cursorRule).toContain("Non-negotiables");
   });
 
   it("writes blocked artifacts when required evidence is missing", async () => {
