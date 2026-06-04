@@ -55,6 +55,8 @@ const requiredFiles = [
   "source_search.json",
   "handoff_context.json",
   "handoff_context.md",
+  "handoff_flag_resolution.json",
+  "handoff_flag_resolution.md",
   "source_papers.json",
   "evidence_collection.json",
   "reviewed_papers.json",

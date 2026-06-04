@@ -383,11 +383,15 @@ visible in:
 ```text
 handoff_context.json
 handoff_context.md
+handoff_flag_resolution.json
+handoff_flag_resolution.md
 ```
 
-These files carry `sourceEvidenceQuality`, `reviewFlags` and readiness into
-research, PRD and architecture review instead of leaving source risk behind in
-the idea-discovery report.
+`handoff_context.*` carries `sourceEvidenceQuality`, `reviewFlags` and
+readiness into research, PRD and architecture review instead of leaving source
+risk behind in the idea-discovery report. `handoff_flag_resolution.*` records
+the research decision for each review flag: `confirmed`, `rejected`,
+`replaced_by_stronger_evidence`, or `unresolved`.
 
 The exported project pack also writes:
 
@@ -516,6 +520,8 @@ averageHandoffQualityScore
 handoffReadyCount
 handoffReviewCount
 handoffBlockedCount
+handoffResolvedFlagCount
+handoffUnresolvedFlagCount
 handoffRiskResolution
 averageJudgeScore
 sourceEvidenceQuality

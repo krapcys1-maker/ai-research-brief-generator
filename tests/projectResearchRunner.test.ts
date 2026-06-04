@@ -142,6 +142,8 @@ describe("runProjectResearch", () => {
       sourceSearch: "source_search.json",
       handoffContextJson: "handoff_context.json",
       handoffContextMarkdown: "handoff_context.md",
+      handoffFlagResolutionJson: "handoff_flag_resolution.json",
+      handoffFlagResolutionMarkdown: "handoff_flag_resolution.md",
       sourcePapers: "source_papers.json",
       evidenceCollection: "evidence_collection.json",
       reviewedPapers: "reviewed_papers.json",
@@ -299,6 +301,69 @@ describe("runProjectResearch", () => {
     expect(projectPackReadiness.verdict).toBe("needs_review");
     expect(projectPackReadiness.planJudge.verdict).toBe("needs_review");
     expect(projectPackReadiness.planJudge.dimensionScores.handoffRiskResolution).toBeLessThan(90);
+  });
+
+  it("unlocks handoff risk resolution when review flags are explicitly resolved", async () => {
+    const outputDir = await mkdtemp(join(tmpdir(), "project-research-handoff-resolved-"));
+    const reviewFlag =
+      "Manual review: single-source idea has weak issue-level evidence.";
+
+    const manifest = await runProjectResearch({
+      idea: repoMriIdea,
+      handoffContext: {
+        ideaId: "idea_repo_mri",
+        title: repoMriIdea.title,
+        readiness: "needs_review",
+        score: 93,
+        sourceEvidenceQuality: 0.48,
+        reviewFlags: [reviewFlag],
+        strengths: ["ProjectIdeaInput schema is valid."],
+        weaknesses: ["Source evidence quality is weak; verify source fit before research."],
+        requiredFixes: []
+      },
+      handoffFlagResolutions: [
+        {
+          reviewFlag,
+          status: "replaced_by_stronger_evidence",
+          rationale:
+            "The source-repo issue signal was weak, but required research buckets are covered by parsed reviewed papers before PRD and architecture.",
+          evidenceIds: papersForRequiredBuckets(repoMriIdea)
+            .slice(0, 2)
+            .map((paper) => paper.paperId)
+        }
+      ],
+      reviewedPapers: papersForRequiredBuckets(repoMriIdea),
+      generatedAt: "2026-06-03T13:45:00.000Z",
+      outputDir
+    });
+
+    const handoffFlagResolution = await readJson<Array<{
+      reviewFlag: string;
+      status: string;
+      evidenceIds: string[];
+    }>>(join(outputDir, "handoff_flag_resolution.json"));
+    const projectPlanJudge = await readJson<{
+      verdict: string;
+      dimensionScores: { handoffRiskResolution: number };
+      requiredFixes: string[];
+    }>(join(outputDir, "project_plan_judge.json"));
+    const handoffResolution = await readFile(
+      join(outputDir, "project_pack", "docs", "09-handoff-risk-resolution.md"),
+      "utf8"
+    );
+
+    expect(manifest.handoffResolvedFlagCount).toBe(1);
+    expect(manifest.handoffUnresolvedFlagCount).toBe(0);
+    expect(handoffFlagResolution[0]?.status).toBe("replaced_by_stronger_evidence");
+    expect(handoffFlagResolution[0]?.reviewFlag).toBe(reviewFlag);
+    expect(handoffFlagResolution[0]?.evidenceIds.length).toBeGreaterThan(0);
+    expect(handoffResolution).toContain("Resolution status: resolved");
+    expect(handoffResolution).toContain("replaced_by_stronger_evidence");
+    expect(projectPlanJudge.verdict).toBe("pass");
+    expect(projectPlanJudge.dimensionScores.handoffRiskResolution).toBeGreaterThanOrEqual(90);
+    expect(projectPlanJudge.requiredFixes.join(" ")).not.toContain(
+      "Resolve handoff review flags"
+    );
   });
 
   it("generates runnable Repo MRI starter code artifacts", async () => {

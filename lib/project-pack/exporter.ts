@@ -4,6 +4,7 @@ import type {
 } from "@/lib/project-architecture";
 import type { ProjectPrd } from "@/lib/project-prd";
 import type {
+  HandoffFlagResolution,
   ProjectIdeaHandoffContext,
   ProjectResearchBrief
 } from "@/lib/project-research";
@@ -59,6 +60,7 @@ type GenerateProjectPackInput = {
   architecture: ProjectArchitecture;
   architectureJudge: ProjectArchitectureJudge;
   handoffContext?: ProjectIdeaHandoffContext;
+  handoffFlagResolutions?: HandoffFlagResolution[];
 };
 
 type ProductShape = {
@@ -166,12 +168,26 @@ function handoffReviewFlags(input: GenerateProjectPackInput) {
   return input.handoffContext?.reviewFlags ?? [];
 }
 
+function unresolvedHandoffFlagResolutions(input: GenerateProjectPackInput) {
+  const byFlag = new Map(
+    (input.handoffFlagResolutions ?? []).map((resolution) => [
+      resolution.reviewFlag,
+      resolution
+    ])
+  );
+
+  return handoffReviewFlags(input).filter((flag) => {
+    const status = byFlag.get(flag)?.status ?? "unresolved";
+    return status === "unresolved";
+  });
+}
+
 function hasUnresolvedHandoffRisk(input: GenerateProjectPackInput) {
   return (
     input.handoffContext?.readiness === "blocked" ||
-    input.handoffContext?.readiness === "needs_review" ||
-    handoffReviewFlags(input).length > 0 ||
-    (input.handoffContext?.sourceEvidenceQuality ?? 1) < 0.55
+    unresolvedHandoffFlagResolutions(input).length > 0 ||
+    ((input.handoffContext?.sourceEvidenceQuality ?? 1) < 0.55 &&
+      handoffReviewFlags(input).length === 0)
   );
 }
 
@@ -758,12 +774,23 @@ function handoffRiskResolution(input: GenerateProjectPackInput) {
   }
 
   const flags = handoffReviewFlags(input);
+  const resolutionByFlag = new Map(
+    (input.handoffFlagResolutions ?? []).map((resolution) => [
+      resolution.reviewFlag,
+      resolution
+    ])
+  );
   const rows = flags.length
-    ? flags.map((flag) => [
-        flag,
-        "unresolved",
-        "Research reviewer must confirm, reject, or replace this source-risk flag before implementation."
-      ])
+    ? flags.map((flag) => {
+        const resolution = resolutionByFlag.get(flag);
+
+        return [
+          flag,
+          resolution?.status ?? "unresolved",
+          resolution?.rationale ??
+            "Research reviewer must confirm, reject, or replace this source-risk flag before implementation."
+        ];
+      })
     : [["none", "resolved", "No review flags were passed from idea discovery."]];
 
   return [

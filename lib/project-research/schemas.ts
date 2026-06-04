@@ -34,6 +34,20 @@ export const ProjectIdeaHandoffContextSchema = z.object({
   requiredFixes: z.array(z.string().trim().min(1)).default([])
 });
 
+export const HandoffFlagResolutionStatusSchema = z.enum([
+  "confirmed",
+  "rejected",
+  "replaced_by_stronger_evidence",
+  "unresolved"
+]);
+
+export const HandoffFlagResolutionSchema = z.object({
+  reviewFlag: z.string().trim().min(1),
+  status: HandoffFlagResolutionStatusSchema,
+  rationale: z.string().trim().min(1),
+  evidenceIds: z.array(z.string().trim().min(1)).default([])
+});
+
 export const NormalizedProjectIdeaSchema = z.object({
   ideaId: z.string().trim().min(1),
   title: z.string().trim().min(3),

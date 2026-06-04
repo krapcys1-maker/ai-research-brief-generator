@@ -2,6 +2,8 @@ import type { z } from "zod";
 import type {
   EvidenceBucketSchema,
   EvidenceCoverageSchema,
+  HandoffFlagResolutionSchema,
+  HandoffFlagResolutionStatusSchema,
   NormalizedProjectIdeaSchema,
   ProjectEvidenceRefSchema,
   ProjectEvidenceStrengthSchema,
@@ -30,6 +32,14 @@ export type ProjectIdeaInput = z.infer<typeof ProjectIdeaInputSchema>;
 
 export type ProjectIdeaHandoffContext = z.infer<
   typeof ProjectIdeaHandoffContextSchema
+>;
+
+export type HandoffFlagResolutionStatus = z.infer<
+  typeof HandoffFlagResolutionStatusSchema
+>;
+
+export type HandoffFlagResolution = z.infer<
+  typeof HandoffFlagResolutionSchema
 >;
 
 export type NormalizedProjectIdea = z.infer<

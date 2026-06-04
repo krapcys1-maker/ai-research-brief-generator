@@ -17,6 +17,7 @@ import {
 } from "@/lib/project-research/evidenceCollector";
 import { buildProjectResearchPlan } from "@/lib/project-research/researchPlan";
 import {
+  HandoffFlagResolutionSchema,
   ProjectIdeaInputSchema,
   ProjectIdeaHandoffContextSchema,
   ReviewedPaperSchema
@@ -68,6 +69,7 @@ export const ProjectResearchRunnerInputSchema = z
   .object({
     idea: ProjectIdeaInputSchema,
     handoffContext: ProjectIdeaHandoffContextSchema.optional(),
+    handoffFlagResolutions: z.array(HandoffFlagResolutionSchema).default([]),
     reviewedPapers: z.array(ReviewedPaperSchema).min(1).optional(),
     papers: z.array(NormalizedPaperRunnerSchema).min(1).optional(),
     sourceSearch: SourceSearchRunnerSchema.optional(),
@@ -101,6 +103,8 @@ export type ProjectResearchRunManifest = {
   architectureJudgeVerdict: "pass" | "needs_review" | "fail";
   handoffReadiness: "ready" | "needs_review" | "blocked" | null;
   handoffReviewFlagCount: number;
+  handoffResolvedFlagCount: number;
+  handoffUnresolvedFlagCount: number;
   handoffSourceEvidenceQuality: number | null;
   requiredCoveredCount: number;
   requiredBucketCount: number;
@@ -115,6 +119,8 @@ export type ProjectResearchRunManifest = {
     sourceSearch: string;
     handoffContextJson: string;
     handoffContextMarkdown: string;
+    handoffFlagResolutionJson: string;
+    handoffFlagResolutionMarkdown: string;
     sourcePapers: string;
     evidenceCollection: string;
     reviewedPapers: string;
@@ -145,6 +151,8 @@ const artifactFiles = {
   sourceSearch: "source_search.json",
   handoffContextJson: "handoff_context.json",
   handoffContextMarkdown: "handoff_context.md",
+  handoffFlagResolutionJson: "handoff_flag_resolution.json",
+  handoffFlagResolutionMarkdown: "handoff_flag_resolution.md",
   sourcePapers: "source_papers.json",
   evidenceCollection: "evidence_collection.json",
   reviewedPapers: "reviewed_papers.json",
@@ -219,6 +227,53 @@ function handoffContextToMarkdown(
   ].join("\n");
 }
 
+function normalizeHandoffFlagResolutions(
+  handoffContext: ProjectResearchRunnerInput["handoffContext"] | undefined,
+  resolutions: ProjectResearchRunnerInput["handoffFlagResolutions"]
+) {
+  const byFlag = new Map(
+    resolutions.map((resolution) => [resolution.reviewFlag, resolution])
+  );
+
+  return (handoffContext?.reviewFlags ?? []).map((flag) => {
+    const resolution = byFlag.get(flag);
+
+    return {
+      reviewFlag: flag,
+      status: resolution?.status ?? "unresolved",
+      rationale:
+        resolution?.rationale ??
+        "No explicit research resolution was provided for this handoff review flag.",
+      evidenceIds: resolution?.evidenceIds ?? []
+    };
+  });
+}
+
+function handoffFlagResolutionToMarkdown(
+  resolutions: ReturnType<typeof normalizeHandoffFlagResolutions>
+) {
+  return [
+    "# Handoff flag resolution",
+    "",
+    resolutions.length
+      ? "Every review flag from idea discovery must be confirmed, rejected, replaced by stronger evidence, or left explicitly unresolved."
+      : "No handoff review flags were provided for this research run.",
+    "",
+    "## Decisions",
+    "",
+    ...(resolutions.length
+      ? resolutions.flatMap((resolution) => [
+          `### ${resolution.reviewFlag}`,
+          "",
+          `- Status: ${resolution.status}`,
+          `- Rationale: ${resolution.rationale}`,
+          `- Evidence IDs: ${resolution.evidenceIds.join(", ") || "none"}`,
+          ""
+        ])
+      : ["- none"])
+  ].join("\n");
+}
+
 function createManifest(
   brief: ProjectResearchBrief,
   prdStatus: "ready" | "blocked",
@@ -226,8 +281,15 @@ function createManifest(
   architectureJudgeScore: number,
   architectureJudgeVerdict: "pass" | "needs_review" | "fail",
   outputDir: string,
-  handoffContext: ProjectResearchRunnerInput["handoffContext"] | undefined
+  handoffContext: ProjectResearchRunnerInput["handoffContext"] | undefined,
+  handoffFlagResolutions: ReturnType<typeof normalizeHandoffFlagResolutions>
 ): ProjectResearchRunManifest {
+  const resolvedStatuses = new Set([
+    "confirmed",
+    "rejected",
+    "replaced_by_stronger_evidence"
+  ]);
+
   return {
     runId: brief.id,
     generatedAt: brief.generatedAt,
@@ -242,6 +304,12 @@ function createManifest(
     architectureJudgeVerdict,
     handoffReadiness: handoffContext?.readiness ?? null,
     handoffReviewFlagCount: handoffContext?.reviewFlags.length ?? 0,
+    handoffResolvedFlagCount: handoffFlagResolutions.filter((resolution) =>
+      resolvedStatuses.has(resolution.status)
+    ).length,
+    handoffUnresolvedFlagCount: handoffFlagResolutions.filter(
+      (resolution) => resolution.status === "unresolved"
+    ).length,
     handoffSourceEvidenceQuality: handoffContext?.sourceEvidenceQuality ?? null,
     requiredCoveredCount: brief.evidenceCoverage.requiredCoveredCount,
     requiredBucketCount: brief.evidenceCoverage.requiredBucketCount,
@@ -396,12 +464,17 @@ export async function runProjectResearch(
     prd,
     brief
   });
+  const handoffFlagResolutions = normalizeHandoffFlagResolutions(
+    parsed.handoffContext,
+    parsed.handoffFlagResolutions
+  );
   const projectPack = generateProjectPack({
     brief,
     prd,
     architecture,
     architectureJudge,
-    handoffContext: parsed.handoffContext
+    handoffContext: parsed.handoffContext,
+    handoffFlagResolutions
   });
   const manifest = createManifest(
     brief,
@@ -410,7 +483,8 @@ export async function runProjectResearch(
     architectureJudge.score,
     architectureJudge.verdict,
     outputDir,
-    parsed.handoffContext
+    parsed.handoffContext,
+    handoffFlagResolutions
   );
 
   await mkdir(outputDir, { recursive: true });
@@ -442,6 +516,16 @@ export async function runProjectResearch(
     writeFile(
       join(outputDir, artifactFiles.handoffContextMarkdown),
       handoffContextToMarkdown(parsed.handoffContext),
+      "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.handoffFlagResolutionJson),
+      toJson(handoffFlagResolutions),
+      "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.handoffFlagResolutionMarkdown),
+      handoffFlagResolutionToMarkdown(handoffFlagResolutions),
       "utf8"
     ),
     writeFile(
