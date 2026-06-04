@@ -422,6 +422,19 @@ alone is not enough to mark a flagged handoff as resolved. `--idea-title-contain
 pins comparable regression runs to a specific shortlisted idea when the shortlist
 contains multiple flagged candidates.
 
+Research runs also write paper-level relevance judgements:
+
+```text
+paper_relevance_judgement.json
+paper_relevance_judgement.md
+```
+
+The judgement runs before PRD and architecture synthesis. It scores every
+paper-to-bucket assignment as `keep`, `maybe`, or `reject`, and rejected
+assignments no longer count as useful bucket evidence. This keeps broad surveys,
+generic LLM technical reports, and accidental keyword matches visible in the
+audit without silently inflating coverage.
+
 The exported project pack also writes:
 
 ```text

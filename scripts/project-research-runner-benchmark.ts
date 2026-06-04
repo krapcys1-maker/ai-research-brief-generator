@@ -59,6 +59,8 @@ const requiredFiles = [
   "handoff_flag_resolution.md",
   "source_papers.json",
   "evidence_collection.json",
+  "paper_relevance_judgement.json",
+  "paper_relevance_judgement.md",
   "reviewed_papers.json",
   "project_research_brief.json",
   "project_research_brief.md",
@@ -338,8 +340,8 @@ async function main() {
       papers: sourcePapersForIdea(tradingIdea)
     },
     {
-      id: "medical_mock_source_search_artifacts",
-      expectedReady: true,
+      id: "medical_mock_source_search_blocked",
+      expectedReady: false,
       idea: {
         title: "Medical RAG Assistant",
         description:

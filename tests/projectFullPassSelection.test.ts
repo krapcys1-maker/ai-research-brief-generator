@@ -157,4 +157,12 @@ describe("full-pass idea selection", () => {
 
     expect(selected?.idea.ideaId).toBe("risky_lower");
   });
+
+  it("does not silently fall back when a pinned title is missing", () => {
+    const selected = selectIdeaForFullPass(report(), FullPassSelectionMode.NeedsReview, {
+      titleIncludes: "Missing Idea"
+    });
+
+    expect(selected).toBeUndefined();
+  });
 });

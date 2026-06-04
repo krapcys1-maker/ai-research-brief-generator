@@ -62,6 +62,8 @@ const researchRequiredFiles = [
   "handoff_flag_resolution.md",
   "source_papers.json",
   "evidence_collection.json",
+  "paper_relevance_judgement.json",
+  "paper_relevance_judgement.md",
   "reviewed_papers.json",
   "project_research_brief.json",
   "project_research_brief.md",

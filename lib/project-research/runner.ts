@@ -15,6 +15,10 @@ import {
   collectProjectEvidenceFromPapers,
   type EvidenceCollectionResult
 } from "@/lib/project-research/evidenceCollector";
+import {
+  judgePaperRelevance,
+  paperRelevanceJudgmentToMarkdown
+} from "@/lib/project-research/paperRelevanceJudge";
 import { buildProjectResearchPlan } from "@/lib/project-research/researchPlan";
 import {
   HandoffFlagResolutionSchema,
@@ -123,6 +127,8 @@ export type ProjectResearchRunManifest = {
     handoffFlagResolutionMarkdown: string;
     sourcePapers: string;
     evidenceCollection: string;
+    paperRelevanceJudgementJson: string;
+    paperRelevanceJudgementMarkdown: string;
     reviewedPapers: string;
     projectResearchBriefJson: string;
     projectResearchBriefMarkdown: string;
@@ -155,6 +161,8 @@ const artifactFiles = {
   handoffFlagResolutionMarkdown: "handoff_flag_resolution.md",
   sourcePapers: "source_papers.json",
   evidenceCollection: "evidence_collection.json",
+  paperRelevanceJudgementJson: "paper_relevance_judgement.json",
+  paperRelevanceJudgementMarkdown: "paper_relevance_judgement.md",
   reviewedPapers: "reviewed_papers.json",
   projectResearchBriefJson: "project_research_brief.json",
   projectResearchBriefMarkdown: "project_research_brief.md",
@@ -172,6 +180,10 @@ const artifactFiles = {
 
 function toJson(value: unknown) {
   return `${JSON.stringify(value, null, 2)}\n`;
+}
+
+function normalizedPaperText(paper: NormalizedPaper) {
+  return [paper.title, paper.abstract, paper.venue].filter(Boolean).join(" ");
 }
 
 function handoffContextToMarkdown(
@@ -440,11 +452,26 @@ export async function runProjectResearch(
           papers: (parsed.papers ?? sourcePapers) as NormalizedPaper[]
         })
       };
-  const reviewedPapers = parsed.reviewedPapers ?? (
+  const rawReviewedPapers = parsed.reviewedPapers ?? (
     evidenceCollection as EvidenceCollectionResult & {
       mode: "collected_from_papers";
     }
   ).reviewedPapers;
+  const sourcePaperTextsById = Object.fromEntries(
+    (parsed.papers ?? sourcePapers ?? []).map((paper) => [
+      paper.id,
+      normalizedPaperText(paper)
+    ])
+  );
+  const paperRelevanceJudgement = judgePaperRelevance({
+    idea: parsed.idea,
+    researchPlan: planResult.researchPlan,
+    reviewedPapers: rawReviewedPapers,
+    paperTextsById: sourcePaperTextsById
+  });
+  const reviewedPapers = parsed.reviewedPapers
+    ? rawReviewedPapers
+    : paperRelevanceJudgement.filteredReviewedPapers;
   const brief = buildProjectResearchBrief({
     idea: parsed.idea,
     reviewedPapers,
@@ -536,6 +563,16 @@ export async function runProjectResearch(
     writeFile(
       join(outputDir, artifactFiles.evidenceCollection),
       toJson(evidenceCollection),
+      "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.paperRelevanceJudgementJson),
+      toJson(paperRelevanceJudgement),
+      "utf8"
+    ),
+    writeFile(
+      join(outputDir, artifactFiles.paperRelevanceJudgementMarkdown),
+      paperRelevanceJudgmentToMarkdown(paperRelevanceJudgement),
       "utf8"
     ),
     writeFile(join(outputDir, artifactFiles.reviewedPapers), toJson(brief.reviewedPapers), "utf8"),

@@ -62,7 +62,7 @@ export function selectIdeaForFullPass(
           .includes(options.titleIncludes!.toLowerCase())
       )
     : candidates;
-  const selectable = filteredCandidates.length > 0 ? filteredCandidates : candidates;
+  const selectable = options.titleIncludes ? filteredCandidates : candidates;
   const sorted = [...selectable].sort(
     (left, right) => candidateRank(right) - candidateRank(left)
   );

@@ -146,6 +146,8 @@ describe("runProjectResearch", () => {
       handoffFlagResolutionMarkdown: "handoff_flag_resolution.md",
       sourcePapers: "source_papers.json",
       evidenceCollection: "evidence_collection.json",
+      paperRelevanceJudgementJson: "paper_relevance_judgement.json",
+      paperRelevanceJudgementMarkdown: "paper_relevance_judgement.md",
       reviewedPapers: "reviewed_papers.json",
       projectResearchBriefJson: "project_research_brief.json",
       projectResearchBriefMarkdown: "project_research_brief.md",

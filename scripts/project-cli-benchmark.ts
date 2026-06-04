@@ -50,6 +50,8 @@ const requiredFiles = [
   "handoff_flag_resolution.md",
   "source_papers.json",
   "evidence_collection.json",
+  "paper_relevance_judgement.json",
+  "paper_relevance_judgement.md",
   "reviewed_papers.json",
   "project_research_brief.json",
   "project_research_brief.md",
@@ -284,8 +286,8 @@ function renderMarkdownReport(input: {
 async function main() {
   const cases: CliBenchmarkCase[] = [
     {
-      id: "medical_mock_source_search_ready",
-      expectedReady: true,
+      id: "medical_mock_source_search_blocked",
+      expectedReady: false,
       input: {
         idea: {
           title: "Medical RAG Assistant",

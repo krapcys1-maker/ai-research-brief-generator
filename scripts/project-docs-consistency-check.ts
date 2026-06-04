@@ -58,6 +58,8 @@ const requiredArtifacts = [
   "handoff_context.md",
   "handoff_flag_resolution.json",
   "handoff_flag_resolution.md",
+  "paper_relevance_judgement.json",
+  "paper_relevance_judgement.md",
   "docs/09-handoff-risk-resolution.md",
   "project_architecture_judge.json",
   "project_architecture_judge.md",
