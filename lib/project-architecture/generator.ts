@@ -511,6 +511,24 @@ function architectureBlueprint(input: GenerateProjectArchitectureInput): Bluepri
   }
 
   if (
+    text.includes("sandbox reliability") ||
+    text.includes("agent sandbox") ||
+    text.includes("sandbox health") ||
+    text.includes("runtime trust failures") ||
+    text.includes("tool exposure") ||
+    text.includes("sandboxed environment")
+  ) {
+    return commonBlueprint({
+      profile: "agent_sandbox_runtime_health",
+      noun: "agent sandbox runtime health",
+      intake: "Sandbox Log Policy Network And Tool Capability",
+      evidence: "Sandbox Runtime Trace",
+      evaluator: "Runtime Trust Failure And Preflight Gate",
+      report: "Sandbox Health And Release Blocker"
+    });
+  }
+
+  if (
     text.includes("session reliability") ||
     text.includes("desktop sessions") ||
     text.includes("conversation continuity") ||

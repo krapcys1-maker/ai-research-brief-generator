@@ -250,4 +250,27 @@ describe("collectGithubIdeaSourceRepos", () => {
       body: "No issue body provided."
     });
   });
+
+  it("returns partial diagnostics instead of throwing when explicit repo enrichment times out", async () => {
+    const fetchFn = vi.fn(
+      (_url: string, init?: { signal?: AbortSignal }) =>
+        new Promise<ReturnType<typeof response>>((_resolve, reject) => {
+          init?.signal?.addEventListener("abort", () => {
+            reject(new DOMException("This operation was aborted", "AbortError"));
+          });
+        })
+    );
+
+    const result = await collectGithubIdeaSourceReposByFullName({
+      repoFullNames: ["example/slow-agent"],
+      fetchFn,
+      timeoutMs: 5
+    });
+
+    expect(result.sourceRepos).toEqual([]);
+    expect(result.diagnostics.returnedRepoCount).toBe(0);
+    expect(result.diagnostics.warnings.join("\n")).toContain(
+      "GitHub enrichment stopped after timeout"
+    );
+  });
 });

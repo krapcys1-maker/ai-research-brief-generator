@@ -280,6 +280,18 @@ async function withTimeout<T>(timeoutMs: number, run: (signal: AbortSignal) => P
   }
 }
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function isAbortError(error: unknown) {
+  return (
+    error instanceof Error &&
+    (error.name === "AbortError" ||
+      error.message.toLowerCase().includes("aborted"))
+  );
+}
+
 function cacheKey(input: CollectGithubIdeaSourceReposInput, searchUrl: string) {
   return [
     searchUrl,
@@ -474,12 +486,33 @@ export async function collectGithubIdeaSourceReposByFullName(
     const sourceRepos: IdeaSourceRepo[] = [];
 
     for (const repoFullName of repoFullNames) {
-      const { response, json } = await fetchJson({
-        fetchFn: fetchFn as FetchLike,
-        url: toRepoUrl(repoFullName),
-        token: input.token,
-        signal
-      });
+      let response: Awaited<ReturnType<FetchLike>>;
+      let json: unknown;
+
+      try {
+        const fetched = await fetchJson({
+          fetchFn: fetchFn as FetchLike,
+          url: toRepoUrl(repoFullName),
+          token: input.token,
+          signal
+        });
+        response = fetched.response;
+        json = fetched.json;
+      } catch (error) {
+        warnings.push(
+          `Repo fetch failed for ${repoFullName}: ${errorMessage(error)}`
+        );
+
+        if (signal.aborted || isAbortError(error)) {
+          warnings.push(
+            `GitHub enrichment stopped after timeout; returned ${sourceRepos.length}/${repoFullNames.length} repos.`
+          );
+          break;
+        }
+
+        continue;
+      }
+
       rateLimit = rateLimit ?? parseRateLimit(response.headers);
 
       if (!response.ok || typeof json !== "object" || json === null) {
@@ -494,6 +527,7 @@ export async function collectGithubIdeaSourceReposByFullName(
       const repo = json as GithubRepoSearchItem;
       let readmeText = fallbackReadme(repo);
       let issueSignals: RepoIssueSignal[] = [];
+      let stopAfterRepo = false;
 
       if (input.includeReadme ?? true) {
         try {
@@ -510,13 +544,14 @@ export async function collectGithubIdeaSourceReposByFullName(
         } catch (error) {
           warnings.push(
             `README fetch failed for ${repo.full_name ?? repo.name}: ${
-              error instanceof Error ? error.message : String(error)
+              errorMessage(error)
             }`
           );
+          stopAfterRepo = signal.aborted || isAbortError(error);
         }
       }
 
-      if (input.includeIssues ?? true) {
+      if (!stopAfterRepo && (input.includeIssues ?? true)) {
         try {
           issueSignals = await fetchIssues({
             fetchFn: fetchFn as FetchLike,
@@ -530,15 +565,23 @@ export async function collectGithubIdeaSourceReposByFullName(
         } catch (error) {
           warnings.push(
             `Issue fetch failed for ${repo.full_name ?? repo.name}: ${
-              error instanceof Error ? error.message : String(error)
+              errorMessage(error)
             }`
           );
+          stopAfterRepo = signal.aborted || isAbortError(error);
         }
       }
 
       const normalized = normalizeRepo(repo, readmeText, issueSignals);
       if (normalized) {
         sourceRepos.push(normalized);
+      }
+
+      if (stopAfterRepo) {
+        warnings.push(
+          `GitHub enrichment stopped after timeout; returned ${sourceRepos.length}/${repoFullNames.length} repos.`
+        );
+        break;
       }
     }
 

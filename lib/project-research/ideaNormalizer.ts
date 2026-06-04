@@ -181,6 +181,32 @@ const DOMAIN_PROFILES: DomainProfile[] = [
     nonGoals: ["budowa kolejnego klienta agenta w MVP"]
   },
   {
+    id: "agent_sandbox_reliability",
+    labels: ["AI agents", "sandbox reliability", "agent safety"],
+    keywords: [
+      "agent sandbox",
+      "sandboxes",
+      "sandbox",
+      "container",
+      "network config",
+      "startup failure",
+      "tool exposure",
+      "policy drift",
+      "agent runtime",
+      "nemoclaw"
+    ],
+    targetUsers: [
+      "AI agent platform team",
+      "sandboxed automation builder",
+      "agent reliability owner"
+    ],
+    assumptions: [
+      "system diagnozuje gotowosc srodowiska agenta przed uruchomieniem workflow",
+      "sandbox policy, network checks, tool exposure i startup logs musza byc testowalne jako release gate"
+    ],
+    nonGoals: ["budowa kolejnego runtime agenta lub automatyczne uruchamianie akcji w MVP"]
+  },
+  {
     id: "self_hosted_ai_governance",
     labels: ["self-hosted AI", "AI security", "workspace governance"],
     keywords: [
@@ -206,7 +232,13 @@ function normalizeText(value: string) {
 }
 
 function includesKeyword(haystack: string, keyword: string) {
-  return haystack.includes(normalizeText(keyword));
+  const normalizedKeyword = normalizeText(keyword);
+
+  if (normalizedKeyword === "law") {
+    return /(^|[^\p{L}\p{N}])law($|[^\p{L}\p{N}])/u.test(haystack);
+  }
+
+  return haystack.includes(normalizedKeyword);
 }
 
 function unique(values: string[]) {

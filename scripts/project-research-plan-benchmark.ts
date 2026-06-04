@@ -85,6 +85,20 @@ const cases: BenchmarkCase[] = [
     ]
   },
   {
+    id: "agent_sandbox_health",
+    title: "Agent Sandbox Health Monitor",
+    description:
+      "Agent Sandbox Health Monitor helps AI agent platform teams solve a narrower adjacent workflow inspired by NemoClaw. Problem: Teams running AI agents inside sandboxes need to catch startup failures, network misconfiguration, capability drops, and unsafe policy drift before live runs.",
+    constraints: ["MVP: ingest sandbox startup logs and policy config"],
+    preferredDomains: ["AI agents", "sandbox reliability", "agent safety"],
+    expectedBucketIds: [
+      "sandbox_preflight_checks",
+      "tool_policy_safety",
+      "runtime_observability",
+      "release_gate_replay"
+    ]
+  },
+  {
     id: "generic_team_planner",
     title: "Smart Team Planner",
     description:

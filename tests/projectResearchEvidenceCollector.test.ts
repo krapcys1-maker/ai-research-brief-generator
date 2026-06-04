@@ -174,4 +174,79 @@ describe("collectProjectEvidenceFromPapers", () => {
     expect(result.requiredReadyCount).toBe(0);
     expect(result.reviewedPapers).toHaveLength(0);
   });
+
+  it("covers agent sandbox runtime readiness with runtime trust and execution gate papers", () => {
+    const { researchPlan } = buildProjectResearchPlan({
+      title: "Agent Sandbox Health Monitor",
+      description:
+        "Agent Sandbox Health Monitor helps AI agent platform teams solve a narrower adjacent workflow inspired by NemoClaw. Problem: Teams running AI agents inside sandboxes need to catch startup failures, network misconfiguration, capability drops, and unsafe policy drift before live runs.",
+      constraints: ["MVP must be evidence-backed"],
+      preferredDomains: ["AI agents", "sandbox reliability", "agent safety"],
+      outputLanguage: "pl"
+    });
+    const sandboxBucket = researchPlan.evidenceBuckets.find(
+      (bucket) => bucket.id === "sandbox_preflight_checks"
+    );
+
+    expect(sandboxBucket).toBeDefined();
+
+    const result = collectProjectEvidenceFromPapers({
+      researchPlan: {
+        ...researchPlan,
+        evidenceBuckets: [sandboxBucket!]
+      },
+      papers: [
+        {
+          id: "agenttrap",
+          title: "AgentTrap: Measuring Runtime Trust Failures in Third-Party Agent Skills",
+          abstract:
+            "AgentTrap evaluates LLM agents in a sandboxed environment and measures malicious runtime behavior, blocked behavior, attack success and no-attack-evidence outcomes.",
+          authors: ["Benchmark Author"],
+          year: 2026,
+          publishedAt: "2026-05-13",
+          doi: null,
+          arxivId: "2605.13940",
+          semanticScholarId: null,
+          openAlexId: null,
+          sourceUrls: ["https://arxiv.org/abs/2605.13940"],
+          pdfUrl: "https://arxiv.org/pdf/2605.13940",
+          venue: "arXiv",
+          citationCount: 0,
+          influentialCitationCount: 0,
+          source: "openalex",
+          fullTextStatus: "parsed"
+        },
+        {
+          id: "authority_frontier",
+          title:
+            "Insuring Every Action: An Authority Frontier Framework for Runtime Actuarial Control of Autonomous AI Agents",
+          abstract:
+            "The framework defines a deterministic runtime contract that gates execution of tool calls against safe defaults and reserve budgets for autonomous AI agents.",
+          authors: ["Benchmark Author"],
+          year: 2026,
+          publishedAt: "2026-05-25",
+          doi: null,
+          arxivId: "2605.25632",
+          semanticScholarId: null,
+          openAlexId: null,
+          sourceUrls: ["https://arxiv.org/abs/2605.25632"],
+          pdfUrl: "https://arxiv.org/pdf/2605.25632",
+          venue: "arXiv",
+          citationCount: 0,
+          influentialCitationCount: 0,
+          source: "openalex",
+          fullTextStatus: "parsed"
+        }
+      ],
+      maxPapersPerBucket: 4
+    });
+
+    expect(result.canBuildReadyBrief).toBe(true);
+    expect(result.bucketMetrics[0]).toMatchObject({
+      bucketId: "sandbox_preflight_checks",
+      coverageReady: true,
+      usefulReviewedCount: 2,
+      parsedCount: 2
+    });
+  });
 });

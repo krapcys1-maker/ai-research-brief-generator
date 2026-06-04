@@ -523,6 +523,80 @@ const AGENT_SESSION_BUCKETS: EvidenceBucket[] = [
   })
 ];
 
+const AGENT_SANDBOX_BUCKETS: EvidenceBucket[] = [
+  bucket({
+    id: "sandbox_preflight_checks",
+    label: "Agent sandbox runtime readiness and preflight gates",
+    query:
+      "LLM agent sandboxed environment runtime trust failures runtime contract execution gate safe default readiness evaluation",
+    keywords: [
+      "agent sandbox",
+      "sandboxed environment",
+      "environment readiness",
+      "runtime trust failures",
+      "runtime contract",
+      "execution gate",
+      "startup failure",
+      "network policy"
+    ],
+    targetQuestions: [
+      "Ktore sygnaly srodowiska najlepiej przewiduja nieudany albo niebezpieczny run agenta?",
+      "Jakie preflight checks powinny blokowac uruchomienie workflow?"
+    ]
+  }),
+  bucket({
+    id: "tool_policy_safety",
+    label: "Tool policy safety and capability exposure",
+    query:
+      "tool using AI agents safety policy capability exposure sandbox permissions evaluation",
+    keywords: [
+      "tool using agents",
+      "safety policy",
+      "capability exposure",
+      "sandbox permissions",
+      "evaluation"
+    ],
+    targetQuestions: [
+      "Jak wykrywac niebezpieczna ekspozycje narzedzi i uprawnien?",
+      "Jak laczyc polityki tool-use z mierzalnymi gate'ami bezpieczenstwa?"
+    ]
+  }),
+  bucket({
+    id: "runtime_observability",
+    label: "Runtime observability for agent and container failures",
+    query:
+      "agent runtime observability container logs failure diagnosis network configuration monitoring",
+    keywords: [
+      "runtime observability",
+      "container logs",
+      "failure diagnosis",
+      "network configuration",
+      "monitoring"
+    ],
+    targetQuestions: [
+      "Jakie logi i telemetry events sa potrzebne do wyjasnienia awarii sandboxa?",
+      "Jak odroznic blad konfiguracji, sieci, runtime i polityki?"
+    ]
+  }),
+  bucket({
+    id: "release_gate_replay",
+    label: "Release gates, replay fixtures and reproducible sandbox QA",
+    query:
+      "AI agent evaluation replay fixtures release gates reproducible failures sandbox reliability",
+    keywords: [
+      "agent evaluation",
+      "replay fixtures",
+      "release gates",
+      "reproducible failures",
+      "sandbox reliability"
+    ],
+    targetQuestions: [
+      "Jak zamieniac failed run traces w reprodukowalne fixture cases?",
+      "Jakie progi jakosci powinny blokowac release agenta?"
+    ]
+  })
+];
+
 const SELF_HOSTED_AI_BUCKETS: EvidenceBucket[] = [
   bucket({
     id: "self_hosted_security_controls",
@@ -723,6 +797,17 @@ function selectBuckets(idea: NormalizedProjectIdea) {
     titleText.includes("session reliability")
   ) {
     buckets.push(...AGENT_SESSION_BUCKETS);
+  }
+
+  if (
+    hasDomain("AI agents") ||
+    hasDomain("sandbox reliability") ||
+    hasDomain("agent safety") ||
+    titleText.includes("agent sandbox") ||
+    titleText.includes("sandbox health") ||
+    titleText.includes("nemoclaw")
+  ) {
+    buckets.push(...AGENT_SANDBOX_BUCKETS);
   }
 
   if (

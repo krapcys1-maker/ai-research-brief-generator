@@ -179,6 +179,19 @@ describe("buildProjectResearchPlan", () => {
       ]
     },
     {
+      title: "Agent Sandbox Health Monitor",
+      description:
+        "Agent Sandbox Health Monitor helps AI agent platform teams solve a narrower adjacent workflow inspired by NemoClaw. Problem: Teams running AI agents inside sandboxes need to catch startup failures, network misconfiguration, capability drops, and unsafe policy drift before live runs.",
+      domains: ["AI agents", "sandbox reliability", "agent safety"],
+      expectedBuckets: [
+        "sandbox_preflight_checks",
+        "tool_policy_safety",
+        "runtime_observability",
+        "release_gate_replay"
+      ],
+      unexpectedBuckets: ["legal_retrieval", "contract_analysis"]
+    },
+    {
       title: "Self-Hosted AI Workspace Policy Auditor",
       description:
         "Audit self-hosted AI workspace policy, secrets, local-first privacy and deployment readiness.",
@@ -229,6 +242,37 @@ describe("buildProjectResearchPlan", () => {
         query.includes("Context compression fidelity and fact retention")
       )
     ).toBe(true);
+  });
+
+  it("does not classify NemoClaw-inspired sandbox ideas as legal work because of the law substring", () => {
+    const { normalizedIdea, researchPlan } = buildProjectResearchPlan({
+      title: "Agent Sandbox Health Monitor",
+      description:
+        "Agent Sandbox Health Monitor helps AI agent platform teams solve a narrower adjacent workflow inspired by NemoClaw. Problem: Teams running AI agents inside sandboxes need to catch startup failures, network misconfiguration, capability drops, and unsafe policy drift before live runs.",
+      constraints: [
+        "MVP: ingest sandbox startup logs, policy config, network checks, and failed run traces"
+      ],
+      preferredDomains: ["AI agents", "sandbox reliability", "agent safety"],
+      outputLanguage: "pl"
+    });
+
+    expect(normalizedIdea.domains).toEqual(
+      expect.arrayContaining(["AI agents", "sandbox reliability", "agent safety"])
+    );
+    expect(normalizedIdea.domains).not.toEqual(
+      expect.arrayContaining(["legal retrieval", "contract analysis"])
+    );
+    expect(bucketIds(researchPlan)).toEqual(
+      expect.arrayContaining([
+        "sandbox_preflight_checks",
+        "tool_policy_safety",
+        "runtime_observability",
+        "release_gate_replay"
+      ])
+    );
+    expect(bucketIds(researchPlan)).not.toEqual(
+      expect.arrayContaining(["legal_retrieval", "contract_analysis"])
+    );
   });
 
   it("creates a plan from an already normalized idea", () => {

@@ -106,6 +106,19 @@ const providerCompatibilityIdea: ProjectIdeaInput = {
   outputLanguage: "pl"
 };
 
+const agentSandboxIdea: ProjectIdeaInput = {
+  title: "Agent Sandbox Health Monitor",
+  description:
+    "Agent Sandbox Health Monitor helps AI agent platform teams solve a narrower adjacent workflow inspired by NemoClaw. Problem: Teams running AI agents inside sandboxes need to catch startup failures, network misconfiguration, capability drops, and unsafe policy drift before live runs.",
+  constraints: [
+    "MVP: ingest sandbox startup logs, policy config, network checks, and failed run traces",
+    "MVP: detect startup failures, blocked capabilities, unsafe tool exposure, and environment drift",
+    "MVP: produce sandbox health reports with reproducible checks and release blockers"
+  ],
+  preferredDomains: ["AI agents", "sandbox reliability", "agent safety"],
+  outputLanguage: "pl"
+};
+
 const repoMriIdea: ProjectIdeaInput = {
   title: "Repo MRI",
   description:
@@ -368,6 +381,38 @@ describe("generateProjectArchitecture", () => {
     expect(componentNames).not.toContain("Repository And Issue Intake Adapter");
     expect(architecture.audit.verdict).toContain("ai_cli_provider_reliability");
     expect(judge.verdict).toBe("pass");
+    expect(judge.genericComponentCount).toBe(0);
+  });
+
+  it("generates non-generic architecture for agent sandbox health ideas", () => {
+    const brief = buildProjectResearchBrief({
+      idea: agentSandboxIdea,
+      reviewedPapers: fullEvidenceForIdea(agentSandboxIdea),
+      generatedAt: "2026-06-03T16:00:00.000Z"
+    });
+    const prd = generateProjectPrd({ brief });
+
+    const architecture = generateProjectArchitecture({
+      prd,
+      brief,
+      generatedAt: "2026-06-03T16:05:00.000Z"
+    });
+    const judge = judgeProjectArchitecture({ architecture, prd, brief });
+    const componentNames = architecture.components
+      .map((component) => component.name)
+      .join(" ");
+
+    expect(componentNames).toContain(
+      "Sandbox Log Policy Network And Tool Capability Intake Adapter"
+    );
+    expect(componentNames).toContain(
+      "Runtime Trust Failure And Preflight Gate AI Evaluator"
+    );
+    expect(architecture.audit.verdict).toContain(
+      "agent_sandbox_runtime_health"
+    );
+    expect(judge.verdict).toBe("pass");
+    expect(judge.score).toBeGreaterThanOrEqual(90);
     expect(judge.genericComponentCount).toBe(0);
   });
 
