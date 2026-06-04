@@ -4,6 +4,16 @@
 
 `Project Idea Scout` discovers project ideas from real external signals, starting with GitHub repositories, then turns those signals into adjacent product ideas that can enter the existing project research pipeline.
 
+The broader target system is described in:
+
+```text
+docs/TARGET_TREND_TO_PROJECT_PIPELINE.md
+```
+
+That document defines the full chain from GH Archive / BigQuery rising-star
+selection, through LLM top-10 idea curation and user selection, to scientific
+research, project pack generation and judge-driven improvement.
+
 It must not be a free-form "invent ideas" prompt. The module should work from evidence:
 
 ```text
