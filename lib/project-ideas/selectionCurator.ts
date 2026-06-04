@@ -308,7 +308,7 @@ function ideaMismatchWarnings(input: {
   const warnings: string[] = [];
   const text = input.repo ? repoText(input.repo) : "";
   const title = input.idea.title.toLowerCase();
-  const clinicalTerms = ["clinical", "medical", "patient", "health"];
+  const clinicalTerms = ["clinical", "medical", "patient", "healthcare"];
   const dataTerms = ["data quality", "warehouse", "analytics", "dataset"];
 
   if (
@@ -377,6 +377,85 @@ function evidenceProfile(title: string) {
     };
   }
 
+  if (normalizedTitle.includes("web extraction drift")) {
+    return {
+      primary: [
+        "scraping",
+        "crawler",
+        "extraction",
+        "selector",
+        "selectors",
+        "redirect",
+        "fetcher"
+      ],
+      secondary: [
+        "drift",
+        "schema",
+        "missing",
+        "similarity",
+        "parser",
+        "regression",
+        "quality"
+      ],
+      minPrimaryHits: 2,
+      minSecondaryHits: 1,
+      minScore: 0.45
+    };
+  }
+
+  if (normalizedTitle.includes("dataset freshness")) {
+    return {
+      primary: [
+        "dataset",
+        "datasets",
+        "refresh",
+        "freshness",
+        "schema",
+        "live web",
+        "populate"
+      ],
+      secondary: [
+        "quality",
+        "inference",
+        "investigate",
+        "cost",
+        "model",
+        "config",
+        "stale"
+      ],
+      minPrimaryHits: 2,
+      minSecondaryHits: 1,
+      minScore: 0.45
+    };
+  }
+
+  if (normalizedTitle.includes("agent harness configuration")) {
+    return {
+      primary: [
+        "harness",
+        "hooks",
+        "hook",
+        "opencode",
+        "claude code",
+        "codex",
+        "cursor",
+        "install"
+      ],
+      secondary: [
+        "config",
+        "configuration",
+        "path",
+        "module",
+        "compatibility",
+        "windows",
+        "workflow"
+      ],
+      minPrimaryHits: 2,
+      minSecondaryHits: 1,
+      minScore: 0.45
+    };
+  }
+
   if (normalizedTitle.includes("clinical") || normalizedTitle.includes("medical")) {
     return {
       primary: ["clinical", "medical", "patient", "health", "healthcare"],
@@ -440,7 +519,27 @@ function evidenceProfile(title: string) {
       primary: ["agent", "tool call", "tool calls", "workflow", "run", "trace"],
       secondary: ["qa", "evaluation", "replay", "failure", "reliability", "production"],
       minPrimaryHits: 1,
-      minScore: 0.35
+      minScore: 0.6
+    };
+  }
+
+  if (normalizedTitle.includes("agent sandbox")) {
+    return {
+      primary: ["agent", "sandbox", "container", "startup", "network", "gpu", "runtime"],
+      secondary: [
+        "health",
+        "policy",
+        "capability",
+        "failure",
+        "fail",
+        "drop",
+        "checks",
+        "security",
+        "preflight"
+      ],
+      minPrimaryHits: 2,
+      minSecondaryHits: 1,
+      minScore: 0.45
     };
   }
 
@@ -462,12 +561,16 @@ function evidenceProfile(title: string) {
     };
   }
 
-  if (normalizedTitle.includes("short-video") || normalizedTitle.includes("short video")) {
+  if (
+    normalizedTitle.includes("short-video") ||
+    normalizedTitle.includes("short video") ||
+    normalizedTitle.includes("video script")
+  ) {
     return {
       primary: ["video", "short", "script", "voiceover", "moviepy"],
       secondary: ["content", "publishing", "qa", "claim", "repetition", "brand"],
       minPrimaryHits: 2,
-      minScore: 0.35
+      minScore: 0.5
     };
   }
 

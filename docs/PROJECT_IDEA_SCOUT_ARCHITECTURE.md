@@ -396,6 +396,8 @@ source_curation_report.json
 source_curation_report.md
 idea_selection_report.json
 idea_selection_report.md
+ai_idea_curation_report.json
+ai_idea_curation_report.md
 project_ideas_audit.json
 project_ideas_audit.md
 project_idea_handoff_quality.json

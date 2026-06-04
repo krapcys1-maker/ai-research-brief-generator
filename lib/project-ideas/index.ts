@@ -2,6 +2,7 @@ export * from "@/lib/project-ideas/schemas";
 export * from "@/lib/project-ideas/types";
 export * from "@/lib/project-ideas/aiIdeaPrompt";
 export * from "@/lib/project-ideas/aiIdeaBenchmark";
+export * from "@/lib/project-ideas/aiIdeaCurator";
 export * from "@/lib/project-ideas/audit";
 export * from "@/lib/project-ideas/handoffQuality";
 export * from "@/lib/project-ideas/repoAnalyzer";

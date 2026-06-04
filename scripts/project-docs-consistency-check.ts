@@ -48,6 +48,8 @@ const requiredArtifacts = [
   "source_curation_report.md",
   "idea_selection_report.json",
   "idea_selection_report.md",
+  "ai_idea_curation_report.json",
+  "ai_idea_curation_report.md",
   "shortlist.json",
   "project_idea_inputs.json",
   "project_idea_handoff_quality.json",

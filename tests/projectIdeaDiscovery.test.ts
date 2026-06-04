@@ -241,7 +241,7 @@ describe("discoverProjectIdeas", () => {
     },
     {
       name: "short-video AI generation",
-      expectedTitle: "AI Short-Video Content QA Console",
+      expectedTitle: "AI Video Script Quality Checker",
       repo: sourceRepo({
         repoId: "repo_money_printer_turbo",
         name: "MoneyPrinterTurbo",
@@ -256,6 +256,26 @@ describe("discoverProjectIdeas", () => {
             title: "Need review queue before publishing generated videos",
             body: "Generated scripts can be repetitive or make unsupported claims before upload.",
             labels: ["enhancement"]
+          }
+        ]
+      })
+    },
+    {
+      name: "agent sandbox runtime",
+      expectedTitle: "Agent Sandbox Health Monitor",
+      repo: sourceRepo({
+        repoId: "repo_nemoclaw",
+        name: "NemoClaw",
+        owner: "NVIDIA",
+        description: "Sandboxed AI agent runtime with secure execution.",
+        topics: ["ai-agents", "sandbox", "security", "runtime"],
+        readmeText:
+          "NemoClaw runs AI agents in sandboxes and containers with network controls, startup checks, GPU support, and tool-use policies.",
+        issueSignals: [
+          {
+            title: "Sandbox startup marker missing after GPU network change",
+            body: "Agent startup can fail silently when network config or sandbox capabilities drop.",
+            labels: ["bug"]
           }
         ]
       })
@@ -283,7 +303,7 @@ describe("discoverProjectIdeas", () => {
     },
     {
       name: "web scraping",
-      expectedTitle: "AI Data Quality Investigation Agent",
+      expectedTitle: "Web Extraction Drift Monitor",
       repo: sourceRepo({
         repoId: "repo_scrapling",
         name: "Scrapling",
@@ -297,6 +317,47 @@ describe("discoverProjectIdeas", () => {
           {
             title: "Extraction drift after site markup changes",
             body: "Scraped data needs quality checks when selectors stop matching expected fields.",
+            labels: ["bug"]
+          }
+        ]
+      })
+    },
+    {
+      name: "live-web dataset builder",
+      expectedTitle: "Dataset Freshness & Quality Monitor",
+      repo: sourceRepo({
+        repoId: "repo_bigset",
+        name: "bigset",
+        owner: "tinyfish-io",
+        description: "Build and maintain any dataset from the live web.",
+        topics: ["dataset", "open-source", "live-web"],
+        readmeText:
+          "Build and maintain any dataset from the live web that refreshes regularly. BigSet includes schema inference, populate orchestration, and investigate subagents.",
+        issueSignals: [
+          {
+            title: "Add configurable AI provider/model settings",
+            body: "Schema inference and populate agents need provider/model config because model cost can spike during dataset refreshes.",
+            labels: ["enhancement"]
+          }
+        ]
+      })
+    },
+    {
+      name: "agent harness config",
+      expectedTitle: "Agent Harness Configuration Auditor",
+      repo: sourceRepo({
+        repoId: "repo_ecc",
+        name: "ECC",
+        owner: "affaan-m",
+        description:
+          "The agent harness performance optimization system for Claude Code, Codex, OpenCode, Cursor and beyond.",
+        topics: ["ai-agents", "developer-tools", "llm", "mcp"],
+        readmeText:
+          "ECC is the harness-native operator system for agentic work with skills, hooks-runtime, platform-configs, workflow-quality, memory, and security modules.",
+        issueSignals: [
+          {
+            title: "Node hooks fail on Windows + Git Bash",
+            body: "Hook commands fail because plugin root paths resolve incorrectly for Windows node.exe. Opencode Desktop can break after installing ECC modules.",
             labels: ["bug"]
           }
         ]

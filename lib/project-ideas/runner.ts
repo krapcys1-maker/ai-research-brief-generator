@@ -32,6 +32,10 @@ import {
   ideaSelectionReportToMarkdown,
   sourceCurationReportToMarkdown
 } from "@/lib/project-ideas/selectionCurator";
+import {
+  aiIdeaCurationReportToMarkdown,
+  runAiIdeaCuration
+} from "@/lib/project-ideas/aiIdeaCurator";
 import type { BqExecutor } from "@/lib/project-ideas/ghArchiveTrendCollector";
 import type { FetchLike } from "@/lib/project-ideas/githubCollector";
 import type {
@@ -70,6 +74,13 @@ const GhArchiveTrendsRunnerSchema = z.object({
   tokenEnv: z.string().trim().min(1).optional()
 });
 
+const AiCurationRunnerSchema = z.object({
+  enabled: z.boolean().default(false),
+  timeoutMs: z.number().int().min(1000).max(180_000).default(90_000),
+  model: z.string().trim().min(1).optional(),
+  maxHiddenGems: z.number().int().min(0).max(10).default(5)
+});
+
 export const ProjectIdeaDiscoveryRunnerInputSchema = z
   .object({
     domain: z.string().trim().min(2),
@@ -79,7 +90,8 @@ export const ProjectIdeaDiscoveryRunnerInputSchema = z
     outputLanguage: z.string().trim().min(2).default("pl"),
     sourceRepos: z.array(IdeaSourceRepoSchema).min(1).optional(),
     githubSearch: GithubSearchRunnerSchema.optional(),
-    ghArchiveTrends: GhArchiveTrendsRunnerSchema.optional()
+    ghArchiveTrends: GhArchiveTrendsRunnerSchema.optional(),
+    aiCuration: AiCurationRunnerSchema.optional()
   })
   .superRefine((value, ctx) => {
     if (!value.sourceRepos?.length && !value.githubSearch && !value.ghArchiveTrends) {
@@ -134,6 +146,8 @@ const artifactFiles = {
   sourceCurationMarkdown: "source_curation_report.md",
   ideaSelectionJson: "idea_selection_report.json",
   ideaSelectionMarkdown: "idea_selection_report.md",
+  aiIdeaCurationJson: "ai_idea_curation_report.json",
+  aiIdeaCurationMarkdown: "ai_idea_curation_report.md",
   projectIdeasAuditJson: "project_ideas_audit.json",
   projectIdeasAuditMarkdown: "project_ideas_audit.md",
   repoInsights: "repo_insights.json",
@@ -580,6 +594,22 @@ export async function runProjectIdeaDiscovery(
     report: curatedReport,
     trendRadar: trendRadarArtifact
   });
+  if (parsed.aiCuration?.enabled) {
+    ensureEnvLoaded();
+  }
+  const aiIdeaCuration = parsed.aiCuration?.enabled
+    ? await runAiIdeaCuration({
+        sourceRepos: curatedReport.sourceRepos,
+        shortlist: curatedReport.shortlist,
+        ideaScores: curatedReport.ideaScores,
+        sourceCuration,
+        ideaSelection: curatedSelection.report,
+        domain: parsed.domain,
+        maxHiddenGems: parsed.aiCuration.maxHiddenGems,
+        timeoutMs: parsed.aiCuration.timeoutMs,
+        model: parsed.aiCuration.model
+      })
+    : null;
   const warnings = [
     ...(githubCollection?.diagnostics.warnings ?? []),
     ...(ghArchiveTrendResult?.diagnostics.warnings ?? []),
@@ -639,6 +669,20 @@ export async function runProjectIdeaDiscovery(
       ideaSelectionReportToMarkdown(curatedSelection.report),
       "utf8"
     ),
+    ...(aiIdeaCuration
+      ? [
+          writeFile(
+            join(outputDir, artifactFiles.aiIdeaCurationJson),
+            toJson(aiIdeaCuration),
+            "utf8"
+          ),
+          writeFile(
+            join(outputDir, artifactFiles.aiIdeaCurationMarkdown),
+            aiIdeaCurationReportToMarkdown(aiIdeaCuration),
+            "utf8"
+          )
+        ]
+      : []),
     writeFile(
       join(outputDir, artifactFiles.projectIdeasAuditJson),
       toJson(projectIdeasAudit),

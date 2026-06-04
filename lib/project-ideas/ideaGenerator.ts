@@ -78,17 +78,117 @@ function adjacentBlueprint(
   }
 
   if (
-    focusedText.includes("analytics") ||
-    focusedText.includes("dashboard") ||
-    focusedText.includes("warehouse") ||
-    focusedText.includes("business-intelligence") ||
-    focusedText.includes("data-modeling") ||
-    focusedText.includes("data analysts") ||
+    focusedText.includes("harness-native") ||
+    focusedText.includes("operator system") ||
+    focusedText.includes("ecc-universal") ||
+    focusedText.includes("hooks-runtime") ||
+    focusedText.includes("hookify") ||
+    focusedText.includes("opencode desktop") ||
+    focusedText.includes("node hooks fail")
+  ) {
+    return {
+      title: "Agent Harness Configuration Auditor",
+      problem:
+        "Agent-tool users install skills, hooks, memory, and workflow modules across Claude Code, Codex, OpenCode, and Cursor, but broken paths and mismatched configs silently destroy reliability.",
+      targetUsers: ["AI agent power users", "developer tooling operators"],
+      mvpScope: [
+        "ingest agent harness manifests, hook configs, install logs, and issue reports",
+        "detect broken hooks, missing modules, path portability failures, and unsafe config drift",
+        "produce a repair plan with reproducible checks per target CLI or desktop app"
+      ],
+      differentiation: [
+        "audits harness installation health instead of shipping another skill pack",
+        "targets cross-tool config reliability for real agent workflows",
+        "turns messy install failures into concrete compatibility checks"
+      ],
+      domains: ["AI agent tooling", "harness reliability", "developer workflow QA"],
+      researchQuestions: [
+        "Which harness config failures most often break agent workflows across CLIs and desktop apps?",
+        "How should agent hook systems expose portable, testable installation contracts?"
+      ],
+      aiLeverage: [
+        "clusters install logs and issue reports into root-cause categories",
+        "maps target-specific configs to repair and compatibility checklists"
+      ]
+    };
+  }
+
+  if (
+    focusedText.includes("live web") ||
+    focusedText.includes("refreshes regularly") ||
+    focusedText.includes("dataset from the live web") ||
+    focusedText.includes("schema inference") ||
+    focusedText.includes("populate orchestrator") ||
+    focusedText.includes("investigate subagents")
+  ) {
+    return {
+      title: "Dataset Freshness & Quality Monitor",
+      problem:
+        "Builders of live-web datasets need to know when refreshed data becomes stale, incomplete, wrongly inferred, or too expensive to regenerate.",
+      targetUsers: ["data product builders", "AI dataset operators"],
+      mvpScope: [
+        "ingest dataset refresh runs, schema inference output, and issue/config signals",
+        "detect freshness gaps, schema drift, extraction errors, and model-cost regressions",
+        "produce dataset health reports with owner actions before downstream use"
+      ],
+      differentiation: [
+        "monitors dataset health instead of building the dataset generator",
+        "connects refresh reliability, schema quality, and AI model cost in one readiness view",
+        "keeps dataset repair recommendations reviewable before automation"
+      ],
+      domains: ["AI datasets", "data quality", "live web monitoring"],
+      researchQuestions: [
+        "Which freshness and schema signals best predict unreliable live-web datasets?",
+        "How should AI-assisted dataset builders separate extraction errors from model-cost/config regressions?"
+      ],
+      aiLeverage: [
+        "summarizes schema and refresh anomalies into operator-ready causes",
+        "maps provider/model configuration issues to dataset quality and cost risks"
+      ]
+    };
+  }
+
+  if (
     focusedText.includes("data extraction") ||
     focusedText.includes("data-extraction") ||
     focusedText.includes("web scraping") ||
     focusedText.includes("scraping") ||
     focusedText.includes("crawler")
+  ) {
+    return {
+      title: "Web Extraction Drift Monitor",
+      problem:
+        "Scraping pipelines break when websites change markup, redirects, selectors, or anti-bot behavior, and teams need to catch extraction drift before bad data spreads.",
+      targetUsers: ["web data builders", "analytics engineers"],
+      mvpScope: [
+        "ingest scraping runs, selectors, extracted fields, and regression issue examples",
+        "detect selector drift, redirect failures, missing fields, and suspicious similarity-score changes",
+        "produce reproducible drift reports with fixture cases and next checks"
+      ],
+      differentiation: [
+        "monitors extraction drift instead of doing the scraping itself",
+        "targets web-data reliability before analytics or RAG ingestion",
+        "turns scraper bug reports into regression fixtures"
+      ],
+      domains: ["web scraping", "data quality", "extraction reliability"],
+      researchQuestions: [
+        "Which extraction drift signals best predict broken downstream datasets?",
+        "How should scraping pipelines distinguish website changes from parser regressions?"
+      ],
+      aiLeverage: [
+        "clusters scraper errors into likely drift and parser-regression causes",
+        "summarizes failing fields and selectors into operator-ready repair plans"
+      ]
+    };
+  }
+
+  if (
+    focusedText.includes("analytics") ||
+    focusedText.includes("dashboard") ||
+    focusedText.includes("warehouse") ||
+    focusedText.includes("business-intelligence") ||
+    focusedText.includes("data-modeling") ||
+    focusedText.includes("data analysts")
   ) {
     return {
       title: "AI Data Quality Investigation Agent",
@@ -313,7 +413,12 @@ function adjacentBlueprint(
     !focusedText.includes("data") &&
     !focusedText.includes("analytics") &&
     !focusedText.includes("dashboard") &&
-    !focusedText.includes("csv")
+    !focusedText.includes("csv") &&
+    !focusedText.includes("sandbox") &&
+    !focusedText.includes("container") &&
+    !focusedText.includes("startup") &&
+    !focusedText.includes("gpu") &&
+    !repoName.includes("nemoclaw")
   ) {
     return {
       title: "AI Agent Run QA Console",
@@ -338,6 +443,50 @@ function adjacentBlueprint(
       aiLeverage: [
         "clusters failed agent traces into actionable QA themes",
         "turns messy run logs into reproducible test and review cases"
+      ]
+    };
+  }
+
+  if (
+    (repoName.includes("nemoclaw") ||
+      focusedText.includes("agent") ||
+      focusedText.includes("agents") ||
+      focusedText.includes("runtime")) &&
+    (focusedText.includes("sandbox") ||
+      focusedText.includes("container") ||
+      focusedText.includes("network") ||
+      focusedText.includes("startup") ||
+      focusedText.includes("gpu")) &&
+    !focusedText.includes("shortvideo") &&
+    !focusedText.includes("short video") &&
+    !focusedText.includes("tiktok") &&
+    !focusedText.includes("moviepy") &&
+    !focusedText.includes("video generation") &&
+    !focusedText.includes("generate short videos")
+  ) {
+    return {
+      title: "Agent Sandbox Health Monitor",
+      problem:
+        "Teams running AI agents inside sandboxes need to catch startup failures, network misconfiguration, capability drops, and unsafe policy drift before live runs.",
+      targetUsers: ["AI agent platform teams", "sandboxed automation builders"],
+      mvpScope: [
+        "ingest sandbox startup logs, policy config, network checks, and failed run traces",
+        "detect startup failures, blocked capabilities, unsafe tool exposure, and environment drift",
+        "produce sandbox health reports with reproducible checks and release blockers"
+      ],
+      differentiation: [
+        "monitors sandbox health instead of building another agent runtime",
+        "targets the environment boundary where agent reliability and safety fail",
+        "turns sandbox issues into preflight checks before production runs"
+      ],
+      domains: ["AI agents", "sandbox reliability", "agent safety"],
+      researchQuestions: [
+        "Which sandbox health signals best predict unsafe or failed agent runs?",
+        "How should agent runtimes expose environment readiness before tool use begins?"
+      ],
+      aiLeverage: [
+        "clusters sandbox logs and issue traces into failure categories",
+        "maps environment checks to release blockers and remediation plans"
       ]
     };
   }
@@ -383,28 +532,28 @@ function adjacentBlueprint(
     focusedText.includes("generate short videos")
   ) {
     return {
-      title: "AI Short-Video Content QA Console",
+      title: "AI Video Script Quality Checker",
       problem:
-        "Teams using AI to generate short videos need to catch low-quality scripts, unsafe claims, weak source grounding, and repetitive output before publishing.",
+        "AI-generated video scripts often contain repetition, weak hooks, unsupported claims, or voiceover problems that are hard to catch before rendering and publishing.",
       targetUsers: ["content operations teams", "AI media builders"],
       mvpScope: [
-        "ingest generated scripts, prompts, voiceover text, and rendered video metadata",
-        "score claims, repetition, source grounding, brand fit, and publishing risk",
-        "produce a review queue with concrete fixes before export or upload"
+        "ingest generated scripts, prompts, voiceover text, and source notes",
+        "score repetition, claim support, hook strength, TTS fit, and publishing risk",
+        "produce script-level fixes before expensive rendering or upload"
       ],
       differentiation: [
-        "audits AI-generated media quality instead of generating another video",
-        "focuses on review, evidence, and publishing risk",
+        "audits video scripts instead of generating another video pipeline",
+        "focuses on the cheapest pre-render quality gate",
         "keeps human approval before public release"
       ],
       domains: ["AI media", "content operations", "publishing QA"],
       researchQuestions: [
-        "Which quality signals best predict whether AI-generated short videos are publishable?",
-        "How should automated media generation preserve claim grounding and brand safety?"
+        "Which script-level signals best predict whether AI-generated short videos are publishable?",
+        "How should automated media generation preserve claim grounding, voice fit, and brand safety before rendering?"
       ],
       aiLeverage: [
-        "classifies generated video scripts into quality and safety failure modes",
-        "turns prompt, transcript, and metadata evidence into reviewer actions"
+        "classifies generated scripts into quality and safety failure modes",
+        "turns prompts, transcripts, and source notes into reviewer actions"
       ]
     };
   }
