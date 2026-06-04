@@ -188,7 +188,8 @@ GitHub / GH Archive signals -> trend radar -> adjacent idea discovery -> anti-cl
     explanations for runner-up candidates.
   - Repo MRI realistic Bug Path fixtures include direct file hints, no-file-hint
     localization, similar symbol disambiguation, related test selection and
-    honest no-direct-test guidance.
+    honest no-direct-test guidance, plus indirect public-wrapper test
+    selection.
   - Bug Path now keeps symptom localization separate from call-graph
     `root_cause_candidates`, so heuristic CALLS evidence can suggest a called
     function without destabilizing the primary candidate ranking.

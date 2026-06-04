@@ -20,6 +20,7 @@ type BugPathFixture = {
   expectedSymbol: string;
   expectedTestFile: string | null;
   requiresCallGraph?: boolean;
+  requiresIndirectTest?: boolean;
   expectedRootCauseFile?: string;
   expectedRootCauseSymbol?: string;
 };
@@ -102,6 +103,7 @@ type CaseResult = {
   relatedTestFileHit: boolean;
   noDirectTestHonesty: boolean;
   callGraphRootCauseHit: boolean;
+  indirectRelatedTestHit: boolean;
   evidenceComplete: boolean;
   lineRangeComplete: boolean;
   relatedTestsComplete: boolean;
@@ -509,6 +511,63 @@ const fixtures: BugPathFixture[] = [
         content: "SUPER_SECRET_TOKEN=do-not-index\n"
       }
     ]
+  },
+  {
+    id: "python_quote_api_indirect_test",
+    repoName: "quote_service",
+    expectedFile: "pricing/rules.py",
+    expectedSymbol: "normalize_discount_code",
+    expectedTestFile: "tests/test_quote_api.py",
+    requiresIndirectTest: true,
+    searchQuery: "quote api discount code whitespace still accepted",
+    issue:
+      "Quote API returns 500 when a discount code contains surrounding whitespace; discount code should be normalized before pricing",
+    files: [
+      {
+        path: "quote_api.py",
+        content: [
+          "from pricing.rules import price_with_discount",
+          "",
+          "",
+          "def apply_quote(request: dict) -> dict:",
+          "    total = price_with_discount(request['subtotal'], request.get('discount_code'))",
+          "    return {'total': total}"
+        ].join("\n")
+      },
+      {
+        path: "pricing/rules.py",
+        content: [
+          "def normalize_discount_code(code: str | None) -> str | None:",
+          "    if code is None:",
+          "        return None",
+          "    if code != code.strip():",
+          "        raise ValueError('discount code whitespace')",
+          "    return code.upper()",
+          "",
+          "",
+          "def price_with_discount(subtotal: float, discount_code: str | None) -> float:",
+          "    normalized = normalize_discount_code(discount_code)",
+          "    if normalized == 'SAVE10':",
+          "        return subtotal * 0.9",
+          "    return subtotal"
+        ].join("\n")
+      },
+      {
+        path: "tests/test_quote_api.py",
+        content: [
+          "from quote_api import apply_quote",
+          "",
+          "",
+          "def test_quote_api_accepts_discount_code_with_surrounding_whitespace():",
+          "    result = apply_quote({'subtotal': 100.0, 'discount_code': ' SAVE10 '})",
+          "    assert result['total'] == 90.0"
+        ].join("\n")
+      },
+      {
+        path: ".env",
+        content: "SUPER_SECRET_TOKEN=do-not-index\n"
+      }
+    ]
   }
 ];
 
@@ -681,16 +740,23 @@ async function evaluateFixture(input: {
   );
   const expectsDirectTest = input.fixture.expectedTestFile !== null;
   const requiresCallGraph = input.fixture.requiresCallGraph === true;
-  const top5TestFileHit = expectsDirectTest
-    ? top5.some((candidate) => candidate.path === input.fixture.expectedTestFile)
-    : top5.every(
-        (candidate) => !candidate.path.includes("test") && !candidate.path.includes("spec")
-      );
+  const requiresIndirectTest = input.fixture.requiresIndirectTest === true;
   const expectedSourceCandidates = candidates.filter(
     (candidate) =>
       candidate.path === input.fixture.expectedFile &&
       candidate.symbol === input.fixture.expectedSymbol
   );
+  const relatedTestForExpectedCandidateHit = expectedSourceCandidates.some((candidate) =>
+    (candidate.related_tests ?? []).some(
+      (relatedTest) => relatedTest.path === input.fixture.expectedTestFile
+    )
+  );
+  const top5TestFileHit = expectsDirectTest
+    ? top5.some((candidate) => candidate.path === input.fixture.expectedTestFile) ||
+      relatedTestForExpectedCandidateHit
+    : top5.every(
+        (candidate) => !candidate.path.includes("test") && !candidate.path.includes("spec")
+      );
   const topCandidateHasNoRelatedTests = (top?.related_tests ?? []).length === 0;
   const noDirectTestHonesty =
     expectsDirectTest ||
@@ -703,12 +769,19 @@ async function evaluateFixture(input: {
       topRootCause.path === input.fixture.expectedRootCauseFile &&
       topRootCause.symbol === input.fixture.expectedRootCauseSymbol &&
       topRootCause.evidence.some((evidence) => evidence.includes("call graph:")));
-  const relatedTestFileHit = expectsDirectTest
-    ? expectedSourceCandidates.some((candidate) =>
-        (candidate.related_tests ?? []).some(
-          (relatedTest) => relatedTest.path === input.fixture.expectedTestFile
-        )
+  const indirectRelatedTestHit =
+    !requiresIndirectTest ||
+    expectedSourceCandidates.some((candidate) =>
+      (candidate.related_tests ?? []).some(
+        (relatedTest) =>
+          relatedTest.path === input.fixture.expectedTestFile &&
+          !relatedTest.evidence.some((evidence) =>
+            evidence.includes(`test content match: ${input.fixture.expectedSymbol}`)
+          )
       )
+    );
+  const relatedTestFileHit = expectsDirectTest
+    ? relatedTestForExpectedCandidateHit
     : noDirectTestHonesty;
   const evidenceComplete =
     candidates.length > 0 &&
@@ -744,6 +817,7 @@ async function evaluateFixture(input: {
     relatedTestFileHit &&
     noDirectTestHonesty &&
     callGraphRootCauseHit &&
+    indirectRelatedTestHit &&
     evidenceComplete &&
     lineRangeComplete &&
     relatedTestsComplete &&
@@ -763,6 +837,7 @@ async function evaluateFixture(input: {
     secretSearchHitCount: secretSearchResults.length,
     expectsDirectTest,
     requiresCallGraph,
+    requiresIndirectTest,
     topCandidatePath: top?.path ?? null,
     topCandidateSymbol: top?.symbol ?? null,
     topCandidateEvidence: top?.evidence ?? [],
@@ -796,6 +871,7 @@ async function evaluateFixture(input: {
     relatedTestFileHit,
     noDirectTestHonesty,
     callGraphRootCauseHit,
+    indirectRelatedTestHit,
     evidenceComplete,
     lineRangeComplete,
     relatedTestsComplete,
@@ -825,6 +901,7 @@ function renderMarkdownReport(input: {
   relatedTestAccuracy: number;
   noDirectTestHonestyRate: number;
   callGraphRootCauseAccuracy: number;
+  indirectRelatedTestAccuracy: number;
   evidenceCompleteness: number;
   lineRangeCompleteness: number;
   relatedTestsCompleteness: number;
@@ -844,10 +921,11 @@ function renderMarkdownReport(input: {
     `Top-1 symbol accuracy: ${pct(input.top1SymbolAccuracy)}`,
     `Top-3 file accuracy: ${pct(input.top3FileAccuracy)}`,
     `Top-3 symbol accuracy: ${pct(input.top3SymbolAccuracy)}`,
-    `Top-5 test file accuracy: ${pct(input.top5TestFileAccuracy)}`,
+    `Test file reachability: ${pct(input.top5TestFileAccuracy)}`,
     `Related test accuracy: ${pct(input.relatedTestAccuracy)}`,
     `No-direct-test honesty rate: ${pct(input.noDirectTestHonestyRate)}`,
     `Call graph root-cause accuracy: ${pct(input.callGraphRootCauseAccuracy)}`,
+    `Indirect related-test accuracy: ${pct(input.indirectRelatedTestAccuracy)}`,
     `Evidence completeness: ${pct(input.evidenceCompleteness)}`,
     `Line range completeness: ${pct(input.lineRangeCompleteness)}`,
     `Related tests completeness: ${pct(input.relatedTestsCompleteness)}`,
@@ -871,6 +949,7 @@ function renderMarkdownReport(input: {
     lines.push(`- Secret search hits: ${result.secretSearchHitCount}`);
     lines.push(`- Expects direct test: ${result.expectsDirectTest ? "yes" : "no"}`);
     lines.push(`- Requires call graph: ${result.requiresCallGraph ? "yes" : "no"}`);
+    lines.push(`- Requires indirect test: ${result.requiresIndirectTest ? "yes" : "no"}`);
     lines.push(`- Top candidate: ${result.topCandidatePath ?? "none"} / ${result.topCandidateSymbol ?? "none"}`);
     lines.push(`- Top candidate evidence: ${result.topCandidateEvidence.join(" | ") || "none"}`);
     lines.push(`- Top candidate next actions: ${result.topCandidateNextActions.join(" | ") || "none"}`);
@@ -898,7 +977,7 @@ function renderMarkdownReport(input: {
     lines.push(`- Top-1 symbol hit: ${result.top1SymbolHit ? "yes" : "no"}`);
     lines.push(`- Top-3 file hit: ${result.top3FileHit ? "yes" : "no"}`);
     lines.push(`- Top-3 symbol hit: ${result.top3SymbolHit ? "yes" : "no"}`);
-    lines.push(`- Top-5 test file hit: ${result.top5TestFileHit ? "yes" : "no"}`);
+    lines.push(`- Test file reachable: ${result.top5TestFileHit ? "yes" : "no"}`);
     lines.push(`- Related test file hit: ${result.relatedTestFileHit ? "yes" : "no"}`);
     lines.push(
       `- No-direct-test honesty: ${
@@ -908,6 +987,11 @@ function renderMarkdownReport(input: {
     lines.push(
       `- Call graph root cause hit: ${
         result.requiresCallGraph ? (result.callGraphRootCauseHit ? "yes" : "no") : "n/a"
+      }`
+    );
+    lines.push(
+      `- Indirect related test hit: ${
+        result.requiresIndirectTest ? (result.indirectRelatedTestHit ? "yes" : "no") : "n/a"
       }`
     );
     lines.push(`- Evidence complete: ${result.evidenceComplete ? "yes" : "no"}`);
@@ -971,6 +1055,13 @@ async function main() {
           .map((result) => result.callGraphRootCauseHit)
       ).toFixed(3)
     ),
+    indirectRelatedTestAccuracy: Number(
+      averageBooleans(
+        results
+          .filter((result) => result.requiresIndirectTest)
+          .map((result) => result.indirectRelatedTestHit)
+      ).toFixed(3)
+    ),
     evidenceCompleteness: Number(averageBooleans(results.map((result) => result.evidenceComplete)).toFixed(3)),
     lineRangeCompleteness: Number(averageBooleans(results.map((result) => result.lineRangeComplete)).toFixed(3)),
     relatedTestsCompleteness: Number(averageBooleans(results.map((result) => result.relatedTestsComplete)).toFixed(3)),
@@ -996,10 +1087,11 @@ async function main() {
       `Top-1 symbol accuracy: ${pct(report.top1SymbolAccuracy)}`,
       `Top-3 file accuracy: ${pct(report.top3FileAccuracy)}`,
       `Top-3 symbol accuracy: ${pct(report.top3SymbolAccuracy)}`,
-      `Top-5 test file accuracy: ${pct(report.top5TestFileAccuracy)}`,
+      `Test file reachability: ${pct(report.top5TestFileAccuracy)}`,
       `Related test accuracy: ${pct(report.relatedTestAccuracy)}`,
       `No-direct-test honesty rate: ${pct(report.noDirectTestHonestyRate)}`,
       `Call graph root-cause accuracy: ${pct(report.callGraphRootCauseAccuracy)}`,
+      `Indirect related-test accuracy: ${pct(report.indirectRelatedTestAccuracy)}`,
       `Evidence completeness: ${pct(report.evidenceCompleteness)}`,
       `Line range completeness: ${pct(report.lineRangeCompleteness)}`,
       `Related tests completeness: ${pct(report.relatedTestsCompleteness)}`,
