@@ -48,6 +48,11 @@ Last updated: 2026-06-02
   questions fail before research spend.
 - Keep architecture judge scoring in the project architecture benchmark so
   schema-valid but generic architectures fail before implementation planning.
+- Keep `npm run benchmark:project-bucket-relevance` in the project pipeline so
+  bucket-specific false positives fail before weak papers become PRD or
+  architecture evidence. Track `project-bucket-relevance-latest.json`,
+  `project-bucket-relevance-latest.md`, `falsePositiveRejectRate` and
+  `truePositiveAcceptRate` as hard relevance regression signals.
 - Keep controlled live GH Archive batch sampling in `npm run benchmark:project-live-batch`,
   with strict byte caps, cached GitHub enrichment, `controlled_live_batch_summary.json`,
   `controlled_live_batch_summary.md`, and decision metrics such as `trendRepoCount`,

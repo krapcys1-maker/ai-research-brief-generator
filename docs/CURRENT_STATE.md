@@ -177,6 +177,12 @@ GitHub / GH Archive signals -> trend radar -> adjacent idea discovery -> anti-cl
     spend.
   - `npm run project:research` turns `ProjectIdeaInput` into research brief,
     PRD and architecture artifacts.
+  - `npm run benchmark:project-bucket-relevance` checks bucket-level
+    false-positive and true-positive fixtures before research papers can count
+    as evidence for PRD or architecture. It writes
+    `project-bucket-relevance-latest.json` and
+    `project-bucket-relevance-latest.md`, including
+    `falsePositiveRejectRate` and `truePositiveAcceptRate`.
   - Architecture judge artifacts compare generated architecture against PRD and
     research evidence, then fail generic schema-valid architectures in the
     project architecture benchmark.

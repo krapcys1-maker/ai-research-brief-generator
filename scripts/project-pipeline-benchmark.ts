@@ -95,6 +95,12 @@ const benchmarkDefinitions: BenchmarkDefinition[] = [
     jsonPath: "benchmark-results/project-research-evidence-latest.json"
   },
   {
+    id: "project_bucket_relevance",
+    label: "ProjectBucketRelevance",
+    npmScript: "benchmark:project-bucket-relevance",
+    jsonPath: "benchmark-results/project-bucket-relevance-latest.json"
+  },
+  {
     id: "research_brief",
     label: "ProjectResearchBrief",
     npmScript: "benchmark:project-research-brief",
@@ -235,6 +241,8 @@ function extractKeyMetrics(report: Record<string, unknown>) {
     "briefSchemaValidCount",
     "readyForArchitectureCount",
     "averageBucketCoverage",
+    "falsePositiveRejectRate",
+    "truePositiveAcceptRate",
     "averageRequiredCoverage",
     "averageArtifactCompleteness",
     "schemaValidCount",

@@ -36,6 +36,7 @@ const requiredScripts = [
   "benchmark:project-ideas",
   "benchmark:project-ai-ideas",
   "benchmark:project-live-batch",
+  "benchmark:project-bucket-relevance",
   "benchmark:project-architecture"
 ];
 
@@ -72,7 +73,9 @@ const requiredArtifacts = [
   "project-repo-mri-local-checkout-latest.json",
   "project-repo-mri-local-checkout-latest.md",
   "project-repo-mri-github-checkout-latest.json",
-  "project-repo-mri-github-checkout-latest.md"
+  "project-repo-mri-github-checkout-latest.md",
+  "project-bucket-relevance-latest.json",
+  "project-bucket-relevance-latest.md"
 ];
 
 const requiredMetrics = [
@@ -109,7 +112,9 @@ const requiredMetrics = [
   "sourceRepoCount",
   "blockerCount",
   "sourceEvidenceQuality",
-  "reviewFlags"
+  "reviewFlags",
+  "falsePositiveRejectRate",
+  "truePositiveAcceptRate"
 ];
 
 async function writeTextFile(path: string, content: string) {
