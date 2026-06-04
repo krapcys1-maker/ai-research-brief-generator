@@ -11,6 +11,7 @@ export * from "@/lib/project-ideas/noveltyGuard";
 export * from "@/lib/project-ideas/ranker";
 export * from "@/lib/project-ideas/runner";
 export * from "@/lib/project-ideas/selectionCurator";
+export * from "@/lib/project-ideas/fullPassSelection";
 export * from "@/lib/project-ideas/githubCollector";
 export * from "@/lib/project-ideas/markdown";
 export * from "@/lib/project-ideas/ghArchiveTrendCollector";

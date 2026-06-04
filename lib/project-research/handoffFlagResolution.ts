@@ -1,20 +1,136 @@
 import type {
   HandoffFlagResolution,
+  ProjectIdeaInput,
   ProjectIdeaHandoffContext,
   ReviewedPaper
 } from "@/lib/project-research/types";
 
 type ProposalInput = {
+  idea?: ProjectIdeaInput;
   handoffContext?: ProjectIdeaHandoffContext;
+  requiredBucketIds: string[];
   requiredCoveredCount: number;
   requiredBucketCount: number;
   requiredBucketsWithoutParsedFullText: string[];
   parsedFullTextCount: number;
   minParsedPapers: number;
   reviewedPapers: ReviewedPaper[];
+  paperTextsById?: Record<string, string>;
 };
 
 const RESOLVED_STATUS = "replaced_by_stronger_evidence" satisfies HandoffFlagResolution["status"];
+const STRONG_EVIDENCE = new Set<ReviewedPaper["evidenceStrength"]>([
+  "full_text_strong",
+  "full_text_partial"
+]);
+const STOP_TERMS = new Set([
+  "and",
+  "for",
+  "from",
+  "how",
+  "the",
+  "with",
+  "system",
+  "systems",
+  "monitor",
+  "quality",
+  "project",
+  "tool",
+  "tools"
+]);
+
+const BUCKET_HINTS: Record<string, string[]> = {
+  context_compression_fidelity: [
+    "context",
+    "compression",
+    "compress",
+    "fidelity",
+    "retention",
+    "summarization",
+    "summary"
+  ],
+  token_budget_tradeoffs: [
+    "token",
+    "budget",
+    "context",
+    "compression",
+    "cost",
+    "efficient",
+    "attention"
+  ],
+  agent_task_success: [
+    "agent",
+    "task",
+    "success",
+    "workflow",
+    "llm",
+    "language",
+    "model"
+  ],
+  rag_evidence_loss: [
+    "retrieval",
+    "augmented",
+    "generation",
+    "rag",
+    "evidence",
+    "faithfulness",
+    "hallucination"
+  ]
+};
+
+function normalize(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function tokenize(value: string) {
+  return normalize(value)
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((term) => term.length > 2 && !STOP_TERMS.has(term));
+}
+
+function uniqueTerms(values: string[]) {
+  return Array.from(new Set(values.flatMap(tokenize)));
+}
+
+function bucketTerms(bucketId: string) {
+  return uniqueTerms([bucketId, ...(BUCKET_HINTS[bucketId] ?? [])]);
+}
+
+function ideaTerms(idea?: ProjectIdeaInput) {
+  if (!idea) {
+    return [];
+  }
+
+  return uniqueTerms([idea.title, idea.description, ...idea.preferredDomains]).slice(
+    0,
+    24
+  );
+}
+
+function paperText(input: ProposalInput, paper: ReviewedPaper) {
+  return normalize(
+    [
+      paper.title,
+      paper.keyMethods.join(" "),
+      input.paperTextsById?.[paper.paperId] ?? ""
+    ].join(" ")
+  );
+}
+
+function hasRelevantBucketSignal(input: ProposalInput, paper: ReviewedPaper) {
+  const text = paperText(input, paper);
+  const projectTerms = ideaTerms(input.idea);
+
+  return paper.bucketIds.some((bucketId) => {
+    const bucketHits = bucketTerms(bucketId).filter((term) => text.includes(term));
+    const projectHits = projectTerms.filter((term) => text.includes(term));
+
+    return bucketHits.length >= 1 && projectHits.length >= 1;
+  });
+}
 
 function strongestEvidenceIds(papers: ReviewedPaper[]) {
   const strengthRank = new Map([
@@ -26,7 +142,7 @@ function strongestEvidenceIds(papers: ReviewedPaper[]) {
   ]);
 
   return [...papers]
-    .filter((paper) => paper.usefulForProject)
+    .filter((paper) => paper.usefulForProject && STRONG_EVIDENCE.has(paper.evidenceStrength))
     .sort(
       (left, right) =>
         (strengthRank.get(right.evidenceStrength) ?? 0) -
@@ -36,12 +152,41 @@ function strongestEvidenceIds(papers: ReviewedPaper[]) {
     .map((paper) => paper.paperId);
 }
 
+function requiredBucketsHaveRelevantParsedEvidence(input: ProposalInput) {
+  const requiredBucketIds =
+    input.requiredBucketIds.length > 0
+      ? input.requiredBucketIds
+      : Array.from(new Set(input.reviewedPapers.flatMap((paper) => paper.bucketIds)));
+
+  return requiredBucketIds.every((bucketId) =>
+    input.reviewedPapers.some(
+      (paper) =>
+        paper.bucketIds.includes(bucketId) &&
+        paper.usefulForProject &&
+        paper.fullTextStatus === "parsed" &&
+        STRONG_EVIDENCE.has(paper.evidenceStrength) &&
+        hasRelevantBucketSignal(input, paper)
+    )
+  );
+}
+
+function relevantStrongEvidence(input: ProposalInput) {
+  return input.reviewedPapers.filter(
+    (paper) =>
+      paper.usefulForProject &&
+      paper.fullTextStatus === "parsed" &&
+      STRONG_EVIDENCE.has(paper.evidenceStrength) &&
+      hasRelevantBucketSignal(input, paper)
+  );
+}
+
 function researchEvidenceIsStrongEnough(input: ProposalInput) {
   return (
     input.requiredBucketCount > 0 &&
     input.requiredCoveredCount === input.requiredBucketCount &&
     input.requiredBucketsWithoutParsedFullText.length === 0 &&
-    input.parsedFullTextCount >= input.minParsedPapers
+    input.parsedFullTextCount >= input.minParsedPapers &&
+    requiredBucketsHaveRelevantParsedEvidence(input)
   );
 }
 
@@ -55,6 +200,9 @@ function unresolvedRationale(input: ProposalInput) {
       : null,
     input.parsedFullTextCount < input.minParsedPapers
       ? `parsed full-text below target: ${input.parsedFullTextCount}/${input.minParsedPapers}`
+      : null,
+    !requiredBucketsHaveRelevantParsedEvidence(input)
+      ? "missing relevant parsed full-text evidence for every required bucket"
       : null
   ].filter(Boolean);
 
@@ -72,7 +220,7 @@ export function proposeHandoffFlagResolutions(
     return [];
   }
 
-  const evidenceIds = strongestEvidenceIds(input.reviewedPapers);
+  const evidenceIds = strongestEvidenceIds(relevantStrongEvidence(input));
   const canReplaceWeakSourceSignal =
     researchEvidenceIsStrongEnough(input) && evidenceIds.length > 0;
 

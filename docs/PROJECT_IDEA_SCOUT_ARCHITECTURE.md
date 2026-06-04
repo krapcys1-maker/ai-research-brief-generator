@@ -405,6 +405,20 @@ buckets without parsed full-text and reviewed papers. They are intentionally not
 silently applied to the pack; they are audit artifacts that can be inspected
 before being passed as `handoffFlagResolutions`.
 
+The full-pass runner supports explicit idea selection modes:
+
+```text
+--selection-mode ready
+--selection-mode top
+--selection-mode needs-review
+```
+
+`ready` keeps the default safe handoff behavior. `needs-review` deliberately
+selects a flagged idea when available, so the run can test whether research
+actually resolves weak GitHub/source evidence. Handoff resolution proposals also
+require relevant parsed full-text evidence per required bucket; numeric coverage
+alone is not enough to mark a flagged handoff as resolved.
+
 The exported project pack also writes:
 
 ```text

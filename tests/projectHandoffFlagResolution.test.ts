@@ -38,16 +38,40 @@ function paper(id: string, strength: ReviewedPaper["evidenceStrength"]): Reviewe
 describe("handoff flag resolution proposal", () => {
   it("proposes replacing weak source evidence when research coverage and parsed full text are strong", () => {
     const resolutions = proposeHandoffFlagResolutions({
+      idea: {
+        title: "LLM Context Budget QA Monitor",
+        description:
+          "Monitor context compression, token budget tradeoffs, agent task success, and RAG evidence loss.",
+        constraints: [],
+        preferredDomains: ["llm developer tools"],
+        outputLanguage: "pl"
+      },
       handoffContext,
+      requiredBucketIds: ["context_compression_fidelity"],
       requiredCoveredCount: 4,
       requiredBucketCount: 4,
       requiredBucketsWithoutParsedFullText: [],
       parsedFullTextCount: 3,
       minParsedPapers: 3,
       reviewedPapers: [
-        paper("strong_1", "full_text_strong"),
-        paper("partial_1", "full_text_partial")
-      ]
+        {
+          ...paper("strong_1", "full_text_strong"),
+          title: "Context compression fidelity for large language model agents",
+          fullTextStatus: "parsed",
+          bucketIds: ["context_compression_fidelity"]
+        },
+        {
+          ...paper("partial_1", "full_text_partial"),
+          title: "Token budget tradeoffs in long context language models",
+          fullTextStatus: "parsed",
+          bucketIds: ["context_compression_fidelity"]
+        }
+      ],
+      paperTextsById: {
+        strong_1:
+          "large language model context compression fidelity retention agent workflow",
+        partial_1: "token budget context compression large language model"
+      }
     });
 
     expect(resolutions).toHaveLength(1);
@@ -57,7 +81,16 @@ describe("handoff flag resolution proposal", () => {
 
   it("keeps flags unresolved when required research evidence is incomplete", () => {
     const resolutions = proposeHandoffFlagResolutions({
+      idea: {
+        title: "LLM Context Budget QA Monitor",
+        description:
+          "Monitor context compression, token budget tradeoffs, agent task success, and RAG evidence loss.",
+        constraints: [],
+        preferredDomains: ["llm developer tools"],
+        outputLanguage: "pl"
+      },
       handoffContext,
+      requiredBucketIds: ["risk_governance"],
       requiredCoveredCount: 2,
       requiredBucketCount: 4,
       requiredBucketsWithoutParsedFullText: ["risk_governance"],
@@ -74,7 +107,15 @@ describe("handoff flag resolution proposal", () => {
 
   it("does not create proposal rows when there are no review flags", () => {
     const resolutions = proposeHandoffFlagResolutions({
+      idea: {
+        title: "LLM Context Budget QA Monitor",
+        description: "Monitor context compression evidence loss.",
+        constraints: [],
+        preferredDomains: ["llm developer tools"],
+        outputLanguage: "pl"
+      },
       handoffContext: { ...handoffContext, reviewFlags: [] },
+      requiredBucketIds: ["context_compression_fidelity"],
       requiredCoveredCount: 4,
       requiredBucketCount: 4,
       requiredBucketsWithoutParsedFullText: [],
@@ -84,5 +125,40 @@ describe("handoff flag resolution proposal", () => {
     });
 
     expect(resolutions).toEqual([]);
+  });
+
+  it("does not resolve flags when parsed full-text is topically weak", () => {
+    const resolutions = proposeHandoffFlagResolutions({
+      idea: {
+        title: "LLM Context Budget QA Monitor",
+        description: "Monitor context compression and RAG evidence loss.",
+        constraints: [],
+        preferredDomains: ["llm developer tools"],
+        outputLanguage: "pl"
+      },
+      handoffContext,
+      requiredBucketIds: ["context_compression_fidelity"],
+      requiredCoveredCount: 1,
+      requiredBucketCount: 1,
+      requiredBucketsWithoutParsedFullText: [],
+      parsedFullTextCount: 1,
+      minParsedPapers: 1,
+      reviewedPapers: [
+        {
+          ...paper("weak_match", "full_text_partial"),
+          title: "X-ray computed tomography",
+          fullTextStatus: "parsed",
+          bucketIds: ["context_compression_fidelity"]
+        }
+      ],
+      paperTextsById: {
+        weak_match: "x-ray computed tomography imaging reconstruction"
+      }
+    });
+
+    expect(resolutions[0]?.status).toBe("unresolved");
+    expect(resolutions[0]?.rationale).toContain(
+      "missing relevant parsed full-text evidence"
+    );
   });
 });

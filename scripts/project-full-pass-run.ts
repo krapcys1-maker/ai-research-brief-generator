@@ -1,6 +1,8 @@
 import {
+  FullPassSelectionMode,
   ProjectIdeaLiveBatchSamplerInputSchema,
-  runControlledLiveBatchSampling
+  runControlledLiveBatchSampling,
+  selectIdeaForFullPass
 } from "@/lib/project-ideas";
 import { runProjectIdeaDiscovery } from "@/lib/project-ideas/runner";
 import type { IdeaDiscoveryReport } from "@/lib/project-ideas/types";
@@ -36,6 +38,7 @@ type CliArgs = {
   fullTextLimit: number;
   minParsedPapers: number;
   iterations: number;
+  selectionMode: FullPassSelectionMode;
 };
 
 type ResearchIteration = {
@@ -99,7 +102,11 @@ function parseArgs(argv: string[]): CliArgs {
     maxPapers: Number(get("--max-papers") ?? 72),
     fullTextLimit: Number(get("--fulltext-limit") ?? 12),
     minParsedPapers: Number(get("--min-parsed-papers") ?? 3),
-    iterations: Number(get("--iterations") ?? 3)
+    iterations: Number(get("--iterations") ?? 3),
+    selectionMode:
+      Object.values(FullPassSelectionMode).find(
+        (mode) => mode === get("--selection-mode")
+      ) ?? FullPassSelectionMode.Ready
   };
 }
 
@@ -166,31 +173,6 @@ function addFocusedQueries(input: {
 
 async function readJson<T>(path: string): Promise<T> {
   return JSON.parse(await readFile(path, "utf8")) as T;
-}
-
-function chooseIdea(report: IdeaDiscoveryReport) {
-  const scoreById = new Map(report.ideaScores.map((score) => [score.ideaId, score]));
-  const handoffById = new Map(
-    report.projectIdeaHandoffQuality.map((quality) => [quality.ideaId, quality])
-  );
-
-  return report.shortlist
-    .map((idea, index) => ({
-      idea,
-      projectIdeaInput: report.projectIdeaInputs[index],
-      score: scoreById.get(idea.ideaId),
-      handoff: handoffById.get(idea.ideaId)
-    }))
-    .filter((candidate) => candidate.projectIdeaInput)
-    .sort((left, right) => {
-      const leftReady = left.handoff?.readiness === "ready" ? 1 : 0;
-      const rightReady = right.handoff?.readiness === "ready" ? 1 : 0;
-      return (
-        rightReady - leftReady ||
-        (right.handoff?.score ?? 0) - (left.handoff?.score ?? 0) ||
-        (right.score?.total ?? 0) - (left.score?.total ?? 0)
-      );
-    })[0];
 }
 
 async function searchAndIngestIteration(input: {
@@ -302,13 +284,18 @@ async function searchAndIngestIteration(input: {
     .filter((bucket) => bucket.status === "covered" && bucket.parsedCount === 0)
     .map((bucket) => bucket.bucketId);
   const handoffFlagResolutionProposal = proposeHandoffFlagResolutions({
+    idea: input.idea,
     handoffContext: input.handoffContext,
+    requiredBucketIds: coverage.buckets.map((bucket) => bucket.bucketId),
     requiredCoveredCount: manifest.requiredCoveredCount,
     requiredBucketCount: manifest.requiredBucketCount,
     requiredBucketsWithoutParsedFullText,
     parsedFullTextCount,
     minParsedPapers: input.minParsedPapers,
-    reviewedPapers
+    reviewedPapers,
+    paperTextsById: Object.fromEntries(
+      papersForResearch.map((paper) => [paper.id, paperText(paper)])
+    )
   });
 
   await Promise.all([
@@ -484,7 +471,7 @@ async function main() {
   const ideaReport = await readJson<IdeaDiscoveryReport>(
     join(ideasDir, "idea_discovery_report.json")
   );
-  const selected = chooseIdea(ideaReport);
+  const selected = selectIdeaForFullPass(ideaReport, args.selectionMode);
 
   if (!selected?.projectIdeaInput) {
     throw new Error("No valid shortlisted ProjectIdeaInput to research.");
