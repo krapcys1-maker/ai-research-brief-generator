@@ -22,6 +22,10 @@ export type FullPassSelectedIdea = {
   handoff?: ProjectIdeaHandoffQuality;
 };
 
+export type FullPassSelectionOptions = {
+  titleIncludes?: string;
+};
+
 function candidateRank(input: {
   score?: IdeaScore;
   handoff?: ProjectIdeaHandoffQuality;
@@ -31,7 +35,8 @@ function candidateRank(input: {
 
 export function selectIdeaForFullPass(
   report: IdeaDiscoveryReport,
-  mode: FullPassSelectionMode
+  mode: FullPassSelectionMode,
+  options: FullPassSelectionOptions = {}
 ): FullPassSelectedIdea | undefined {
   const scoreById = new Map(report.ideaScores.map((score) => [score.ideaId, score]));
   const handoffById = new Map(
@@ -50,7 +55,15 @@ export function selectIdeaForFullPass(
         candidate.projectIdeaInput !== undefined
     );
 
-  const sorted = [...candidates].sort(
+  const filteredCandidates = options.titleIncludes
+    ? candidates.filter((candidate) =>
+        candidate.idea.title
+          .toLowerCase()
+          .includes(options.titleIncludes!.toLowerCase())
+      )
+    : candidates;
+  const selectable = filteredCandidates.length > 0 ? filteredCandidates : candidates;
+  const sorted = [...selectable].sort(
     (left, right) => candidateRank(right) - candidateRank(left)
   );
 

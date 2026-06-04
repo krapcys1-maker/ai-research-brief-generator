@@ -161,4 +161,38 @@ describe("handoff flag resolution proposal", () => {
       "missing relevant parsed full-text evidence"
     );
   });
+
+  it("does not resolve agent task success with a generic LLM technical report", () => {
+    const resolutions = proposeHandoffFlagResolutions({
+      idea: {
+        title: "LLM Context Budget QA Monitor",
+        description:
+          "Monitor context compression, agent task success, tool use and RAG evidence loss.",
+        constraints: [],
+        preferredDomains: ["agent reliability", "llm context engineering"],
+        outputLanguage: "pl"
+      },
+      handoffContext,
+      requiredBucketIds: ["agent_task_success"],
+      requiredCoveredCount: 1,
+      requiredBucketCount: 1,
+      requiredBucketsWithoutParsedFullText: [],
+      parsedFullTextCount: 1,
+      minParsedPapers: 1,
+      reviewedPapers: [
+        {
+          ...paper("qwen_report", "full_text_partial"),
+          title: "Qwen Technical Report",
+          fullTextStatus: "parsed",
+          bucketIds: ["agent_task_success"]
+        }
+      ],
+      paperTextsById: {
+        qwen_report:
+          "large language model pretraining benchmark parameter scaling model evaluation"
+      }
+    });
+
+    expect(resolutions[0]?.status).toBe("unresolved");
+  });
 });

@@ -39,6 +39,7 @@ type CliArgs = {
   minParsedPapers: number;
   iterations: number;
   selectionMode: FullPassSelectionMode;
+  ideaTitleContains?: string;
 };
 
 type ResearchIteration = {
@@ -106,7 +107,8 @@ function parseArgs(argv: string[]): CliArgs {
     selectionMode:
       Object.values(FullPassSelectionMode).find(
         (mode) => mode === get("--selection-mode")
-      ) ?? FullPassSelectionMode.Ready
+      ) ?? FullPassSelectionMode.Ready,
+    ideaTitleContains: get("--idea-title-contains")
   };
 }
 
@@ -471,7 +473,9 @@ async function main() {
   const ideaReport = await readJson<IdeaDiscoveryReport>(
     join(ideasDir, "idea_discovery_report.json")
   );
-  const selected = selectIdeaForFullPass(ideaReport, args.selectionMode);
+  const selected = selectIdeaForFullPass(ideaReport, args.selectionMode, {
+    titleIncludes: args.ideaTitleContains
+  });
 
   if (!selected?.projectIdeaInput) {
     throw new Error("No valid shortlisted ProjectIdeaInput to research.");
@@ -545,7 +549,10 @@ async function main() {
         : "required evidence buckets covered",
       result.manifest.architectureJudgeVerdict === "pass"
         ? "architecture judge passed"
-        : "architecture judge needs improvement"
+        : "architecture judge needs improvement",
+      countUnresolvedProposal(result.handoffFlagResolutionProposal) > 0
+        ? `handoff proposal still unresolved: ${countUnresolvedProposal(result.handoffFlagResolutionProposal)}`
+        : "handoff proposal has no unresolved flags"
     ];
     const iterationSummary: ResearchIteration = {
       iteration,
@@ -577,7 +584,8 @@ async function main() {
       result.parsedFullTextCount >= args.minParsedPapers &&
       result.requiredBucketsWithoutParsedFullText.length === 0 &&
       result.manifest.requiredCoveredCount === result.manifest.requiredBucketCount &&
-      result.manifest.architectureJudgeVerdict === "pass"
+      result.manifest.architectureJudgeVerdict === "pass" &&
+      countUnresolvedProposal(result.handoffFlagResolutionProposal) === 0
     ) {
       break;
     }
@@ -598,7 +606,8 @@ async function main() {
     finalIteration.parsedFullTextCount >= args.minParsedPapers &&
     finalIteration.requiredBucketsWithoutParsedFullText.length === 0 &&
     finalIteration.requiredCoveredCount === finalIteration.requiredBucketCount &&
-    finalIteration.architectureJudgeVerdict === "pass"
+    finalIteration.architectureJudgeVerdict === "pass" &&
+    finalIteration.handoffUnresolvedProposalCount === 0
       ? "PASS - pelny przelot ma trend GitHub, realne source search, PDF/full-text gate i architekture do porownania"
       : "NEEDS_REVIEW - system wygenerowal artefakty, ale nie spelnil wszystkich bramek full-text/coverage/judge";
 

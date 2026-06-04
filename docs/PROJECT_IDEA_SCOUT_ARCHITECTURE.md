@@ -411,13 +411,16 @@ The full-pass runner supports explicit idea selection modes:
 --selection-mode ready
 --selection-mode top
 --selection-mode needs-review
+--idea-title-contains "<title fragment>"
 ```
 
 `ready` keeps the default safe handoff behavior. `needs-review` deliberately
 selects a flagged idea when available, so the run can test whether research
 actually resolves weak GitHub/source evidence. Handoff resolution proposals also
 require relevant parsed full-text evidence per required bucket; numeric coverage
-alone is not enough to mark a flagged handoff as resolved.
+alone is not enough to mark a flagged handoff as resolved. `--idea-title-contains`
+pins comparable regression runs to a specific shortlisted idea when the shortlist
+contains multiple flagged candidates.
 
 The exported project pack also writes:
 

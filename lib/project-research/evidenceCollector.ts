@@ -36,6 +36,12 @@ type CollectProjectEvidenceInput = {
 
 const DEFAULT_MAX_PAPERS_PER_BUCKET = 4;
 const DEFAULT_MIN_SCORE = 0.18;
+const STRICT_KEYWORD_BUCKETS = new Set([
+  "context_compression_fidelity",
+  "token_budget_tradeoffs",
+  "agent_task_success",
+  "rag_evidence_loss"
+]);
 const STOP_TERMS = new Set([
   "and",
   "for",
@@ -74,7 +80,7 @@ function paperText(paper: NormalizedPaper) {
   );
 }
 
-function phraseOrTokenMatch(text: string, keyword: string) {
+function phraseOrTokenMatch(text: string, keyword: string, strictMultiTerm = false) {
   const normalizedKeyword = normalize(keyword);
   if (text.includes(normalizedKeyword)) {
     return true;
@@ -85,13 +91,23 @@ function phraseOrTokenMatch(text: string, keyword: string) {
     return false;
   }
 
-  return keywordTerms.some((term) => text.includes(term));
+  if (keywordTerms.length === 1) {
+    return text.includes(keywordTerms[0]);
+  }
+
+  if (!strictMultiTerm) {
+    return keywordTerms.some((term) => text.includes(term));
+  }
+
+  const hitCount = keywordTerms.filter((term) => text.includes(term)).length;
+  return hitCount >= Math.min(keywordTerms.length, 2);
 }
 
 function scorePaperForBucket(bucket: EvidenceBucket, paper: NormalizedPaper) {
   const text = paperText(paper);
+  const strictKeywordMatching = STRICT_KEYWORD_BUCKETS.has(bucket.id);
   const keywordHits = bucket.keywords.filter((keyword) =>
-    phraseOrTokenMatch(text, keyword)
+    phraseOrTokenMatch(text, keyword, strictKeywordMatching)
   ).length;
   const queryTerms = Array.from(new Set(tokenize(bucket.query))).slice(0, 18);
   const queryHits = queryTerms.filter((term) => text.includes(term)).length;
@@ -99,6 +115,14 @@ function scorePaperForBucket(bucket: EvidenceBucket, paper: NormalizedPaper) {
     ? keywordHits / bucket.keywords.length
     : 0;
   const queryScore = queryTerms.length ? queryHits / queryTerms.length : 0;
+
+  if (STRICT_KEYWORD_BUCKETS.has(bucket.id) && keywordHits === 0) {
+    return 0;
+  }
+
+  if (keywordHits === 0 && queryHits < 3) {
+    return 0;
+  }
 
   return clamp01(keywordScore * 0.7 + queryScore * 0.3);
 }

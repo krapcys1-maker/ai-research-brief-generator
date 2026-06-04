@@ -149,4 +149,12 @@ describe("full-pass idea selection", () => {
 
     expect(selected?.idea.ideaId).toBe("risky_top");
   });
+
+  it("can pin selection by title for comparable full-pass regression runs", () => {
+    const selected = selectIdeaForFullPass(report(), FullPassSelectionMode.NeedsReview, {
+      titleIncludes: "Risky Lower"
+    });
+
+    expect(selected?.idea.ideaId).toBe("risky_lower");
+  });
 });

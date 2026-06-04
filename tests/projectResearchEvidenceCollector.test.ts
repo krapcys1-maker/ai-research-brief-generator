@@ -13,7 +13,7 @@ import type { NormalizedPaper } from "@/lib/sources/types";
 function paperForBucket(bucket: EvidenceBucket, index: number): NormalizedPaper {
   return {
     id: `collector_${bucket.id}_${index}`,
-    title: `${bucket.label} ${bucket.keywords.join(" ")}`,
+    title: `${bucket.label} ${bucket.keywords.join(" ")} evidence ${index}`,
     abstract: `${bucket.query}. ${bucket.targetQuestions.join(" ")}`,
     authors: ["Benchmark Author"],
     year: 2025,
@@ -123,5 +123,55 @@ describe("collectProjectEvidenceFromPapers", () => {
         paper.bucketIds.every((bucketId) => planBucketIds.has(bucketId))
       )
     ).toBe(true);
+  });
+
+  it("does not cover LLM context buckets with weak one-token topical overlap", () => {
+    const { researchPlan } = buildProjectResearchPlan({
+      title: "LLM Context Budget QA Monitor",
+      description:
+        "Monitor context compression, token budget tradeoffs, fact retention and agent task success.",
+      constraints: ["MVP must be evidence-backed"],
+      preferredDomains: ["LLM context engineering", "RAG evaluation", "agent reliability"],
+      outputLanguage: "pl"
+    });
+    const contextBucket = researchPlan.evidenceBuckets.find(
+      (bucket) => bucket.id === "context_compression_fidelity"
+    );
+
+    expect(contextBucket).toBeDefined();
+
+    const result = collectProjectEvidenceFromPapers({
+      researchPlan: {
+        ...researchPlan,
+        evidenceBuckets: [contextBucket!]
+      },
+      papers: [
+        {
+          id: "weak_context_overlap",
+          title: "Visual Place Recognition in Robot Navigation",
+          abstract:
+            "This survey evaluates visual recognition methods in changing environmental context for robot localization.",
+          authors: ["Mismatch Author"],
+          year: 2024,
+          publishedAt: "2024-01-01",
+          doi: "10.1000/weak-context-overlap",
+          arxivId: null,
+          semanticScholarId: "weak-context-overlap",
+          openAlexId: null,
+          sourceUrls: ["https://example.com/weak-context-overlap"],
+          pdfUrl: "https://example.com/weak-context-overlap.pdf",
+          venue: "Robotics Survey",
+          citationCount: 10,
+          influentialCitationCount: 1,
+          source: "semantic_scholar",
+          fullTextStatus: "parsed"
+        }
+      ],
+      maxPapersPerBucket: 2
+    });
+
+    expect(result.canBuildReadyBrief).toBe(false);
+    expect(result.requiredReadyCount).toBe(0);
+    expect(result.reviewedPapers).toHaveLength(0);
   });
 });

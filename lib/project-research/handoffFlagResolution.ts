@@ -63,9 +63,9 @@ const BUCKET_HINTS: Record<string, string[]> = {
     "task",
     "success",
     "workflow",
-    "llm",
-    "language",
-    "model"
+    "tool use",
+    "agent memory",
+    "long horizon"
   ],
   rag_evidence_loss: [
     "retrieval",

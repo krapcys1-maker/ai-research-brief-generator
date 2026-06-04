@@ -208,6 +208,29 @@ describe("buildProjectResearchPlan", () => {
     expectPlanIsNotSingleGenericQuery(researchPlan);
   });
 
+  it("creates focused LLM context queries that target fidelity and agent outcomes", () => {
+    const { researchPlan } = buildProjectResearchPlan({
+      title: "LLM Context Budget QA Monitor",
+      description:
+        "Monitor context compression, token budget tradeoffs, fact retention, agent task success and RAG evidence loss.",
+      constraints: ["MVP must be evidence-backed"],
+      preferredDomains: ["LLM context engineering", "RAG evaluation", "agent reliability"],
+      outputLanguage: "pl"
+    });
+    const queries = researchPlan.queryVariants.join("\n").toLowerCase();
+
+    expect(queries).toContain("information loss");
+    expect(queries).toContain("faithfulness");
+    expect(queries).toContain("agent memory");
+    expect(queries).toContain("long horizon tasks");
+    expect(queries).toContain("rag evidence loss");
+    expect(
+      researchPlan.queryVariants.some((query) =>
+        query.includes("Context compression fidelity and fact retention")
+      )
+    ).toBe(true);
+  });
+
   it("creates a plan from an already normalized idea", () => {
     const normalizedIdea = normalizeProjectIdea({
       title: "Contract Compliance Reviewer",

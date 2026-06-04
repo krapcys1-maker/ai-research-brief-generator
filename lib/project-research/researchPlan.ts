@@ -373,8 +373,15 @@ const LLM_CONTEXT_BUCKETS: EvidenceBucket[] = [
     id: "context_compression_fidelity",
     label: "Context compression fidelity and fact retention",
     query:
-      "LLM context compression fact retention summarization evaluation long context",
-    keywords: ["context compression", "fact retention", "long context", "summarization evaluation"],
+      "LLM context compression fidelity fact retention information loss faithfulness summarization evaluation",
+    keywords: [
+      "context compression",
+      "fact retention",
+      "information loss",
+      "faithfulness",
+      "summarization evaluation",
+      "long context"
+    ],
     targetQuestions: [
       "Jak mierzyc utrate faktow po kompresji kontekstu?",
       "Ktore typy informacji sa krytyczne dla agentow i RAG?"
@@ -395,8 +402,15 @@ const LLM_CONTEXT_BUCKETS: EvidenceBucket[] = [
     id: "agent_task_success",
     label: "Agent task success after context transformation",
     query:
-      "AI agent task success context summarization tool use evaluation",
-    keywords: ["agent task success", "tool use", "context summarization", "evaluation"],
+      "LLM agent task success context compression agent memory long horizon tasks summarization tool use benchmark",
+    keywords: [
+      "agent task success",
+      "tool use",
+      "context summarization",
+      "agent memory",
+      "long horizon tasks",
+      "benchmark"
+    ],
     targetQuestions: [
       "Jak kompresja wplywa na wykonywanie zadan przez agentow?",
       "Jakie testy wykrywaja utrate intencji kodu lub instrukcji?"
@@ -737,6 +751,11 @@ function buildQueryVariants(idea: NormalizedProjectIdea, buckets: EvidenceBucket
   return Array.from(
     new Set([
       ...buckets.map((bucketItem) => bucketItem.query),
+      ...buckets.flatMap((bucketItem) =>
+        bucketItem.targetQuestions.map(
+          (question) => `${idea.title} ${bucketItem.label} ${question}`
+        )
+      ),
       ...buckets.flatMap((bucketItem) =>
         bucketItem.keywords.slice(0, 2).map((keyword) => `${idea.title} ${keyword}`)
       )
