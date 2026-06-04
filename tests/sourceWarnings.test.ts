@@ -165,4 +165,36 @@ describe("filterWarningsForSuccessfulSources", () => {
       )
     ).toHaveLength(2);
   });
+
+  it("disables Semantic Scholar when the configured key is a placeholder", async () => {
+    vi.stubEnv("SEMANTIC_SCHOLAR_API_KEY", "...");
+    const fetchMock = vi.fn(async (url: string | URL | Request) => {
+      const href = url.toString();
+      expect(href).not.toContain("semanticscholar");
+
+      return new Response(JSON.stringify(openAlexFixture), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await searchAllSources({
+      query: "agent sandbox",
+      queryVariants: ["agent sandbox", "runtime evaluation"],
+      maxResults: 1,
+      sources: ["semantic_scholar", "openalex"]
+    });
+
+    const semanticDiagnostics = result.sourceDiagnostics.filter(
+      (diagnostic) => diagnostic.source === "semantic_scholar"
+    );
+
+    expect(result.papers.length).toBeGreaterThan(0);
+    expect(
+      semanticDiagnostics.every((diagnostic) =>
+        diagnostic.message?.includes("API key is missing or placeholder")
+      )
+    ).toBe(true);
+  });
 });

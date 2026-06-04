@@ -107,4 +107,36 @@ describe("paper relevance judge", () => {
     expect(result.judgments[0]?.decision).toBe("reject");
     expect(result.filteredReviewedPapers[0]?.usefulForProject).toBe(false);
   });
+
+  it("keeps maybe-only papers visible but excludes them from readiness evidence", () => {
+    const cliIdea = {
+      title: "AI CLI Provider Compatibility Monitor",
+      description:
+        "Monitor compatibility, routing failures, provider capability drift and reproducible diagnostics for AI coding CLIs.",
+      constraints: ["MVP must be evidence-backed"],
+      preferredDomains: ["AI developer tools", "provider routing", "CLI reliability"],
+      outputLanguage: "pl"
+    };
+    const { researchPlan } = buildProjectResearchPlan(cliIdea);
+    const result = judgePaperRelevance({
+      idea: cliIdea,
+      researchPlan,
+      reviewedPapers: [
+        paper({
+          id: "routing_trace_partial",
+          title:
+            "Adaptive Complexity Routing for Multi-Model Ensembles with Auditable Decision Traces",
+          bucketId: "auth_proxy_failure_modes",
+          text: "proxy failure routing diagnostics auditable model traces"
+        })
+      ]
+    });
+
+    expect(result.judgments[0]?.decision).toBe("maybe");
+    expect(result.filteredReviewedPapers[0]?.usefulForProject).toBe(false);
+    expect(result.keptPaperCount).toBe(0);
+    expect(result.filteredReviewedPapers[0]?.limitations.join(" ")).toContain(
+      "maybe only; not used for readiness"
+    );
+  });
 });

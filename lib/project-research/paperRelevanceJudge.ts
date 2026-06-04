@@ -62,17 +62,17 @@ function unique(values: string[]) {
 
 function phraseMatches(text: string, value: string) {
   const normalizedValue = normalize(value);
-  if (text.includes(normalizedValue)) {
-    return true;
-  }
-
   const terms = tokenize(value);
   if (terms.length === 0) {
     return false;
   }
 
   if (terms.length === 1) {
-    return text.includes(terms[0]);
+    return new Set(tokenize(text)).has(terms[0]);
+  }
+
+  if (text.includes(normalizedValue)) {
+    return true;
   }
 
   return terms.filter((term) => text.includes(term)).length >= 2;
@@ -223,7 +223,7 @@ export function judgePaperRelevance(input: {
       })
     )
   );
-  const retainedByPaperId = new Map<string, Set<string>>();
+  const keptByPaperId = new Map<string, Set<string>>();
   const maybeByPaperId = new Map<string, Set<string>>();
 
   for (const judgment of judgments) {
@@ -231,11 +231,11 @@ export function judgePaperRelevance(input: {
       continue;
     }
 
-    const existing = retainedByPaperId.get(judgment.paperId) ?? new Set<string>();
-    existing.add(judgment.bucketId);
-    retainedByPaperId.set(judgment.paperId, existing);
-
-    if (judgment.decision === "maybe") {
+    if (judgment.decision === "keep") {
+      const existing = keptByPaperId.get(judgment.paperId) ?? new Set<string>();
+      existing.add(judgment.bucketId);
+      keptByPaperId.set(judgment.paperId, existing);
+    } else {
       const maybeExisting = maybeByPaperId.get(judgment.paperId) ?? new Set<string>();
       maybeExisting.add(judgment.bucketId);
       maybeByPaperId.set(judgment.paperId, maybeExisting);
@@ -244,9 +244,10 @@ export function judgePaperRelevance(input: {
 
   const filteredReviewedPapers = input.reviewedPapers
     .map((paper) => {
-      const retainedBucketIds = retainedByPaperId.get(paper.paperId);
+      const keptBucketIds = keptByPaperId.get(paper.paperId);
+      const maybeBucketIds = maybeByPaperId.get(paper.paperId);
 
-      if (!retainedBucketIds?.size) {
+      if (!keptBucketIds?.size && !maybeBucketIds?.size) {
         return {
           ...paper,
           usefulForProject: false,
@@ -257,15 +258,25 @@ export function judgePaperRelevance(input: {
         };
       }
 
-      const maybeBucketIds = maybeByPaperId.get(paper.paperId);
+      if (!keptBucketIds?.size) {
+        return {
+          ...paper,
+          bucketIds: paper.bucketIds.filter((bucketId) => maybeBucketIds?.has(bucketId)),
+          usefulForProject: false,
+          limitations: [
+            ...paper.limitations,
+            `paper relevance judge marked these bucket assignments as maybe only; not used for readiness: ${[...(maybeBucketIds ?? new Set<string>())].join(", ")}`
+          ]
+        };
+      }
 
       return {
         ...paper,
-        bucketIds: paper.bucketIds.filter((bucketId) => retainedBucketIds.has(bucketId)),
+        bucketIds: paper.bucketIds.filter((bucketId) => keptBucketIds.has(bucketId)),
         limitations: maybeBucketIds?.size
           ? [
               ...paper.limitations,
-              `paper relevance judge marked these bucket assignments as maybe: ${[...maybeBucketIds].join(", ")}`
+              `paper relevance judge marked these bucket assignments as maybe and excluded them from readiness: ${[...maybeBucketIds].join(", ")}`
             ]
           : paper.limitations
       };

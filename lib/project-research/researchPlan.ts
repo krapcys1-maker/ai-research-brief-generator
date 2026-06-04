@@ -445,8 +445,17 @@ const AI_CLI_PROVIDER_BUCKETS: EvidenceBucket[] = [
     id: "auth_proxy_failure_modes",
     label: "Auth, proxy and routing failure modes",
     query:
-      "developer tools authentication proxy failure model routing diagnostics",
-    keywords: ["authentication", "proxy failure", "routing diagnostics", "developer tools"],
+      "AI coding CLI API integration configuration authentication proxy terminal command failure diagnostics",
+    keywords: [
+      "authentication",
+      "proxy failure",
+      "routing diagnostics",
+      "developer tools",
+      "API integration",
+      "configuration errors",
+      "terminal problems",
+      "command failures"
+    ],
     targetQuestions: [
       "Jak klasyfikowac awarie auth, proxy i routingu?",
       "Jakie health checki wykrywaja awarie przed rozmowa z modelem?"
@@ -456,8 +465,17 @@ const AI_CLI_PROVIDER_BUCKETS: EvidenceBucket[] = [
     id: "cli_observability",
     label: "CLI observability and reproducible diagnostics",
     query:
-      "command line developer tool observability diagnostics logs reproducible bug report",
-    keywords: ["CLI observability", "diagnostics", "logs", "reproducible bug report"],
+      "AI coding CLI command failures terminal problems issue reports reproducible bug reports logs telemetry",
+    keywords: [
+      "CLI observability",
+      "diagnostics",
+      "logs",
+      "reproducible bug report",
+      "command failures",
+      "terminal problems",
+      "issue reports",
+      "CLI task"
+    ],
     targetQuestions: [
       "Jakie logi sa potrzebne do wyjasnienia failure providerow?",
       "Jak generowac bezpieczne raporty diagnostyczne bez sekretow?"

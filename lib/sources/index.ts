@@ -1,7 +1,10 @@
 import { arxivSourceAdapter } from "@/lib/sources/arxiv";
 import { mockSourceAdapter } from "@/lib/sources/mockPapers";
 import { openAlexSourceAdapter } from "@/lib/sources/openAlex";
-import { semanticScholarSourceAdapter } from "@/lib/sources/semanticScholar";
+import {
+  configuredSemanticScholarApiKey,
+  semanticScholarSourceAdapter
+} from "@/lib/sources/semanticScholar";
 import {
   getCachedSourcePapers,
   setCachedSourcePapers
@@ -97,6 +100,39 @@ function skippedByCircuitBreaker(input: {
       }
     ]
   };
+}
+
+function disabledSourceResult(input: {
+  source: ResearchSource;
+  query: string;
+  message: string;
+}): SearchAllSourcesResult {
+  return {
+    papers: [],
+    sourcesUsed: [],
+    warnings: [`${input.source} disabled: ${input.message}`],
+    sourceDiagnostics: [
+      {
+        source: input.source,
+        query: input.query,
+        status: "failed",
+        resultCount: 0,
+        cached: false,
+        message: input.message
+      }
+    ]
+  };
+}
+
+function disabledReason(source: ResearchSource) {
+  if (
+    source === "semantic_scholar" &&
+    !configuredSemanticScholarApiKey(process.env.SEMANTIC_SCHOLAR_API_KEY)
+  ) {
+    return "Semantic Scholar API key is missing or placeholder; external source disabled for this run.";
+  }
+
+  return null;
 }
 
 async function mapWithConcurrency<T, R>(
@@ -231,6 +267,7 @@ async function searchOneSourceAcrossQueries(input: SearchPapersInput & {
   const limits = sourceSearchLimits[input.source];
   const delayMs = sourceDelayMs(input.source);
   const breakerAfter = limits.breakerAfterConsecutiveFailures;
+  const sourceDisabledReason = disabledReason(input.source);
   let previousRequestStartedAt = 0;
   let consecutiveBreakerFailures = 0;
 
@@ -238,6 +275,14 @@ async function searchOneSourceAcrossQueries(input: SearchPapersInput & {
     input.queryVariants,
     limits.concurrency,
     async (query) => {
+      if (sourceDisabledReason) {
+        return disabledSourceResult({
+          source: input.source,
+          query,
+          message: sourceDisabledReason
+        });
+      }
+
       if (breakerAfter && consecutiveBreakerFailures >= breakerAfter) {
         return skippedByCircuitBreaker({
           source: input.source,

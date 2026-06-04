@@ -226,4 +226,64 @@ describe("search flow audit", () => {
     expect(audit.verdict).toBe("needs_review");
     expect(audit.warnings).toContain("Search relies on a single contributing source.");
   });
+
+  it("reports OpenAlex to arXiv bridge candidates without treating them as metadata diversity", () => {
+    const candidate = paper({
+      arxivId: "2601.00001",
+      id: "openalex_arxiv_bridge",
+      pdfUrl: "https://arxiv.org/pdf/2601.00001",
+      source: "openalex",
+      title: "OpenAlex arXiv Bridge"
+    });
+    const audit = auditSearchFlow({
+      candidatePapers: [candidate],
+      dedupedPapers: [candidate],
+      evidenceCollection: evidenceResult({
+        bucketMetrics: [
+          {
+            bucketId: "agent_reliability",
+            candidateCount: 1,
+            reviewedCount: 1,
+            usefulReviewedCount: 1,
+            parsedCount: 1,
+            topPaperIds: ["openalex_arxiv_bridge"],
+            coverageReady: true
+          }
+        ]
+      }),
+      fullTextAttempts: [
+        {
+          paper: candidate,
+          fullText: {
+            status: "parsed"
+          }
+        }
+      ],
+      queryVariants: ["agent sandbox"],
+      rawPapers: [candidate],
+      sourceDiagnostics: [
+        {
+          cached: false,
+          query: "agent sandbox",
+          resultCount: 0,
+          source: "arxiv",
+          status: "failed",
+          message: "rate limited"
+        },
+        {
+          cached: false,
+          query: "agent sandbox",
+          resultCount: 1,
+          source: "openalex",
+          status: "success"
+        }
+      ]
+    });
+
+    expect(audit.verdict).toBe("needs_review");
+    expect(audit.arxivBridgeCandidateCount).toBe(1);
+    expect(audit.warnings).toContain(
+      "Search relies on a single contributing metadata source, with arXiv full-text bridges."
+    );
+  });
 });

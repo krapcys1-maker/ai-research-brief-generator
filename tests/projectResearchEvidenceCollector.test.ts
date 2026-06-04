@@ -249,4 +249,76 @@ describe("collectProjectEvidenceFromPapers", () => {
       parsedCount: 2
     });
   });
+
+  it("does not let medical diagnostics outrank real CLI observability evidence", () => {
+    const { researchPlan } = buildProjectResearchPlan({
+      title: "AI CLI Provider Compatibility Monitor",
+      description:
+        "Monitor compatibility, routing failures, provider capability drift and reproducible diagnostics for AI coding CLIs.",
+      constraints: ["MVP must be evidence-backed"],
+      preferredDomains: ["AI developer tools", "provider routing", "CLI reliability"],
+      outputLanguage: "pl"
+    });
+    const cliBucket = researchPlan.evidenceBuckets.find(
+      (bucket) => bucket.id === "cli_observability"
+    );
+
+    expect(cliBucket).toBeDefined();
+
+    const result = collectProjectEvidenceFromPapers({
+      researchPlan: {
+        ...researchPlan,
+        evidenceBuckets: [cliBucket!]
+      },
+      papers: [
+        {
+          id: "remote_patient_monitoring",
+          title:
+            "Mobile Health in Remote Patient Monitoring for Chronic Diseases: Principles, Trends, and Challenges",
+          abstract:
+            "Remote patient monitoring systems improve diagnosis speed and clinical disease reports.",
+          authors: ["Mismatch Author"],
+          year: 2021,
+          publishedAt: "2021-03-29",
+          doi: "10.3390/diagnostics11040607",
+          arxivId: null,
+          semanticScholarId: null,
+          openAlexId: "W3151989229",
+          sourceUrls: ["https://doi.org/10.3390/diagnostics11040607"],
+          pdfUrl: "https://example.com/medical.pdf",
+          venue: "Diagnostics",
+          citationCount: 250,
+          influentialCitationCount: 0,
+          source: "openalex",
+          fullTextStatus: "parsed"
+        },
+        {
+          id: "cli_gym",
+          title: "CLI-Gym: Scalable CLI Task Generation via Agentic Environment Inversion",
+          abstract:
+            "Agentic coding requires command line interfaces, executable programs, execution feedback, terminal tasks and reproducible environment histories.",
+          authors: ["Benchmark Author"],
+          year: 2026,
+          publishedAt: "2026-05-01",
+          doi: null,
+          arxivId: "2605.00001",
+          semanticScholarId: null,
+          openAlexId: null,
+          sourceUrls: ["https://arxiv.org/abs/2605.00001"],
+          pdfUrl: "https://arxiv.org/pdf/2605.00001",
+          venue: "arXiv cs.SE",
+          citationCount: 0,
+          influentialCitationCount: 0,
+          source: "arxiv",
+          fullTextStatus: "parsed"
+        }
+      ],
+      maxPapersPerBucket: 4
+    });
+
+    expect(result.reviewedPapers.map((paper) => paper.paperId)).toContain("cli_gym");
+    expect(result.reviewedPapers.map((paper) => paper.paperId)).not.toContain(
+      "remote_patient_monitoring"
+    );
+  });
 });

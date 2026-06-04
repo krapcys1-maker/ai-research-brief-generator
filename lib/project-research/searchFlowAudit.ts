@@ -17,6 +17,7 @@ export type SearchFlowAudit = {
   failedFullTextCount: number;
   requiredBucketCandidateCoverage: number;
   sourceResultCounts: Record<string, number>;
+  arxivBridgeCandidateCount: number;
   topCandidateIds: string[];
   verdict: "pass" | "needs_review";
   warnings: string[];
@@ -124,6 +125,14 @@ function requiredBucketCandidateCoverage(
   );
 }
 
+function arxivBridgeCandidateCount(papers: NormalizedPaper[]) {
+  return papers.filter(
+    (paper) =>
+      paper.source === "openalex" &&
+      (Boolean(paper.arxivId) || paper.pdfUrl?.includes("arxiv.org/"))
+  ).length;
+}
+
 function warningsFor(input: {
   queryVariantCount: number;
   successfulQueryCount: number;
@@ -133,6 +142,7 @@ function warningsFor(input: {
   parsedFullTextCount: number;
   requiredBucketCandidateCoverage: number;
   sourceResultCounts: Record<string, number>;
+  arxivBridgeCandidateCount: number;
 }) {
   const warnings: string[] = [];
 
@@ -170,7 +180,11 @@ function warningsFor(input: {
     (count) => count > 0
   ).length;
   if (configuredSourceCount > 1 && contributingSourceCount < 2) {
-    warnings.push("Search relies on a single contributing source.");
+    warnings.push(
+      input.arxivBridgeCandidateCount > 0
+        ? "Search relies on a single contributing metadata source, with arXiv full-text bridges."
+        : "Search relies on a single contributing source."
+    );
   }
 
   return warnings;
@@ -202,6 +216,7 @@ export function auditSearchFlow(input: {
     input.evidenceCollection
   );
   const resultCounts = sourceResultCounts(input.sourceDiagnostics);
+  const arxivBridgeCount = arxivBridgeCandidateCount(input.candidatePapers);
   const warnings = warningsFor({
     queryVariantCount: input.queryVariants.length,
     successfulQueryCount: statusCounts.successfulQueryCount,
@@ -210,7 +225,8 @@ export function auditSearchFlow(input: {
     attemptedFullTextCount: input.fullTextAttempts.length,
     parsedFullTextCount,
     requiredBucketCandidateCoverage: bucketCandidateCoverage,
-    sourceResultCounts: resultCounts
+    sourceResultCounts: resultCounts,
+    arxivBridgeCandidateCount: arxivBridgeCount
   });
 
   return {
@@ -226,6 +242,7 @@ export function auditSearchFlow(input: {
     failedFullTextCount,
     requiredBucketCandidateCoverage: bucketCandidateCoverage,
     sourceResultCounts: resultCounts,
+    arxivBridgeCandidateCount: arxivBridgeCount,
     topCandidateIds: input.candidatePapers.slice(0, 12).map((paper) => paper.id),
     verdict: warnings.length === 0 ? "pass" : "needs_review",
     warnings
@@ -250,6 +267,7 @@ export function searchFlowAuditToMarkdown(audit: SearchFlowAudit) {
     `Unavailable full-text: ${audit.unavailableFullTextCount}`,
     `Failed full-text: ${audit.failedFullTextCount}`,
     `Required bucket candidate coverage: ${audit.requiredBucketCandidateCoverage}`,
+    `OpenAlex -> arXiv bridge candidates: ${audit.arxivBridgeCandidateCount}`,
     `Top candidate IDs: ${audit.topCandidateIds.join(", ") || "none"}`,
     "",
     "## Source result counts",

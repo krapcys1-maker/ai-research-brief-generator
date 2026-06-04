@@ -26,7 +26,7 @@ type SemanticScholarResponse = {
   data?: SemanticScholarPaper[];
 };
 
-function configuredApiKey(value: string | undefined) {
+export function configuredSemanticScholarApiKey(value: string | undefined) {
   const trimmed = value?.trim();
 
   if (!trimmed || trimmed === "..." || /^<.*>$/.test(trimmed)) {
@@ -46,7 +46,9 @@ export const semanticScholarSourceAdapter: SourceAdapter = {
         "paperId,title,abstract,year,publicationDate,venue,citationCount,influentialCitationCount,url,externalIds,authors,openAccessPdf"
     });
     const headers: Record<string, string> = {};
-    const apiKey = configuredApiKey(process.env.SEMANTIC_SCHOLAR_API_KEY);
+    const apiKey = configuredSemanticScholarApiKey(
+      process.env.SEMANTIC_SCHOLAR_API_KEY
+    );
 
     if (apiKey) {
       headers["x-api-key"] = apiKey;

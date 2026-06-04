@@ -42,6 +42,32 @@ const STRICT_KEYWORD_BUCKETS = new Set([
   "agent_task_success",
   "rag_evidence_loss"
 ]);
+const REQUIRED_ANCHOR_TERMS_BY_BUCKET: Record<string, string[]> = {
+  cli_observability: [
+    "cli",
+    "command line",
+    "command-line",
+    "terminal",
+    "developer",
+    "software",
+    "bug report",
+    "issue report",
+    "logs",
+    "telemetry"
+  ],
+  auth_proxy_failure_modes: [
+    "authentication",
+    "auth",
+    "proxy",
+    "routing",
+    "api",
+    "configuration",
+    "developer",
+    "software",
+    "terminal",
+    "command"
+  ]
+};
 const STOP_TERMS = new Set([
   "and",
   "for",
@@ -82,17 +108,17 @@ function paperText(paper: NormalizedPaper) {
 
 function phraseOrTokenMatch(text: string, keyword: string, strictMultiTerm = false) {
   const normalizedKeyword = normalize(keyword);
-  if (text.includes(normalizedKeyword)) {
-    return true;
-  }
-
   const keywordTerms = tokenize(keyword);
   if (!keywordTerms.length) {
     return false;
   }
 
   if (keywordTerms.length === 1) {
-    return text.includes(keywordTerms[0]);
+    return new Set(tokenize(text)).has(keywordTerms[0]);
+  }
+
+  if (text.includes(normalizedKeyword)) {
+    return true;
   }
 
   if (!strictMultiTerm) {
@@ -103,8 +129,23 @@ function phraseOrTokenMatch(text: string, keyword: string, strictMultiTerm = fal
   return hitCount >= Math.min(keywordTerms.length, 2);
 }
 
+function hasRequiredAnchor(bucket: EvidenceBucket, text: string) {
+  const anchors = REQUIRED_ANCHOR_TERMS_BY_BUCKET[bucket.id];
+
+  if (!anchors?.length) {
+    return true;
+  }
+
+  return anchors.some((anchor) => phraseOrTokenMatch(text, anchor, true));
+}
+
 function scorePaperForBucket(bucket: EvidenceBucket, paper: NormalizedPaper) {
   const text = paperText(paper);
+
+  if (!hasRequiredAnchor(bucket, text)) {
+    return 0;
+  }
+
   const strictKeywordMatching = STRICT_KEYWORD_BUCKETS.has(bucket.id);
   const keywordHits = bucket.keywords.filter((keyword) =>
     phraseOrTokenMatch(text, keyword, strictKeywordMatching)

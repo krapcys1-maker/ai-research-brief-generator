@@ -191,7 +191,7 @@ export function buildAgentReflection(input: {
     verdict: ready
       ? "ready"
       : input.searchFlowAudit.warnings.some((warning) =>
-          warning.includes("single contributing source")
+          warning.includes("single contributing")
         )
         ? "needs_human_or_external_input"
         : "continue",
