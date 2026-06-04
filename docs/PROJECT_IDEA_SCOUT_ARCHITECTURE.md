@@ -389,6 +389,16 @@ These files carry `sourceEvidenceQuality`, `reviewFlags` and readiness into
 research, PRD and architecture review instead of leaving source risk behind in
 the idea-discovery report.
 
+The exported project pack also writes:
+
+```text
+docs/09-handoff-risk-resolution.md
+```
+
+If handoff review flags remain unresolved, Project Plan Judge lowers
+`handoffRiskResolution`, adds a required fix, and prevents the plan from getting
+a clean `pass` before implementation.
+
 `project:research` also writes an architecture judge report:
 
 ```text
@@ -506,6 +516,7 @@ averageHandoffQualityScore
 handoffReadyCount
 handoffReviewCount
 handoffBlockedCount
+handoffRiskResolution
 averageJudgeScore
 sourceEvidenceQuality
 reviewFlags

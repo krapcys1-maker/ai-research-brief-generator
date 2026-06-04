@@ -3,7 +3,10 @@ import type {
   ProjectArchitectureJudge
 } from "@/lib/project-architecture";
 import type { ProjectPrd } from "@/lib/project-prd";
-import type { ProjectResearchBrief } from "@/lib/project-research";
+import type {
+  ProjectIdeaHandoffContext,
+  ProjectResearchBrief
+} from "@/lib/project-research";
 
 export type ProjectPackArtifact = {
   path: string;
@@ -38,6 +41,7 @@ export type ProjectPlanJudge = {
     evaluationPlan: number;
     cursorActionability: number;
     gptBaselineParity: number;
+    handoffRiskResolution: number;
   };
   strengths: string[];
   weaknesses: string[];
@@ -54,6 +58,7 @@ type GenerateProjectPackInput = {
   prd: ProjectPrd;
   architecture: ProjectArchitecture;
   architectureJudge: ProjectArchitectureJudge;
+  handoffContext?: ProjectIdeaHandoffContext;
 };
 
 type ProductShape = {
@@ -102,6 +107,7 @@ const REQUIRED_ARTIFACTS = [
   "docs/06-demo-script.md",
   "docs/07-research-digest.md",
   "docs/08-project-plan-judge.md",
+  "docs/09-handoff-risk-resolution.md",
   "adr/0001-evidence-first.md",
   "adr/0002-deterministic-core-before-llm.md",
   "adr/0003-storage-path.md",
@@ -154,6 +160,31 @@ function projectText(input: GenerateProjectPackInput) {
   ]
     .join(" ")
     .toLowerCase();
+}
+
+function handoffReviewFlags(input: GenerateProjectPackInput) {
+  return input.handoffContext?.reviewFlags ?? [];
+}
+
+function hasUnresolvedHandoffRisk(input: GenerateProjectPackInput) {
+  return (
+    input.handoffContext?.readiness === "blocked" ||
+    input.handoffContext?.readiness === "needs_review" ||
+    handoffReviewFlags(input).length > 0 ||
+    (input.handoffContext?.sourceEvidenceQuality ?? 1) < 0.55
+  );
+}
+
+function handoffResolutionStatus(input: GenerateProjectPackInput) {
+  if (!input.handoffContext) {
+    return "not_applicable";
+  }
+
+  if (!hasUnresolvedHandoffRisk(input)) {
+    return "resolved";
+  }
+
+  return "unresolved";
 }
 
 function productShape(input: GenerateProjectPackInput): ProductShape {
@@ -490,8 +521,28 @@ function riskItems(input: GenerateProjectPackInput, shape: ProductShape): RiskIt
       evidenceOrSource: "project_architecture.risks",
       testOrSignal: "architecture judge score drops below 90 or traceability coverage regresses"
     }));
+  const handoffRisks: RiskItem[] = hasUnresolvedHandoffRisk(input)
+    ? [
+        {
+          id: "HND-1",
+          severity: "critical",
+          risk: "Idea source evidence handoff has unresolved review flags.",
+          trigger:
+            "Discovery marked the idea as needs_review, blocked, or source evidence quality is weak.",
+          impact:
+            "PRD and architecture may optimize around a trend signal that was not confirmed by source evidence.",
+          mitigation:
+            "Before implementation, confirm, reject, or replace each handoff review flag in `docs/09-handoff-risk-resolution.md`.",
+          owner: "Product/research reviewer",
+          evidenceOrSource: "handoff_context.json + idea_selection_report",
+          testOrSignal:
+            "Project Plan Judge `handoffRiskResolution` remains below 90 or final verdict is needs_review"
+        }
+      ]
+    : [];
 
   return [
+    ...handoffRisks,
     {
       id: "P0-1",
       severity: "critical",
@@ -586,6 +637,7 @@ function readme(input: GenerateProjectPackInput, shape: ProductShape) {
 function masterplan(input: GenerateProjectPackInput, shape: ProductShape) {
   const milestones = roadmapMilestones(shape);
   const riskSummary = riskItems(input, shape).slice(0, 4);
+  const handoffFlags = handoffReviewFlags(input);
 
   return [
     `# ${input.prd.productName} - masterplan`,
@@ -657,6 +709,17 @@ function masterplan(input: GenerateProjectPackInput, shape: ProductShape) {
       ])
     ),
     "",
+    "## Handoff source-risk resolution",
+    "",
+    input.handoffContext
+      ? [
+          `- Handoff readiness: ${input.handoffContext.readiness}`,
+          `- Source evidence quality: ${input.handoffContext.sourceEvidenceQuality ?? "n/a"}`,
+          `- Resolution status: ${handoffResolutionStatus(input)}`,
+          `- Review flags: ${handoffFlags.length ? handoffFlags.join(" | ") : "none"}`
+        ].join("\n")
+      : "No idea-discovery handoff context was provided for this pack.",
+    "",
     "## Architecture direction from research",
     "",
     input.brief.recommendedTechnicalDirection.why,
@@ -678,6 +741,49 @@ function masterplan(input: GenerateProjectPackInput, shape: ProductShape) {
     "## Why this should beat a generic AI answer",
     "",
     "The project is grounded in explicit research coverage, PRD requirements, architecture traceability, DoD-gated roadmap milestones, risk ownership and a Cursor-ready implementation workflow. The final product must expose evidence instead of hiding reasoning inside prose."
+  ].join("\n");
+}
+
+function handoffRiskResolution(input: GenerateProjectPackInput) {
+  const context = input.handoffContext;
+
+  if (!context) {
+    return [
+      "# Handoff risk resolution",
+      "",
+      "Resolution status: not_applicable",
+      "",
+      "No idea-discovery handoff context was provided for this project pack."
+    ].join("\n");
+  }
+
+  const flags = handoffReviewFlags(input);
+  const rows = flags.length
+    ? flags.map((flag) => [
+        flag,
+        "unresolved",
+        "Research reviewer must confirm, reject, or replace this source-risk flag before implementation."
+      ])
+    : [["none", "resolved", "No review flags were passed from idea discovery."]];
+
+  return [
+    "# Handoff risk resolution",
+    "",
+    `Idea: ${context.title}`,
+    `Handoff readiness: ${context.readiness}`,
+    `Handoff score: ${context.score}`,
+    `Source evidence quality: ${context.sourceEvidenceQuality ?? "n/a"}`,
+    `Resolution status: ${handoffResolutionStatus(input)}`,
+    "",
+    "## Review flag decisions",
+    "",
+    table(["Review flag", "Resolution", "Required action"], rows),
+    "",
+    "## Gate",
+    "",
+    hasUnresolvedHandoffRisk(input)
+      ? "This project pack is not implementation-clean until every review flag is confirmed, rejected, or replaced with stronger source evidence."
+      : "No unresolved handoff source-risk blocks implementation planning."
   ].join("\n");
 }
 
@@ -2259,6 +2365,10 @@ export function judgeProjectPlan(
   const roadmapText = artifactContent(artifacts, "docs/02-build-roadmap.md");
   const riskText = artifactContent(artifacts, "docs/03-risk-register.md");
   const evaluationText = artifactContent(artifacts, "docs/04-evaluation-plan.md");
+  const handoffResolutionText = artifactContent(
+    artifacts,
+    "docs/09-handoff-risk-resolution.md"
+  );
   const cursorPlansText = artifacts
     .filter((artifact) => artifact.path.startsWith(".cursor/plans/"))
     .map((artifact) => artifact.content)
@@ -2317,15 +2427,24 @@ export function judgeProjectPlan(
       containsAll(allText, ["cursor", "adr"]),
       containsAll(allText, ["evaluation", "risk register"]),
       containsAll(allText, ["confidence", "unknowns"])
+    ]),
+    handoffRiskResolution: scoreFromChecks([
+      !input.handoffContext || containsAll(handoffResolutionText, ["Handoff risk resolution", "Resolution status"]),
+      handoffReviewFlags(input).length === 0 ||
+        containsAll(handoffResolutionText, ["Review flag decisions", "Required action"]),
+      !hasUnresolvedHandoffRisk(input) || containsAll(riskText, ["HND-1", "handoff"]),
+      !hasUnresolvedHandoffRisk(input) || containsAll(masterplanText, ["Handoff source-risk", "Resolution status"]),
+      !hasUnresolvedHandoffRisk(input)
     ])
   };
   const score = Math.round(
     dimensionScores.masterplanDepth * 0.2 +
-      dimensionScores.roadmapDod * 0.2 +
-      dimensionScores.riskRegister * 0.17 +
-      dimensionScores.evaluationPlan * 0.2 +
-      dimensionScores.cursorActionability * 0.13 +
-      dimensionScores.gptBaselineParity * 0.1
+      dimensionScores.roadmapDod * 0.18 +
+      dimensionScores.riskRegister * 0.16 +
+      dimensionScores.evaluationPlan * 0.18 +
+      dimensionScores.cursorActionability * 0.12 +
+      dimensionScores.gptBaselineParity * 0.1 +
+      dimensionScores.handoffRiskResolution * 0.06
   );
   const requiredFixes = [
     ...(dimensionScores.masterplanDepth < 90
@@ -2345,6 +2464,9 @@ export function judgeProjectPlan(
       : []),
     ...(dimensionScores.gptBaselineParity < 90
       ? ["Restore GPT-baseline parity: Repo MRI, Bug Path, SQLite/FTS, ADRs, evaluation and evidence fields must all be present."]
+      : []),
+    ...(dimensionScores.handoffRiskResolution < 90
+      ? ["Resolve handoff review flags before implementation: confirm, reject, or replace weak source evidence."]
       : [])
   ];
   const verdict: ProjectPlanJudge["verdict"] =
@@ -2376,6 +2498,9 @@ export function judgeProjectPlan(
         : []),
       ...(dimensionScores.gptBaselineParity >= 90
         ? ["plan preserves Repo MRI / Bug Path / evidence-first baseline concepts"]
+        : []),
+      ...(dimensionScores.handoffRiskResolution >= 90
+        ? ["handoff source-risk is resolved or not applicable"]
         : [])
     ],
     weaknesses: requiredFixes.length
@@ -2518,6 +2643,7 @@ export function generateProjectPack(input: GenerateProjectPackInput): ProjectPac
     { path: "docs/05-api-contract.md", content: apiContract(shape) },
     { path: "docs/06-demo-script.md", content: demoScript(input, shape) },
     { path: "docs/07-research-digest.md", content: researchDigest(input.brief) },
+    { path: "docs/09-handoff-risk-resolution.md", content: handoffRiskResolution(input) },
     ...adrFiles(shape),
     ...cursorFiles(input, shape),
     ...schemaFiles(shape),

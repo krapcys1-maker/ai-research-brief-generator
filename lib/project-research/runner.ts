@@ -400,7 +400,8 @@ export async function runProjectResearch(
     brief,
     prd,
     architecture,
-    architectureJudge
+    architectureJudge,
+    handoffContext: parsed.handoffContext
   });
   const manifest = createManifest(
     brief,

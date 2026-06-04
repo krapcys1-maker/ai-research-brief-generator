@@ -257,6 +257,22 @@ describe("runProjectResearch", () => {
       join(outputDir, "handoff_context.md"),
       "utf8"
     );
+    const projectPlanJudge = await readJson<{
+      verdict: string;
+      dimensionScores: { handoffRiskResolution: number };
+      requiredFixes: string[];
+    }>(join(outputDir, "project_plan_judge.json"));
+    const projectPackReadiness = await readJson<{
+      verdict: string;
+      planJudge: {
+        verdict: string;
+        dimensionScores: { handoffRiskResolution: number };
+      };
+    }>(join(outputDir, "project_pack_readiness.json"));
+    const handoffResolution = await readFile(
+      join(outputDir, "project_pack", "docs", "09-handoff-risk-resolution.md"),
+      "utf8"
+    );
     const manifestFromDisk = await readJson<ProjectResearchRunManifest>(
       join(outputDir, "manifest.json")
     );
@@ -271,6 +287,18 @@ describe("runProjectResearch", () => {
     );
     expect(handoffMarkdown).toContain("Treat the review flags as explicit hypotheses");
     expect(handoffMarkdown).toContain("Source evidence quality: 0.48");
+    expect(handoffResolution).toContain("Resolution status: unresolved");
+    expect(handoffResolution).toContain(
+      "Manual review: single-source idea has weak issue-level evidence."
+    );
+    expect(projectPlanJudge.verdict).toBe("needs_review");
+    expect(projectPlanJudge.dimensionScores.handoffRiskResolution).toBeLessThan(90);
+    expect(projectPlanJudge.requiredFixes.join(" ")).toContain(
+      "Resolve handoff review flags"
+    );
+    expect(projectPackReadiness.verdict).toBe("needs_review");
+    expect(projectPackReadiness.planJudge.verdict).toBe("needs_review");
+    expect(projectPackReadiness.planJudge.dimensionScores.handoffRiskResolution).toBeLessThan(90);
   });
 
   it("generates runnable Repo MRI starter code artifacts", async () => {
