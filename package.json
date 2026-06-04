@@ -33,6 +33,7 @@
     "benchmark:project-prd": "tsx scripts/project-prd-benchmark.ts",
     "benchmark:project-research-evidence": "tsx scripts/project-research-evidence-benchmark.ts",
     "benchmark:project-bucket-relevance": "tsx scripts/project-bucket-relevance-benchmark.ts",
+    "benchmark:project-paper-relevance": "tsx scripts/project-paper-relevance-judge-benchmark.ts",
     "benchmark:project-research-plan": "tsx scripts/project-research-plan-benchmark.ts",
     "benchmark:project-research-brief": "tsx scripts/project-research-brief-benchmark.ts",
     "benchmark:project-research-runner": "tsx scripts/project-research-runner-benchmark.ts",

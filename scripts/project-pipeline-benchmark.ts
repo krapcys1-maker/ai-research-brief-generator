@@ -101,6 +101,12 @@ const benchmarkDefinitions: BenchmarkDefinition[] = [
     jsonPath: "benchmark-results/project-bucket-relevance-latest.json"
   },
   {
+    id: "project_paper_relevance",
+    label: "ProjectPaperRelevance",
+    npmScript: "benchmark:project-paper-relevance",
+    jsonPath: "benchmark-results/project-paper-relevance-judge-latest.json"
+  },
+  {
     id: "research_brief",
     label: "ProjectResearchBrief",
     npmScript: "benchmark:project-research-brief",
@@ -243,6 +249,8 @@ function extractKeyMetrics(report: Record<string, unknown>) {
     "averageBucketCoverage",
     "falsePositiveRejectRate",
     "truePositiveAcceptRate",
+    "paperJudgeFalsePositiveRejectRate",
+    "paperJudgeTruePositiveKeepRate",
     "averageRequiredCoverage",
     "averageArtifactCompleteness",
     "schemaValidCount",

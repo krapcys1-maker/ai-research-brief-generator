@@ -1,3 +1,7 @@
+import {
+  hasRequiredBucketAnchor,
+  requiredAnchorsForBucket
+} from "@/lib/project-research/domainAnchors";
 import type {
   ProjectIdeaInput,
   ResearchPlan,
@@ -142,6 +146,8 @@ function scoreBucketAssignment(input: {
     ...input.idea.preferredDomains.flatMap(tokenize)
   ]);
   const ideaHits = ideaTerms.filter((term) => text.includes(term));
+  const requiredAnchors = requiredAnchorsForBucket(bucket.id);
+  const hasDomainAnchor = hasRequiredBucketAnchor(bucket, text);
 
   if (keywordHits.length > 0) {
     matchedSignals.push(`keyword hits: ${keywordHits.slice(0, 4).join(", ")}`);
@@ -163,6 +169,16 @@ function scoreBucketAssignment(input: {
     missingSignals.push("no idea term hit");
   }
 
+  if (requiredAnchors.length === 0) {
+    matchedSignals.push("no required domain anchor configured");
+  } else if (hasDomainAnchor) {
+    matchedSignals.push("required domain anchor present");
+  } else {
+    missingSignals.push(
+      `missing required domain anchor: ${requiredAnchors.slice(0, 6).join(", ")}`
+    );
+  }
+
   const keywordScore = bucket.keywords.length
     ? keywordHits.length / bucket.keywords.length
     : 0;
@@ -181,9 +197,12 @@ function scoreBucketAssignment(input: {
     )
   );
   const hasStrongTopicalMatch =
-    keywordHits.length > 0 || (bucketTermHits.length >= 2 && ideaHits.length > 0);
+    hasDomainAnchor &&
+    (keywordHits.length > 0 || (bucketTermHits.length >= 2 && ideaHits.length > 0));
   const decision: PaperRelevanceDecision =
-    score >= 55 && hasStrongTopicalMatch && bucketTermHits.length > 0
+    !hasDomainAnchor
+      ? "reject"
+      : score >= 55 && hasStrongTopicalMatch && bucketTermHits.length > 0
       ? "keep"
       : score >= 35 && (keywordHits.length > 0 || bucketTermHits.length >= 2)
         ? "maybe"
@@ -196,7 +215,9 @@ function scoreBucketAssignment(input: {
     score,
     decision,
     rationale:
-      decision === "keep"
+      !hasDomainAnchor
+        ? "Paper matches generic bucket wording but misses the required project-domain anchor."
+        : decision === "keep"
         ? "Paper has enough topical overlap with the bucket and project idea."
         : decision === "maybe"
           ? "Paper has partial overlap; keep it visible but do not rely on it as strong bucket evidence."

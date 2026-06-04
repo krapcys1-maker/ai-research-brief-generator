@@ -53,6 +53,12 @@ Last updated: 2026-06-02
   architecture evidence. Track `project-bucket-relevance-latest.json`,
   `project-bucket-relevance-latest.md`, `falsePositiveRejectRate` and
   `truePositiveAcceptRate` as hard relevance regression signals.
+- Keep `npm run benchmark:project-paper-relevance` in the project pipeline so
+  the final `paper_relevance_judgement` layer rejects cross-domain papers that
+  happen to share generic bucket wording. Track
+  `project-paper-relevance-judge-latest.json`,
+  `project-paper-relevance-judge-latest.md`,
+  `paperJudgeFalsePositiveRejectRate` and `paperJudgeTruePositiveKeepRate`.
 - Keep controlled live GH Archive batch sampling in `npm run benchmark:project-live-batch`,
   with strict byte caps, cached GitHub enrichment, `controlled_live_batch_summary.json`,
   `controlled_live_batch_summary.md`, and decision metrics such as `trendRepoCount`,
