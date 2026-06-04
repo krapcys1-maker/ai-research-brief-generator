@@ -25,6 +25,7 @@ type IdeaSelection = {
   title: string;
   selected: boolean;
   score: number;
+  alignmentScore: number;
   clusterKey: string;
   primarySource: string;
   supportingSources: string[];
@@ -39,6 +40,7 @@ type IdeaCluster = {
   supportingSources: string[];
   selectedIdeaId: string | null;
   rejectedIdeaIds: string[];
+  alignmentScore: number;
   reasons: string[];
 };
 
@@ -341,6 +343,200 @@ function ideaMismatchWarnings(input: {
   return warnings;
 }
 
+function countHits(text: string, terms: string[]) {
+  return terms.filter((term) => text.includes(term)).length;
+}
+
+function evidenceProfile(title: string) {
+  const normalizedTitle = title.toLowerCase();
+
+  if (normalizedTitle.includes("data quality")) {
+    return {
+      primary: [
+        "data",
+        "dataset",
+        "csv",
+        "warehouse",
+        "analytics",
+        "scrap",
+        "crawler",
+        "extraction"
+      ],
+      secondary: [
+        "quality",
+        "anomaly",
+        "schema",
+        "drift",
+        "missing",
+        "duplicate",
+        "profile",
+        "join"
+      ],
+      minPrimaryHits: 2,
+      minScore: 0.35
+    };
+  }
+
+  if (normalizedTitle.includes("clinical") || normalizedTitle.includes("medical")) {
+    return {
+      primary: ["clinical", "medical", "patient", "health", "healthcare"],
+      secondary: [
+        "evidence",
+        "citation",
+        "summary",
+        "summaries",
+        "documentation",
+        "uncertainty"
+      ],
+      minPrimaryHits: 2,
+      minSecondaryHits: 1,
+      minScore: 0.45
+    };
+  }
+
+  if (normalizedTitle.includes("technical debt")) {
+    return {
+      primary: [
+        "code review",
+        "pull request",
+        "review comments",
+        "static analysis",
+        "code",
+        "repo"
+      ],
+      secondary: [
+        "technical debt",
+        "sprint",
+        "refactor",
+        "maintainability",
+        "prioritization",
+        "plan"
+      ],
+      minPrimaryHits: 1,
+      minScore: 0.35
+    };
+  }
+
+  if (normalizedTitle.includes("document conversion")) {
+    return {
+      primary: ["document", "documents", "markdown", "pdf", "office"],
+      secondary: ["conversion", "convert", "table", "citation", "encoding", "rag"],
+      minPrimaryHits: 2,
+      minScore: 0.45
+    };
+  }
+
+  if (normalizedTitle.includes("cli provider")) {
+    return {
+      primary: ["provider", "routing", "auth", "proxy", "model", "codex", "claude"],
+      secondary: ["compatibility", "capability", "cli", "opencode", "gemini", "switch"],
+      minPrimaryHits: 2,
+      minScore: 0.4
+    };
+  }
+
+  if (normalizedTitle.includes("agent run")) {
+    return {
+      primary: ["agent", "tool call", "tool calls", "workflow", "run", "trace"],
+      secondary: ["qa", "evaluation", "replay", "failure", "reliability", "production"],
+      minPrimaryHits: 1,
+      minScore: 0.35
+    };
+  }
+
+  if (normalizedTitle.includes("self-hosted")) {
+    return {
+      primary: ["self-hosted", "local-first", "privacy", "workspace", "secrets"],
+      secondary: ["policy", "audit", "security", "deployment", "network", "approval"],
+      minPrimaryHits: 2,
+      minScore: 0.4
+    };
+  }
+
+  if (normalizedTitle.includes("context budget")) {
+    return {
+      primary: ["context", "compression", "token", "rag", "chunks"],
+      secondary: ["quality", "retention", "facts", "budget", "loss", "threshold"],
+      minPrimaryHits: 2,
+      minScore: 0.4
+    };
+  }
+
+  if (normalizedTitle.includes("short-video") || normalizedTitle.includes("short video")) {
+    return {
+      primary: ["video", "short", "script", "voiceover", "moviepy"],
+      secondary: ["content", "publishing", "qa", "claim", "repetition", "brand"],
+      minPrimaryHits: 2,
+      minScore: 0.35
+    };
+  }
+
+  if (normalizedTitle.includes("release readiness")) {
+    return {
+      primary: ["llm", "model", "inference", "benchmark", "deployment", "release"],
+      secondary: ["latency", "cost", "rollback", "regression", "readiness", "quality"],
+      minPrimaryHits: 2,
+      minSecondaryHits: 1,
+      minScore: 0.45
+    };
+  }
+
+  return {
+    primary: normalize(title)
+      .split(" ")
+      .filter((term) => term.length >= 5),
+    secondary: ["qa", "audit", "monitor", "reliability", "readiness", "workflow"],
+    minPrimaryHits: 1,
+    minScore: 0.3
+  };
+}
+
+function ideaSourceAlignment(input: {
+  idea: DiscoveredIdea;
+  repo: IdeaSourceRepo | undefined;
+}) {
+  if (!input.repo) {
+    return {
+      score: 0,
+      warnings: ["Idea source repo was not found for evidence alignment."]
+    };
+  }
+
+  const profile = evidenceProfile(input.idea.title);
+  const text = repoText(input.repo);
+  const primaryHits = countHits(text, profile.primary);
+  const secondaryHits = countHits(text, profile.secondary);
+  const primaryScore = clamp01(primaryHits / Math.max(2, Math.min(profile.primary.length, 4)));
+  const secondaryScore = clamp01(
+    secondaryHits / Math.max(2, Math.min(profile.secondary.length, 4))
+  );
+  const score = Number((primaryScore * 0.65 + secondaryScore * 0.35).toFixed(3));
+  const warnings: string[] = [];
+
+  if (primaryHits < profile.minPrimaryHits) {
+    warnings.push(
+      `Idea-source primary evidence has ${primaryHits}/${profile.minPrimaryHits} required hits for "${input.idea.title}".`
+    );
+  }
+
+  if ((profile.minSecondaryHits ?? 0) > 0 && secondaryHits < profile.minSecondaryHits) {
+    warnings.push(
+      `Idea-source secondary evidence has ${secondaryHits}/${profile.minSecondaryHits} required hits for "${input.idea.title}".`
+    );
+  }
+
+  if (score < profile.minScore) {
+    warnings.push(
+      `Idea-source alignment ${score} is below required ${profile.minScore} for "${input.idea.title}".`
+    );
+  }
+
+  return {
+    score,
+    warnings
+  };
+}
+
 function scoreFor(scores: IdeaScore[], ideaId: string) {
   const score = scores.find((candidate) => candidate.ideaId === ideaId);
   if (!score) {
@@ -382,10 +578,26 @@ export function curateShortlistIdeas(input: {
       const rankedIdeas = [...ideas].sort((left, right) => {
         const leftSource = sourceScoreById.get(left.sourceRepos[0]);
         const rightSource = sourceScoreById.get(right.sourceRepos[0]);
+        const leftAlignment = ideaSourceAlignment({
+          idea: left,
+          repo: reposById.get(left.sourceRepos[0])
+        });
+        const rightAlignment = ideaSourceAlignment({
+          idea: right,
+          repo: reposById.get(right.sourceRepos[0])
+        });
+        const leftPenalty = leftAlignment.warnings.length ? 30 : 0;
+        const rightPenalty = rightAlignment.warnings.length ? 30 : 0;
         const leftScore =
-          scoreFor(input.ideaScores, left.ideaId).total + (leftSource?.score ?? 0) * 0.12;
+          scoreFor(input.ideaScores, left.ideaId).total +
+          (leftSource?.score ?? 0) * 0.08 +
+          leftAlignment.score * 18 -
+          leftPenalty;
         const rightScore =
-          scoreFor(input.ideaScores, right.ideaId).total + (rightSource?.score ?? 0) * 0.12;
+          scoreFor(input.ideaScores, right.ideaId).total +
+          (rightSource?.score ?? 0) * 0.08 +
+          rightAlignment.score * 18 -
+          rightPenalty;
 
         return rightScore - leftScore;
       });
@@ -393,17 +605,37 @@ export function curateShortlistIdeas(input: {
       const representativeScore = scoreFor(input.ideaScores, representative.ideaId);
       const bestSourceScore =
         sourceScoreById.get(representative.sourceRepos[0])?.score ?? 0;
+      const representativeAlignment = ideaSourceAlignment({
+        idea: representative,
+        repo: reposById.get(representative.sourceRepos[0])
+      });
       const supportingSources = unique(rankedIdeas.flatMap((idea) => idea.sourceRepos));
+      const alignedSupportCount = rankedIdeas.filter(
+        (idea) => {
+          const alignment = ideaSourceAlignment({
+            idea,
+            repo: reposById.get(idea.sourceRepos[0])
+          });
+
+          return (
+            alignment.score >= evidenceProfile(idea.title).minScore &&
+            alignment.warnings.length === 0
+          );
+        }
+      ).length;
       const clusterScore =
         representativeScore.total +
-        bestSourceScore * 0.1 +
-        Math.min(supportingSources.length - 1, 4) * 1.5;
+        bestSourceScore * 0.08 +
+        representativeAlignment.score * 18 +
+        Math.min(alignedSupportCount - 1, 4) * 1.5;
 
       return {
         key,
         ideas: rankedIdeas,
         representative,
         supportingSources,
+        alignedSupportCount,
+        alignmentScore: representativeAlignment.score,
         clusterScore
       };
     })
@@ -422,6 +654,11 @@ export function curateShortlistIdeas(input: {
       idea: representative,
       repo: reposById.get(primarySource)
     });
+    const alignment = ideaSourceAlignment({
+      idea: representative,
+      repo: reposById.get(primarySource)
+    });
+    warnings.push(...alignment.warnings);
     const canSelect =
       selected.length < input.maxIdeas &&
       sourceCount < input.maxIdeasPerSource &&
@@ -452,10 +689,16 @@ export function curateShortlistIdeas(input: {
       cluster.supportingSources.length > 1
         ? `Concept has ${cluster.supportingSources.length} supporting sources.`
         : "Concept has one supporting source.";
+    const alignedSupportReason =
+      cluster.alignedSupportCount > 1
+        ? `${cluster.alignedSupportCount} sources pass idea-source alignment.`
+        : `${cluster.alignedSupportCount} source passes idea-source alignment.`;
     const decisionReasons = [
       `Base idea score ${scoreFor(input.ideaScores, representative.ideaId).total}.`,
       `Source curation score ${sourceScoreById.get(primarySource)?.score ?? "n/a"}.`,
+      `Idea-source alignment ${alignment.score}.`,
       supportReason,
+      alignedSupportReason,
       ...(canSelect
         ? ["Selected as the best representative for this concept cluster."]
         : selected.length >= input.maxIdeas
@@ -470,6 +713,7 @@ export function curateShortlistIdeas(input: {
       title: representative.title,
       selected: Boolean(selectedIdea),
       score: Number(cluster.clusterScore.toFixed(1)),
+      alignmentScore: alignment.score,
       clusterKey: cluster.key,
       primarySource,
       supportingSources: cluster.supportingSources,
@@ -483,6 +727,7 @@ export function curateShortlistIdeas(input: {
       supportingSources: cluster.supportingSources,
       selectedIdeaId: selectedIdea?.ideaId ?? null,
       rejectedIdeaIds,
+      alignmentScore: alignment.score,
       reasons: decisionReasons
     });
   }
@@ -573,6 +818,7 @@ export function ideaSelectionReportToMarkdown(report: IdeaSelectionReport) {
     lines.push("");
     lines.push(`- Idea ID: ${decision.ideaId}`);
     lines.push(`- Score: ${decision.score}`);
+    lines.push(`- Alignment score: ${decision.alignmentScore}`);
     lines.push(`- Cluster: ${decision.clusterKey}`);
     lines.push(`- Primary source: ${decision.primarySource}`);
     lines.push(`- Supporting sources: ${decision.supportingSources.join(", ")}`);
@@ -593,6 +839,7 @@ export function ideaSelectionReportToMarkdown(report: IdeaSelectionReport) {
     lines.push("");
     lines.push(`- Key: ${cluster.key}`);
     lines.push(`- Candidates: ${cluster.candidateCount}`);
+    lines.push(`- Alignment score: ${cluster.alignmentScore}`);
     lines.push(`- Selected idea: ${cluster.selectedIdeaId ?? "none"}`);
     lines.push(`- Rejected ideas: ${cluster.rejectedIdeaIds.join(", ") || "none"}`);
     lines.push(`- Supporting sources: ${cluster.supportingSources.join(", ")}`);
