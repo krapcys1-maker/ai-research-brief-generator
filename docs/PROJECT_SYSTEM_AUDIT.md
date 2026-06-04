@@ -176,7 +176,9 @@ Do not move an idea into expensive research or architecture generation unless:
 - clone rejection ratio is non-zero on benchmarked runs,
 - shortlisted ideas are research-ready,
 - shortlisted ideas have enough personal build utility for the user's own workflow,
-- `handoffReadyCount` equals the number of generated `ProjectIdeaInput` records,
+- generated `ProjectIdeaInput` records are either `ready` or explicitly marked
+  `needs_review`,
+- `handoffBlockedCount` is zero,
 - `averageHandoffQualityScore` is at least 82,
 - trend radar has at least one category,
 - the idea has a specific QA/audit/diagnostic/reliability/governance job rather than a broad clone-shaped title.

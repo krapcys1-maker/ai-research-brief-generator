@@ -94,12 +94,15 @@ Current guard:
 - `researchReadyCount`.
 - `pipelineInputValidCount`.
 - `project_idea_handoff_quality.json` and `.md` artifacts score every shortlisted idea before research.
-- Report metrics: `averageHandoffQualityScore`, `handoffReadyCount`.
+- Report metrics: `averageHandoffQualityScore`, `handoffReadyCount`,
+  `handoffReviewCount`, `handoffBlockedCount`.
 
 Implemented guard:
 
 - Handoff quality score checks constraints quality, domain specificity, research question coverage, non-goal clarity and description specificity.
-- `npm run benchmark:project-ideas` fails if promising ideas are not handoff-ready.
+- `npm run benchmark:project-ideas` fails if promising ideas are blocked or
+  invalid. It allows `needs_review` when source evidence must be verified before
+  research spend.
 
 ### 6. Architecture Quality Drift
 
@@ -194,7 +197,9 @@ For every meaningful system change:
 - Done: store only summarized benchmark artifacts, not raw large runs:
   - `controlled_live_batch_summary.json`,
   - `controlled_live_batch_summary.md`.
-- Done: track `trendRepoCount`, `sourceRepoCount`, `handoffReadyCount`, `averageHandoffQualityScore` and `blockerCount` before research spend.
+- Done: track `trendRepoCount`, `sourceRepoCount`, `handoffReadyCount`,
+  `handoffReviewCount`, `handoffBlockedCount`, `averageHandoffQualityScore` and
+  `blockerCount` before research spend.
 - Done: include compact `repoEvidence` and `scoredCandidates` sections so live outputs can be audited without raw large dumps.
 - Done: require `allowLiveSpend: true` in addition to `mode: "live"` so a copied JSON file cannot accidentally run a live BigQuery query.
 - Done: run one real controlled live GH Archive sample for 2026-06-01 with a 500,000,000 byte cap and no auto-escalation.

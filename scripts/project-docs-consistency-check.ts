@@ -90,6 +90,8 @@ const requiredMetrics = [
   "whyNotCompleteness",
   "averageHandoffQualityScore",
   "handoffReadyCount",
+  "handoffReviewCount",
+  "handoffBlockedCount",
   "averageJudgeScore",
   "trendRepoCount",
   "sourceRepoCount",

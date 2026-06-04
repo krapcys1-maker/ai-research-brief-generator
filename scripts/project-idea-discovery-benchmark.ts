@@ -28,6 +28,8 @@ type CaseResult = {
   pipelineInputValidCount: number;
   averageHandoffQualityScore: number;
   handoffReadyCount: number;
+  handoffReviewCount: number;
+  handoffBlockedCount: number;
   passed: boolean;
   topIdeaTitle: string | null;
   expectedTopIdeaTitle: string | null;
@@ -68,6 +70,10 @@ function evaluateCase(testCase: ProjectIdeaBenchmarkCase): CaseResult {
   const topIdeaMatchesExpectation =
     !testCase.expectedTopIdeaTitle ||
     topIdeaTitle === testCase.expectedTopIdeaTitle;
+  const handoffReviewCount = report.metrics.handoffReviewCount;
+  const handoffBlockedCount = report.metrics.handoffBlockedCount;
+  const handoffUsableCount =
+    report.metrics.handoffReadyCount + handoffReviewCount;
   const passed =
     parsed.success &&
     report.metrics.ideaCount >= 2 &&
@@ -79,7 +85,8 @@ function evaluateCase(testCase: ProjectIdeaBenchmarkCase): CaseResult {
     sourceDiversityPass &&
     topIdeaMatchesExpectation &&
     report.metrics.researchReadyCount >= 1 &&
-    report.metrics.handoffReadyCount === report.metrics.promisingCount &&
+    handoffUsableCount === report.metrics.promisingCount &&
+    handoffBlockedCount === 0 &&
     report.metrics.averageHandoffQualityScore >= 82 &&
     pipelineInputValidCount === report.metrics.promisingCount;
 
@@ -101,6 +108,8 @@ function evaluateCase(testCase: ProjectIdeaBenchmarkCase): CaseResult {
     pipelineInputValidCount,
     averageHandoffQualityScore: report.metrics.averageHandoffQualityScore,
     handoffReadyCount: report.metrics.handoffReadyCount,
+    handoffReviewCount,
+    handoffBlockedCount,
     passed,
     topIdeaTitle,
     expectedTopIdeaTitle: testCase.expectedTopIdeaTitle ?? null,
@@ -130,6 +139,8 @@ function renderMarkdownReport(input: {
   pipelineInputValidCount: number;
   averageHandoffQualityScore: number;
   handoffReadyCount: number;
+  handoffReviewCount: number;
+  handoffBlockedCount: number;
   results: CaseResult[];
 }) {
   const lines = [
@@ -152,6 +163,8 @@ function renderMarkdownReport(input: {
     `Pipeline inputs valid: ${input.pipelineInputValidCount}`,
     `Average handoff quality score: ${input.averageHandoffQualityScore.toFixed(1)}`,
     `Handoff ready ideas: ${input.handoffReadyCount}`,
+    `Handoff review ideas: ${input.handoffReviewCount}`,
+    `Handoff blocked ideas: ${input.handoffBlockedCount}`,
     "",
     "## Cases",
     ""
@@ -173,6 +186,8 @@ function renderMarkdownReport(input: {
     lines.push(`- Pipeline inputs valid: ${result.pipelineInputValidCount}`);
     lines.push(`- Average handoff quality score: ${result.averageHandoffQualityScore.toFixed(1)}`);
     lines.push(`- Handoff ready: ${result.handoffReadyCount}`);
+    lines.push(`- Handoff review: ${result.handoffReviewCount}`);
+    lines.push(`- Handoff blocked: ${result.handoffBlockedCount}`);
     lines.push(`- Tags: ${result.tags.join(", ")}`);
     lines.push(`- Top idea: ${result.topIdeaTitle ?? "none"}`);
     if (result.expectedTopIdeaTitle) {
@@ -235,6 +250,14 @@ async function main() {
       (sum, result) => sum + result.handoffReadyCount,
       0
     ),
+    handoffReviewCount: results.reduce(
+      (sum, result) => sum + result.handoffReviewCount,
+      0
+    ),
+    handoffBlockedCount: results.reduce(
+      (sum, result) => sum + result.handoffBlockedCount,
+      0
+    ),
     results
   };
 
@@ -255,6 +278,8 @@ async function main() {
       `Research-ready ideas: ${report.researchReadyCount}`,
       `Average handoff quality score: ${report.averageHandoffQualityScore.toFixed(1)}`,
       `Handoff ready ideas: ${report.handoffReadyCount}`,
+      `Handoff review ideas: ${report.handoffReviewCount}`,
+      `Handoff blocked ideas: ${report.handoffBlockedCount}`,
       `JSON: ${jsonOutputPath}`,
       `Markdown: ${markdownOutputPath}`
     ].join("\n")

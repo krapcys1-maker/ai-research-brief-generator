@@ -25,6 +25,8 @@ export function ideaDiscoveryReportToMarkdown(report: IdeaDiscoveryReport) {
     `**Clone rejections:** ${report.metrics.cloneRejectedCount}`,
     `**Research ready:** ${report.metrics.researchReadyCount}`,
     `**Handoff ready:** ${report.metrics.handoffReadyCount}`,
+    `**Handoff review:** ${report.metrics.handoffReviewCount}`,
+    `**Handoff blocked:** ${report.metrics.handoffBlockedCount}`,
     `**Average handoff quality:** ${report.metrics.averageHandoffQualityScore}`,
     "",
     "## Shortlist",
@@ -101,6 +103,9 @@ export function projectIdeaHandoffQualityToMarkdown(
     lines.push(`**Research question coverage:** ${quality.researchQuestionCoverage}`);
     lines.push(`**Non-goal clarity:** ${quality.nonGoalClarity}`);
     lines.push(`**Description specificity:** ${quality.descriptionSpecificity}`);
+    lines.push(
+      `**Source evidence quality:** ${quality.sourceEvidenceQuality ?? "n/a"}`
+    );
     lines.push("");
     lines.push("**Strengths:**");
     lines.push(...listItems(quality.strengths));
@@ -110,6 +115,9 @@ export function projectIdeaHandoffQualityToMarkdown(
     lines.push("");
     lines.push("**Required fixes:**");
     lines.push(...listItems(quality.requiredFixes));
+    lines.push("");
+    lines.push("**Review flags:**");
+    lines.push(...listItems(quality.reviewFlags));
     lines.push("");
   }
 

@@ -127,7 +127,9 @@ Controlled live batch sampling is implemented as the next gate before research s
 - The sampler writes only summary artifacts:
   - `controlled_live_batch_summary.json`,
   - `controlled_live_batch_summary.md`.
-- Key summary metrics are `trendRepoCount`, `sourceRepoCount`, `handoffReadyCount`, `averageHandoffQualityScore` and `blockerCount`.
+- Key summary metrics are `trendRepoCount`, `sourceRepoCount`,
+  `handoffReadyCount`, `handoffReviewCount`, `handoffBlockedCount`,
+  `averageHandoffQualityScore` and `blockerCount`.
 - The summary includes compact `repoEvidence` and `scoredCandidates` sections so reviewers can inspect why repos were or were not promoted without storing raw README/issue dumps.
 - GitHub enrichment for GH Archive repo names is cached, the sampler never auto-escalates `maxBytesBilled`, and `live` mode cannot run from a JSON file unless `allowLiveSpend: true` is set after a dry-run review.
 
@@ -201,7 +203,9 @@ type ProjectIdeaHandoffQuality = {
   researchQuestionCoverage: number;
   nonGoalClarity: number;
   descriptionSpecificity: number;
+  sourceEvidenceQuality: number | null;
   requiredFixes: string[];
+  reviewFlags: string[];
 };
 ```
 
@@ -222,6 +226,8 @@ type IdeaDiscoveryMetrics = {
   pipelineInputValidCount: number;
   averageHandoffQualityScore: number;
   handoffReadyCount: number;
+  handoffReviewCount: number;
+  handoffBlockedCount: number;
 };
 ```
 
@@ -343,7 +349,15 @@ gate checks:
 - explicit non-goals,
 - preferred-domain specificity,
 - research question coverage from the original idea,
-- description specificity for downstream PRD and architecture.
+- description specificity for downstream PRD and architecture,
+- source evidence quality from the selection report,
+- review flags that should stay visible before research spend.
+
+Advisory flags such as low single-source curation confidence are carried into
+the handoff report without automatically blocking a strong project input.
+Blocking flags, for example weak issue-level evidence or borderline source
+evidence, downgrade readiness to `needs_review` so the next stage does not treat
+the idea as fully verified.
 
 Runs emit:
 
@@ -352,7 +366,10 @@ project_idea_handoff_quality.json
 project_idea_handoff_quality.md
 ```
 
-The project idea benchmark fails when shortlisted ideas are not handoff-ready.
+The project idea benchmark fails when shortlisted ideas are blocked or invalid.
+It allows `needs_review` when the idea input itself is strong but source
+evidence flags require manual verification. This keeps weak evidence visible
+without pretending every generated input is fully research-ready.
 
 Then the existing CLI can run:
 
@@ -475,6 +492,8 @@ researchReadyCount
 pipelineInputValidCount
 averageHandoffQualityScore
 handoffReadyCount
+handoffReviewCount
+handoffBlockedCount
 averageJudgeScore
 sourceEvidenceQuality
 reviewFlags
@@ -491,7 +510,8 @@ averageNovelty >= 0.70
 averageMvpFeasibility >= 0.70
 averagePersonalUtility >= 0.70
 researchReadyCount >= 5
-handoffReadyCount == promisingCount
+handoffReadyCount + handoffReviewCount == promisingCount
+handoffBlockedCount == 0
 averageHandoffQualityScore >= 82
 ```
 

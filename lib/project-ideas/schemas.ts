@@ -94,9 +94,11 @@ export const ProjectIdeaHandoffQualitySchema = z.object({
   researchQuestionCoverage: z.number().min(0).max(1),
   nonGoalClarity: z.number().min(0).max(1),
   descriptionSpecificity: z.number().min(0).max(1),
+  sourceEvidenceQuality: z.number().min(0).max(1).nullable().default(null),
   strengths: z.array(z.string().trim().min(1)).default([]),
   weaknesses: z.array(z.string().trim().min(1)).default([]),
-  requiredFixes: z.array(z.string().trim().min(1)).default([])
+  requiredFixes: z.array(z.string().trim().min(1)).default([]),
+  reviewFlags: z.array(z.string().trim().min(1)).default([])
 });
 
 export const IdeaDiscoveryInputSchema = z.object({
@@ -133,7 +135,9 @@ export const IdeaDiscoveryReportSchema = z.object({
     researchReadyCount: z.number().int().nonnegative(),
     pipelineInputValidCount: z.number().int().nonnegative(),
     averageHandoffQualityScore: z.number().min(0).max(100),
-    handoffReadyCount: z.number().int().nonnegative()
+    handoffReadyCount: z.number().int().nonnegative(),
+    handoffReviewCount: z.number().int().nonnegative(),
+    handoffBlockedCount: z.number().int().nonnegative()
   })
 });
 

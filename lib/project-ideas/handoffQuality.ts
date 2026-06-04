@@ -6,6 +6,11 @@ import type {
 } from "@/lib/project-ideas/types";
 import type { ProjectIdeaInput } from "@/lib/project-research";
 
+type SelectionRisk = {
+  sourceEvidenceQuality?: number | null;
+  reviewFlags?: string[];
+};
+
 function includesAny(text: string, terms: string[]) {
   return terms.some((term) => text.includes(term));
 }
@@ -21,6 +26,15 @@ function rounded(value: number, decimals = 3) {
 
 function unique(values: string[]) {
   return [...new Set(values.map((value) => value.trim()).filter(Boolean))];
+}
+
+function shouldBlockReadyOnReviewFlag(flag: string) {
+  const normalized = flag.toLowerCase();
+
+  return (
+    normalized.includes("weak issue-level evidence") ||
+    normalized.includes("borderline")
+  );
 }
 
 function constraintQuality(constraints: string[]) {
@@ -140,6 +154,7 @@ function descriptionSpecificity(input: ProjectIdeaInput) {
 export function scoreProjectIdeaHandoff(input: {
   idea: DiscoveredIdea;
   projectIdeaInput: ProjectIdeaInput;
+  selectionRisk?: SelectionRisk;
 }): ProjectIdeaHandoffQuality {
   const parsedInput = ProjectIdeaInputSchema.safeParse(input.projectIdeaInput);
   const constraintsScore = constraintQuality(input.projectIdeaInput.constraints);
@@ -157,6 +172,8 @@ export function scoreProjectIdeaHandoff(input: {
   const strengths: string[] = [];
   const weaknesses: string[] = [];
   const requiredFixes: string[] = [];
+  const reviewFlags = unique(input.selectionRisk?.reviewFlags ?? []);
+  const sourceEvidenceQuality = input.selectionRisk?.sourceEvidenceQuality ?? null;
 
   if (parsedInput.success) {
     strengths.push("ProjectIdeaInput schema is valid.");
@@ -207,11 +224,28 @@ export function scoreProjectIdeaHandoff(input: {
     }
   }
 
+  if (sourceEvidenceQuality !== null) {
+    if (sourceEvidenceQuality >= 0.75) {
+      strengths.push("Source evidence quality is strong enough for research handoff.");
+    } else if (sourceEvidenceQuality < 0.55) {
+      weaknesses.push("Source evidence quality is weak; verify source fit before research.");
+    } else {
+      weaknesses.push("Source evidence quality is moderate; keep source fit under review.");
+    }
+  }
+
+  if (reviewFlags.length > 0) {
+    weaknesses.push(...reviewFlags);
+  }
+
   const uniqueRequiredFixes = unique(requiredFixes);
+  const hasBlockingReviewFlag = reviewFlags.some(shouldBlockReadyOnReviewFlag);
   const readiness =
     uniqueRequiredFixes.length > 0 || score < 65
       ? "blocked"
-      : score >= 82
+      : hasBlockingReviewFlag
+        ? "needs_review"
+        : score >= 82
         ? "ready"
         : "needs_review";
 
@@ -226,15 +260,18 @@ export function scoreProjectIdeaHandoff(input: {
     researchQuestionCoverage: rounded(researchScore),
     nonGoalClarity: rounded(nonGoalScore),
     descriptionSpecificity: rounded(descriptionScore),
+    sourceEvidenceQuality,
     strengths,
     weaknesses,
-    requiredFixes: uniqueRequiredFixes
+    requiredFixes: uniqueRequiredFixes,
+    reviewFlags
   });
 }
 
 export function scoreProjectIdeaHandoffs(input: {
   ideas: DiscoveredIdea[];
   projectIdeaInputs: ProjectIdeaInput[];
+  selectionRisks?: SelectionRisk[];
 }) {
   return input.projectIdeaInputs.flatMap((projectIdeaInput, index) => {
     const idea = input.ideas[index];
@@ -242,6 +279,10 @@ export function scoreProjectIdeaHandoffs(input: {
       return [];
     }
 
-    return scoreProjectIdeaHandoff({ idea, projectIdeaInput });
+    return scoreProjectIdeaHandoff({
+      idea,
+      projectIdeaInput,
+      selectionRisk: input.selectionRisks?.[index]
+    });
   });
 }

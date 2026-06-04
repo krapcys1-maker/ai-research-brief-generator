@@ -52,6 +52,8 @@ Last updated: 2026-06-02
   with strict byte caps, cached GitHub enrichment, `controlled_live_batch_summary.json`,
   `controlled_live_batch_summary.md`, and decision metrics such as `trendRepoCount`,
   `sourceRepoCount`, `handoffReadyCount`, `averageHandoffQualityScore` and `blockerCount`.
+  `handoffReviewCount` and `handoffBlockedCount` separate source-evidence review
+  from fully blocked handoffs.
 
 ## P2: Product UX
 

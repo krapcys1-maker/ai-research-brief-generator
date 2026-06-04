@@ -119,6 +119,8 @@ export type ProjectIdeaDiscoveryRunManifest = {
   cloneRejectedCount: number;
   projectIdeaInputCount: number;
   handoffReadyCount: number;
+  handoffReviewCount: number;
+  handoffBlockedCount: number;
   averageHandoffQualityScore: number;
   githubMode: "not_used" | "used";
   ghArchiveMode: "not_used" | "dry_run" | "used";
@@ -234,6 +236,26 @@ function toProjectIdeaInput(idea: DiscoveredIdea, outputLanguage: string) {
     constraints: [...idea.nonGoals, ...idea.mvpScope.map((scope) => `MVP: ${scope}`)],
     preferredDomains: idea.domains,
     outputLanguage
+  });
+}
+
+function selectionRisksForShortlist(
+  shortlist: DiscoveredIdea[],
+  decisions: Array<{
+    ideaId: string;
+    sourceEvidenceQuality: number;
+    reviewFlags: string[];
+  }>
+) {
+  const byIdeaId = new Map(decisions.map((decision) => [decision.ideaId, decision]));
+
+  return shortlist.map((idea) => {
+    const decision = byIdeaId.get(idea.ideaId);
+
+    return {
+      sourceEvidenceQuality: decision?.sourceEvidenceQuality ?? null,
+      reviewFlags: decision?.reviewFlags ?? []
+    };
   });
 }
 
@@ -369,7 +391,8 @@ export function discoverProjectIdeas(value: unknown): IdeaDiscoveryReport {
   );
   const projectIdeaHandoffQuality = scoreProjectIdeaHandoffs({
     ideas: shortlist,
-    projectIdeaInputs
+    projectIdeaInputs,
+    selectionRisks: selectionRisksForShortlist(shortlist, curated.report.decisions)
   });
   const shortlistedScores = shortlist.map((idea) => scoreFor(idea, ideaScores));
   const metrics = {
@@ -400,6 +423,12 @@ export function discoverProjectIdeas(value: unknown): IdeaDiscoveryReport {
     ),
     handoffReadyCount: projectIdeaHandoffQuality.filter(
       (quality) => quality.readiness === "ready"
+    ).length,
+    handoffReviewCount: projectIdeaHandoffQuality.filter(
+      (quality) => quality.readiness === "needs_review"
+    ).length,
+    handoffBlockedCount: projectIdeaHandoffQuality.filter(
+      (quality) => quality.readiness === "blocked"
     ).length
   };
   const report: IdeaDiscoveryReport = {
@@ -448,6 +477,8 @@ function createManifest(input: {
     cloneRejectedCount: input.report.metrics.cloneRejectedCount,
     projectIdeaInputCount: input.report.projectIdeaInputs.length,
     handoffReadyCount: input.report.metrics.handoffReadyCount,
+    handoffReviewCount: input.report.metrics.handoffReviewCount,
+    handoffBlockedCount: input.report.metrics.handoffBlockedCount,
     averageHandoffQualityScore: input.report.metrics.averageHandoffQualityScore,
     githubMode: input.githubMode,
     ghArchiveMode: input.ghArchiveMode,
@@ -541,7 +572,11 @@ export async function runProjectIdeaDiscovery(
   );
   const curatedProjectIdeaHandoffQuality = scoreProjectIdeaHandoffs({
     ideas: curatedSelection.shortlist,
-    projectIdeaInputs: curatedProjectIdeaInputs
+    projectIdeaInputs: curatedProjectIdeaInputs,
+    selectionRisks: selectionRisksForShortlist(
+      curatedSelection.shortlist,
+      curatedSelection.report.decisions
+    )
   });
   const curatedScores = curatedSelection.shortlist.map((idea) =>
     scoreFor(idea, report.ideaScores)
@@ -574,6 +609,12 @@ export async function runProjectIdeaDiscovery(
       ),
       handoffReadyCount: curatedProjectIdeaHandoffQuality.filter(
         (quality) => quality.readiness === "ready"
+      ).length,
+      handoffReviewCount: curatedProjectIdeaHandoffQuality.filter(
+        (quality) => quality.readiness === "needs_review"
+      ).length,
+      handoffBlockedCount: curatedProjectIdeaHandoffQuality.filter(
+        (quality) => quality.readiness === "blocked"
       ).length
     }
   });
