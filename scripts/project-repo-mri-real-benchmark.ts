@@ -64,6 +64,7 @@ type CaseResult = {
     evidence: string[];
   }>;
   top1FileHit: boolean;
+  top1SymbolHit: boolean;
   top3FileHit: boolean;
   top3SymbolHit: boolean;
   top5TestFileHit: boolean;
@@ -262,6 +263,117 @@ const fixtures: BugPathFixture[] = [
         content: "SUPER_SECRET_TOKEN=do-not-index\n"
       }
     ]
+  },
+  {
+    id: "python_billing_discount_without_file_hint",
+    repoName: "billing_service",
+    expectedFile: "billing/discounts.py",
+    expectedSymbol: "apply_loyalty_discount",
+    expectedTestFile: "tests/test_discounts.py",
+    searchQuery: "premium customer negative total loyalty discount sale price",
+    issue:
+      "Premium customers can end up with a negative total when loyalty discount stacks with an active sale price",
+    files: [
+      {
+        path: "billing/discounts.py",
+        content: [
+          "def apply_loyalty_discount(total: float, customer_tier: str, sale_active: bool) -> float:",
+          "    if customer_tier == 'premium' and sale_active:",
+          "        return total - 150.0",
+          "    if customer_tier == 'premium':",
+          "        return total * 0.85",
+          "    return total",
+          "",
+          "",
+          "def apply_shipping_discount(total: float, has_coupon: bool) -> float:",
+          "    if has_coupon:",
+          "        return total - 5.0",
+          "    return total"
+        ].join("\n")
+      },
+      {
+        path: "billing/invoices.py",
+        content: [
+          "from billing.discounts import apply_loyalty_discount",
+          "",
+          "",
+          "def build_invoice(total: float, customer_tier: str, sale_active: bool) -> dict:",
+          "    discounted = apply_loyalty_discount(total, customer_tier, sale_active)",
+          "    return {'total': discounted}"
+        ].join("\n")
+      },
+      {
+        path: "tests/test_discounts.py",
+        content: [
+          "from billing.discounts import apply_loyalty_discount",
+          "",
+          "",
+          "def test_premium_sale_discount_does_not_make_negative_total():",
+          "    assert apply_loyalty_discount(100.0, 'premium', True) >= 0"
+        ].join("\n")
+      },
+      {
+        path: ".env",
+        content: "SUPER_SECRET_TOKEN=do-not-index\n"
+      }
+    ]
+  },
+  {
+    id: "typescript_webhook_similar_symbols",
+    repoName: "webhook_service",
+    expectedFile: "src/webhook.ts",
+    expectedSymbol: "parseWebhookSignature",
+    expectedTestFile: "tests/webhook.test.ts",
+    searchQuery: "webhook signature rejects valid hex digest",
+    issue:
+      "Webhook signature validation rejects a valid hex digest while the payload parser still accepts the event body",
+    files: [
+      {
+        path: "src/webhook.ts",
+        content: [
+          "export function parseWebhookPayload(body: string): unknown {",
+          "  return JSON.parse(body);",
+          "}",
+          "",
+          "export function parseWebhookSignature(signature: string): string {",
+          "  if (!signature.startsWith('sha256=')) {",
+          "    throw new Error('missing webhook signature prefix');",
+          "  }",
+          "  const digest = signature.slice('sha256='.length);",
+          "  if (digest.length !== 64 || /[^0-9a-f]/.test(digest)) {",
+          "    throw new Error('invalid webhook signature digest');",
+          "  }",
+          "  return digest;",
+          "}"
+        ].join("\n")
+      },
+      {
+        path: "src/webhookClient.ts",
+        content: [
+          "import { parseWebhookPayload, parseWebhookSignature } from './webhook';",
+          "",
+          "export function receiveWebhook(body: string, signature: string) {",
+          "  const digest = parseWebhookSignature(signature);",
+          "  return { digest, payload: parseWebhookPayload(body) };",
+          "}"
+        ].join("\n")
+      },
+      {
+        path: "tests/webhook.test.ts",
+        content: [
+          "import { parseWebhookSignature } from '../src/webhook';",
+          "",
+          "test('accepts valid lowercase hex webhook signature digest', () => {",
+          "  const digest = 'a'.repeat(64);",
+          "  expect(parseWebhookSignature(`sha256=${digest}`)).toBe(digest);",
+          "});"
+        ].join("\n")
+      },
+      {
+        path: ".env",
+        content: "SUPER_SECRET_TOKEN=do-not-index\n"
+      }
+    ]
   }
 ];
 
@@ -419,6 +531,9 @@ async function evaluateFixture(input: {
   const top3 = candidates.slice(0, 3);
   const top5 = candidates.slice(0, 5);
   const top1FileHit = top?.path === input.fixture.expectedFile;
+  const top1SymbolHit =
+    top?.path === input.fixture.expectedFile &&
+    top?.symbol === input.fixture.expectedSymbol;
   const top3FileHit = top3.some((candidate) => candidate.path === input.fixture.expectedFile);
   const top3SymbolHit = top3.some(
     (candidate) =>
@@ -457,6 +572,7 @@ async function evaluateFixture(input: {
   const secretIgnored = secretSearchResults.length === 0 && indexStats.files < input.fixture.files.length;
   const passed =
     top1FileHit &&
+    top1SymbolHit &&
     top3FileHit &&
     top3SymbolHit &&
     top5TestFileHit &&
@@ -491,6 +607,7 @@ async function evaluateFixture(input: {
       }))
     ),
     top1FileHit,
+    top1SymbolHit,
     top3FileHit,
     top3SymbolHit,
     top5TestFileHit,
@@ -515,6 +632,7 @@ function renderMarkdownReport(input: {
   caseCount: number;
   passCount: number;
   top1FileAccuracy: number;
+  top1SymbolAccuracy: number;
   top3FileAccuracy: number;
   top3SymbolAccuracy: number;
   top5TestFileAccuracy: number;
@@ -533,6 +651,7 @@ function renderMarkdownReport(input: {
     `Pytest passed: ${input.pytestPassed ? "yes" : "no"}`,
     `Cases: ${input.passCount}/${input.caseCount}`,
     `Top-1 file accuracy: ${pct(input.top1FileAccuracy)}`,
+    `Top-1 symbol accuracy: ${pct(input.top1SymbolAccuracy)}`,
     `Top-3 file accuracy: ${pct(input.top3FileAccuracy)}`,
     `Top-3 symbol accuracy: ${pct(input.top3SymbolAccuracy)}`,
     `Top-5 test file accuracy: ${pct(input.top5TestFileAccuracy)}`,
@@ -568,6 +687,7 @@ function renderMarkdownReport(input: {
       }`
     );
     lines.push(`- Top-1 file hit: ${result.top1FileHit ? "yes" : "no"}`);
+    lines.push(`- Top-1 symbol hit: ${result.top1SymbolHit ? "yes" : "no"}`);
     lines.push(`- Top-3 file hit: ${result.top3FileHit ? "yes" : "no"}`);
     lines.push(`- Top-3 symbol hit: ${result.top3SymbolHit ? "yes" : "no"}`);
     lines.push(`- Top-5 test file hit: ${result.top5TestFileHit ? "yes" : "no"}`);
@@ -612,6 +732,7 @@ async function main() {
     caseCount: results.length,
     passCount: results.filter((result) => result.passed).length,
     top1FileAccuracy: Number(averageBooleans(results.map((result) => result.top1FileHit)).toFixed(3)),
+    top1SymbolAccuracy: Number(averageBooleans(results.map((result) => result.top1SymbolHit)).toFixed(3)),
     top3FileAccuracy: Number(averageBooleans(results.map((result) => result.top3FileHit)).toFixed(3)),
     top3SymbolAccuracy: Number(averageBooleans(results.map((result) => result.top3SymbolHit)).toFixed(3)),
     top5TestFileAccuracy: Number(averageBooleans(results.map((result) => result.top5TestFileHit)).toFixed(3)),
@@ -636,6 +757,7 @@ async function main() {
       `Cases: ${report.passCount}/${report.caseCount}`,
       `Pytest: ${report.pytestPassed ? "pass" : "fail"}`,
       `Top-1 file accuracy: ${pct(report.top1FileAccuracy)}`,
+      `Top-1 symbol accuracy: ${pct(report.top1SymbolAccuracy)}`,
       `Top-3 file accuracy: ${pct(report.top3FileAccuracy)}`,
       `Top-3 symbol accuracy: ${pct(report.top3SymbolAccuracy)}`,
       `Top-5 test file accuracy: ${pct(report.top5TestFileAccuracy)}`,

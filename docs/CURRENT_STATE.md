@@ -185,6 +185,8 @@ GitHub / GH Archive signals -> trend radar -> adjacent idea discovery -> anti-cl
   - Repo MRI project packs generate runnable Bug Path starter code that returns
     likely source files, symbols, evidence, line ranges, next actions and
     related tests with runnable test commands.
+  - Repo MRI realistic Bug Path fixtures include direct file hints, no-file-hint
+    localization, similar symbol disambiguation and related test selection.
   - `npm run benchmark:project-pipeline` aggregates the project planning
     benchmark suite.
   - `npm run benchmark:project-live-batch` checks controlled dry-run budget

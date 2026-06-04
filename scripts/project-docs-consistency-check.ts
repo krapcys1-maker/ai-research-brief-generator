@@ -68,6 +68,7 @@ const requiredMetrics = [
   "averageMvpFeasibility",
   "averagePersonalUtility",
   "top1FileAccuracy",
+  "top1SymbolAccuracy",
   "top3FileAccuracy",
   "top3SymbolAccuracy",
   "top5TestFileAccuracy",

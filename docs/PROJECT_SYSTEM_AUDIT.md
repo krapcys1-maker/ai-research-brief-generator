@@ -90,9 +90,10 @@ The system also includes a Repo MRI realistic Bug Path benchmark:
 - output: `benchmark-results/project-repo-mri-real-latest.json`
 - output: `benchmark-results/project-repo-mri-real-latest.md`
 
-This benchmark generates the current Repo MRI project pack, runs the generated Python starter tests, creates three realistic repository fixtures, indexes them, and evaluates Bug Path localization. Key metrics:
+This benchmark generates the current Repo MRI project pack, runs the generated Python starter tests, creates realistic repository fixtures, indexes them, and evaluates Bug Path localization. Key metrics:
 
 - `top1FileAccuracy`
+- `top1SymbolAccuracy`
 - `top3FileAccuracy`
 - `top3SymbolAccuracy`
 - `top5TestFileAccuracy`
