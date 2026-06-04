@@ -40,9 +40,18 @@ type ResearchIteration = {
   requiredCoveredCount: number;
   requiredBucketCount: number;
   missingRequiredBuckets: string[];
+  requiredBucketsWithoutParsedFullText: string[];
   architectureJudgeScore: number;
   architectureJudgeVerdict: string;
   notes: string[];
+};
+
+type CoverageArtifact = {
+  buckets: Array<{
+    bucketId: string;
+    status: "covered" | "partial" | "missing";
+    parsedCount: number;
+  }>;
 };
 
 const DEFAULT_OUTPUT_DIR = join(
@@ -259,6 +268,7 @@ async function searchAndIngestIteration(input: {
     generatedAt: input.generatedAt,
     outputDir: researchDir
   });
+  const coverage = await readJson<CoverageArtifact>(join(researchDir, "coverage.json"));
   const parsedFullTextCount = ingestion.results.filter(
     (result) => result.fullText.status === "parsed"
   ).length;
@@ -272,7 +282,10 @@ async function searchAndIngestIteration(input: {
     rawPaperCount: sourceSearch.papers.length,
     dedupedPaperCount: dedupedPapers.length,
     candidatePaperCount: candidatePapers.length,
-    attemptedFullTextCount: ingestion.results.length
+    attemptedFullTextCount: ingestion.results.length,
+    requiredBucketsWithoutParsedFullText: coverage.buckets
+      .filter((bucket) => bucket.status === "covered" && bucket.parsedCount === 0)
+      .map((bucket) => bucket.bucketId)
   };
 }
 
@@ -314,6 +327,7 @@ function renderStart(input: {
           `- Papers raw/deduped: ${best.rawPaperCount}/${best.dedupedPaperCount}`,
           `- Full-text parsed/saved PDFs: ${best.parsedFullTextCount}/${best.savedPdfCount}`,
           `- Coverage: ${best.requiredCoveredCount}/${best.requiredBucketCount}`,
+          `- Required buckets without parsed full-text: ${best.requiredBucketsWithoutParsedFullText.join(", ") || "none"}`,
           `- Architecture judge: ${best.architectureJudgeScore}/${best.architectureJudgeVerdict}`,
           `- Missing buckets: ${best.missingRequiredBuckets.join(", ") || "none"}`
         ].join("\n")
@@ -332,6 +346,7 @@ function renderStart(input: {
       `- Parsed full-text: ${iteration.parsedFullTextCount}`,
       `- Saved PDFs: ${iteration.savedPdfCount}`,
       `- Coverage: ${iteration.requiredCoveredCount}/${iteration.requiredBucketCount}`,
+      `- Required buckets without parsed full-text: ${iteration.requiredBucketsWithoutParsedFullText.join(", ") || "none"}`,
       `- Architecture judge: ${iteration.architectureJudgeScore}/${iteration.architectureJudgeVerdict}`,
       `- Missing buckets: ${iteration.missingRequiredBuckets.join(", ") || "none"}`,
       `- Notes: ${iteration.notes.join(" | ") || "none"}`,
@@ -479,6 +494,9 @@ async function main() {
       result.parsedFullTextCount < args.minParsedPapers
         ? `parsed full-text below target ${args.minParsedPapers}`
         : "parsed full-text target met",
+      result.requiredBucketsWithoutParsedFullText.length > 0
+        ? `required buckets without parsed full-text: ${result.requiredBucketsWithoutParsedFullText.join(", ")}`
+        : "every covered required bucket has parsed full-text",
       result.manifest.requiredCoveredCount < result.manifest.requiredBucketCount
         ? "coverage still missing required buckets"
         : "required evidence buckets covered",
@@ -498,6 +516,8 @@ async function main() {
       requiredCoveredCount: result.manifest.requiredCoveredCount,
       requiredBucketCount: result.manifest.requiredBucketCount,
       missingRequiredBuckets: result.manifest.missingRequiredBuckets,
+      requiredBucketsWithoutParsedFullText:
+        result.requiredBucketsWithoutParsedFullText,
       architectureJudgeScore: result.manifest.architectureJudgeScore,
       architectureJudgeVerdict: result.manifest.architectureJudgeVerdict,
       notes
@@ -506,6 +526,7 @@ async function main() {
 
     if (
       result.parsedFullTextCount >= args.minParsedPapers &&
+      result.requiredBucketsWithoutParsedFullText.length === 0 &&
       result.manifest.requiredCoveredCount === result.manifest.requiredBucketCount &&
       result.manifest.architectureJudgeVerdict === "pass"
     ) {
@@ -515,7 +536,10 @@ async function main() {
     queryVariants = addFocusedQueries({
       baseQueries: queryVariants,
       idea: selected.projectIdeaInput,
-      missingBuckets: result.manifest.missingRequiredBuckets
+      missingBuckets: [
+        ...result.manifest.missingRequiredBuckets,
+        ...result.requiredBucketsWithoutParsedFullText
+      ]
     });
   }
 
@@ -523,6 +547,7 @@ async function main() {
   const finalVerdict =
     finalIteration &&
     finalIteration.parsedFullTextCount >= args.minParsedPapers &&
+    finalIteration.requiredBucketsWithoutParsedFullText.length === 0 &&
     finalIteration.requiredCoveredCount === finalIteration.requiredBucketCount &&
     finalIteration.architectureJudgeVerdict === "pass"
       ? "PASS - pelny przelot ma trend GitHub, realne source search, PDF/full-text gate i architekture do porownania"
