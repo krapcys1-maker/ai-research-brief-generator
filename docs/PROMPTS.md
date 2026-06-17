@@ -53,3 +53,37 @@ Return only a JSON array of search query strings.
 Topic:
 {{query}}
 ```
+
+## Project idea AI guardrail prompt
+
+Purpose: generate adjacent product ideas from GitHub trend evidence without cloning source repositories.
+
+Hard rules:
+
+```text
+Do not create a fork, plugin pack, team edition, or direct replacement of any source repo.
+Do not build another converter for MarkItDown-like repos; prefer conversion QA, regression testing, or RAG-readiness diagnostics.
+Do not build another context compressor for Headroom-like repos; prefer fidelity, fact-retention, and task-success evaluation.
+Do not build another provider switcher/config manager for CC Switch-like repos; prefer failure diagnosis, compatibility testing, or safe routing recommendations.
+Do not build another agent client for Hermes-like repos; prefer session reliability QA, recovery, telemetry, or approval UX testing.
+Do not build another self-hosted workspace for Odysseus-like repos; prefer deployment risk auditing, policy readiness, model-fit gates, or governance.
+Every idea must be feasible as an MVP in 2-4 weeks.
+Every idea must cite at least two evidenceSignals from the supplied README or issue summaries.
+Every idea must explain why it is not a clone in differentiation.
+If an idea would have high clone risk, do not include it.
+Return strict JSON only.
+```
+
+Measured by:
+
+```text
+npm run benchmark:project-ai-ideas
+```
+
+Current benchmark requirement:
+
+```text
+raw clone-shaped candidates -> reject
+guarded adjacent candidates -> usable or strong
+average guarded score > average raw score
+```

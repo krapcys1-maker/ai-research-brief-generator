@@ -1,7 +1,10 @@
 import { arxivSourceAdapter } from "@/lib/sources/arxiv";
 import { mockSourceAdapter } from "@/lib/sources/mockPapers";
 import { openAlexSourceAdapter } from "@/lib/sources/openAlex";
-import { semanticScholarSourceAdapter } from "@/lib/sources/semanticScholar";
+import {
+  configuredSemanticScholarApiKey,
+  semanticScholarSourceAdapter
+} from "@/lib/sources/semanticScholar";
 import {
   getCachedSourcePapers,
   setCachedSourcePapers
@@ -22,12 +25,140 @@ const adapters: Record<ResearchSource, SourceAdapter> = {
   openalex: openAlexSourceAdapter
 };
 
+const sourceSearchLimits: Record<
+  ResearchSource,
+  { concurrency: number; minDelayMs: number; breakerAfterConsecutiveFailures?: number }
+> = {
+  mock: { concurrency: 8, minDelayMs: 0 },
+  arxiv: { concurrency: 1, minDelayMs: 3000, breakerAfterConsecutiveFailures: 2 },
+  semantic_scholar: {
+    concurrency: 1,
+    minDelayMs: 1100,
+    breakerAfterConsecutiveFailures: 2
+  },
+  openalex: { concurrency: 4, minDelayMs: 0 }
+};
+
 export type SearchAllSourcesResult = {
   papers: NormalizedPaper[];
   sourcesUsed: ResearchSource[];
   warnings: string[];
   sourceDiagnostics: SourceSearchDiagnostic[];
 };
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function uniqueWarnings(warnings: string[]) {
+  return Array.from(new Set(warnings));
+}
+
+function sourceDelayMs(source: ResearchSource) {
+  if (process.env.NODE_ENV === "test") {
+    return 0;
+  }
+
+  return sourceSearchLimits[source].minDelayMs;
+}
+
+function isCircuitBreakerFailure(message: string | undefined) {
+  const text = message?.toLowerCase() ?? "";
+  return (
+    text.includes("429") ||
+    text.includes("too many requests") ||
+    text.includes("rate exceeded") ||
+    text.includes("403") ||
+    text.includes("forbidden")
+  );
+}
+
+function sourceFailureMessage(result: SearchAllSourcesResult) {
+  return result.sourceDiagnostics.find((diagnostic) => diagnostic.status === "failed")
+    ?.message;
+}
+
+function skippedByCircuitBreaker(input: {
+  source: ResearchSource;
+  query: string;
+  failureCount: number;
+}) {
+  const message = `${input.source} skipped after ${input.failureCount} consecutive rate-limit/auth failures.`;
+
+  return {
+    papers: [],
+    sourcesUsed: [],
+    warnings: [message],
+    sourceDiagnostics: [
+      {
+        source: input.source,
+        query: input.query,
+        status: "failed" as const,
+        resultCount: 0,
+        cached: false,
+        message
+      }
+    ]
+  };
+}
+
+function disabledSourceResult(input: {
+  source: ResearchSource;
+  query: string;
+  message: string;
+}): SearchAllSourcesResult {
+  return {
+    papers: [],
+    sourcesUsed: [],
+    warnings: [`${input.source} disabled: ${input.message}`],
+    sourceDiagnostics: [
+      {
+        source: input.source,
+        query: input.query,
+        status: "failed",
+        resultCount: 0,
+        cached: false,
+        message: input.message
+      }
+    ]
+  };
+}
+
+function disabledReason(source: ResearchSource) {
+  if (
+    source === "semantic_scholar" &&
+    !configuredSemanticScholarApiKey(process.env.SEMANTIC_SCHOLAR_API_KEY)
+  ) {
+    return "Semantic Scholar API key is missing or placeholder; external source disabled for this run.";
+  }
+
+  return null;
+}
+
+async function mapWithConcurrency<T, R>(
+  items: T[],
+  concurrency: number,
+  worker: (item: T, index: number) => Promise<R>
+) {
+  const results: R[] = [];
+  let cursor = 0;
+
+  async function runNext() {
+    while (cursor < items.length) {
+      const index = cursor;
+      cursor += 1;
+      results[index] = await worker(items[index] as T, index);
+    }
+  }
+
+  const workers = Array.from(
+    { length: Math.min(Math.max(1, concurrency), items.length) },
+    () => runNext()
+  );
+  await Promise.all(workers);
+
+  return results;
+}
 
 export function filterWarningsForSuccessfulSources(
   warnings: string[],
@@ -39,7 +170,7 @@ export function filterWarningsForSuccessfulSources(
       .map((diagnostic) => diagnostic.source)
   );
 
-  return warnings.filter(
+  return uniqueWarnings(warnings).filter(
     (warning) =>
       ![...successfulSources].some(
         (source) =>
@@ -49,94 +180,148 @@ export function filterWarningsForSuccessfulSources(
   );
 }
 
-async function searchSourcesForOneQuery(input: SearchPapersInput & {
-  sources: ResearchSource[];
+async function searchOneSourceForOneQuery(
+  adapter: SourceAdapter,
+  input: SearchPapersInput
+): Promise<SearchAllSourcesResult> {
+  const searchInput = {
+    query: input.query,
+    maxResults: input.maxResults,
+    fromYear: input.fromYear,
+    toYear: input.toYear
+  };
+
+  try {
+    const cached = await getCachedSourcePapers({
+      source: adapter.name,
+      ...searchInput
+    });
+
+    if (cached) {
+      return {
+        papers: cached,
+        sourcesUsed: [adapter.name],
+        warnings: [],
+        sourceDiagnostics: [
+          {
+            source: adapter.name,
+            query: input.query,
+            status: "success",
+            resultCount: cached.length,
+            cached: true
+          }
+        ]
+      };
+    }
+
+    const papers = await adapter.searchPapers(searchInput);
+    await setCachedSourcePapers(
+      {
+        source: adapter.name,
+        ...searchInput
+      },
+      papers
+    );
+
+    return {
+      papers,
+      sourcesUsed: papers.length ? [adapter.name] : [],
+      warnings: papers.length ? [] : [`${adapter.name} returned no papers.`],
+      sourceDiagnostics: [
+        {
+          source: adapter.name,
+          query: input.query,
+          status: papers.length ? "success" : "empty",
+          resultCount: papers.length,
+          cached: false,
+          message: papers.length ? undefined : "No papers returned."
+        }
+      ]
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown error";
+
+    return {
+      papers: [],
+      sourcesUsed: [],
+      warnings: [`${adapter.name} failed: ${message}`],
+      sourceDiagnostics: [
+        {
+          source: adapter.name,
+          query: input.query,
+          status: "failed",
+          resultCount: 0,
+          cached: false,
+          message
+        }
+      ]
+    };
+  }
+}
+
+async function searchOneSourceAcrossQueries(input: SearchPapersInput & {
+  source: ResearchSource;
+  queryVariants: string[];
 }): Promise<SearchAllSourcesResult> {
-  const selectedAdapters = input.sources.map((source) => adapters[source]);
-  const settled = await Promise.allSettled(
-    selectedAdapters.map(async (adapter) => {
-      const searchInput = {
-        query: input.query,
+  const adapter = adapters[input.source];
+  const limits = sourceSearchLimits[input.source];
+  const delayMs = sourceDelayMs(input.source);
+  const breakerAfter = limits.breakerAfterConsecutiveFailures;
+  const sourceDisabledReason = disabledReason(input.source);
+  let previousRequestStartedAt = 0;
+  let consecutiveBreakerFailures = 0;
+
+  const results = await mapWithConcurrency(
+    input.queryVariants,
+    limits.concurrency,
+    async (query) => {
+      if (sourceDisabledReason) {
+        return disabledSourceResult({
+          source: input.source,
+          query,
+          message: sourceDisabledReason
+        });
+      }
+
+      if (breakerAfter && consecutiveBreakerFailures >= breakerAfter) {
+        return skippedByCircuitBreaker({
+          source: input.source,
+          query,
+          failureCount: consecutiveBreakerFailures
+        });
+      }
+
+      if (delayMs > 0 && previousRequestStartedAt > 0) {
+        const elapsed = Date.now() - previousRequestStartedAt;
+        if (elapsed < delayMs) {
+          await sleep(delayMs - elapsed);
+        }
+      }
+      previousRequestStartedAt = Date.now();
+
+      const result = await searchOneSourceForOneQuery(adapter, {
+        query,
         maxResults: input.maxResults,
         fromYear: input.fromYear,
         toYear: input.toYear
-      };
-      const cached = await getCachedSourcePapers({
-        source: adapter.name,
-        ...searchInput
       });
 
-      if (cached) {
-        return {
-          papers: cached,
-          cached: true
-        };
-      }
+      const failureMessage = sourceFailureMessage(result);
+      consecutiveBreakerFailures = isCircuitBreakerFailure(failureMessage)
+        ? consecutiveBreakerFailures + 1
+        : 0;
 
-      const papers = await adapter.searchPapers(searchInput);
-      await setCachedSourcePapers(
-        {
-          source: adapter.name,
-          ...searchInput
-        },
-        papers
-      );
-
-      return {
-        papers,
-        cached: false
-      };
-    })
+      return result;
+    }
   );
 
-  const papers: NormalizedPaper[] = [];
-  const sourcesUsed: ResearchSource[] = [];
-  const warnings: string[] = [];
-  const sourceDiagnostics: SourceSearchDiagnostic[] = [];
-
-  settled.forEach((result, index) => {
-    const adapter = selectedAdapters[index];
-    if (!adapter) {
-      return;
-    }
-
-    if (result.status === "fulfilled") {
-      papers.push(...result.value.papers);
-      if (result.value.papers.length) {
-        sourcesUsed.push(adapter.name);
-      }
-      sourceDiagnostics.push({
-        source: adapter.name,
-        query: input.query,
-        status: result.value.papers.length ? "success" : "empty",
-        resultCount: result.value.papers.length,
-        cached: result.value.cached,
-        message: result.value.papers.length ? undefined : "No papers returned."
-      });
-      if (!result.value.papers.length) {
-        warnings.push(`${adapter.name} returned no papers.`);
-      }
-      return;
-    }
-
-    const message =
-      result.reason instanceof Error ? result.reason.message : "unknown error";
-    sourceDiagnostics.push({
-      source: adapter.name,
-      query: input.query,
-      status: "failed",
-      resultCount: 0,
-      cached: false,
-      message
-    });
-    warnings.push(`${adapter.name} failed: ${message}`);
-  });
-
   return {
-    papers,
-    sourcesUsed,
-    warnings,
-    sourceDiagnostics
+    papers: results.flatMap((result) => result.papers),
+    sourcesUsed: Array.from(
+      new Set(results.flatMap((result) => result.sourcesUsed))
+    ),
+    warnings: uniqueWarnings(results.flatMap((result) => result.warnings)),
+    sourceDiagnostics: results.flatMap((result) => result.sourceDiagnostics)
   };
 }
 
@@ -149,13 +334,14 @@ export async function searchAllSources(input: SearchPapersInput & {
     : [input.query];
 
   const settled = await Promise.allSettled(
-    queryVariants.map((query) =>
-      searchSourcesForOneQuery({
-        query,
+    input.sources.map((source) =>
+      searchOneSourceAcrossQueries({
+        source,
+        query: input.query,
+        queryVariants,
         maxResults: input.maxResults,
         fromYear: input.fromYear,
-        toYear: input.toYear,
-        sources: input.sources
+        toYear: input.toYear
       })
     )
   );
@@ -166,7 +352,10 @@ export async function searchAllSources(input: SearchPapersInput & {
   const sourceDiagnostics: SourceSearchDiagnostic[] = [];
 
   settled.forEach((result, index) => {
-    const variant = queryVariants[index] ?? input.query;
+    const source = input.sources[index];
+    if (!source) {
+      return;
+    }
 
     if (result.status === "fulfilled") {
       papers.push(...result.value.papers);
@@ -177,7 +366,7 @@ export async function searchAllSources(input: SearchPapersInput & {
     }
 
     sourceDiagnostics.push(
-      ...input.sources.map((source) => ({
+      ...queryVariants.map((variant) => ({
         source,
         query: variant,
         status: "failed" as const,
@@ -188,7 +377,7 @@ export async function searchAllSources(input: SearchPapersInput & {
       }))
     );
     warnings.push(
-      `query variant "${variant}" failed: ${
+      `${source} query queue failed: ${
         result.reason instanceof Error ? result.reason.message : "unknown error"
       }`
     );
@@ -212,7 +401,7 @@ export async function searchAllSources(input: SearchPapersInput & {
   return {
     papers,
     sourcesUsed: [...sourcesUsed],
-    warnings: filteredWarnings,
+    warnings: uniqueWarnings(filteredWarnings),
     sourceDiagnostics
   };
 }

@@ -33,6 +33,42 @@ Last updated: 2026-06-02
 - Keep `npm run benchmark:quality-gate` in CI so retrieval, source-quality, and
   claim-check regressions fail before deploy.
 
+## P1: Project Idea And Architecture Quality
+
+- Keep `npm run benchmark:project-pipeline` in CI so idea discovery, AI idea
+  guardrails, GitHub collection, GH Archive cost safety, research, PRD and
+  architecture regressions fail before deploy.
+- Add docs/script consistency checks so project pipeline documentation cannot
+  drift from available commands and artifacts.
+- Expand recorded GitHub fixtures for noisy README text, multilingual issues,
+  session reliability, provider routing, document conversion, context
+  compression and self-hosted AI governance.
+- Keep `ProjectIdeaInput` handoff quality scoring in the idea benchmark so
+  generic constraints, weak domains, missing non-goals or missing research
+  questions fail before research spend.
+- Keep architecture judge scoring in the project architecture benchmark so
+  schema-valid but generic architectures fail before implementation planning.
+- Keep `npm run benchmark:project-bucket-relevance` in the project pipeline so
+  bucket-specific false positives fail before weak papers become PRD or
+  architecture evidence. Track `project-bucket-relevance-latest.json`,
+  `project-bucket-relevance-latest.md`, `falsePositiveRejectRate` and
+  `truePositiveAcceptRate` as hard relevance regression signals.
+- Keep `npm run benchmark:project-paper-relevance` in the project pipeline so
+  the final `paper_relevance_judgement` layer rejects cross-domain papers that
+  happen to share generic bucket wording, while real-run collector-to-judge
+  fixtures prove it does not destroy required-bucket coverage. Track
+  `project-paper-relevance-judge-latest.json`,
+  `project-paper-relevance-judge-latest.md`,
+  `paperJudgeFalsePositiveRejectRate`, `paperJudgeTruePositiveKeepRate`,
+  `realRunCoveragePreservationRate`, `realRunSupportRetentionRate` and
+  `realRunDistractorLeakCount`.
+- Keep controlled live GH Archive batch sampling in `npm run benchmark:project-live-batch`,
+  with strict byte caps, cached GitHub enrichment, `controlled_live_batch_summary.json`,
+  `controlled_live_batch_summary.md`, and decision metrics such as `trendRepoCount`,
+  `sourceRepoCount`, `handoffReadyCount`, `averageHandoffQualityScore` and `blockerCount`.
+  `handoffReviewCount` and `handoffBlockedCount` separate source-evidence review
+  from fully blocked handoffs.
+
 ## P2: Product UX
 
 - Add user accounts and private saved topics.

@@ -22,6 +22,10 @@ export type IngestFullTextOptions = {
   maxBytes?: number;
   includeMockPapers?: boolean;
   pageRange?: PageRange | null;
+  onPdfFetched?: (input: {
+    paper: NormalizedPaper;
+    fetched: Awaited<ReturnType<typeof fetchPdf>>;
+  }) => Promise<void> | void;
 };
 
 function nowIso() {
@@ -142,6 +146,7 @@ async function ingestOnePaper(
       timeoutMs: options.timeoutMs,
       maxBytes: options.maxBytes
     });
+    await options.onPdfFetched?.({ paper, fetched });
     const parsed = await parsePdf(fetched.bytes, {
       pageRange: options.pageRange
     });

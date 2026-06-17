@@ -1,0 +1,626 @@
+# Project Idea Scout Architecture
+
+## Purpose
+
+`Project Idea Scout` discovers project ideas from real external signals, starting with GitHub repositories, then turns those signals into adjacent product ideas that can enter the existing project research pipeline.
+
+The broader target system is described in:
+
+```text
+docs/TARGET_TREND_TO_PROJECT_PIPELINE.md
+```
+
+That document defines the full chain from GH Archive / BigQuery rising-star
+selection, through LLM top-10 idea curation and user selection, to scientific
+research, project pack generation and judge-driven improvement.
+
+It must not be a free-form "invent ideas" prompt. The module should work from evidence:
+
+```text
+GitHub repos
+-> repo analysis
+-> problem pattern extraction
+-> adjacent idea generation
+-> novelty guard
+-> scoring
+-> per-source shortlist cap
+-> shortlist
+-> trend radar
+-> idea quality audit
+-> handoff quality scoring
+-> ProjectIdeaInput
+-> project:research
+```
+
+## Design Rule
+
+The module can use a repository as inspiration, but must not clone it.
+
+It should extract:
+
+- the problem solved by the repo,
+- target users,
+- workflow,
+- technical mechanisms,
+- pain signals from README/issues,
+- missing capabilities,
+- possible adjacent opportunities.
+
+Then it should produce an idea with a different user, workflow, scope, integration layer, compliance layer, or business niche.
+
+## Pipeline
+
+```text
+Project Idea Scout
+  |
+  +--> GitHub Signal Collector
+  +--> GH Archive / BigQuery Trend Collector
+  +--> Repo Analyzer
+  +--> Problem Pattern Extractor
+  +--> Adjacent Idea Generator
+  +--> Novelty Guard
+  +--> AI Idea Guardrail Benchmark
+  +--> Idea Ranker
+  +--> Per-Source Shortlist Selector
+  +--> Trend Radar
+  +--> Project Idea System Audit
+  +--> Project Idea Handoff Quality Gate
+  +--> Idea Discovery Report
+  |
+  v
+Project Research Runner
+  |
+  v
+ProjectResearchBrief -> PRD -> Architecture
+Architecture -> Architecture Judge
+```
+
+## Implemented Phases
+
+### Phase 0: Mocked Repositories
+
+Implemented. The deterministic pipeline can run from mocked or recorded repository signals before touching live APIs.
+
+Mock input:
+
+```ts
+type IdeaSourceRepo = {
+  repoId: string;
+  name: string;
+  owner: string;
+  url: string;
+  description: string;
+  topics: string[];
+  primaryLanguage: string | null;
+  stars: number;
+  forks: number;
+  openIssues: number | null;
+  createdAt: string;
+  pushedAt: string;
+  readmeText: string;
+  issueSignals: RepoIssueSignal[];
+};
+```
+
+### Phase 1: GitHub Search API
+
+Implemented. GitHub Search API enrichment supports README/issues fetching, cache, timeout diagnostics, and rate-limit diagnostics.
+
+Example queries:
+
+```text
+stars:>100 pushed:>2026-01-01 topic:ai
+stars:>500 topic:developer-tools
+stars:>100 language:typescript topic:agent
+```
+
+The collector should report rate limits, cache results, and work with or without `GITHUB_TOKEN`.
+
+### Phase 2: GH Archive Trend Sampling
+
+Implemented with budget guards. GH Archive / BigQuery collection uses exact date tables, dry-run estimates, `maxDays`, and `maxBytesBilled`.
+
+Controlled live batch sampling is implemented as the next gate before research spend:
+
+- `npm run project:live-batch` runs small GH Archive windows in safe `dry_run` mode, or explicit `live` mode only when `allowLiveSpend: true` is also present.
+- `npm run benchmark:project-live-batch` verifies dry-run budget checks, live shortlist quality and too-small-sample blocking.
+- The sampler writes only summary artifacts:
+  - `controlled_live_batch_summary.json`,
+  - `controlled_live_batch_summary.md`.
+- Key summary metrics are `trendRepoCount`, `sourceRepoCount`,
+  `handoffReadyCount`, `handoffReviewCount`, `handoffBlockedCount`,
+  `averageHandoffQualityScore` and `blockerCount`.
+- The summary includes compact `repoEvidence` and `scoredCandidates` sections so reviewers can inspect why repos were or were not promoted without storing raw README/issue dumps.
+- GitHub enrichment for GH Archive repo names is cached, the sampler never auto-escalates `maxBytesBilled`, and `live` mode cannot run from a JSON file unless `allowLiveSpend: true` is set after a dry-run review.
+
+### Phase 3: Extra Signals
+
+Later sources:
+
+- GitHub issues/discussions,
+- releases/changelog,
+- Papers with Code,
+- Hacker News,
+- Product Hunt,
+- arXiv/Semantic Scholar for research-heavy ideas.
+
+## Core Data Contracts
+
+```ts
+type RepoInsight = {
+  repoId: string;
+  problemSolved: string;
+  targetUsers: string[];
+  coreWorkflow: string;
+  technicalMechanisms: string[];
+  marketSignals: string[];
+  painSignals: string[];
+  missingCapabilities: string[];
+  cloneRisk: "low" | "medium" | "high";
+};
+
+type DiscoveredIdea = {
+  ideaId: string;
+  title: string;
+  oneSentence: string;
+  problem: string;
+  targetUsers: string[];
+  mvpScope: string[];
+  nonGoals: string[];
+  sourceRepos: string[];
+  originalInspiration: string;
+  differentiation: string[];
+  aiLeverage: string[];
+  researchQuestions: string[];
+  risks: string[];
+  domains: string[];
+};
+
+type IdeaScore = {
+  ideaId: string;
+  total: number;
+  problemClarity: number;
+  userSpecificity: number;
+  githubSignalStrength: number;
+  novelty: number;
+  mvpFeasibility: number;
+  researchLeverage: number;
+  personalUtility: number;
+  businessPotential: number;
+  riskPenalty: number;
+  verdict: "reject" | "needs_research" | "promising";
+  reasons: string[];
+};
+
+type ProjectIdeaHandoffQuality = {
+  ideaId: string;
+  title: string;
+  score: number;
+  readiness: "ready" | "needs_review" | "blocked";
+  inputValid: boolean;
+  constraintsQuality: number;
+  domainSpecificity: number;
+  researchQuestionCoverage: number;
+  nonGoalClarity: number;
+  descriptionSpecificity: number;
+  sourceEvidenceQuality: number | null;
+  requiredFixes: string[];
+  reviewFlags: string[];
+};
+```
+
+Current report metrics also include:
+
+```ts
+type IdeaDiscoveryMetrics = {
+  ideaCount: number;
+  promisingCount: number;
+  cloneRejectedCount: number;
+  averageNovelty: number;
+  averageMvpFeasibility: number;
+  averagePersonalUtility: number;
+  averageGithubSignalStrength: number;
+  shortlistSourceDominance: number;
+  maxIdeasPerSource: number;
+  researchReadyCount: number;
+  pipelineInputValidCount: number;
+  averageHandoffQualityScore: number;
+  handoffReadyCount: number;
+  handoffReviewCount: number;
+  handoffBlockedCount: number;
+};
+```
+
+## Scoring
+
+Current weights:
+
+```text
+problemClarity: 16%
+userSpecificity: 12%
+githubSignalStrength: 12%
+novelty: 18%
+mvpFeasibility: 14%
+researchLeverage: 10%
+personalUtility: 13%
+businessPotential: 5%
+riskPenalty: -0% to -30%
+```
+
+The system itself is personal: it helps the user decide what is worth building.
+Candidate projects may still be business-oriented, open-source, learning-focused,
+local tools, research tools, automation utilities, or hybrids. `businessPotential`
+is a small optional bonus, not the main selection criterion.
+
+Verdicts:
+
+```text
+total >= 80 -> promising
+60-79       -> needs_research
+< 60        -> reject
+```
+
+## Novelty Guard
+
+Reject weak clones:
+
+- `differentiation` must contain at least two concrete differences,
+- `mvpScope` must differ from the source repo core workflow,
+- if target users, problem, and workflow are all the same, the idea is a clone,
+- if `cloneRisk = high`, verdict cannot be better than `needs_research`,
+- "chatbot for X" without a workflow is rejected.
+
+## Shortlist Diversity Guard
+
+The shortlist selector caps ideas per source repository.
+
+## Idea Selection Audit
+
+The runner writes `idea_selection_report.json` and `idea_selection_report.md`
+to explain why each concept cluster was selected or rejected. Selection decisions
+include:
+
+```ts
+type IdeaSelectionDecision = {
+  score: number;
+  alignmentScore: number;
+  sourceEvidenceQuality: number;
+  primarySource: string;
+  supportingSources: string[];
+  warnings: string[];
+  reviewFlags: string[];
+};
+```
+
+`sourceEvidenceQuality` separates README/topic alignment from issue-level proof.
+This catches cases where a repo looks relevant, but the issues do not actually
+support the proposed product. `reviewFlags` do not block selection automatically;
+they mark ideas that should be checked by a human, especially single-source ideas
+with weak issue evidence or low source curation scores.
+
+Default:
+
+```text
+maxIdeasPerSource = 1
+```
+
+This prevents one popular repository from filling the entire shortlist. Larger runs should raise `maxIdeas` before raising `maxIdeasPerSource`.
+
+Measured fields:
+
+```text
+shortlistSourceDominance
+maxIdeasPerSource
+```
+
+## AI Guardrail Benchmark
+
+Script:
+
+```text
+npm run benchmark:project-ai-ideas
+```
+
+Purpose:
+
+- compare raw clone-shaped AI candidates against guarded adjacent candidates,
+- reject converter/compressor/workspace clones,
+- keep QA, audit, diagnostic, readiness and reliability ideas.
+
+## Integration With Current Pipeline
+
+Top ideas are converted to `ProjectIdeaInput`:
+
+```json
+{
+  "title": "AI Technical Debt Sprint Planner",
+  "description": "System analyzing repo, issues, and commit history to create sprint-sized refactor plans.",
+  "constraints": ["MVP recommends a plan only", "no automatic code rewriting"],
+  "preferredDomains": ["software engineering", "LLM code review", "technical debt"],
+  "outputLanguage": "pl"
+}
+```
+
+Before research spend, each input is scored by the handoff quality gate. The
+gate checks:
+
+- schema validity,
+- concrete MVP constraints,
+- explicit non-goals,
+- preferred-domain specificity,
+- research question coverage from the original idea,
+- description specificity for downstream PRD and architecture,
+- source evidence quality from the selection report,
+- review flags that should stay visible before research spend.
+
+Advisory flags such as low single-source curation confidence are carried into
+the handoff report without automatically blocking a strong project input.
+Blocking flags, for example weak issue-level evidence or borderline source
+evidence, downgrade readiness to `needs_review` so the next stage does not treat
+the idea as fully verified.
+
+Runs emit:
+
+```text
+project_idea_handoff_quality.json
+project_idea_handoff_quality.md
+research_handoff_audit.json
+research_handoff_audit.md
+```
+
+The project idea benchmark fails when shortlisted ideas are blocked or invalid.
+It allows `needs_review` when the idea input itself is strong but source
+evidence flags require manual verification. This keeps weak evidence visible
+without pretending every generated input is fully research-ready.
+
+`research_handoff_audit.*` follows the next cable: source repository signals ->
+`ProjectIdeaInput` -> generated research query variants. It records source signal
+terms, project idea terms, query terms, source-to-input coverage,
+source-to-query coverage, input-to-query coverage and warnings when research
+queries drift away from the selected idea before paper search begins.
+
+Then the existing CLI can run:
+
+```text
+npm run project:research -- --input idea.json --out run-output
+```
+
+When idea discovery provides handoff context, `project:research` keeps it
+visible in:
+
+```text
+handoff_context.json
+handoff_context.md
+handoff_flag_resolution.json
+handoff_flag_resolution.md
+```
+
+`handoff_context.*` carries `sourceEvidenceQuality`, `reviewFlags` and
+readiness into research, PRD and architecture review instead of leaving source
+risk behind in the idea-discovery report. `handoff_flag_resolution.*` records
+the research decision for each review flag: `confirmed`, `rejected`,
+`replaced_by_stronger_evidence`, or `unresolved`.
+
+The full-pass runner also writes per-iteration audit proposals:
+
+```text
+07_handoff_flag_resolution_proposal.json
+07_handoff_flag_resolution_proposal.md
+08_search_flow_audit.json
+08_search_flow_audit.md
+```
+
+These proposals are generated from coverage, parsed full-text count, required
+buckets without parsed full-text and reviewed papers. They are intentionally not
+silently applied to the pack; they are audit artifacts that can be inspected
+before being passed as `handoffFlagResolutions`.
+
+`08_search_flow_audit.*` follows the next cable: research query variants ->
+source diagnostics -> raw papers -> deduped papers -> bucket candidates ->
+full-text ingestion. Candidate papers are ranked for ingestion by legal
+full-text/PDF availability first, then evidence-bucket rank, citation count and
+recency. The audit flags runs where too few query variants returned papers,
+candidate papers lack open full text, full-text ingestion parsed nothing, or
+required evidence buckets did not produce candidates.
+
+The full-pass runner supports explicit idea selection modes:
+
+```text
+--selection-mode ready
+--selection-mode top
+--selection-mode needs-review
+--idea-title-contains "<title fragment>"
+```
+
+`ready` keeps the default safe handoff behavior. `needs-review` deliberately
+selects a flagged idea when available, so the run can test whether research
+actually resolves weak GitHub/source evidence. Handoff resolution proposals also
+require relevant parsed full-text evidence per required bucket; numeric coverage
+alone is not enough to mark a flagged handoff as resolved. `--idea-title-contains`
+pins comparable regression runs to a specific shortlisted idea when the shortlist
+contains multiple flagged candidates.
+
+Research runs also write paper-level relevance judgements:
+
+```text
+source_search.json
+source_papers.json
+paper_relevance_judgement.json
+paper_relevance_judgement.md
+```
+
+`source_search.json` records whether papers came from an internal source search,
+from directly provided upstream papers, or were not used. `source_papers.json`
+must keep the actual source-paper inputs visible in either case, so downstream
+research, PRD and architecture artifacts can be audited back to their source
+metadata.
+
+The judgement runs before PRD and architecture synthesis. It scores every
+paper-to-bucket assignment as `keep`, `maybe`, or `reject`, and rejected
+assignments no longer count as useful bucket evidence. This keeps broad surveys,
+generic LLM technical reports, and accidental keyword matches visible in the
+audit without silently inflating coverage. The manifest also records kept,
+maybe and rejected relevance counts, so coverage changes can be traced without
+opening every detailed judgement file.
+
+The exported project pack also writes:
+
+```text
+docs/09-handoff-risk-resolution.md
+```
+
+If handoff review flags remain unresolved, Project Plan Judge lowers
+`handoffRiskResolution`, adds a required fix, and prevents the plan from getting
+a clean `pass` before implementation.
+
+`project:research` also writes an architecture judge report:
+
+```text
+project_architecture_judge.json
+project_architecture_judge.md
+```
+
+The judge compares `project_architecture.json` against the PRD and research
+brief. It scores requirement coverage, component traceability, decision paper
+coverage, component type diversity, generic component risk, paper evidence
+coverage, risk coverage and project-specific language. The architecture
+benchmark fails schema-valid architectures when the judge verdict is not
+`pass`.
+
+## Implemented Files
+
+```text
+lib/project-ideas/schemas.ts
+lib/project-ideas/types.ts
+lib/project-ideas/repoAnalyzer.ts
+lib/project-ideas/ideaGenerator.ts
+lib/project-ideas/noveltyGuard.ts
+lib/project-ideas/aiIdeaPrompt.ts
+lib/project-ideas/aiIdeaBenchmark.ts
+lib/project-ideas/audit.ts
+lib/project-ideas/handoffQuality.ts
+lib/project-ideas/trendRadar.ts
+lib/project-ideas/githubCollector.ts
+lib/project-ideas/ghArchiveTrendCollector.ts
+lib/project-ideas/ranker.ts
+lib/project-ideas/runner.ts
+lib/project-ideas/index.ts
+scripts/project-idea-discovery-benchmark.ts
+scripts/project-ai-idea-benchmark.ts
+scripts/project-idea-runner-benchmark.ts
+tests/projectIdeaDiscovery.test.ts
+tests/projectAiIdeaPrompt.test.ts
+tests/projectAiIdeaBenchmark.test.ts
+tests/projectIdeaAudit.test.ts
+```
+
+CLI:
+
+```text
+npm run project:ideas -- --input input.json --out output-dir
+```
+
+Artifacts:
+
+```text
+manifest.json
+source_repos.json
+github_collection.json
+gh_archive_trends.json
+trend_radar.json
+trend_radar.md
+source_curation_report.json
+source_curation_report.md
+idea_selection_report.json
+idea_selection_report.md
+ai_idea_curation_report.json
+ai_idea_curation_report.md
+project_ideas_audit.json
+project_ideas_audit.md
+project_idea_handoff_quality.json
+project_idea_handoff_quality.md
+research_handoff_audit.json
+research_handoff_audit.md
+project_architecture_judge.json
+project_architecture_judge.md
+repo_insights.json
+discovered_ideas.json
+idea_scores.json
+shortlist.json
+project_idea_inputs.json
+idea_discovery_report.md
+```
+
+## Benchmark
+
+Script:
+
+```text
+npm run benchmark:project-ideas
+npm run benchmark:project-architecture
+```
+
+Minimum domains:
+
+```text
+AI developer tools
+AI trading support
+AI medical documentation
+AI education tools
+AI data analysis agents
+```
+
+Metrics:
+
+```text
+schemaValidCount
+ideaCount
+promisingCount
+cloneRejectedCount
+averageNovelty
+averageMvpFeasibility
+averagePersonalUtility
+averageGithubSignalStrength
+top1FileAccuracy
+top3FileAccuracy
+top3SymbolAccuracy
+shortlistSourceDominance
+maxIdeasPerSource
+researchReadyCount
+pipelineInputValidCount
+averageHandoffQualityScore
+handoffReadyCount
+handoffReviewCount
+handoffBlockedCount
+handoffResolvedFlagCount
+handoffUnresolvedFlagCount
+handoffRiskResolution
+averageJudgeScore
+sourceEvidenceQuality
+reviewFlags
+```
+
+MVP pass criteria:
+
+```text
+caseCount >= 5
+schemaValidCount == ideaCount
+pipelineInputValidCount == promisingCount
+cloneRejectedCount >= 1
+averageNovelty >= 0.70
+averageMvpFeasibility >= 0.70
+averagePersonalUtility >= 0.70
+researchReadyCount >= 5
+handoffReadyCount + handoffReviewCount == promisingCount
+handoffBlockedCount == 0
+averageHandoffQualityScore >= 82
+```
+
+## Current Optimization Loop
+
+1. Run `npm run benchmark:project-pipeline`.
+2. Inspect `project_ideas_audit.json` and `project_idea_handoff_quality.json` for blocked or weak runs.
+3. If AI output is involved, run `npm run benchmark:project-ai-ideas`.
+4. If a source dominates the shortlist, lower or keep `maxIdeasPerSource=1`.
+5. If research/architecture quality drops, add a fixture before tuning prompts.
+6. Commit only code/docs/benchmarks, not local `runs/` artifacts.

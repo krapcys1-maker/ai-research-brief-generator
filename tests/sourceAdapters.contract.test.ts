@@ -90,6 +90,23 @@ describe("source adapter contracts", () => {
     });
   });
 
+  it("does not send placeholder Semantic Scholar API keys", async () => {
+    vi.stubEnv("SEMANTIC_SCHOLAR_API_KEY", "...");
+    const fetchMock = mockFetchWithResponse(
+      fixtureText("semantic-scholar-citation-faithfulness.json"),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+
+    await semanticScholarSourceAdapter.searchPapers({
+      query: "citation faithfulness",
+      maxResults: 1
+    });
+
+    expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({
+      headers: {}
+    });
+  });
+
   it("normalizes OpenAlex works, reconstructed abstracts, and DOI URLs", async () => {
     const fetchMock = mockFetchWithResponse(
       fixtureText("openalex-clinical-rag.json"),
@@ -122,6 +139,41 @@ describe("source adapter contracts", () => {
       venue: "Nature Medicine",
       citationCount: 34,
       source: "openalex"
+    });
+  });
+
+  it("extracts arXiv IDs from OpenAlex locations", async () => {
+    const fetchMock = mockFetchWithResponse(
+      JSON.stringify({
+        results: [
+          {
+            id: "https://openalex.org/W456",
+            display_name: "OpenAlex arXiv Bridge",
+            ids: {
+              openalex: "https://openalex.org/W456"
+            },
+            primary_location: {
+              landing_page_url: "https://arxiv.org/abs/2601.00001v2",
+              pdf_url: "https://arxiv.org/pdf/2601.00001v2",
+              source: {
+                display_name: "arXiv"
+              }
+            }
+          }
+        ]
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+
+    const papers = await openAlexSourceAdapter.searchPapers({
+      query: "agent sandbox",
+      maxResults: 1
+    });
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(papers[0]).toMatchObject({
+      arxivId: "2601.00001",
+      pdfUrl: "https://arxiv.org/pdf/2601.00001v2"
     });
   });
 });

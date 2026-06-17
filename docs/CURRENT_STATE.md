@@ -36,6 +36,12 @@ The third product mode compares user claims with retrieved scientific evidence:
 paste/upload text -> extract candidate claims -> user selects claims -> academic search per claim -> rank papers -> retrieve evidence -> claim-evidence matrix
 ```
 
+The project planning mode turns external software/project signals into research-ready product ideas and architecture artifacts:
+
+```text
+GitHub / GH Archive signals -> trend radar -> adjacent idea discovery -> anti-clone guard -> shortlist audit -> ProjectIdeaInput -> research brief -> PRD -> architecture
+```
+
 ## Implemented Capabilities
 
 - Home page research form with query, source selection, year range, source preflight, and generation progress.
@@ -138,6 +144,82 @@ paste/upload text -> extract candidate claims -> user selects claims -> academic
   - The dashboard includes a simple Getting started checklist that derives
     onboarding progress from actual scoped resources: first brief, document,
     project, collection, paper note, share link, and export.
+- Project Idea Scout and project research pipeline:
+  - `npm run project:ideas` turns source repositories, GitHub Search, or GH
+    Archive trend repos into adjacent non-clone product ideas.
+  - GitHub enrichment can fetch README and issue signals with authenticated
+    token loading from `.env`.
+  - GH Archive / BigQuery trend collection uses exact date tables, dry-run
+    estimates, `maxDays`, and `maxBytesBilled` to control cost.
+  - `npm run project:live-batch` runs controlled GH Archive live batch
+    sampling in safe `dry_run` mode by default, with explicit `live` mode,
+    `allowLiveSpend: true`, cached GitHub enrichment and no auto-spend
+    escalation.
+  - Controlled live sampling stores only `controlled_live_batch_summary.json`
+    and `controlled_live_batch_summary.md`, with `trendRepoCount`,
+    `sourceRepoCount`, `handoffReadyCount`, `handoffReviewCount`,
+    `handoffBlockedCount`, `averageHandoffQualityScore` and `blockerCount` as
+    the decision metrics before research spend.
+  - The live batch summary also includes compact `repoEvidence` and
+    `scoredCandidates` sections so reviewers can audit source relevance and
+    rejected candidates without committing raw large runs.
+  - Trend radar artifacts summarize heat, sexiness, feasibility and opportunity
+    angles.
+  - AI idea guardrails reject clone-shaped raw AI ideas and keep adjacent
+    QA/audit/diagnostic/reliability ideas.
+  - Shortlist selection uses `maxIdeasPerSource` to prevent one repository from
+    dominating larger batches.
+  - Project idea audit artifacts report strengths, weaknesses, readiness,
+    promotion moves and mitigation moves before research/architecture spend.
+  - Project idea handoff quality artifacts score each shortlisted
+    `ProjectIdeaInput` for constraints, domain specificity, research question
+    coverage, non-goal clarity and description specificity before research
+    spend.
+  - `npm run project:research` turns `ProjectIdeaInput` into research brief,
+    PRD and architecture artifacts.
+  - `npm run benchmark:project-bucket-relevance` checks bucket-level
+    false-positive and true-positive fixtures before research papers can count
+    as evidence for PRD or architecture. It writes
+    `project-bucket-relevance-latest.json` and
+    `project-bucket-relevance-latest.md`, including
+    `falsePositiveRejectRate` and `truePositiveAcceptRate`.
+  - `npm run benchmark:project-paper-relevance` checks the
+    `paper_relevance_judgement` layer with hard cross-domain false positives
+    and real-run collector-to-judge fixtures before reviewed papers can remain
+    useful evidence. It writes
+    `project-paper-relevance-judge-latest.json` and
+    `project-paper-relevance-judge-latest.md`, including
+    `paperJudgeFalsePositiveRejectRate`, `paperJudgeTruePositiveKeepRate`,
+    `realRunCoveragePreservationRate`, `realRunSupportRetentionRate` and
+    `realRunDistractorLeakCount`.
+  - Architecture judge artifacts compare generated architecture against PRD and
+    research evidence, then fail generic schema-valid architectures in the
+    project architecture benchmark.
+  - The project architecture benchmark includes live-derived categories for
+    short-video content QA, data quality investigation, and agent approval
+    governance so new trend categories must stay non-generic.
+  - Repo MRI project packs generate runnable Bug Path starter code that returns
+    likely source files, symbols, evidence, line ranges, next actions and
+    related tests with runnable test commands, including targeted Python
+    `pytest file.py::test_name` commands when the index can identify a concrete
+    test function. When no related test exists, candidates include a concrete
+    `characterization_test` with suggested path, test name, reproducer input,
+    expected assertion and command, plus unknowns and why-not explanations for
+    runner-up candidates.
+  - Repo MRI realistic Bug Path fixtures include direct file hints, no-file-hint
+    localization, similar symbol disambiguation, related test selection and
+    honest no-direct-test guidance, plus indirect public-wrapper test
+    selection and an ambiguous top-3 case where top-1 is intentionally not the
+    expected repair symbol, so the report must surface close-score uncertainty,
+    plus a minimal next-action case that checks a targeted reproducer command
+    and a characterization-test case for missing direct tests.
+  - Bug Path now keeps symptom localization separate from call-graph
+    `root_cause_candidates`, so heuristic CALLS evidence can suggest a called
+    function without destabilizing the primary candidate ranking.
+  - `npm run benchmark:project-pipeline` aggregates the project planning
+    benchmark suite.
+  - `npm run benchmark:project-live-batch` checks controlled dry-run budget
+    behavior, live quality gates and too-small live sample blocking.
 - Saved topics / research projects:
   - `ResearchProject` stores title, standing query, optional description,
     preferred sources, and session/user/workspace ownership metadata.

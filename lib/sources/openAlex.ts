@@ -14,6 +14,7 @@ type OpenAlexWork = {
   ids?: {
     openalex?: string;
     doi?: string;
+    arxiv?: string;
   };
   authorships?: {
     author?: {
@@ -60,6 +61,26 @@ function cleanText(value: string | null | undefined) {
     .trim();
 
   return cleaned || null;
+}
+
+function arxivIdFromUrl(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  const match = value.match(/arxiv\.org\/(?:abs|pdf)\/([^?#\s/]+)/i);
+  const raw = match?.[1]?.replace(/\.pdf$/i, "").replace(/v\d+$/i, "");
+
+  return raw || null;
+}
+
+function normalizeArxivId(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  return arxivIdFromUrl(trimmed) ?? trimmed.replace(/^arxiv:/i, "").replace(/v\d+$/i, "");
 }
 
 export const openAlexSourceAdapter: SourceAdapter = {
@@ -114,7 +135,10 @@ export const openAlexSourceAdapter: SourceAdapter = {
           year: work.publication_year ?? null,
           publishedAt: work.publication_date ?? null,
           doi: normalizeDoi(work.doi ?? work.ids?.doi),
-          arxivId: null,
+          arxivId:
+            normalizeArxivId(work.ids?.arxiv) ??
+            arxivIdFromUrl(work.primary_location?.landing_page_url) ??
+            arxivIdFromUrl(work.primary_location?.pdf_url),
           semanticScholarId: null,
           openAlexId,
           sourceUrls: [
